@@ -1,2 +1,2 @@
 # potential-octo-waddle
-(working title) prototype for a native content-based language learning app similar to lwt?
+Prototype for an integrated content-based language learning environment, hopefully the next generation lwt.
