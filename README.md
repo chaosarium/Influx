@@ -8,3 +8,6 @@ Stack:
 - Tauri (Rust)
 - Svelte (TypeScript)
 - SurrealDB
+
+Please use
+- `rustc 1.70.0`
