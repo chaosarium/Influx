@@ -15,6 +15,5 @@ struct Args {
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-
     influx_api::launch(args.disk, !args.no_seed).await
 }
