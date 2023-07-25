@@ -32,8 +32,8 @@ pub async fn todos_create(
 }
 
 pub async fn todos_delete(Path(id): Path<String>, State(db): State<DB>) -> impl IntoResponse {
-    db.delete_todo_sql(
-        surrealdb::sql::thing(&id).unwrap()
-    ).await.unwrap();
+    // db.delete_todo_sql(
+    //     surrealdb::sql::thing(&id).unwrap()
+    // ).await.unwrap();
     (StatusCode::NO_CONTENT, Json(()))
 }
