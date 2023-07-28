@@ -88,7 +88,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_todo_in_db() {
+    fn test_todo_struct() {
         let todo = TodoInDB {
             id: None,
             text: "text".into(),

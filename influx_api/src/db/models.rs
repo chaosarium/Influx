@@ -11,3 +11,4 @@ mod models_prelude {
 }
 
 pub mod todos;
+pub mod vocab;
