@@ -8,7 +8,7 @@ name = "influx"
 version = "0.1.0"
 edition = "2021"
 authors = ["Lómenoirë Mortecc."]
-rust-version = "1.70.0"
+rust-version = "1.74.1"
 readme = "README.md"
 
 # see https://doc.rust-lang.org/cargo/reference/manifest.html for info on this file

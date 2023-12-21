@@ -10,4 +10,4 @@ Stack:
 - SurrealDB
 
 Please use
-- `rustc 1.70.0`
+- `rustc 1.74.1`
