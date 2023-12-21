@@ -4,7 +4,7 @@ use axum::{
     Router,
     routing::{get, delete},
 };
-use std::net::SocketAddr;
+use tokio::net::TcpListener;
 
 use db::DB;
 mod db;
@@ -30,10 +30,7 @@ pub async fn launch(disk: bool, seed: bool) {
         .route("/todos/:id", delete(handlers::todos_delete))
         .with_state(db);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    println!("listening on http://{}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let listener = TcpListener::bind("127.0.0.1:3000").await.unwrap();
+    println!("listener is http://{:?}", listener.local_addr().unwrap());
+    axum::serve(listener, app).await.unwrap();
 }
