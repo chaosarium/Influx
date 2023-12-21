@@ -19,6 +19,7 @@ thiserror = "1.0.40"
 anyhow = "1.0.71"
 clap = { version = "4.3.19", features = ["derive"] }
 ts-rs = { version = "6.2.1" }
+yaml-front-matter = "0.1.0"
 
 [profile.dev]
 opt-level = 0
