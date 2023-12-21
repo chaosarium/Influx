@@ -11,19 +11,39 @@ use yaml_front_matter::YamlFrontMatter;
 use yaml_front_matter::Document;
 use chrono::{Local, DateTime, Utc};
 
+#[derive(Deserialize, PartialEq, Debug)]
+enum DocType {
+    Text,
+    Video,
+    Audio,
+}
+
+#[derive(Deserialize, Debug)]
+struct Metadata {
+    title: String,
+    doc_type: DocType,
+    tags: Vec<String>,
+    date_created: DateTime::<Utc>,
+    date_modified: DateTime::<Utc>,
+}
+
+#[derive(Debug)]
+struct DocEntry {
+    path: PathBuf,
+    metadata: Metadata,
+}
+
+
 fn list_md_files(dir: &str) -> Result<Vec<fs::DirEntry>, io::Error> {
     let entries = fs::read_dir(dir)?;
 
-    let mut md_entries = Vec::new();
-
-    for entry in entries {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_file() && path.extension() == Some(std::ffi::OsStr::new("md")) {
-            println!("{}", path.display());
-            md_entries.push(entry);
-        }
-    }
+    let md_entries: Vec<fs::DirEntry> = entries
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            let path = entry.path();
+            path.is_file() && path.extension() == Some(std::ffi::OsStr::new("md"))
+        })
+        .collect();
 
     Ok(md_entries)
 }
@@ -54,27 +74,6 @@ fn list_md_files_metadata(dir: &str) -> Result<Vec<DocEntry>, io::Error> {
     Ok(doc_entries)
 }
 
-#[derive(Deserialize, PartialEq, Debug)]
-enum DocType {
-    Text,
-    Video,
-    Audio,
-}
-
-#[derive(Deserialize, Debug)]
-struct Metadata {
-    title: String,
-    doc_type: DocType,
-    tags: Vec<String>,
-    date_created: DateTime::<Utc>,
-    date_modified: DateTime::<Utc>,
-}
-
-#[derive(Debug)]
-struct DocEntry {
-    path: PathBuf,
-    metadata: Metadata,
-}
 
 const SAMPLE_MD_DOC: &str = r#"
 ---
