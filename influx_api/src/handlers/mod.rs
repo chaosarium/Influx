@@ -59,15 +59,19 @@ pub async fn get_docs_list(Path(lang): Path<String>) -> impl IntoResponse {
 }
 
 pub async fn get_doc(Path((lang, file)): Path<(String, String)>) -> impl IntoResponse {
-    // format!("parsed, with {}, {}", lang, file);
+    println!("trying to access {}", format!("/Users/chaosarium/Desktop/influx_content/{}/{}", lang, file).as_str());
 
-    let (metadata, content) = read_md_file(
+    let (metadata, text) = read_md_file(
         format!("/Users/chaosarium/Desktop/influx_content/{}/{}", lang, file).as_str()
     ).unwrap();
 
+    // TODO figure out how to tokenize
+    let tokens: Vec<&str> = text.split_whitespace().collect();
+
     Json(json!({
         "metadata": metadata,
-        "text": content,
+        "text": text,
+        "tokenized": tokens,
     }))  
 
 }
