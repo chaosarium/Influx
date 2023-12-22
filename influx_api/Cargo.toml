@@ -7,23 +7,25 @@ edition = "2021"
 
 [dependencies]
 axum = "0.7.2"
-tokio = { version = "1.29.1", features = ["full"] }
+tokio = { version = "1.35.1", features = ["full"] }
 tower = { version = "0.4.13", features = ["util", "timeout"] }
 tower-http = { version = "0.5.0", features = ["add-extension", "trace", "cors"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-serde = { version = "1.0.166", features = ["derive"] }
-uuid = { version = "1.4.0", features = ["serde", "v4"] }
-tracing = "0.1"
-surrealdb = {version = "1.0.0-beta.9", features = ['kv-mem', 'kv-rocksdb'] }
-thiserror = "1.0.40"
-anyhow = "1.0.71"
-clap = { version = "4.3.19", features = ["derive"] }
+serde = { version = "1.0.193", features = ["derive"] }
+uuid = { version = "1.6.1", features = ["serde", "v4"] }
+tracing = "0.1.40"
+
+thiserror = "1.0.51"
+anyhow = "1.0.76"
+clap = { version = "4.4.11", features = ["derive"] }
 ts-rs = { version = "6.2.1" }
 yaml-front-matter = "0.1.0"
 chrono = { version="0.4.31", features = ["serde"] }
 maplit = "1.0.2"
 serde_json = "1.0"
+
+surrealdb = {version = "1.0.2", features = ['kv-mem', 'kv-rocksdb'] }
 
 [profile.dev]
 opt-level = 0

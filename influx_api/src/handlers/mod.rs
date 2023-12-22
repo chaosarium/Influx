@@ -58,7 +58,10 @@ pub async fn get_docs_list(Path(lang): Path<String>) -> impl IntoResponse {
     Json(list)
 }
 
-pub async fn get_doc(Path((lang, file)): Path<(String, String)>) -> impl IntoResponse {
+pub async fn get_doc(
+    State(db): State<DB>, 
+    Path((lang, file)): Path<(String, String)>
+) -> impl IntoResponse {
     println!("trying to access {}", format!("/Users/chaosarium/Desktop/influx_content/{}/{}", lang, file).as_str());
 
     let (metadata, text) = read_md_file(
@@ -66,12 +69,15 @@ pub async fn get_doc(Path((lang, file)): Path<(String, String)>) -> impl IntoRes
     ).unwrap();
 
     // TODO figure out how to tokenize
-    let tokens: Vec<&str> = text.split_whitespace().collect();
+    let tokens_strs: Vec<&str> = text.split_whitespace().collect();
+    let tokens_strings: Vec<String> = tokens_strs.iter().clone().map(|s| s.to_string()).collect();
+    let tokens = db.get_token_seq_from_orthography_seq(tokens_strings, lang).await.unwrap();
 
     Json(json!({
         "metadata": metadata,
         "text": text,
-        "tokenized": tokens,
+        "tokens_strs": tokens_strs,
+        "tokens": tokens,
     }))  
 
 }

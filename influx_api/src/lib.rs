@@ -1,4 +1,4 @@
-#![allow(dead_code, unused_variables, unused_macros)]
+#![allow(dead_code, unused_variables, unused_macros, unused_imports)]
 
 use axum::{
     Router,
@@ -21,8 +21,8 @@ pub async fn launch(disk: bool, seed: bool) {
     let db = DB::create_db(disk).await;
 
     if seed {
-        db.add_todo_sql("todo1".into()).await.unwrap();
-        db.add_todo_sql("todo2".into()).await.unwrap();
+        let _ = db.seed_todo_table().await;
+        
     }
 
     let cors = CorsLayer::new()

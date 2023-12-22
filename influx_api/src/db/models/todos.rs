@@ -29,6 +29,13 @@ impl From<TodoInDB> for Value {
 }
 
 impl DB {
+    pub async fn seed_todo_table(&self) -> Result<()> {
+        self.add_todo_sql("todo1".into()).await.unwrap();
+        self.add_todo_sql("todo2".into()).await.unwrap();
+        
+        Ok(())
+    }
+
     pub async fn add_todo_sql(&self, text: String) -> Result<TodoInDB> { 
         let sql = "CREATE todos SET text = $title, completed = false"; 
         let mut res: Response = self.db
