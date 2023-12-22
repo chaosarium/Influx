@@ -2,7 +2,10 @@
   import { page } from '$app/stores';
   export let data;
   import JSONTree from 'svelte-json-tree';
+  import GlobalNav from "$lib/dbg/DbgGlobalNav.svelte";
 </script>
+
+<GlobalNav />
 
 Page
 <p>Text for language: `{$page.params.lang}`</p>
@@ -12,20 +15,15 @@ Page
 <h1 class="font-bold">{data.metadata.title}</h1>
 
 <!-- vocabulary? -->
-
-
-
 {#each data.tokenized as token}
   <span class="border-solid border-2 m-0.5 border-white-50">{token}</span>
   <span> </span>
-  
 {/each}
 
 <!-- Text -->
-
-<pre>
+<!-- <pre>
   {data.text}
-</pre>
+</pre> -->
 
 <hr>
 

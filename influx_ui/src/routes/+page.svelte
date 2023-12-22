@@ -1,16 +1,16 @@
-<h1 class="text-3xl font-bold underline">
-    Hello world!
-</h1>
+<script>
+  import GlobalNav from "$lib/dbg/DbgGlobalNav.svelte";
+</script>
 
 
-<hr>
+<GlobalNav />
 
-Let's try to do some API requests
+<h1 class="text-3xl font-bold underline">Hello world!</h1>
 
-
+<hr />
 
 <style lang="postcss">
-:global(html) {
+  :global(html) {
     background-color: theme(colors.gray.100);
-}
+  }
 </style>
