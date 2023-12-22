@@ -19,7 +19,7 @@ pub struct Token {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(type = "string")]
     pub id: Option<Thing>,
-    pub language: String, // TODO make this relate to language table?
+    pub language: String, // future: make this relate to language table?
 
     pub orthography: String,
     pub phonetic: String,
@@ -28,7 +28,7 @@ pub struct Token {
     pub status: TokenStatus,
     pub definition: String,
     pub notes: String,
-    // pub tags: Vec<String>, // todo this should relate to a tags table
+    // pub tags: Vec<String>, // future: this should relate to a tags table
     
     // pub original_context: String, // future
     // pub srs info: SRSInfo, // future    

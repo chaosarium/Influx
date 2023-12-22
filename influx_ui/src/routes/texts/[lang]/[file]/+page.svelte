@@ -7,7 +7,7 @@
     import { stringify } from 'postcss';
   
   let lastHoveredOrth = '';
-  let lastClickedOrth = '';
+  let lastClickedOrth = 'voix';
   const handleHover = event => {
     lastHoveredOrth = event.detail;
   };
@@ -40,8 +40,7 @@ Page
 
 
 <div class="p-4 bg-rose-50">
-  <p>Last hovered token:</p>
-  <p><b>{lastHoveredOrth}</b></p>
+  <p>Last hovered: <b>{lastHoveredOrth}</b></p>
   <ol>
     <li>
       definition: {#if lastHoveredOrth != '' && data.tokens_dict[lastHoveredOrth]}
@@ -61,8 +60,7 @@ Page
   </ol>
 </div>
 <div class="p-4 bg-amber-50">
-  <p>Last hovered token:</p>
-  <p><b>{lastClickedOrth}</b></p>
+  <p>Last clicked: <b>{lastClickedOrth}</b></p>
   <ol>
     <li>
       definition: {#if lastClickedOrth != '' && data.tokens_dict[lastClickedOrth]}
@@ -80,6 +78,49 @@ Page
       {/if}
     </li>
   </ol>
+
+  <div class="p-4 bg-amber-100">
+    <p><b>Editor</b></p>
+    {#if lastClickedOrth != ''}
+      <form on:submit|preventDefault={updateToken}>
+        <label for="orthography">orthography:</label><br>
+        <input class="border-solid border-2 border-gray-400" type="text" id="orthography" bind:value={data.tokens_dict[lastClickedOrth].orthography}><br>
+
+        <label for="lemma">lemma:</label><br>
+        <input class="border-solid border-2 border-gray-400" type="text" id="lemma" bind:value={data.tokens_dict[lastClickedOrth].lemma}><br>
+
+        <label for="definition">definition:</label><br>
+        <input class="border-solid border-2 border-gray-400" type="text" id="definition" bind:value={data.tokens_dict[lastClickedOrth].definition}><br>
+
+        <label for="phonetic">phonetic:</label><br>
+        <input class="border-solid border-2 border-gray-400" type="text" id="phonetic" bind:value={data.tokens_dict[lastClickedOrth].phonetic}><br>
+        
+        <label for="status">status:</label><br>
+        <select class="border-solid border-2 border-gray-400" id="status" bind:value={data.tokens_dict[lastClickedOrth].status}>
+          <option value="UNMARKED">UNMARKED</option>
+          <option value="L1">L1</option>
+          <option value="L2">L2</option>
+          <option value="L3">L3</option>
+          <option value="L4">L4</option>
+          <option value="L5">L5</option>
+          <option value="IGNORED">IGNORED</option>
+        </select><br>
+
+        <label for="notes">notes:</label><br>
+        <textarea class="border-solid border-2 border-gray-400" id="notes" bind:value={data.tokens_dict[lastClickedOrth].notes} /><br>
+
+
+        <input class="mt-2 border-solid border-2 border-gray-400" type="submit" value="Update Token">
+      </form>
+    {/if}
+  </div>
+
+  <script>
+    function updateToken() {
+      // Replace this with the code to update the token
+      console.log(data.tokens_dict[lastClickedOrth]);
+    }
+  </script>
 </div>
 
 
