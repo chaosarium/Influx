@@ -21,6 +21,8 @@ clap = { version = "4.3.19", features = ["derive"] }
 ts-rs = { version = "6.2.1" }
 yaml-front-matter = "0.1.0"
 chrono = { version="0.4.31", features = ["serde"] }
+maplit = "1.0.2"
+serde_json = "1.0"
 
 [profile.dev]
 opt-level = 0

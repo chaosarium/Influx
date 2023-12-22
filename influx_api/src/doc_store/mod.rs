@@ -6,20 +6,20 @@ use std::fs;
 use std::fs::DirEntry;
 use std::io;
 use std::path::{Path, PathBuf};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use yaml_front_matter::YamlFrontMatter;
 use yaml_front_matter::Document;
 use chrono::{Local, DateTime, Utc};
 
-#[derive(Deserialize, PartialEq, Debug)]
-enum DocType {
+#[derive(Deserialize, PartialEq, Debug, Serialize)]
+pub enum DocType {
     Text,
     Video,
     Audio,
 }
 
-#[derive(Deserialize, Debug)]
-struct Metadata {
+#[derive(Deserialize, Debug, Serialize)]
+pub struct Metadata {
     title: String,
     doc_type: DocType,
     tags: Vec<String>,
@@ -27,14 +27,14 @@ struct Metadata {
     date_modified: DateTime::<Utc>,
 }
 
-#[derive(Debug)]
-struct DocEntry {
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DocEntry {
     path: PathBuf,
     metadata: Metadata,
 }
 
 
-fn list_md_files(dir: &str) -> Result<Vec<fs::DirEntry>, io::Error> {
+fn get_md_files_list(dir: &str) -> Result<Vec<fs::DirEntry>, io::Error> {
     let entries = fs::read_dir(dir)?;
 
     let md_entries: Vec<fs::DirEntry> = entries
@@ -49,13 +49,17 @@ fn list_md_files(dir: &str) -> Result<Vec<fs::DirEntry>, io::Error> {
 }
 
 fn get_md_file_metadata(path: &str) -> Result<Metadata, io::Error> {
-    let file_content = fs::read_to_string(path)?;
-    let document: Document<Metadata> = YamlFrontMatter::parse::<Metadata>(&file_content).unwrap();
-    Ok(document.metadata)
+    Ok((read_md_file(path)?).0)
 }
 
-fn list_md_files_metadata(dir: &str) -> Result<Vec<DocEntry>, io::Error> {
-    let md_entries = list_md_files(dir)?;
+pub fn read_md_file(path: &str) -> Result<(Metadata, String), io::Error> {
+    let file_buf = fs::read_to_string(path)?;
+    let document: Document<Metadata> = YamlFrontMatter::parse::<Metadata>(&file_buf).unwrap();
+    Ok((document.metadata, document.content))
+}
+
+pub fn gt_md_file_list_w_metadata(dir: &str) -> Result<Vec<DocEntry>, io::Error> {
+    let md_entries = get_md_files_list(dir)?;
 
     let mut doc_entries: Vec<DocEntry> = Vec::new();
 
@@ -103,7 +107,7 @@ mod tests {
 
     #[test]
     fn test_list_md_files() {
-        let result = list_md_files("/Users/chaosarium/Desktop/influx_content/fr");
+        let result = get_md_files_list("/Users/chaosarium/Desktop/influx_content/fr");
         assert!(result.is_ok());
     }
 
@@ -141,7 +145,7 @@ mod tests {
     #[test]
     fn test_list_md_files_metadata() {
         let directory = "/Users/chaosarium/Desktop/influx_content/fr";
-        let result = list_md_files_metadata(directory);
+        let result = gt_md_file_list_w_metadata(directory);
 
         assert!(result.is_ok());
         let metadata_list = result.unwrap();
