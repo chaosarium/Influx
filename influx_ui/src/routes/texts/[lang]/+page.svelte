@@ -1,6 +1,7 @@
 <script>
-    import { page } from '$app/stores';
-    export let data;
+  import { page } from '$app/stores';
+  export let data;
+  import JSONTree from 'svelte-json-tree';
 </script>
 
 Page
@@ -10,11 +11,11 @@ Page
 {@debug data}
 
 <ul>
-    {#each data.text_entries as entry}
-        <li>{entry.metadata.title}; [{entry.metadata.tags}]; <a href="{$page.params.lang}/{entry.filename}">{entry.filename}</a></li>
-    {/each}
+  {#each data.text_entries as entry}
+    <li>{entry.metadata.title}; [{entry.metadata.tags}]; <a href="{$page.params.lang}/{entry.filename}">{entry.filename}</a></li>
+  {/each}
 </ul>
 
 <hr>
 <p>Debug</p>
-<p>{JSON.stringify(data.text_entries)}</p>
+<JSONTree value={data} />

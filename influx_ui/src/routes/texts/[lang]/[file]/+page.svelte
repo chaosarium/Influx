@@ -1,6 +1,7 @@
 <script>
-    import { page } from '$app/stores';
-    export let data;
+  import { page } from '$app/stores';
+  export let data;
+  import JSONTree from 'svelte-json-tree';
 </script>
 
 Page
@@ -15,15 +16,15 @@ Page
 
 
 {#each data.tokenized as token}
-    <span class="border-solid border-2 m-0.5 border-white-50">{token}</span>
-    <span> </span>
-    
+  <span class="border-solid border-2 m-0.5 border-white-50">{token}</span>
+  <span> </span>
+  
 {/each}
 
 <!-- Text -->
 
 <pre>
-    {data.text}
+  {data.text}
 </pre>
 
 <hr>
@@ -32,4 +33,4 @@ Page
 
 <hr>
 <p>Debug</p>
-<p>{JSON.stringify(data)}</p>
+<JSONTree value={data} defaultExpandedLevel={1}/>
