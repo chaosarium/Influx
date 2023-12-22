@@ -1,6 +1,7 @@
 use super::models_prelude::*;
+use std::collections::HashMap;
 
-#[derive(Debug, Serialize, Deserialize, TS, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, TS, Clone, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "../bindings/")]
 pub enum TokenStatus {
     UNMARKED,
@@ -12,17 +13,26 @@ pub enum TokenStatus {
     IGNORED,
 }
 
-#[derive(Debug, Serialize, Deserialize, TS, Clone)]
+#[derive(Debug, Serialize, Deserialize, TS, Clone, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "../bindings/")]
 pub struct Token {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(type = "string")]
     pub id: Option<Thing>,
-    pub orthography: String,
-    pub lemma: String,
-    pub phonetic: String,
-    pub status: TokenStatus,
     pub language: String, // TODO make this relate to language table?
+
+    pub orthography: String,
+    pub phonetic: String,
+    pub lemma: String,
+    
+    pub status: TokenStatus,
+    pub definition: String,
+    pub notes: String,
+    // pub tags: Vec<String>, // todo this should relate to a tags table
+    
+    // pub original_context: String, // future
+    // pub srs info: SRSInfo, // future    
+    
 }
 
 impl DB {
@@ -30,51 +40,63 @@ impl DB {
         let tokens = vec![
             Token {
                 id: None,
+                language: "fr".to_string(),
                 orthography: "voix".to_string(),
-                lemma: "".to_string(),
                 phonetic: "".to_string(),
+                lemma: "".to_string(),
                 status: TokenStatus::L5,
-                language: "fr".to_string(),
+                definition: "voice".to_string(),
+                notes: "lorem ipsum".to_string(),                
             },
             Token {
                 id: None,
+                language: "fr".to_string(),
                 orthography: "cœur".to_string(),
-                lemma: "".to_string(),
                 phonetic: "".to_string(),
+                lemma: "".to_string(),
                 status: TokenStatus::L4,
-                language: "fr".to_string(),
+                definition: "heart".to_string(),
+                notes: "".to_string(),
             },
             Token {
                 id: None,
+                language: "fr".to_string(),
                 orthography: "qui".to_string(),
-                lemma: "".to_string(),
                 phonetic: "".to_string(),
+                lemma: "".to_string(),
                 status: TokenStatus::L3,
-                language: "fr".to_string(),
+                definition: "谁".to_string(),
+                notes: "".to_string(),
             },
             Token {
                 id: None,
+                language: "fr".to_string(),
                 orthography: "au".to_string(),
-                lemma: "".to_string(),
                 phonetic: "".to_string(),
+                lemma: "".to_string(),
                 status: TokenStatus::L2,
-                language: "fr".to_string(),
+                definition: "= à le, or".to_string(),
+                notes: "".to_string(),
             },
             Token {
                 id: None,
+                language: "fr".to_string(),
                 orthography: "kiwis".to_string(),
-                lemma: "".to_string(),
                 phonetic: "".to_string(),
+                lemma: "".to_string(),
                 status: TokenStatus::L1,
-                language: "fr".to_string(),
+                definition: "kiwi plural".to_string(),
+                notes: "".to_string(),
             },
             Token {
                 id: None,
-                orthography: "les".to_string(),
-                lemma: "".to_string(),
-                phonetic: "".to_string(),
-                status: TokenStatus::IGNORED,
                 language: "fr".to_string(),
+                orthography: "les".to_string(),
+                phonetic: "".to_string(),
+                lemma: "".to_string(),
+                status: TokenStatus::IGNORED,
+                definition: "le -> les".to_string(),
+                notes: "le téléphone > les téléphones".to_string(),
             },
         ];
 
@@ -86,7 +108,7 @@ impl DB {
     }
 
     pub async fn create_token(&self, token: Token) -> Result<Token> {
-        let sql = "CREATE tokens SET orthography = $orthography, lemma = $lemma, phonetic = $phonetic, status = $status, language = $language";
+        let sql = "CREATE tokens SET orthography = $orthography, lemma = $lemma, phonetic = $phonetic, status = $status, language = $language, definition = $definition, notes = $notes";
         let mut res: Response = self.db
             .query(sql)
             .bind(token)
@@ -147,11 +169,38 @@ impl DB {
                     phonetic: "".to_string(),
                     status: TokenStatus::UNMARKED,
                     language: "".to_string(),
+                    definition: "".to_string(),
+                    notes: "".to_string(),    
                 })
         }).collect::<Vec<Token>>().into();
 
         Ok(populated_seq)
     }
+
+    // TODO merge with above
+    pub async fn get_token_set_from_orthography_seq(&self, orthography_seq: Vec<String>, language: String) -> Result<HashMap<String, Token>> {
+        let query_result = self.query_tokens_by_orthographies(orthography_seq.clone(), language.clone()).await?;
+
+        // loop through sequence, apply token if found, otherwise apply UNMARKED token
+        let populated_seq: HashMap<String, Token> = orthography_seq.iter().map(|orthography| {
+            (orthography.to_string(), query_result.iter()
+                .find(|token| token.orthography == *orthography) // BUG many case sensitivity issues
+                .map(|token| Token::clone(token))
+                .unwrap_or(Token {
+                    id: None,
+                    orthography: orthography.to_string(),
+                    lemma: "".to_string(),
+                    phonetic: "".to_string(),
+                    status: TokenStatus::UNMARKED,
+                    language: "".to_string(),
+                    definition: "".to_string(),
+                    notes: "".to_string(),    
+                }))
+        }).collect::<HashMap<String, Token>>().into();
+
+        Ok(populated_seq)
+    }
+
 }
 
 #[cfg(test)]
@@ -168,6 +217,8 @@ mod tests {
             phonetic: "test".to_string(),
             status: TokenStatus::UNMARKED,
             language: "test".to_string(),
+            definition: "".to_string(),
+            notes: "".to_string(),
         };
         let token = db.create_token(token).await.unwrap();
         println!("{:?}", token);
@@ -183,11 +234,16 @@ mod tests {
             phonetic: "tɛst".to_string(),
             status: TokenStatus::UNMARKED,
             language: "en".to_string(),
+            definition: "testdef".to_string(),
+            notes: "testnote".to_string(),
         };
         let token = db.create_token(token).await.unwrap();
         let token = db.query_token_by_orthography("test".to_string(), "en".to_string()).await.unwrap();
         println!("query result: {:#?}", token);
         assert_eq!(token.orthography, "test".to_string());
+        assert_eq!(token.phonetic, "tɛst".to_string());
+        assert_eq!(token.definition, "testdef".to_string());
+        assert_eq!(token.notes, "testnote".to_string());
     }
 
     #[tokio::test]
@@ -200,6 +256,8 @@ mod tests {
             phonetic: "token1".to_string(),
             status: TokenStatus::L1,
             language: "en".to_string(),
+            definition: "".to_string(),
+            notes: "".to_string(),
         }).await.unwrap();
         db.create_token(Token {
             id: None,
@@ -208,6 +266,8 @@ mod tests {
             phonetic: "token2".to_string(),
             status: TokenStatus::L1,
             language: "en".to_string(),
+            definition: "".to_string(),
+            notes: "".to_string(),
         }).await.unwrap();
         db.create_token(Token {
             id: None,
@@ -216,6 +276,8 @@ mod tests {
             phonetic: "token3".to_string(),
             status: TokenStatus::L1,
             language: "en".to_string(),
+            definition: "".to_string(),
+            notes: "".to_string(),
         }).await.unwrap();
 
         // make sure we can query all three tokens

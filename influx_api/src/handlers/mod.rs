@@ -71,13 +71,13 @@ pub async fn get_doc(
     // TODO figure out how to tokenize
     let tokens_strs: Vec<&str> = text.split_whitespace().collect();
     let tokens_strings: Vec<String> = tokens_strs.iter().clone().map(|s| s.to_string()).collect();
-    let tokens = db.get_token_seq_from_orthography_seq(tokens_strings, lang).await.unwrap();
+    let tokens_dict = db.get_token_set_from_orthography_seq(tokens_strings, lang).await.unwrap();
 
     Json(json!({
         "metadata": metadata,
         "text": text,
         "tokens_strs": tokens_strs,
-        "tokens": tokens,
+        "tokens_dict": tokens_dict,
     }))  
 
 }
