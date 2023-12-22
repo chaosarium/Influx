@@ -2,6 +2,7 @@
 #![allow(unused_imports)]
 
 use std::error::Error;
+use std::ffi::OsStr;
 use std::fs;
 use std::fs::DirEntry;
 use std::io;
@@ -30,6 +31,7 @@ pub struct Metadata {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DocEntry {
     path: PathBuf,
+    filename: PathBuf,
     metadata: Metadata,
 }
 
@@ -65,9 +67,13 @@ pub fn gt_md_file_list_w_metadata(dir: &str) -> Result<Vec<DocEntry>, io::Error>
 
     for entry in md_entries {
         let path = entry.path();
+
+        let filename = path.file_name().unwrap().into();
+
         let metadata = get_md_file_metadata(path.to_str().unwrap())?;
         let doc_entry = DocEntry {
             path,
+            filename,
             metadata,
         };
         doc_entries.push(doc_entry);
@@ -169,7 +175,7 @@ mod tests {
             vec!["tag3"],
         ];
 
-        for (i, DocEntry {path, metadata}) in metadata_list.iter().enumerate() {
+        for (i, DocEntry {path, filename, metadata}) in metadata_list.iter().enumerate() {
             assert_eq!(metadata.title, expected_titles[i]);
             assert_eq!(metadata.doc_type, expected_doc_types[i]);
             assert_eq!(metadata.tags, expected_tags[i]);

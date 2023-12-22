@@ -11,7 +11,7 @@ Page
 
 <ul>
     {#each data.text_entries as entry}
-        <li>{entry.metadata.title}; [{entry.metadata.tags}]</li>
+        <li>{entry.metadata.title}; [{entry.metadata.tags}]; <a href="{$page.params.lang}/{entry.filename}">{entry.filename}</a></li>
     {/each}
 </ul>
 
