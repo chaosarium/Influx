@@ -7,6 +7,7 @@ Prototype for an integrated content-based language learning environment.
 ### Architecture
 
 - SurrealDB + Axum + Disk as backend service exposing an API
+- Python via PyO3 for NLP
 - Svelte frontend consumes the API 
 - Tauri as a desktop client
 
