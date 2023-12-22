@@ -52,7 +52,7 @@ pub struct GetDocsList {
 
 pub async fn get_docs_list(Path(lang): Path<String>) -> impl IntoResponse {
     let list = gt_md_file_list_w_metadata(
-        format!("/Users/chaosarium/Desktop/influx_content/{}", lang).as_str()
+        format!("/Users/chaosarium/Documents/Dev/Influx/toy_content/{}", lang).as_str()
     ).unwrap();
 
     Json(list)
@@ -62,10 +62,10 @@ pub async fn get_doc(
     State(db): State<DB>, 
     Path((lang, file)): Path<(String, String)>
 ) -> impl IntoResponse {
-    println!("trying to access {}", format!("/Users/chaosarium/Desktop/influx_content/{}/{}", lang, file).as_str());
+    println!("trying to access {}", format!("/Users/chaosarium/Documents/Dev/Influx/toy_content/{}/{}", lang, file).as_str());
 
     let (metadata, text) = read_md_file(
-        format!("/Users/chaosarium/Desktop/influx_content/{}/{}", lang, file).as_str()
+        format!("/Users/chaosarium/Documents/Dev/Influx/toy_content/{}/{}", lang, file).as_str()
     ).unwrap();
 
     // TODO figure out how to tokenize

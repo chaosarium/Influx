@@ -113,7 +113,7 @@ mod tests {
 
     #[test]
     fn test_list_md_files() {
-        let result = get_md_files_list("/Users/chaosarium/Desktop/influx_content/fr");
+        let result = get_md_files_list("/Users/chaosarium/Documents/Dev/Influx/toy_content/fr");
         assert!(result.is_ok());
     }
 
@@ -133,7 +133,7 @@ mod tests {
         
     #[test]
     fn test_get_md_file_metadata() {
-        let path = "/Users/chaosarium/Desktop/influx_content/fr/Les misérables 1.md";
+        let path = "/Users/chaosarium/Documents/Dev/Influx/toy_content/fr/Les misérables 1.md";
         let result = get_md_file_metadata(path);
         
         assert!(result.is_ok());
@@ -150,7 +150,7 @@ mod tests {
         
     #[test]
     fn test_list_md_files_metadata() {
-        let directory = "/Users/chaosarium/Desktop/influx_content/fr";
+        let directory = "/Users/chaosarium/Documents/Dev/Influx/toy_content/fr";
         let result = gt_md_file_list_w_metadata(directory);
 
         assert!(result.is_ok());
