@@ -82,7 +82,8 @@ Page
   <div class="p-4 bg-amber-100">
     <p><b>Editor</b></p>
     {#if lastClickedOrth != ''}
-      <form on:submit|preventDefault={updateToken}>
+      <form>
+        <!-- on:submit|preventDefault={updateToken}? -->
         <label for="orthography">orthography:</label><br>
         <input class="border-solid border-2 border-gray-400" type="text" id="orthography" bind:value={data.tokens_dict[lastClickedOrth].orthography}><br>
 
