@@ -26,6 +26,8 @@ pub async fn launch(disk: bool, seed: bool) {
 
     let app = Router::new()
         .route("/", get(handlers::hello_world))
+        .route("/docs/:lang", get(handlers::get_docs_list))
+        .route("/docs/:lang/:file", get(handlers::get_doc))
         .route("/todos", get(handlers::todos_index).post(handlers::todos_create))
         .route("/todos/:id", delete(handlers::todos_delete))
         .with_state(db);
