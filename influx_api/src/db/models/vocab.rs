@@ -57,7 +57,15 @@ impl DB {
                 orthography: "au".to_string(),
                 lemma: "".to_string(),
                 phonetic: "".to_string(),
-                status: TokenStatus::L4,
+                status: TokenStatus::L2,
+                language: "fr".to_string(),
+            },
+            Token {
+                id: None,
+                orthography: "kiwis".to_string(),
+                lemma: "".to_string(),
+                phonetic: "".to_string(),
+                status: TokenStatus::L1,
                 language: "fr".to_string(),
             },
             Token {
@@ -95,7 +103,7 @@ impl DB {
         let sql = "SELECT * FROM tokens WHERE orthography = $orthography AND language = $language";
         let mut res: Response = self.db
             .query(sql)
-            .bind(("orthography", orthography))
+            .bind(("orthography", orthography.to_lowercase()))
             .bind(("language", language))
             .await?;
 
@@ -106,7 +114,10 @@ impl DB {
         }
     }
 
-    pub async fn query_tokens_by_orthographies(&self, orthographies: Vec<String>, language: String) -> Result<Vec<Token>> {
+    pub async fn query_tokens_by_orthographies(&self, mut orthographies: Vec<String>, language: String) -> Result<Vec<Token>> {
+        orthographies = orthographies.iter().map(|orthography| orthography.to_lowercase()).collect::<Vec<String>>();
+        // dbg!(&orthographies);
+
         let sql = "SELECT * FROM tokens WHERE orthography INSIDE $orthography AND language = $language";
         let mut res: Response = self.db
             .query(sql)
@@ -127,7 +138,7 @@ impl DB {
         // loop through sequence, apply token if found, otherwise apply UNMARKED token
         let populated_seq: Vec<Token> = orthography_seq.iter().map(|orthography| {
             query_result.iter()
-                .find(|token| token.orthography == *orthography)
+                .find(|token| token.orthography == *orthography) // BUG many case sensitivity issues
                 .map(|token| Token::clone(token))
                 .unwrap_or(Token {
                     id: None,
@@ -211,7 +222,7 @@ mod tests {
         let tokens = db.query_tokens_by_orthographies(
             vec![
                 "token1".to_string(),
-                "token2".to_string(),
+                "Token2".to_string(),
                 "token3".to_string(),
             ],
             "en".to_string()

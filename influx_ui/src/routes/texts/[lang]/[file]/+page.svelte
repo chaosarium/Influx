@@ -15,8 +15,7 @@ Page
 <h1 class="font-bold">{data.metadata.title}</h1>
 
 <div class="p-4">
-  <!-- token sequences? -->
-  {#each data.tokenized as token}
+  {#each data.tokens as token}
     <Token {token} />
   {/each}
 </div>

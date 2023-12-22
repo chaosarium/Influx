@@ -22,6 +22,7 @@ pub async fn launch(disk: bool, seed: bool) {
 
     if seed {
         let _ = db.seed_todo_table().await;
+        let _ = db.seed_vocab_table().await;
         
     }
 
