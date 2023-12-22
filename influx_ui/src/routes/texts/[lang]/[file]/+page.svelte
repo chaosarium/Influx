@@ -4,6 +4,7 @@
   import DbgGlobalNav from "$lib/dbg/DbgGlobalNav.svelte";
   import DbgJsonData from "$lib/dbg/DbgJsonData.svelte";
   import Token from "$lib/components/Token.svelte";
+  import Tooltip from "$lib/components/TokenTooltip.svelte";
 </script>
 <DbgGlobalNav />
 
@@ -19,6 +20,8 @@ Page
     <Token {token} />
   {/each}
 </div>
+
+
 
 <!-- Text -->
 <!-- <pre>
