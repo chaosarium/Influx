@@ -1,11 +1,10 @@
 <script>
   import { page } from '$app/stores';
   export let data;
-  import JSONTree from 'svelte-json-tree';
-  import GlobalNav from "$lib/dbg/DbgGlobalNav.svelte";
+  import DbgGlobalNav from "$lib/dbg/DbgGlobalNav.svelte";
+  import DbgJsonData from "$lib/dbg/DbgJsonData.svelte";
 </script>
-
-<GlobalNav />
+<DbgGlobalNav />
 
 <p>Text for language: `{$page.params.lang}`</p>
 <hr>
@@ -18,6 +17,4 @@
   {/each}
 </ul>
 
-<hr>
-<p>Debug</p>
-<JSONTree value={data} />
+<DbgJsonData {data} />

@@ -1,4 +1,4 @@
-<div class="bg-indigo-100">
+<div class="bg-indigo-50">
   <ul>
     <li>
       <a href="/texts/fr">fr texts</a>

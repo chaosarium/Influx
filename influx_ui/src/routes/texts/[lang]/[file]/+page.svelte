@@ -1,11 +1,11 @@
 <script>
   import { page } from '$app/stores';
   export let data;
-  import JSONTree from 'svelte-json-tree';
-  import GlobalNav from "$lib/dbg/DbgGlobalNav.svelte";
+  import DbgGlobalNav from "$lib/dbg/DbgGlobalNav.svelte";
+  import DbgJsonData from "$lib/dbg/DbgJsonData.svelte";
+  import Token from "$lib/components/Token.svelte";
 </script>
-
-<GlobalNav />
+<DbgGlobalNav />
 
 Page
 <p>Text for language: `{$page.params.lang}`</p>
@@ -14,21 +14,16 @@ Page
 
 <h1 class="font-bold">{data.metadata.title}</h1>
 
-<!-- vocabulary? -->
-{#each data.tokenized as token}
-  <span class="border-solid border-2 m-0.5 border-white-50">{token}</span>
-  <span> </span>
-{/each}
+<div class="p-4">
+  <!-- token sequences? -->
+  {#each data.tokenized as token}
+    <Token {token} />
+  {/each}
+</div>
 
 <!-- Text -->
 <!-- <pre>
   {data.text}
 </pre> -->
 
-<hr>
-
-{@debug data}
-
-<hr>
-<p>Debug</p>
-<JSONTree value={data} defaultExpandedLevel={1}/>
+<DbgJsonData {data} />
