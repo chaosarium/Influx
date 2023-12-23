@@ -9,7 +9,7 @@ use surrealdb::{
 // use surrealdb::{kvs::Datastore, dbs::Session, opt::auth::Root, engine::remote::ws::Ws, };
 use anyhow::Result;
 
-mod models;
+pub mod models;
 use models::todos::TodoInDB;
 use models::vocab::Token;
 

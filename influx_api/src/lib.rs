@@ -1,8 +1,8 @@
-#![allow(dead_code, unused_variables, unused_macros)]
+#![allow(dead_code, unused_variables, unused_macros, unused_imports)]
 
 use axum::{
     Router,
-    routing::{get, delete}, http::Method,
+    routing::{get, post, delete}, http::Method,
 };
 use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
@@ -21,21 +21,26 @@ pub async fn launch(disk: bool, seed: bool) {
     let db = DB::create_db(disk).await;
 
     if seed {
-        db.add_todo_sql("todo1".into()).await.unwrap();
-        db.add_todo_sql("todo2".into()).await.unwrap();
+        let _ = db.seed_todo_table().await;
+        let _ = db.seed_vocab_table().await;
+        
     }
 
-    let cors = CorsLayer::new()
+    // let cors = CorsLayer::new()
         // allow `GET` and `POST` when accessing the resource
-        // .allow_methods([Method::GET, Method::POST])
+        // .allow_methods(Any)
         // allow requests from any origin
-        .allow_origin(Any);
+        // .allow_origin(Any);
+
+    let cors = CorsLayer::permissive();
+
 
     let app = Router::new()
         .route("/", get(handlers::hello_world))
         .route("/docs/:lang", get(handlers::get_docs_list))
         .route("/docs/:lang/:file", get(handlers::get_doc))
         .route("/todos", get(handlers::todos_index).post(handlers::todos_create))
+        .route("/vocab/token", post(handlers::update_token))
         .route("/todos/:id", delete(handlers::todos_delete))
         .layer(cors)
         .with_state(db);

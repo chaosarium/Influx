@@ -15,4 +15,5 @@ readme = "README.md"
 
 [dependencies]
 influx_api = { path = "./influx_api" }
+surrealdb = "1.0.2"
 tokio = { version = "1.29.1", features = ["full"] }
