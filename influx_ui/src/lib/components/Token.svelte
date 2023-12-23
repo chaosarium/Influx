@@ -14,7 +14,7 @@
 
 
 </script>
-
+<!-- svelte-ignore a11y -->
 <Tooltip token={token}>
 
   <span class="border-solid border-2"

@@ -15,6 +15,43 @@
     lastClickedOrth = event.detail;
   };
 
+  async function updateToken() {
+    const token = data.tokens_dict[lastClickedOrth];
+    console.log("trying to update token: ", token);
+
+    const body = JSON.stringify({
+      id: token.id.id.String,
+      language: token.language,
+      
+      orthography: token.orthography,
+      phonetic: token.phonetic,
+      lemma: token.lemma,
+
+      definition: token.definition,
+      status: token.status,
+      notes: token.notes
+    })
+
+    console.log("token id seems like: ", body);
+
+
+    const response = await fetch('http://127.0.0.1:3000/vocab/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: body,
+    });
+
+    if (!response.ok) {
+      const message = `An error has occurred: ${response.status}`;
+      throw new Error(message);
+    }
+
+    const result = await response.json();
+    console.log(result);
+  }
+
 </script>
 <DbgGlobalNav />
 
@@ -82,10 +119,9 @@ Page
   <div class="p-4 bg-amber-100">
     <p><b>Editor</b></p>
     {#if lastClickedOrth != ''}
-      <form>
-        <!-- on:submit|preventDefault={updateToken}? -->
+      <form on:submit|preventDefault={updateToken}>
         <label for="orthography">orthography:</label><br>
-        <input class="border-solid border-2 border-gray-400" type="text" id="orthography" bind:value={data.tokens_dict[lastClickedOrth].orthography}><br>
+        <input class="border-solid border-2 border-gray-400" disabled type="text" id="orthography" bind:value={data.tokens_dict[lastClickedOrth].orthography}><br>
 
         <label for="lemma">lemma:</label><br>
         <input class="border-solid border-2 border-gray-400" type="text" id="lemma" bind:value={data.tokens_dict[lastClickedOrth].lemma}><br>
@@ -116,12 +152,6 @@ Page
     {/if}
   </div>
 
-  <script>
-    function updateToken() {
-      // Replace this with the code to update the token
-      console.log(data.tokens_dict[lastClickedOrth]);
-    }
-  </script>
 </div>
 
 

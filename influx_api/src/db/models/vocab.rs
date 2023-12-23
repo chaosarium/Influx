@@ -192,7 +192,7 @@ impl DB {
                     lemma: "".to_string(),
                     phonetic: "".to_string(),
                     status: TokenStatus::UNMARKED,
-                    language: "".to_string(),
+                    language: language.to_string(),
                     definition: "".to_string(),
                     notes: "".to_string(),    
                 }))

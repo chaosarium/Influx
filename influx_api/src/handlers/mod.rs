@@ -109,6 +109,7 @@ pub async fn update_token(
             db.update_token(
                 Token {
                     // BUG doesn't handle wrong token id but orthography in database
+                    // anyway now let's just assume whoever calling this not mess up the id
                     id: Some(sql::thing(format!("tokens:{}", &id).as_str()).unwrap()),
                     language: payload.language.clone(),
                     orthography: payload.orthography.clone(),

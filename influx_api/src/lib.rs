@@ -26,11 +26,14 @@ pub async fn launch(disk: bool, seed: bool) {
         
     }
 
-    let cors = CorsLayer::new()
+    // let cors = CorsLayer::new()
         // allow `GET` and `POST` when accessing the resource
-        // .allow_methods([Method::GET, Method::POST])
+        // .allow_methods(Any)
         // allow requests from any origin
-        .allow_origin(Any);
+        // .allow_origin(Any);
+
+    let cors = CorsLayer::permissive();
+
 
     let app = Router::new()
         .route("/", get(handlers::hello_world))
