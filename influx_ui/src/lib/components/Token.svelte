@@ -16,7 +16,7 @@
 </script>
 <!-- svelte-ignore a11y -->
 <Tooltip token={token}>
-  <div class="inline bg-slate-200">
+  <div class="inline bg-slate-100">
 
     <!-- <ruby>
 
@@ -69,18 +69,20 @@
           </span>
         </ruby>
 
-        <rt>{token?.definition}</rt>
+        <rt data-rt="{token?.definition}"></rt>
       </ruby>
-      <rt>{token?.phonetic}</rt>
+      <rt data-rt="{token?.phonetic}"></rt>
     </ruby>
     
+    <span class="inline text-blue-100 mx-2 inline"> </span>
   </div>
-  <span class="inline text-blue-100 mx-2 inline"> </span>
  
   
 </Tooltip>
 
 <style>
-
+  rt:before {
+    content: attr(data-rt);
+  }
 
 </style>
