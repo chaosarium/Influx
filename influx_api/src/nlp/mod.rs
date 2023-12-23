@@ -1,4 +1,6 @@
 #![allow(unused_imports, unused_must_use)]
+use std::collections::HashMap;
+
 // use anyhow::Ok;
 use anyhow;
 use pyo3::prelude::*;
@@ -94,9 +96,68 @@ fn try_importing() -> PyResult<()> {
 
 }
 
+
+#[derive(FromPyObject, Debug)]
+enum RustyEnum {
+    #[pyo3(transparent, annotation = "str")]
+    String(String),
+    #[pyo3(transparent, annotation = "int")]
+    Int(isize),
+}
+
+fn tokenise_pipeline(text: &str, language: String) -> PyResult<()> {
+    
+    let args = (text, language);
+
+
+    Python::with_gil(|py| {
+        let stanza = PyModule::import(py, "stanza")?;
+
+        let fun: Py<PyAny> = PyModule::from_code(
+            py,
+            "def fun(text: str, language: str):
+                import stanza
+                nlp = stanza.Pipeline(lang=language, processors='tokenize, lemma')
+                doc = nlp(text)
+                print('processed doc:', flush=True)
+                print(doc, flush=True)
+
+                res = []
+                for sentence in doc.sentences:
+                    res.append([token.to_dict() for token in sentence.tokens])
+                return res
+            ", "", "",
+        )?.getattr("fun")?.into();
+
+        let callret = fun
+            .call1(py, args)?
+            .extract::<Vec<Vec<Vec<HashMap<String, RustyEnum>>>>>(py);
+
+        dbg!(callret);
+
+
+        Ok(())
+    })
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_tokenise_pipeline() {
+        const TEXT: &str = r#"
+Monsieur Myriel
+
+En 1815, M. Charles-François-Bienvenu Myriel était évêque de Digne.
+C'était un vieillard d'environ soixante-quinze ans; il occupait le siège
+de Digne depuis 1806.
+        "#;
+        
+        assert!(tokenise_pipeline(TEXT, "fr".to_string()).is_ok());
+    }
+
 
     #[test]
     fn test_run_some_python() {
@@ -112,4 +173,6 @@ mod tests {
     fn test_run_some_python_binding() {
         assert!(run_some_python_binding().is_ok());
     }
+
+
 }
