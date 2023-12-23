@@ -20,6 +20,10 @@ pub async fn hello_world() -> &'static str {
     "Hello, World!"
 }
 
+pub async fn connection_test() -> impl IntoResponse {
+    StatusCode::OK
+}
+
 pub async fn todos_index(State(db): State<DB>) -> impl IntoResponse {
     let todos = db.get_todos_sql().await.unwrap();
     Json(todos)
