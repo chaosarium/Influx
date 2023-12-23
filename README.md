@@ -26,3 +26,19 @@ Prototype for an integrated content-based language learning environment.
 - [ ] video support
 - [ ] audio support
 - [ ] pdf + ocr support?
+
+### Setting up python
+
+Try not using conda, it didn't work
+Try not using mac's built-in python, it didn't work
+Installing stanza in virtual environment doesn't work for some reason. have to install it on the system python
+
+```sh 
+brew install python@3.10
+brew install pipenv
+python3.10 -m pip install stanza
+pipenv install
+pipenv shell
+
+rm /opt/homebrew/Cellar/python\@3*/**/EXTERNALLY-MANAGED
+```

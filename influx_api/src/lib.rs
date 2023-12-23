@@ -14,6 +14,7 @@ mod utils;
 mod handlers;
 mod prelude;
 mod error;
+mod nlp;
 
 pub async fn launch(disk: bool, seed: bool) {
     println!("launching with disk: {}, seed: {}", disk, seed);
