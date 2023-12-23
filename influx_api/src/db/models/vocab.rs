@@ -201,6 +201,20 @@ impl DB {
         Ok(populated_seq)
     }
 
+    pub async fn update_token(&self, token: Token) -> Result<Token> {
+        let sql = "UPDATE tokens SET orthography = $orthography, lemma = $lemma, phonetic = $phonetic, status = $status, language = $language, definition = $definition, notes = $notes WHERE id = $id";
+        let mut res: Response = self.db
+            .query(sql)
+            .bind(token)
+            .await?;
+
+        // dbg!(&res);
+        match res.take(0) {
+            Ok(Some::<Token>(v)) => Ok(v),
+            _ => Err(anyhow::anyhow!("Error updating token"))
+        }
+    }
+
 }
 
 #[cfg(test)]

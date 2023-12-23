@@ -2,7 +2,7 @@
 
 mod models_prelude {
     pub use serde::{Deserialize, Serialize};
-    pub use surrealdb::{sql::{Thing, Array, Object, Value}, Response};
+    pub use surrealdb::{sql::{Thing, Array, Object, Value}, sql, Response};
     pub use ts_rs::TS;
     pub use anyhow::Result;
     

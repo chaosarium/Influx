@@ -2,7 +2,7 @@
 
 use axum::{
     Router,
-    routing::{get, delete}, http::Method,
+    routing::{get, post, delete}, http::Method,
 };
 use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
@@ -37,6 +37,7 @@ pub async fn launch(disk: bool, seed: bool) {
         .route("/docs/:lang", get(handlers::get_docs_list))
         .route("/docs/:lang/:file", get(handlers::get_doc))
         .route("/todos", get(handlers::todos_index).post(handlers::todos_create))
+        .route("/vocab/token", post(handlers::update_token))
         .route("/todos/:id", delete(handlers::todos_delete))
         .layer(cors)
         .with_state(db);
