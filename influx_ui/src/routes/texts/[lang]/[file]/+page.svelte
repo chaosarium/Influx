@@ -1,13 +1,12 @@
 <script>
   import { page } from '$app/stores';
   export let data;
-  import DbgGlobalNav from "$lib/dbg/DbgGlobalNav.svelte";
   import DbgJsonData from "$lib/dbg/DbgJsonData.svelte";
   import Token from "$lib/components/Token.svelte";
     import { stringify } from 'postcss';
   
   let lastHoveredOrth = '';
-  let lastClickedOrth = 'voix';
+  let lastClickedOrth = '';
   const handleHover = event => {
     lastHoveredOrth = event.detail;
   };
@@ -20,7 +19,7 @@
     console.log("trying to update token: ", token);
 
     const body = JSON.stringify({
-      id: token.id.id.String,
+      id: token.id?.id?.String,
       language: token.language,
       
       orthography: token.orthography,
@@ -53,7 +52,6 @@
   }
 
 </script>
-<DbgGlobalNav />
 
 Page
 <p>Text for language: `{$page.params.lang}`</p>
@@ -66,7 +64,7 @@ Page
 
 <p>Text area:</p>
 
-<div class="p-4 leading-10">
+<div class="p-4 leading-10 text-2xl">
   {#each data.tokens_strs as token}   
     <Token token={data.tokens_dict[token]} 
       on:token_hover={handleHover} 

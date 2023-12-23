@@ -14,6 +14,7 @@ mod utils;
 mod handlers;
 mod prelude;
 mod error;
+mod nlp;
 
 pub async fn launch(disk: bool, seed: bool) {
     println!("launching with disk: {}, seed: {}", disk, seed);
@@ -37,6 +38,7 @@ pub async fn launch(disk: bool, seed: bool) {
 
     let app = Router::new()
         .route("/", get(handlers::hello_world))
+        .route("/test", get(handlers::connection_test))
         .route("/docs/:lang", get(handlers::get_docs_list))
         .route("/docs/:lang/:file", get(handlers::get_doc))
         .route("/todos", get(handlers::todos_index).post(handlers::todos_create))

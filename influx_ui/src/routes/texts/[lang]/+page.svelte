@@ -1,10 +1,8 @@
 <script>
   import { page } from '$app/stores';
   export let data;
-  import DbgGlobalNav from "$lib/dbg/DbgGlobalNav.svelte";
   import DbgJsonData from "$lib/dbg/DbgJsonData.svelte";
 </script>
-<DbgGlobalNav />
 
 <p>Text for language: `{$page.params.lang}`</p>
 <hr>
