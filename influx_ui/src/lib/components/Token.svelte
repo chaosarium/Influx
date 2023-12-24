@@ -74,7 +74,6 @@
       <rt data-rt="{token?.phonetic}"></rt>
     </ruby>
     
-    <span class="inline text-blue-100 mx-2 inline"> </span>
   </div>
  
   

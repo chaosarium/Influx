@@ -15,6 +15,7 @@ use crate::doc_store::{
 use crate::prelude::*;
 use serde_json::json;
 use surrealdb::sql;
+use crate::nlp;
 
 pub async fn hello_world() -> &'static str {
     "Hello, World!"
@@ -73,16 +74,17 @@ pub async fn get_doc(
         format!("/Users/chaosarium/Documents/Dev/Influx/toy_content/{}/{}", lang, file).as_str()
     ).unwrap();
 
-    // TODO figure out how to tokenize
-    let tokens_strs: Vec<&str> = text.split_whitespace().collect();
-    let tokens_strings: Vec<String> = tokens_strs.iter().clone().map(|s| s.to_string()).collect();
-    let tokens_dict = db.get_token_set_from_orthography_seq(tokens_strings, lang).await.unwrap();
+
+    let (parsed_doc, tokens_strings): (nlp::Document, Vec<String>) = nlp::tokenise_pipeline(text.as_str(), lang.clone()).unwrap();
+
+    let tokens_dict = db.get_token_set_from_orthography_seq(tokens_strings.clone(), lang).await.unwrap();
 
     Json(json!({
         "metadata": metadata,
         "text": text,
-        "tokens_strs": tokens_strs,
+        "tokens_strs": tokens_strings,
         "tokens_dict": tokens_dict,
+        "parsed_doc": parsed_doc,
     }))  
 }
 

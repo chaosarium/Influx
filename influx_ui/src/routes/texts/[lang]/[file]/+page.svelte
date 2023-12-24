@@ -64,14 +64,73 @@ Page
 
 <p>Text area:</p>
 
-<div class="p-4 leading-10 text-2xl">
+<!-- <div class="p-4 leading-10 text-2xl">
   {#each data.tokens_strs as token}   
     <Token token={data.tokens_dict[token]} 
       on:token_hover={handleHover} 
       on:token_click={handleClick}
     />
   {/each}
+</div> -->
+
+<div class="p-4 leading-8 text-xl">
+  {#each data.parsed_doc.constituents as sentence_constituent}
+
+
+
+    {#if sentence_constituent.type == 'Whitespace'}
+    
+      <span class="bg-green-200 whitespace-pre-wrap">{sentence_constituent.text}</span>
+    
+    {:else if sentence_constituent.type == 'Sentence'}
+
+      <!-- <span class="bg-red-50 whitespace-pre-wrap"> -->
+        {#each sentence_constituent.constituents as constituent}
+        
+          {#if constituent.type == 'CompositToken'}
+          
+            <Token token={data.tokens_dict[constituent?.text]} 
+              on:token_hover={handleHover} 
+              on:token_click={handleClick}
+            />
+
+          {:else if constituent.type == 'SubwordToken'}
+                      
+            <!-- <Token token={data.tokens_dict[constituent?.text]} 
+              on:token_hover={handleHover} 
+              on:token_click={handleClick}
+            /> -->
+            
+          {:else if constituent.type == 'SingleToken'}
+            
+            <Token token={data.tokens_dict[constituent?.text]} 
+              on:token_hover={handleHover} 
+              on:token_click={handleClick}
+            />
+
+            
+          {:else if constituent.type == 'Whitespace'}
+            
+            <span class="bg-green-200 whitespace-pre-wrap">{constituent.text}</span>
+          
+          {/if}
+
+
+        {/each}
+      <!-- </span> -->
+    
+    {:else}
+    
+      <span class="">PANIC</span>
+    
+    {/if}
+
+
+
+  {/each}
+  <!-- {JSON.stringify(data.parsed_doc.constituents)} -->
 </div>
+
 
 
 <div class="p-4 bg-rose-50">
@@ -161,3 +220,10 @@ Page
 </pre> -->
 
 <DbgJsonData {data} />
+
+<style>
+  span {
+    /* white-space: break-spaces; */
+    /* white-space: pre-wrap; */
+  }
+</style>
