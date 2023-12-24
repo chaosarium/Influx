@@ -9,6 +9,7 @@ use pyo3::types::{IntoPyDict, PyTuple};
 use std::env;
 use std::path::PathBuf;
 use indoc::indoc;
+use serde::{Deserialize, Serialize};
 
 // from https://pyo3.rs/v0.20.0/
 fn run_some_python() -> PyResult<()> {
@@ -39,15 +40,17 @@ enum RustyEnum {
 
 type StanzaResult = (String, usize, usize, Vec<Vec<Vec<BTreeMap<String, RustyEnum>>>>);
 
-#[derive(Debug)]
-struct Document {
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(tag = "type")]
+pub struct Document {
     text: String,
     constituents: Vec<DocumentConstituent>,
     num_sentences: usize,
     num_tokens: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(tag = "type")]
 enum DocumentConstituent {
     Sentence {
         id: usize, // 0-indexed
@@ -63,7 +66,8 @@ enum DocumentConstituent {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(tag = "type")]
 enum SentenceConstituent {
     CompositToken {
         sentence_id: usize,
@@ -160,9 +164,10 @@ fn char_slice(text_chars: &Vec<char>, start_char: usize, end_char: usize) -> Str
     text_chars[start_char..end_char].iter().collect()
 }
 
-fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<Document> {
+fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<String>)> {
     let text = stanzares.0;
     let text_chars: Vec<char> = text.chars().collect();
+    let mut token_strs: Vec<String> = vec![];
 
     let mut intermediate_sentences: Vec<DocumentConstituent> = vec![];
 
@@ -183,7 +188,8 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<Document> {
                             text: stanzatoken_get_text(stanzatoken),
                             start_char: stanzatoken_get_start_char(stanzatoken),
                             end_char: stanzatoken_get_end_char(stanzatoken),
-                        })
+                        });
+                        token_strs.push(stanzatoken_get_text(stanzatoken))
                     },
                     _ => ()
                 }
@@ -200,7 +206,8 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<Document> {
                                     id: *stanza_token_id,
                                     text: stanzatoken_get_text(stanzatoken),
                                     lemma: stanzatoken_get_lemma(stanzatoken),
-                                })
+                                });
+                                token_strs.push(stanzatoken_get_text(stanzatoken))
                             },
                             false => {
                                 intermediate_tokens.push(SentenceConstituent::SingleToken {
@@ -210,7 +217,8 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<Document> {
                                     lemma: stanzatoken_get_lemma(stanzatoken),
                                     start_char: stanzatoken_get_start_char(stanzatoken),
                                     end_char: stanzatoken_get_end_char(stanzatoken),
-                                })
+                                });
+                                token_strs.push(stanzatoken_get_text(stanzatoken))
                             }
                         }
                     },
@@ -273,7 +281,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<Document> {
 
         intermediate_sentences.push(DocumentConstituent::Sentence {
             id: sentence_id,
-            text: text[sentence_start..sentence_end].to_string(),
+            text: char_slice(&text_chars, sentence_start, sentence_end).to_string(),
             start_char: sentence_start,
             end_char: sentence_end,
             constituents: tokens,
@@ -308,15 +316,15 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<Document> {
 
     dbg!(&sentences);
     
-    anyhow::Ok(Document {
+    anyhow::Ok((Document {
         text: text, 
         constituents: sentences, 
         num_sentences: stanzares.2, 
         num_tokens: stanzares.1, 
-    })
+    }, token_strs))
 }
 
-fn tokenise_pipeline(text: &str, language: String) -> PyResult<()> {
+pub fn tokenise_pipeline(text: &str, language: String) -> anyhow::Result<(Document, Vec<String>)> {
 
     let current_dir = env::current_dir()?;
     let pylib_path = current_dir.join("./src/nlp/pylib").canonicalize()?;
@@ -344,9 +352,9 @@ fn tokenise_pipeline(text: &str, language: String) -> PyResult<()> {
 
         // dbg!(&callret);
 
-        let converteddoc = stanza2document(callret?);
+        let converteddoc = stanza2document(callret?)?;
 
-        Ok(())
+        Ok(converteddoc)
     })
 }
 

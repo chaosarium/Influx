@@ -1,4 +1,4 @@
-def fun(text: str, language: str) -> list[list[list[dict[str, str|int]]]]:
+def fun(text: str, language: str) -> tuple[str, int, int, list[list[list[dict[str, str|int]]]]]:
     import stanza
     nlp = stanza.Pipeline(lang=language, processors='tokenize, lemma', download_method=None)
     doc = nlp(text)
