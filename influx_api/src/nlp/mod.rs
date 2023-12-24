@@ -359,22 +359,17 @@ mod tests {
 
     #[test]
     fn test_tokenise_pipeline() {
+        
         const TEXT: &str = indoc! {
             r#"
-            The experiment 🚀 (∑n=1∞ 1/n^2) demonstrated  exceptional results! The integration of  🚀 mathematical equations, such as f(x) = ∫(a to b) F(x) dx, ... and astonishment! 🚀.
+            Out, out, brief candle!
+            Life's but a walking shadow, a poor player,
+            That struts and frets his hour upon the stage,
+            And then is heard no more. It is a tale
+            Told by an idiot, full of sound and fury,
+            Signifying nothing.
             "#
         };
-        
-        // const TEXT: &str = indoc! {
-        //     r#"
-        //     Out, out, brief candle!
-        //     Life's but a walking shadow, a poor player,
-        //     That struts and frets his hour upon the stage,
-        //     And then is heard no more. It is a tale
-        //     Told by an idiot, full of sound and fury,
-        //     Signifying nothing.
-        //     "#
-        // };
         
         let res = tokenise_pipeline(TEXT, "en".to_string());
         dbg!(&res);

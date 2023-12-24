@@ -1,13 +1,10 @@
 def fun(text: str, language: str) -> list[list[list[dict[str, str|int]]]]:
     import stanza
-    nlp = stanza.Pipeline(lang=language, processors='tokenize, lemma')
+    nlp = stanza.Pipeline(lang=language, processors='tokenize, lemma', download_method=None)
     doc = nlp(text)
-    print('processed doc:', flush=True)
-    print("======== doc ========\n", doc, flush=True)
 
-    res = []
+    constituents = []
     for sentence in doc.sentences:
-        res.append([token.to_dict() for token in sentence.tokens])
+        constituents.append([token.to_dict() for token in sentence.tokens])
         
-    print("======== res ========\n", res, flush=True)
-    return res
+    return (doc.text, doc.num_tokens, len(doc.sentences), constituents)
