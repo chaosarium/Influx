@@ -2,8 +2,9 @@
 
 Prototype for an integrated content-based language learning environment.
 
-
 [![wakatime](https://wakatime.com/badge/github/chaosarium/Influx.svg?style=for-the-badge)](https://wakatime.com/badge/github/chaosarium/Influx)
+
+See devlog [here](a)
 
 ## Development notes
 
@@ -15,6 +16,54 @@ Prototype for an integrated content-based language learning environment.
 - Tauri as a desktop client
 - fsrs-rs for SRS algorithm
 
+### Plan
+
+(only a partial plan)
+
+**Phase I - Project Skeleton**
+
+- [x] file system content access
+- [x] working vocabulary database
+- [x] allow python scripting for extendable language support
+- [x] text processing: tokenization, lemmatization, and sentence segmentation
+- [x] document query api
+- [x] basic text reader
+- [ ] token data write requests and confirmations
+- [ ] svelte routing structure
+- [ ] read toml language configurations
+- [ ] read toml application configurations
+- [ ] language-specific file listing
+
+**Phase II - Packaging**
+
+- [ ] tauri wrapper
+- [ ] figure out how to package python dependencies
+- [ ] document set up process
+
+**Phase III - Frontend Usability**
+
+- [ ] feedback messages
+
+**Phase IV - Frontend Language Learning Features**
+
+- [ ] dictionary
+- [ ] translation
+- [ ] TTS
+- [ ] sentence structure analysis?
+
+**Phase V - Code Quality**
+
+- [ ] error handling
+- [ ] documentation
+- [ ] security and accounts?
+
+**Phase ? - Future**
+
+- [ ] markdown rendering?
+- [ ] video support
+- [ ] audio support
+- [ ] pdf + ocr support?
+
 ### For future self
 
 - Use `toml = "0.8.8"` for toml settings parsing and editing.
@@ -22,13 +71,6 @@ Prototype for an integrated content-based language learning environment.
 - File on disk could lead to race condition, but probabily won't encounter in single user situation
 - Language settings could be on disk
 - security? account? whatever for now as it's localhost
-
-### Future features
-
-- [ ] markdown rendering?
-- [ ] video support
-- [ ] audio support
-- [ ] pdf + ocr support?
 
 ### Setting up python
 

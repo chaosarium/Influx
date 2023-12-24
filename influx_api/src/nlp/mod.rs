@@ -244,7 +244,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<Str
         let mut tokens = vec![];
         let mut fill_line = sentence_start;
         while intermediate_tokens.len() > 0 {
-            let token = intermediate_tokens.remove(0);
+            let token = intermediate_tokens.remove(0); // very bad idea to do O(n) work every time
 
             match token {
                 SentenceConstituent::SubwordToken { .. } => {
@@ -293,7 +293,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<Str
     let mut sentences = vec![];
     let mut fill_line = 0;
     while intermediate_sentences.len() > 0 {
-        let sentence = intermediate_sentences.remove(0);
+        let sentence = intermediate_sentences.remove(0); // very bad idea to do O(n) work every time
 
         match sentence {
             DocumentConstituent::Whitespace { .. } => {
