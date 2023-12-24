@@ -156,8 +156,13 @@ fn stanzatoken_get_lemma(stanzatoken: &BTreeMap<String, RustyEnum>) -> String {
     }
 }
 
+fn char_slice(text_chars: &Vec<char>, start_char: usize, end_char: usize) -> String {
+    text_chars[start_char..end_char].iter().collect()
+}
+
 fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<Document> {
     let text = stanzares.0;
+    let text_chars: Vec<char> = text.chars().collect();
 
     let mut intermediate_sentences: Vec<DocumentConstituent> = vec![];
 
@@ -240,7 +245,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<Document> {
                 SentenceConstituent::CompositToken { start_char, end_char, .. } => {
                     if start_char > fill_line {
                         tokens.push(SentenceConstituent::Whitespace {
-                            text: text[fill_line..start_char].to_string(),
+                            text: char_slice(&text_chars, fill_line, start_char).to_string(),
                             start_char: fill_line,
                             end_char: start_char,
                         })
@@ -251,7 +256,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<Document> {
                 SentenceConstituent::SingleToken { start_char, end_char, .. } => {
                     if start_char > fill_line {
                         tokens.push(SentenceConstituent::Whitespace {
-                            text: text[fill_line..start_char].to_string(),
+                            text: char_slice(&text_chars, fill_line, start_char).to_string(),
                             start_char: fill_line,
                             end_char: start_char,
                         })
@@ -289,7 +294,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<Document> {
             DocumentConstituent::Sentence { start_char, end_char, .. } => {
                 if start_char > fill_line {
                     sentences.push(DocumentConstituent::Whitespace {
-                        text: text[fill_line..start_char].to_string(),
+                        text: char_slice(&text_chars, fill_line, start_char).to_string(),
                         start_char: fill_line,
                         end_char: start_char,
                     })
@@ -348,13 +353,15 @@ fn tokenise_pipeline(text: &str, language: String) -> PyResult<()> {
 
 #[cfg(test)]
 mod tests {
+    use axum::body::HttpBody;
+
     use super::*;
 
     #[test]
     fn test_tokenise_pipeline() {
         const TEXT: &str = indoc! {
             r#"
-            The experiment (∑n=1∞ 1/n^2) demonstrated  exceptional results! The integration of mathematical equations, such as f(x) = ∫(a to b) F(x) dx, ... and astonishment! .
+            The experiment 🚀 (∑n=1∞ 1/n^2) demonstrated  exceptional results! The integration of  🚀 mathematical equations, such as f(x) = ∫(a to b) F(x) dx, ... and astonishment! 🚀.
             "#
         };
         
@@ -378,6 +385,19 @@ mod tests {
     #[test]
     fn test_run_some_python() {
         assert!(run_some_python().is_ok());
+    }
+
+    #[test]
+    fn test_bytes() {
+        let text = "🚀, 🚀, 🚀".to_string();
+        let text2 = "a".to_string();
+
+        println!("{:?}", text.as_bytes());
+        println!("{:?}", text.chars());
+        println!("{:?}", text2.as_bytes());
+        // println!("{}", text[0..1].to_string());
+        // println!("{}", text[1..2].to_string());
+
     }
 
 }
