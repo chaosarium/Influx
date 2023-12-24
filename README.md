@@ -4,7 +4,10 @@ Prototype for an integrated content-based language learning environment.
 
 [![wakatime](https://wakatime.com/badge/github/chaosarium/Influx.svg?style=for-the-badge)](https://wakatime.com/badge/github/chaosarium/Influx)
 
-See devlog [here](a)
+Links
+
+- Devlog [here](https://chaosarium.xyz/influx-dev-log/)
+- Proposal [here](https://chaosarium.xyz/2022-07-18-towards-an-integrated-content-based-language-learning-environment-an-exploratory-proposal/)
 
 ## Development notes
 
