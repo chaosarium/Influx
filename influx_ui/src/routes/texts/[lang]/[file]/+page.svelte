@@ -76,13 +76,14 @@ Page
 <div class="p-4 leading-8 text-xl">
   {#each data.parsed_doc.constituents as sentence_constituent}
 
-
+    
 
     {#if sentence_constituent.type == 'Whitespace'}
     
       <span class="bg-green-200 whitespace-pre-wrap">{sentence_constituent.text}</span>
     
     {:else if sentence_constituent.type == 'Sentence'}
+      <span class="border-1 border-blue-200 py-1 hover:bg-blue-200">
 
       <!-- <span class="bg-red-50 whitespace-pre-wrap"> -->
         {#each sentence_constituent.constituents as constituent}
@@ -115,17 +116,17 @@ Page
           
           {/if}
 
-
         {/each}
       <!-- </span> -->
-    
+
+      </span>
     {:else}
     
       <span class="">PANIC</span>
     
     {/if}
 
-
+    
 
   {/each}
   <!-- {JSON.stringify(data.parsed_doc.constituents)} -->
