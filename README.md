@@ -46,6 +46,7 @@ How it looks like right now, with working multilingual sentence segmentation and
 - [ ] tauri wrapper
 - [ ] figure out how to package python dependencies (check https://pyo3.rs/v0.14.2/building_and_distribution.html)
 - [ ] document set up process
+- [ ] build CI
 
 **Phase III - Frontend Usability**
 

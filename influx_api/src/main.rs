@@ -1,4 +1,6 @@
 #![allow(unused_imports)]
+use std::env;
+
 use pyo3::prelude::*;
 use pyo3::types::IntoPyDict;
 
@@ -14,10 +16,24 @@ struct Args {
     /// Whether to not seed database
     #[arg(short, long, default_value_t = false)]
     no_seed: bool,
+
+    /// Path to content directory
+    #[arg(short, long, default_value = "../toy_content")]
+    influx_path: String,
 }
 
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-    influx_api::launch(args.disk, !args.no_seed).await
+
+    if let Ok(current_dir) = env::current_dir() {
+        println!("Launching at {:?}", current_dir);
+    } 
+    println!("Content path: {:?}", args.influx_path);
+
+    influx_api::launch(
+        args.disk, 
+        !args.no_seed, 
+        args.influx_path.into()
+    ).await
 }

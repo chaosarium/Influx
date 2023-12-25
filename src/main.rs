@@ -1,6 +1,5 @@
-use influx_api;
-
 #[tokio::main]
+#[deprecated]
 async fn main() {
-    influx_api::launch(false, true).await
+    panic!("This is deprecated for now. Use influx_api::main() instead.");
 }

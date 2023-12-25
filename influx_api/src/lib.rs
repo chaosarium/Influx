@@ -6,6 +6,7 @@ use axum::{
 };
 use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
+use std::path::{Path, PathBuf};
 
 mod db;
 mod doc_store;
@@ -16,13 +17,15 @@ mod error;
 mod nlp;
 
 use db::DB;
+use std::env;
 
 #[derive(Clone)] // TODO later use this as state rather than db itself
 pub struct ServerState {
     db: DB,
+    influx_path: PathBuf,
 }
 
-pub async fn launch(disk: bool, seed: bool) {
+pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
     println!("launching with disk: {}, seed: {}", disk, seed);
 
     let db = DB::create_db(disk).await;
@@ -81,7 +84,12 @@ pub async fn launch(disk: bool, seed: bool) {
             delete(handlers::todos_delete)
         )
         .layer(cors)
-        .with_state(db);
+        .with_state(
+            ServerState {
+                db,
+                influx_path,
+            }
+        );
 
     let listener = TcpListener::bind("127.0.0.1:3000").await.unwrap();
     println!("Starting Influx server at http://{:?}", listener.local_addr().unwrap());
