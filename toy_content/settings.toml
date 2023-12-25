@@ -1,0 +1,27 @@
+# where to run influx server
+port = 3000
+
+# a language starts with [[lang]]
+# and needs these fields
+# name = the display name of the language
+# code = the language code used for processing, things like af ar be bg bxr ca cop cs cu da de el en es et eu fa fi fr fro ga gd gl got grc he hi hr hsb hu hy id it ja kk kmr ko la lt lv lzh mr mt nl nn no olo orv pl pt ro ru sk sl sme sr sv swl ta te tr ug uk ur vi wo zh-hans zh-hant are supported for tokenisation
+# identifier = a unique identifier for the language, which also corresponds to the directory where the language files are stored inside the content directory.
+# TODO tts language code?
+
+
+# todo theme
+
+
+[[lang]]
+identifier = 'fr_demo'
+display_name = 'French'
+code = 'fr'
+'dict1' = 'dict:///###' # macos built in dict
+'dict2' = 'http://www.wordreference.com/fren/###'
+
+[[lang]]
+identifier = 'en_demo'
+display_name = 'English'
+code = 'en'
+'dict1' = 'dict:///###' # macos built in dict
+'dict2' = 'http://www.wordreference.com/enfr/###'

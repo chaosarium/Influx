@@ -11,6 +11,8 @@ use serde::{Deserialize, Serialize};
 use yaml_front_matter::YamlFrontMatter;
 use yaml_front_matter::Document;
 use chrono::{Local, DateTime, Utc};
+use toml::Table;
+use toml::Value;
 
 #[derive(Deserialize, PartialEq, Debug, Serialize)]
 pub enum DocType {
@@ -35,6 +37,37 @@ pub struct DocEntry {
     metadata: Metadata,
 }
 
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Settings {
+    pub port: Option<u16>,
+    pub lang: Vec<LanguageSetting>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LanguageSetting {
+    pub identifier: String,
+    pub display_name: String,
+    pub code: String,
+    pub dict1: Option<String>,
+    pub dict2: Option<String>,
+}
+
+/// Loads a TOML file from the given path and parses it into a type `T`.
+///
+/// This function reads the file content as a string and then uses the `toml` crate's `from_str` function
+/// to parse the string into the type `T`. The type `T` must implement the `Deserialize` trait.
+pub fn load_and_parse_toml_file<T: for<'a> Deserialize<'a>>(path: &str) -> anyhow::Result<T> {
+    let file_content = fs::read_to_string(path)?;
+    let parsed: T = toml::from_str(&file_content)?;
+    Ok(parsed)
+}
+
+pub fn read_settings_file() -> anyhow::Result<Settings> {
+    let path = "/Users/chaosarium/Documents/Dev/Influx/toy_content/settings.toml";
+    let settings = load_and_parse_toml_file::<Settings>(path);
+    settings
+}
 
 fn get_md_files_list(dir: &str) -> Result<Vec<fs::DirEntry>, io::Error> {
     let entries = fs::read_dir(dir)?;
@@ -107,9 +140,23 @@ de Digne depuis 1806.
 "#;
 
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_toml_parsing() {
+        let value = "foo = 'bar'".parse::<Table>().unwrap();
+        assert_eq!(value["foo"].as_str(), Some("bar"));
+
+        let path = "/Users/chaosarium/Documents/Dev/Influx/toy_content/settings.toml";
+        let settings = load_and_parse_toml_file::<Settings>(path);
+
+        dbg!(&settings);
+    
+    }
+
 
     #[test]
     fn test_list_md_files() {

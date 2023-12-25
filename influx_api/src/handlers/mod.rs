@@ -2,11 +2,11 @@
 
 use axum::{
     extract::{Path, Query, State},
-    response::IntoResponse, http::StatusCode, Json,
+    response::IntoResponse, http::StatusCode, Json, response::Response
 };
 use serde::{Deserialize, Serialize};
 
-use crate::db::{DB, models::vocab::Token};
+use crate::{db::{DB, models::vocab::Token}, doc_store};
 use crate::doc_store::DocEntry;
 use crate::doc_store::{
     gt_md_file_list_w_metadata,
@@ -18,7 +18,7 @@ use surrealdb::sql;
 use crate::nlp;
 
 pub async fn hello_world() -> &'static str {
-    "Hello, World!"
+    "Hello, World! Apparently nothing at the root route :p"
 }
 
 pub async fn connection_test() -> impl IntoResponse {
@@ -56,14 +56,34 @@ pub struct GetDocsList {
     lang: String,
 }
 
-pub async fn get_docs_list(Path(lang): Path<String>) -> impl IntoResponse {
-    let list = gt_md_file_list_w_metadata(
-        format!("/Users/chaosarium/Documents/Dev/Influx/toy_content/{}", lang).as_str()
-    ).unwrap();
-
-    Json(list)
+pub async fn get_language_list() -> impl IntoResponse {
+    let settings = doc_store::read_settings_file().unwrap();
+    Json(settings.lang)
 }
 
+pub async fn get_docs_list(Path(lang): Path<String>) -> Response {
+
+    // check if language exists, if not return 404
+    let settings = doc_store::read_settings_file().unwrap();
+    let lang_exists = settings.lang.iter().any(|l| l.identifier == lang);
+    if !lang_exists {
+        return (StatusCode::NOT_FOUND, Json(json!({
+            "error": format!("language {} not found", lang),
+        }))).into_response()
+    }
+
+    match gt_md_file_list_w_metadata(
+        format!("/Users/chaosarium/Documents/Dev/Influx/toy_content/{}", lang).as_str()
+    ) {
+        Ok(list) => (StatusCode::OK, Json(list)).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+            "error": format!("failed to access language content folder on disk: {}", e),
+        }))).into_response()
+    }
+
+}
+
+// TODO do error handling like above
 pub async fn get_doc(
     State(db): State<DB>, 
     Path((lang, file)): Path<(String, String)>
@@ -147,4 +167,10 @@ pub async fn update_token(
        "success": true,
        "token": token,
    }))
+}
+
+pub async fn get_settings() -> impl IntoResponse {
+    Json(
+        doc_store::read_settings_file().unwrap()
+    )
 }

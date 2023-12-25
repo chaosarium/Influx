@@ -9,6 +9,10 @@ Links
 - Devlog [here](https://chaosarium.xyz/influx-dev-log/)
 - Proposal [here](https://chaosarium.xyz/2022-07-18-towards-an-integrated-content-based-language-learning-environment-an-exploratory-proposal/)
 
+How it looks like right now, with working multilingual sentence segmentation and tokenization:
+
+![preview img](https://share.cleanshot.com/cMYjgH60Y7HHjszYGb5d+)
+
 ## Development notes
 
 ### Architecture
@@ -40,7 +44,7 @@ Links
 **Phase II - Packaging**
 
 - [ ] tauri wrapper
-- [ ] figure out how to package python dependencies
+- [ ] figure out how to package python dependencies (check https://pyo3.rs/v0.14.2/building_and_distribution.html)
 - [ ] document set up process
 
 **Phase III - Frontend Usability**
@@ -75,6 +79,8 @@ Links
 - Language settings could be on disk
 - security? account? whatever for now as it's localhost
 
+## Running development server
+
 ### Setting up python
 
 Try not using conda, it didn't work
@@ -89,4 +95,18 @@ pipenv install
 pipenv shell
 
 rm /opt/homebrew/Cellar/python\@3*/**/EXTERNALLY-MANAGED
+```
+
+### Running influx server
+
+```sh
+cd influx_api
+cargo run
+```
+
+### Running frontend
+
+```sh
+cd influx_ui
+npm run dev
 ```
