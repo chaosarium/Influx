@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     fn test_list_md_files() {
-        let result = get_md_files_list("../toy_content/fr".into());
+        let result = get_md_files_list("../toy_content/fr_demo".into());
         assert!(result.is_ok());
     }
 
@@ -180,7 +180,7 @@ mod tests {
         
     #[test]
     fn test_get_md_file_metadata() {
-        let path = "../toy_content/fr/Les misérables 1.md";
+        let path = "../toy_content/fr_demo/Les misérables 1.md";
         let result = get_md_file_metadata(path.into());
         
         assert!(result.is_ok());
@@ -197,7 +197,7 @@ mod tests {
         
     #[test]
     fn test_list_md_files_metadata() {
-        let directory = "../toy_content/fr";
+        let directory = "../toy_content/fr_demo";
         let result = gt_md_file_list_w_metadata(directory.into());
 
         assert!(result.is_ok());
