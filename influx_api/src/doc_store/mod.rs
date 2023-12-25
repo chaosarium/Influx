@@ -69,6 +69,7 @@ pub fn read_settings_file(influx_path: PathBuf) -> anyhow::Result<Settings> {
     settings
 }
 
+
 fn get_md_files_list(dir: PathBuf) -> Result<Vec<fs::DirEntry>, io::Error> {
     let entries = fs::read_dir(dir)?;
 

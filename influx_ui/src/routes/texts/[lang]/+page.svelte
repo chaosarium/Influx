@@ -7,7 +7,7 @@
 <p>Text for language: `{$page.params.lang}`</p>
 <hr>
 
-{@debug data}
+<!-- {@debug data} -->
 
 <ul>
   {#each data.text_entries as entry}

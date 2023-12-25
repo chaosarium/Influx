@@ -71,20 +71,20 @@ pub async fn get_language_list(
 
 pub async fn get_docs_list(
     State(ServerState { influx_path, .. }): State<ServerState>, 
-    Path(lang): Path<String>
+    Path(language_identifier): Path<String>
 ) -> Response {
 
     // check if language exists, if not return 404
     let settings = doc_store::read_settings_file(influx_path.clone()).unwrap();
-    let lang_exists = settings.lang.iter().any(|l| l.identifier == lang);
+    let lang_exists = settings.lang.iter().any(|l| l.identifier == language_identifier);
     if !lang_exists {
         return (StatusCode::NOT_FOUND, Json(json!({
-            "error": format!("language {} not found", lang),
+            "error": format!("language {} not found", language_identifier),
         }))).into_response()
     }
 
     match gt_md_file_list_w_metadata(
-        influx_path
+        influx_path.join(PathBuf::from(language_identifier))
     ) {
         Ok(list) => (StatusCode::OK, Json(list)).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
@@ -94,27 +94,48 @@ pub async fn get_docs_list(
 
 }
 
+pub fn get_language_code(settings: &doc_store::Settings, language_identifier: String) -> Option<String> {
+    settings
+        .lang
+        .iter()
+        .find(|l| l.identifier == language_identifier)
+        .map(|l| l.code.clone())
+}
+
+
 // TODO do error handling like above
 pub async fn get_doc(
     State(ServerState { db, influx_path }): State<ServerState>, 
-    Path((lang, file)): Path<(String, String)>
+    Path((language_identifier, file)): Path<(String, String)>
 ) -> impl IntoResponse {
-    let filepath = influx_path.join(PathBuf::from(&lang)).join(PathBuf::from(&file));
+
+    // check if language exists, if not return 404
+    let settings = doc_store::read_settings_file(influx_path.clone()).unwrap();
+    let lang_exists = settings.lang.iter().any(|l| l.identifier == language_identifier);
+    if !lang_exists {
+        return (StatusCode::NOT_FOUND, Json(json!({
+            "error": format!("language {} not found", language_identifier),
+        }))).into_response()
+    }
+
+    let language_code = get_language_code(&settings, language_identifier.clone()).unwrap();
+
+    let filepath = influx_path.join(PathBuf::from(&language_identifier)).join(PathBuf::from(&file));
     println!("trying to access {}", &filepath.display());
 
     let (metadata, text) = read_md_file(filepath).unwrap();
 
-    let (parsed_doc, tokens_strings): (nlp::Document, Vec<String>) = nlp::tokenise_pipeline(text.as_str(), lang.clone()).unwrap();
+    let (parsed_doc, tokens_strings): (nlp::Document, Vec<String>) = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).unwrap();
 
-    let tokens_dict = db.get_token_set_from_orthography_seq(tokens_strings.clone(), lang).await.unwrap();
+    let tokens_dict = db.get_token_set_from_orthography_seq(tokens_strings.clone(), language_code).await.unwrap();
 
-    Json(json!({
+    (StatusCode::OK, Json(json!({
         "metadata": metadata,
         "text": text,
         "tokens_strs": tokens_strings,
         "tokens_dict": tokens_dict,
         "parsed_doc": parsed_doc,
-    }))  
+    }))).into_response()
 }
 
 #[derive(Debug, Deserialize)]

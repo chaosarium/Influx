@@ -54,11 +54,11 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
             get(handlers::connection_test)
         )
         .route(
-            "/docs/:lang", 
+            "/docs/:language_identifier", 
             get(handlers::get_docs_list)
         )
         .route(
-            "/docs/:lang/:file", 
+            "/docs/:language_identifier/:file", 
             get(handlers::get_doc)
         )
         .route(
