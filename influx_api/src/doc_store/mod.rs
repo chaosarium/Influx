@@ -57,19 +57,20 @@ pub struct LanguageSetting {
 ///
 /// This function reads the file content as a string and then uses the `toml` crate's `from_str` function
 /// to parse the string into the type `T`. The type `T` must implement the `Deserialize` trait.
-pub fn load_and_parse_toml_file<T: for<'a> Deserialize<'a>>(path: &str) -> anyhow::Result<T> {
+pub fn load_and_parse_toml_file<T: for<'a> Deserialize<'a>>(path: PathBuf) -> anyhow::Result<T> {
     let file_content = fs::read_to_string(path)?;
     let parsed: T = toml::from_str(&file_content)?;
     Ok(parsed)
 }
 
-pub fn read_settings_file() -> anyhow::Result<Settings> {
-    let path = "/Users/chaosarium/Documents/Dev/Influx/toy_content/settings.toml";
+pub fn read_settings_file(influx_path: PathBuf) -> anyhow::Result<Settings> {
+    let path = influx_path.join("settings.toml");
     let settings = load_and_parse_toml_file::<Settings>(path);
     settings
 }
 
-fn get_md_files_list(dir: &str) -> Result<Vec<fs::DirEntry>, io::Error> {
+
+fn get_md_files_list(dir: PathBuf) -> Result<Vec<fs::DirEntry>, io::Error> {
     let entries = fs::read_dir(dir)?;
 
     let md_entries: Vec<fs::DirEntry> = entries
@@ -83,17 +84,17 @@ fn get_md_files_list(dir: &str) -> Result<Vec<fs::DirEntry>, io::Error> {
     Ok(md_entries)
 }
 
-fn get_md_file_metadata(path: &str) -> Result<Metadata, io::Error> {
+fn get_md_file_metadata(path: PathBuf) -> Result<Metadata, io::Error> {
     Ok((read_md_file(path)?).0)
 }
 
-pub fn read_md_file(path: &str) -> Result<(Metadata, String), io::Error> {
+pub fn read_md_file(path: PathBuf) -> Result<(Metadata, String), io::Error> {
     let file_buf = fs::read_to_string(path)?;
     let document: Document<Metadata> = YamlFrontMatter::parse::<Metadata>(&file_buf).unwrap();
     Ok((document.metadata, document.content))
 }
 
-pub fn gt_md_file_list_w_metadata(dir: &str) -> Result<Vec<DocEntry>, io::Error> {
+pub fn gt_md_file_list_w_metadata(dir: PathBuf) -> Result<Vec<DocEntry>, io::Error> {
     let md_entries = get_md_files_list(dir)?;
 
     let mut doc_entries: Vec<DocEntry> = Vec::new();
@@ -103,7 +104,7 @@ pub fn gt_md_file_list_w_metadata(dir: &str) -> Result<Vec<DocEntry>, io::Error>
 
         let filename = path.file_name().unwrap().into();
 
-        let metadata = get_md_file_metadata(path.to_str().unwrap())?;
+        let metadata = get_md_file_metadata(path.clone())?;
         let doc_entry = DocEntry {
             path,
             filename,
@@ -150,7 +151,7 @@ mod tests {
         let value = "foo = 'bar'".parse::<Table>().unwrap();
         assert_eq!(value["foo"].as_str(), Some("bar"));
 
-        let path = "/Users/chaosarium/Documents/Dev/Influx/toy_content/settings.toml";
+        let path = PathBuf::from("../toy_content/settings.toml");
         let settings = load_and_parse_toml_file::<Settings>(path);
 
         dbg!(&settings);
@@ -160,7 +161,7 @@ mod tests {
 
     #[test]
     fn test_list_md_files() {
-        let result = get_md_files_list("/Users/chaosarium/Documents/Dev/Influx/toy_content/fr");
+        let result = get_md_files_list("../toy_content/fr_demo".into());
         assert!(result.is_ok());
     }
 
@@ -180,8 +181,8 @@ mod tests {
         
     #[test]
     fn test_get_md_file_metadata() {
-        let path = "/Users/chaosarium/Documents/Dev/Influx/toy_content/fr/Les misérables 1.md";
-        let result = get_md_file_metadata(path);
+        let path = "../toy_content/fr_demo/Les misérables 1.md";
+        let result = get_md_file_metadata(path.into());
         
         assert!(result.is_ok());
         let metadata = result.unwrap();
@@ -197,21 +198,23 @@ mod tests {
         
     #[test]
     fn test_list_md_files_metadata() {
-        let directory = "/Users/chaosarium/Documents/Dev/Influx/toy_content/fr";
-        let result = gt_md_file_list_w_metadata(directory);
+        let directory = "../toy_content/fr_demo";
+        let result = gt_md_file_list_w_metadata(directory.into());
 
         assert!(result.is_ok());
         let metadata_list = result.unwrap();
 
-        assert_eq!(metadata_list.len(), 3);
+        assert_eq!(metadata_list.len(), 4);
         println!("{:#?}", metadata_list);
 
         let expected_titles = vec![
             "Livre premier--Un juste, Chapitre I",
             "Livre premier--Un juste, Chapitre II",
             "Livre premier--Un juste, Chapitre III",
+            "Toy Example",
         ];
         let expected_doc_types = vec![
+            DocType::Text,
             DocType::Text,
             DocType::Text,
             DocType::Text,
@@ -220,6 +223,7 @@ mod tests {
             vec!["tag1", "tag2"],
             vec!["tag2", "tag3"],
             vec!["tag3"],
+            vec!["tag1", "tag2"],
         ];
 
         for (i, DocEntry {path, filename, metadata}) in metadata_list.iter().enumerate() {

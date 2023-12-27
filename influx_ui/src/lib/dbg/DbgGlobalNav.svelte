@@ -30,9 +30,9 @@
 
 <div class="bg-indigo-50">
 
-  <a href="/texts/fr">fr texts</a> | 
   <a href="/">root</a> | 
-  <a href="/texts/fr/toy.md">dummy text</a> | 
+  <a href="/languages">languages list</a> | 
+  <a href="/texts/fr_demo/toy.md">french dummy text</a> | 
   server alive: <span class={connectionStatus === 'Connected' ? 'text-green-600' : 'text-red-600'}>{connectionStatus}</span>
 
 </div>

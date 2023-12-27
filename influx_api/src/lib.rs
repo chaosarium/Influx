@@ -6,6 +6,7 @@ use axum::{
 };
 use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
+use std::path::{Path, PathBuf};
 
 mod db;
 mod doc_store;
@@ -16,13 +17,15 @@ mod error;
 mod nlp;
 
 use db::DB;
+use std::env;
 
 #[derive(Clone)] // TODO later use this as state rather than db itself
 pub struct ServerState {
     db: DB,
+    influx_path: PathBuf,
 }
 
-pub async fn launch(disk: bool, seed: bool) {
+pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
     println!("launching with disk: {}, seed: {}", disk, seed);
 
     let db = DB::create_db(disk).await;
@@ -50,26 +53,6 @@ pub async fn launch(disk: bool, seed: bool) {
             "/test", 
             get(handlers::connection_test)
         )
-        .route(
-            "/docs/:lang", 
-            get(handlers::get_docs_list)
-        )
-        .route(
-            "/docs/:lang/:file", 
-            get(handlers::get_doc)
-        )
-        .route(
-            "/vocab/token", 
-            post(handlers::update_token)
-        )
-        .route(
-            "/settings",
-            get(handlers::get_settings)
-        )
-        .route(
-            "/settings/lang",
-            get(handlers::get_language_list)
-        )
         // toy examples below
         .route(
             "/todos", 
@@ -80,8 +63,45 @@ pub async fn launch(disk: bool, seed: bool) {
             "/todos/:id", 
             delete(handlers::todos_delete)
         )
+        .route(
+            "/docs/:language_identifier", 
+            get(handlers::get_docs_list)
+        )
+        .route(
+            "/docs/:language_identifier/:file", 
+            get(handlers::get_doc)
+        )
+        .route(
+            "/vocab/token/:language_identifier/:orthography", 
+            get(handlers::lookup_token)
+        )
+        .route(
+            "/vocab/delete_token", 
+            delete(handlers::delete_token)
+        )
+        .route(
+            "/vocab/update_token", 
+            post(handlers::update_token)
+        )
+        .route(
+            "/vocab/create_token", 
+            post(handlers::create_token)
+        )
+        .route(
+            "/settings",
+            get(handlers::get_settings)
+        )
+        .route(
+            "/settings/lang",
+            get(handlers::get_language_list)
+        )
         .layer(cors)
-        .with_state(db);
+        .with_state(
+            ServerState {
+                db,
+                influx_path,
+            }
+        );
 
     let listener = TcpListener::bind("127.0.0.1:3000").await.unwrap();
     println!("Starting Influx server at http://{:?}", listener.local_addr().unwrap());

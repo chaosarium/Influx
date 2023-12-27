@@ -19,7 +19,7 @@ pub struct Token {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(type = "string")]
     pub id: Option<Thing>,
-    pub language: String, // future: make this relate to language table?
+    pub lang_id: String, // future: make this relate to language table?
 
     pub orthography: String,
     pub phonetic: String,
@@ -40,7 +40,7 @@ impl DB {
         let tokens = vec![
             Token {
                 id: None,
-                language: "fr".to_string(),
+                lang_id: "fr_demo".to_string(),
                 orthography: "voix".to_string(),
                 phonetic: "vwa".to_string(),
                 lemma: "".to_string(),
@@ -50,7 +50,7 @@ impl DB {
             },
             Token {
                 id: None,
-                language: "fr".to_string(),
+                lang_id: "fr_demo".to_string(),
                 orthography: "cœur".to_string(),
                 phonetic: "kœʀ".to_string(),
                 lemma: "".to_string(),
@@ -60,7 +60,7 @@ impl DB {
             },
             Token {
                 id: None,
-                language: "fr".to_string(),
+                lang_id: "fr_demo".to_string(),
                 orthography: "qui".to_string(),
                 phonetic: "".to_string(),
                 lemma: "".to_string(),
@@ -70,7 +70,7 @@ impl DB {
             },
             Token {
                 id: None,
-                language: "fr".to_string(),
+                lang_id: "fr_demo".to_string(),
                 orthography: "au".to_string(),
                 phonetic: "".to_string(),
                 lemma: "".to_string(),
@@ -80,7 +80,7 @@ impl DB {
             },
             Token {
                 id: None,
-                language: "fr".to_string(),
+                lang_id: "fr_demo".to_string(),
                 orthography: "kiwis".to_string(),
                 phonetic: "kiwi".to_string(),
                 lemma: "".to_string(),
@@ -90,7 +90,7 @@ impl DB {
             },
             Token {
                 id: None,
-                language: "fr".to_string(),
+                lang_id: "fr_demo".to_string(),
                 orthography: "les".to_string(),
                 phonetic: "".to_string(),
                 lemma: "".to_string(),
@@ -108,7 +108,7 @@ impl DB {
     }
 
     pub async fn create_token(&self, token: Token) -> Result<Token> {
-        let sql = "CREATE tokens SET orthography = $orthography, lemma = $lemma, phonetic = $phonetic, status = $status, language = $language, definition = $definition, notes = $notes";
+        let sql = "CREATE tokens SET orthography = $orthography, lemma = $lemma, phonetic = $phonetic, status = $status, lang_id = $lang_id, definition = $definition, notes = $notes";
         let mut res: Response = self.db
             .query(sql)
             .bind(token)
@@ -121,30 +121,31 @@ impl DB {
         }
     }
 
-    pub async fn query_token_by_orthography(&self, orthography: String, language: String) -> Result<Token> {
-        let sql = "SELECT * FROM tokens WHERE orthography = $orthography AND language = $language";
+    pub async fn query_token_by_orthography(&self, orthography: String, lang_id: String) -> Result<Token> {
+        let sql = "SELECT * FROM tokens WHERE orthography = $orthography AND lang_id = $lang_id";
         let mut res: Response = self.db
             .query(sql)
             .bind(("orthography", orthography.to_lowercase()))
-            .bind(("language", language))
+            .bind(("lang_id", lang_id))
             .await?;
 
         // dbg!(&res);
+        // TODO handle more than 1 result
         match res.take(0) {
             Ok(Some::<Token>(v)) => Ok(v),
             _ => Err(anyhow::anyhow!("Error getting token"))
         }
     }
 
-    pub async fn query_tokens_by_orthographies(&self, mut orthographies: Vec<String>, language: String) -> Result<Vec<Token>> {
+    pub async fn query_tokens_by_orthographies(&self, mut orthographies: Vec<String>, lang_id: String) -> Result<Vec<Token>> {
         orthographies = orthographies.iter().map(|orthography| orthography.to_lowercase()).collect::<Vec<String>>();
         // dbg!(&orthographies);
 
-        let sql = "SELECT * FROM tokens WHERE orthography INSIDE $orthography AND language = $language";
+        let sql = "SELECT * FROM tokens WHERE orthography INSIDE $orthography AND lang_id = $lang_id";
         let mut res: Response = self.db
             .query(sql)
             .bind(("orthography", orthographies))
-            .bind(("language", language))
+            .bind(("lang_id", lang_id))
             .await?;
 
         // dbg!(&res);
@@ -154,8 +155,17 @@ impl DB {
         }
     }
 
-    pub async fn get_token_seq_from_orthography_seq(&self, orthography_seq: Vec<String>, language: String) -> Result<Vec<Token>> {
-        let query_result = self.query_tokens_by_orthographies(orthography_seq.clone(), language.clone()).await?;
+    pub async fn delete_token(&self, id: String) -> Result<Token> {
+        match self.db.delete(("tokens", &id)).await? {
+            Some::<Token>(v) => Ok(v),
+            _ => Err(anyhow::anyhow!("Error deleting todo"))
+        }
+    }
+
+
+
+    pub async fn get_token_seq_from_orthography_seq(&self, orthography_seq: Vec<String>, lang_id: String) -> Result<Vec<Token>> {
+        let query_result = self.query_tokens_by_orthographies(orthography_seq.clone(), lang_id.clone()).await?;
 
         // loop through sequence, apply token if found, otherwise apply UNMARKED token
         let populated_seq: Vec<Token> = orthography_seq.iter().map(|orthography| {
@@ -168,7 +178,7 @@ impl DB {
                     lemma: "".to_string(),
                     phonetic: "".to_string(),
                     status: TokenStatus::UNMARKED,
-                    language: "".to_string(),
+                    lang_id: "".to_string(),
                     definition: "".to_string(),
                     notes: "".to_string(),    
                 })
@@ -178,8 +188,8 @@ impl DB {
     }
 
     // TODO merge with above
-    pub async fn get_token_set_from_orthography_seq(&self, orthography_seq: Vec<String>, language: String) -> Result<HashMap<String, Token>> {
-        let query_result = self.query_tokens_by_orthographies(orthography_seq.clone(), language.clone()).await?;
+    pub async fn get_token_set_from_orthography_seq(&self, orthography_seq: Vec<String>, lang_id: String) -> Result<HashMap<String, Token>> {
+        let query_result = self.query_tokens_by_orthographies(orthography_seq.clone(), lang_id.clone()).await?;
 
         // loop through sequence, apply token if found, otherwise apply UNMARKED token
         let populated_seq: HashMap<String, Token> = orthography_seq.iter().map(|orthography| {
@@ -192,7 +202,7 @@ impl DB {
                     lemma: "".to_string(),
                     phonetic: "".to_string(),
                     status: TokenStatus::UNMARKED,
-                    language: language.to_string(),
+                    lang_id: lang_id.to_string(),
                     definition: "".to_string(),
                     notes: "".to_string(),    
                 }))
@@ -202,7 +212,7 @@ impl DB {
     }
 
     pub async fn update_token(&self, token: Token) -> Result<Token> {
-        let sql = "UPDATE tokens SET orthography = $orthography, lemma = $lemma, phonetic = $phonetic, status = $status, language = $language, definition = $definition, notes = $notes WHERE id = $id";
+        let sql = "UPDATE tokens SET orthography = $orthography, lemma = $lemma, phonetic = $phonetic, status = $status, lang_id = $lang_id, definition = $definition, notes = $notes WHERE id = $id";
         let mut res: Response = self.db
             .query(sql)
             .bind(token)
@@ -230,7 +240,7 @@ mod tests {
             lemma: "test".to_string(),
             phonetic: "test".to_string(),
             status: TokenStatus::UNMARKED,
-            language: "test".to_string(),
+            lang_id: "test".to_string(),
             definition: "".to_string(),
             notes: "".to_string(),
         };
@@ -247,7 +257,7 @@ mod tests {
             lemma: "test".to_string(),
             phonetic: "tɛst".to_string(),
             status: TokenStatus::UNMARKED,
-            language: "en".to_string(),
+            lang_id: "en".to_string(),
             definition: "testdef".to_string(),
             notes: "testnote".to_string(),
         };
@@ -269,7 +279,7 @@ mod tests {
             lemma: "token1".to_string(),
             phonetic: "token1".to_string(),
             status: TokenStatus::L1,
-            language: "en".to_string(),
+            lang_id: "en".to_string(),
             definition: "".to_string(),
             notes: "".to_string(),
         }).await.unwrap();
@@ -279,7 +289,7 @@ mod tests {
             lemma: "token2".to_string(),
             phonetic: "token2".to_string(),
             status: TokenStatus::L1,
-            language: "en".to_string(),
+            lang_id: "en".to_string(),
             definition: "".to_string(),
             notes: "".to_string(),
         }).await.unwrap();
@@ -289,7 +299,7 @@ mod tests {
             lemma: "token3".to_string(),
             phonetic: "token3".to_string(),
             status: TokenStatus::L1,
-            language: "en".to_string(),
+            lang_id: "en".to_string(),
             definition: "".to_string(),
             notes: "".to_string(),
         }).await.unwrap();
