@@ -4,7 +4,7 @@
     export let tokens_dict;
 </script>
 
-<div class="p-4 leading-8 text-xl">
+<div class="p-4 leading-8 text-xl bg-white">
     {#each parsed_doc.constituents as sentence_constituent}
         {#if sentence_constituent.type == "Whitespace"}
             <span class="bg-green-200 whitespace-pre-wrap"
