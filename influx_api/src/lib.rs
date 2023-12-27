@@ -53,6 +53,16 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
             "/test", 
             get(handlers::connection_test)
         )
+        // toy examples below
+        .route(
+            "/todos", 
+            get(handlers::todos_index)
+            .post(handlers::todos_create)
+        )
+        .route(
+            "/todos/:id", 
+            delete(handlers::todos_delete)
+        )
         .route(
             "/docs/:language_identifier", 
             get(handlers::get_docs_list)
@@ -72,16 +82,6 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
         .route(
             "/settings/lang",
             get(handlers::get_language_list)
-        )
-        // toy examples below
-        .route(
-            "/todos", 
-            get(handlers::todos_index)
-            .post(handlers::todos_create)
-        )
-        .route(
-            "/todos/:id", 
-            delete(handlers::todos_delete)
         )
         .layer(cors)
         .with_state(

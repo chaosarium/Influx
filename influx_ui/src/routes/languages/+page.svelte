@@ -12,7 +12,7 @@
 <ul>
   {#each data.language_entries as language_entry}
     <li>
-      <a href="/texts/{language_entry.identifier}">{language_entry.display_name}</a>
+      <a href="/texts/{language_entry.identifier}">{language_entry.display_name}</a> [{language_entry.identifier}]
     </li>    
   {/each}
 </ul>

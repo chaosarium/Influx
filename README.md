@@ -37,9 +37,9 @@ How it looks like right now, with working multilingual sentence segmentation and
 - [x] basic text reader
 - [ ] token data write requests and confirmations
 - [ ] svelte routing structure
-- [ ] read toml language configurations
+- [x] read toml language configurations
 - [ ] read toml application configurations
-- [ ] language-specific file listing
+- [x] language-specific file listing
 
 **Phase II - Packaging**
 

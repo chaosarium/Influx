@@ -19,7 +19,7 @@ use crate::nlp;
 use std::path::PathBuf;
 
 pub async fn hello_world() -> &'static str {
-    "Hello, World! Apparently nothing at the root route :p"
+    "hello world from the influx server :p root route might not be the most useful"
 }
 
 pub async fn connection_test() -> impl IntoResponse {
