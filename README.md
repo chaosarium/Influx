@@ -52,6 +52,7 @@ How it looks like right now, with working multilingual sentence segmentation and
 **Phase III - Frontend Usability**
 
 - [ ] feedback messages
+- [ ] typescript: export typescript for rust structs
 
 **Phase IV - Frontend Language Learning Features**
 
