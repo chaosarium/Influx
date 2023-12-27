@@ -7,4 +7,6 @@ date_modified: '2023-11-28T12:45:59.324310806Z'
 ---
 voix ambiguë d'un cœur qui, au zéphyr, préfère les jattes de kiwis.
 
+cœur cœur cœur.
+
 Comme même monde omelette rendre frenchtech croissant pouvoir grève meilleur. Disruptif guillotine baguette du du demander à la révolution. Mais saucisson comme même manger très manger. 

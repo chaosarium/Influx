@@ -13,7 +13,24 @@
     lastClickedOrth = event.detail;
   };
 
+  let tokenFormData = {
+    orthography: '',
+    lemma: '',
+    definition: '',
+    phonetic: '',
+    status: '',
+    notes: ''
+  };
+
+  function updateTokenFormData() {
+    if (lastClickedOrth && data.tokens_dict[lastClickedOrth]) {
+      tokenFormData = {...data.tokens_dict[lastClickedOrth]};
+    }
+  }
+  $: lastClickedOrth, updateTokenFormData();
+
   async function createToken() {
+    data.tokens_dict[lastClickedOrth] = {...tokenFormData};
     const token = data.tokens_dict[lastClickedOrth];
 
     const response = await fetch('http://127.0.0.1:3000/vocab/create_token', {
@@ -41,6 +58,7 @@
     console.log(result);
   }
   async function updateToken() {
+    data.tokens_dict[lastClickedOrth] = {...tokenFormData};
     const token = data.tokens_dict[lastClickedOrth];
 
     const response = await fetch('http://127.0.0.1:3000/vocab/update_token', {
@@ -195,19 +213,19 @@ Page
     {#if lastClickedOrth != ''}
       <form on:submit|preventDefault={data.tokens_dict[lastClickedOrth].id ? updateToken : createToken}>
         <label for="orthography">orthography:</label><br>
-        <input class="border-solid border-2 border-gray-400" disabled type="text" id="orthography" bind:value={data.tokens_dict[lastClickedOrth].orthography}><br>
+        <input class="border-solid border-2 border-gray-400" disabled type="text" id="orthography" bind:value={tokenFormData.orthography}><br>
 
         <label for="lemma">lemma:</label><br>
-        <input class="border-solid border-2 border-gray-400" type="text" id="lemma" bind:value={data.tokens_dict[lastClickedOrth].lemma}><br>
+        <input class="border-solid border-2 border-gray-400" type="text" id="lemma" bind:value={tokenFormData.lemma}><br>
 
         <label for="definition">definition:</label><br>
-        <input class="border-solid border-2 border-gray-400" type="text" id="definition" bind:value={data.tokens_dict[lastClickedOrth].definition}><br>
+        <input class="border-solid border-2 border-gray-400" type="text" id="definition" bind:value={tokenFormData.definition}><br>
 
         <label for="phonetic">phonetic:</label><br>
-        <input class="border-solid border-2 border-gray-400" type="text" id="phonetic" bind:value={data.tokens_dict[lastClickedOrth].phonetic}><br>
+        <input class="border-solid border-2 border-gray-400" type="text" id="phonetic" bind:value={tokenFormData.phonetic}><br>
         
         <label for="status">status:</label><br>
-        <select class="border-solid border-2 border-gray-400" id="status" bind:value={data.tokens_dict[lastClickedOrth].status}>
+        <select class="border-solid border-2 border-gray-400" id="status" bind:value={tokenFormData.status}>
           <option value="L1">L1</option>
           <option value="L2">L2</option>
           <option value="L3">L3</option>
@@ -217,7 +235,7 @@ Page
         </select><br>
 
         <label for="notes">notes:</label><br>
-        <textarea class="border-solid border-2 border-gray-400" id="notes" bind:value={data.tokens_dict[lastClickedOrth].notes} /><br>
+        <textarea class="border-solid border-2 border-gray-400" id="notes" bind:value={tokenFormData.notes} /><br>
 
 
         <input class="mt-2 border-solid border-2 border-gray-400" type="submit" value="Update Token">
@@ -236,6 +254,8 @@ Page
 </pre> -->
 
 <DbgJsonData {data} />
+<DbgJsonData name='tokenFormData bindings' data={tokenFormData} />
+
 
 <style>
   span {
