@@ -71,34 +71,34 @@ pub async fn get_language_list(
 
 pub async fn get_docs_list(
     State(ServerState { influx_path, .. }): State<ServerState>, 
-    Path(language_identifier): Path<String>
+    Path(lang_id): Path<String>
 ) -> Response {
 
-    // check if language exists, if not return 404
+    // check if lang_id exists, if not return 404
     let settings = doc_store::read_settings_file(influx_path.clone()).unwrap();
-    let lang_exists = settings.lang.iter().any(|l| l.identifier == language_identifier);
+    let lang_exists = settings.lang.iter().any(|l| l.identifier == lang_id);
     if !lang_exists {
         return (StatusCode::NOT_FOUND, Json(json!({
-            "error": format!("language {} not found", language_identifier),
+            "error": format!("lang_id {} not found", lang_id),
         }))).into_response()
     }
 
     match gt_md_file_list_w_metadata(
-        influx_path.join(PathBuf::from(language_identifier))
+        influx_path.join(PathBuf::from(lang_id))
     ) {
         Ok(list) => (StatusCode::OK, Json(list)).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
-            "error": format!("failed to access language content folder on disk: {}", e),
+            "error": format!("failed to access lang_id content folder on disk: {}", e),
         }))).into_response()
     }
 
 }
 
-pub fn get_language_code(settings: &doc_store::Settings, language_identifier: String) -> Option<String> {
+pub fn get_language_code(settings: &doc_store::Settings, lang_id: String) -> Option<String> {
     settings
         .lang
         .iter()
-        .find(|l| l.identifier == language_identifier)
+        .find(|l| l.identifier == lang_id)
         .map(|l| l.code.clone())
 }
 
@@ -106,28 +106,28 @@ pub fn get_language_code(settings: &doc_store::Settings, language_identifier: St
 // TODO do error handling like above
 pub async fn get_doc(
     State(ServerState { db, influx_path }): State<ServerState>, 
-    Path((language_identifier, file)): Path<(String, String)>
+    Path((lang_id, file)): Path<(String, String)>
 ) -> impl IntoResponse {
 
-    // check if language exists, if not return 404
+    // check if lang_id exists, if not return 404
     let settings = doc_store::read_settings_file(influx_path.clone()).unwrap();
-    let lang_exists = settings.lang.iter().any(|l| l.identifier == language_identifier);
+    let lang_exists = settings.lang.iter().any(|l| l.identifier == lang_id);
     if !lang_exists {
         return (StatusCode::NOT_FOUND, Json(json!({
-            "error": format!("language {} not found", language_identifier),
+            "error": format!("lang_id {} not found", lang_id),
         }))).into_response()
     }
 
-    let language_code = get_language_code(&settings, language_identifier.clone()).unwrap();
+    let language_code = get_language_code(&settings, lang_id.clone()).unwrap();
 
-    let filepath = influx_path.join(PathBuf::from(&language_identifier)).join(PathBuf::from(&file));
+    let filepath = influx_path.join(PathBuf::from(&lang_id)).join(PathBuf::from(&file));
     println!("trying to access {}", &filepath.display());
 
     let (metadata, text) = read_md_file(filepath).unwrap();
 
     let (parsed_doc, tokens_strings): (nlp::Document, Vec<String>) = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).unwrap();
 
-    let tokens_dict = db.get_token_set_from_orthography_seq(tokens_strings.clone(), language_code).await.unwrap();
+    let tokens_dict = db.get_token_set_from_orthography_seq(tokens_strings.clone(), lang_id).await.unwrap();
 
     (StatusCode::OK, Json(json!({
         "metadata": metadata,
@@ -139,9 +139,8 @@ pub async fn get_doc(
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UpdateToken {
-    pub id: Option<String>,
-    pub language: String,
+pub struct CreateToken {
+    pub lang_id: String,
 
     pub orthography: String,
     pub phonetic: String,
@@ -150,9 +149,47 @@ pub struct UpdateToken {
     pub status: crate::db::models::vocab::TokenStatus,
     pub definition: String,
     pub notes: String,
-
 }
 
+#[derive(Debug, Deserialize)]
+pub struct UpdateToken {
+    pub id: String,
+    pub lang_id: String,
+
+    pub orthography: String,
+    pub phonetic: String,
+    pub lemma: String,
+    
+    pub status: crate::db::models::vocab::TokenStatus,
+    pub definition: String,
+    pub notes: String,
+}
+
+pub async fn create_token(
+    State(ServerState { db, .. }): State<ServerState>, 
+    Json(payload): Json<CreateToken>,
+) -> impl IntoResponse {
+
+    println!("token update attempt payload: {:?}", payload);
+
+    let token = db.create_token(
+        Token {
+            id: None,
+            lang_id: payload.lang_id.clone(),
+            orthography: payload.orthography.clone(),
+            phonetic: payload.phonetic.clone(),
+            lemma: payload.lemma.clone(),
+            status: payload.status.clone(),
+            definition: payload.definition.clone(),
+            notes: payload.notes.clone(),
+        }
+    ).await.unwrap();
+
+   Json(json!({
+       "success": true,
+       "token": token,
+   }))
+}
 pub async fn update_token(
     State(ServerState { db, .. }): State<ServerState>, 
     Json(payload): Json<UpdateToken>,
@@ -160,38 +197,20 @@ pub async fn update_token(
 
     println!("token update attempt payload: {:?}", payload);
 
-    let token = match payload.id {
-        Some(id) => {
-            db.update_token(
-                Token {
-                    // BUG doesn't handle wrong token id but orthography in database
-                    // anyway now let's just assume whoever calling this not mess up the id
-                    id: Some(sql::thing(format!("tokens:{}", &id).as_str()).unwrap()),
-                    language: payload.language.clone(),
-                    orthography: payload.orthography.clone(),
-                    phonetic: payload.phonetic.clone(),
-                    lemma: payload.lemma.clone(),
-                    status: payload.status.clone(),
-                    definition: payload.definition.clone(),
-                    notes: payload.notes.clone(),
-                }
-            ).await.unwrap()
-        },
-        None => {
-            db.create_token(
-                Token {
-                    id: None,
-                    language: payload.language.clone(),
-                    orthography: payload.orthography.clone(),
-                    phonetic: payload.phonetic.clone(),
-                    lemma: payload.lemma.clone(),
-                    status: payload.status.clone(),
-                    definition: payload.definition.clone(),
-                    notes: payload.notes.clone(),
-                }
-            ).await.unwrap()
+    let token = db.update_token(
+        Token {
+            // BUG doesn't handle wrong token id but orthography in database
+            // anyway now let's just assume whoever calling this not mess up the id
+            id: Some(sql::thing(format!("tokens:{}", &payload.id).as_str()).unwrap()),
+            lang_id: payload.lang_id.clone(),
+            orthography: payload.orthography.clone(),
+            phonetic: payload.phonetic.clone(),
+            lemma: payload.lemma.clone(),
+            status: payload.status.clone(),
+            definition: payload.definition.clone(),
+            notes: payload.notes.clone(),
         }
-    };
+    ).await.unwrap();
 
    Json(json!({
        "success": true,

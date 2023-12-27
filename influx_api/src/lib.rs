@@ -72,8 +72,12 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
             get(handlers::get_doc)
         )
         .route(
-            "/vocab/token", 
+            "/vocab/update_token", 
             post(handlers::update_token)
+        )
+        .route(
+            "/vocab/create_token", 
+            post(handlers::create_token)
         )
         .route(
             "/settings",

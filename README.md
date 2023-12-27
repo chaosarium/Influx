@@ -40,6 +40,7 @@ How it looks like right now, with working multilingual sentence segmentation and
 - [x] read toml language configurations
 - [ ] read toml application configurations
 - [x] language-specific file listing
+- [ ] ensure uniqueness of vocabulary database entries
 
 **Phase II - Packaging**
 
@@ -111,3 +112,19 @@ cargo run
 cd influx_ui
 npm run dev
 ```
+
+## API design
+
+Method defaults to GET is unspecified
+
+- `/` returns something random
+- `/settings` returns app settings as json
+    - `/langs` returns list of languages in settings
+- `/vocab` to work with vocabs
+    - `/vocab/token/{lang_identifier}/{orthography}` to query for a single token?
+    - POST `/vocab/create_token` to create a token
+    - POST `/vocab/update_token` to update a token
+    - DELETE `/vocab/delete_token` to update a token
+- `docs` to work with docs
+    - `/docs/{lang_identifier}` returns list of content, with metadata, for the language specified by `lang_identifier`. Currently only supports markdown content.
+        - `/docs/{lang_identifier}/{filename}` returns a specific piece of content, with metadata, text, tokenised text, and results from querying vocabulary database
