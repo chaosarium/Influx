@@ -164,13 +164,17 @@ pub struct UpdateToken {
     pub definition: String,
     pub notes: String,
 }
+#[derive(Debug, Deserialize)]
+pub struct DeleteToken {
+    pub id: String,
+}
 
 pub async fn create_token(
     State(ServerState { db, .. }): State<ServerState>, 
     Json(payload): Json<CreateToken>,
 ) -> impl IntoResponse {
 
-    println!("token update attempt payload: {:?}", payload);
+    println!("token create attempt payload: {:?}", payload);
 
     let token = db.create_token(
         Token {
@@ -190,6 +194,35 @@ pub async fn create_token(
        "token": token,
    }))
 }
+
+pub async fn delete_token(
+    State(ServerState { db, .. }): State<ServerState>, 
+    Json(payload): Json<DeleteToken>,
+) -> impl IntoResponse {
+
+    println!("token delete attempt payload: {:?}", payload);
+
+    let token = db.delete_token(payload.id).await.unwrap();
+
+   Json(json!({
+       "success": true,
+       "token": token,
+   }))
+}
+
+pub async fn lookup_token(
+    State(ServerState { db, .. }): State<ServerState>, 
+    Path((lang_id, orthography)): Path<(String, String)>
+) -> impl IntoResponse {
+
+    let token = db.query_token_by_orthography(orthography, lang_id).await.unwrap();
+
+    Json(json!({
+        "success": true,
+        "token": token,
+    }))
+}
+
 pub async fn update_token(
     State(ServerState { db, .. }): State<ServerState>, 
     Json(payload): Json<UpdateToken>,

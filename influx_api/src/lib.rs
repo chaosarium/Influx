@@ -72,6 +72,14 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
             get(handlers::get_doc)
         )
         .route(
+            "/vocab/token/:language_identifier/:orthography", 
+            get(handlers::lookup_token)
+        )
+        .route(
+            "/vocab/delete_token", 
+            delete(handlers::delete_token)
+        )
+        .route(
             "/vocab/update_token", 
             post(handlers::update_token)
         )

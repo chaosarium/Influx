@@ -130,6 +130,7 @@ impl DB {
             .await?;
 
         // dbg!(&res);
+        // TODO handle more than 1 result
         match res.take(0) {
             Ok(Some::<Token>(v)) => Ok(v),
             _ => Err(anyhow::anyhow!("Error getting token"))
@@ -153,6 +154,15 @@ impl DB {
             _ => Err(anyhow::anyhow!("Error getting token"))
         }
     }
+
+    pub async fn delete_token(&self, id: String) -> Result<Token> {
+        match self.db.delete(("tokens", &id)).await? {
+            Some::<Token>(v) => Ok(v),
+            _ => Err(anyhow::anyhow!("Error deleting todo"))
+        }
+    }
+
+
 
     pub async fn get_token_seq_from_orthography_seq(&self, orthography_seq: Vec<String>, lang_id: String) -> Result<Vec<Token>> {
         let query_result = self.query_tokens_by_orthographies(orthography_seq.clone(), lang_id.clone()).await?;
