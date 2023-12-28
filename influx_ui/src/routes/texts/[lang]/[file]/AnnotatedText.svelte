@@ -31,7 +31,7 @@
                             tokenisation_debug={tokenisation_debug}
                         />
                     {:else if constituent.type == "Whitespace"}
-                        <span class="whitespace-pre-wrap" class:bg-green-200={tokenisation_debug}
+                        <span class="whitespace-pre-wrap" class:bg-green-100={tokenisation_debug}
                             >{constituent.text}</span
                         >
                     {/if}

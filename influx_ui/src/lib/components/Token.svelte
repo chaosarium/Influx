@@ -87,7 +87,7 @@
   }
 
   .token_dbg {
-    @apply bg-slate-50 border-solid border-1 hover:bg-slate-200;
+    @apply bg-slate-50 border-solid border-2 hover:bg-slate-200;
   }
 
 </style>
