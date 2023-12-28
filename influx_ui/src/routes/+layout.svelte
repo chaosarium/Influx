@@ -1,8 +1,6 @@
 <script>
   import "../app.css";
-  import DbgGlobalNav from "$lib/dbg/DbgGlobalNav.svelte";
-
+  import "../panestyle.scss";
 </script>
 
-<DbgGlobalNav />
-<slot />
+<slot>empty slot</slot>

@@ -314,7 +314,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<Str
 
     }
 
-    dbg!(&sentences);
+    // dbg!(&sentences);
     
     anyhow::Ok((Document {
         text: text, 

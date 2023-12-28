@@ -11,7 +11,11 @@ Links
 
 How it looks like right now, with working multilingual sentence segmentation and tokenization:
 
-![preview img](https://share.cleanshot.com/cMYjgH60Y7HHjszYGb5d+)
+![preview img](https://share.cleanshot.com/s06w8VZ1ljSvtrRyTjCl+)
+
+**Is this usable at its current state?**
+
+No. Not yet. It technically has a functioning database and text reader, but there is not yet any dictionary integration nor translation integration. The UI needs a lot of work. There is also not yet a way to package the app into some binary due to complications with embedding python in rust.
 
 ## Development notes
 
@@ -52,6 +56,7 @@ How it looks like right now, with working multilingual sentence segmentation and
 **Phase III - Frontend Usability**
 
 - [ ] feedback messages
+- [ ] typescript: export typescript for rust structs
 
 **Phase IV - Frontend Language Learning Features**
 

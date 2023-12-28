@@ -11,12 +11,13 @@
   const handleClick = () => {
     dispatch('token_click', token.orthography);
   };
+  export let tokenisation_debug: boolean = false;
 
 
 </script>
 <!-- svelte-ignore a11y -->
 <Tooltip token={token}>
-  <div class="inline bg-slate-100">
+  <div class="inline hover:cursor-default" >
 
     <!-- <ruby>
 
@@ -54,7 +55,7 @@
          
      
         <ruby style="ruby-position: alternate;">
-          <span class="border-solid border-2"
+          <span class=""
             class:border-white-50={token.status === 'UNMARKED'}
             class:border-violet-400={token.status === 'IGNORED'}
             class:border-red-400={token.status === 'L1'}
@@ -64,6 +65,7 @@
             class:border-teal-400={token.status === 'L5'}
             on:mouseenter={handleMouseEnter}
             on:click={handleClick}
+            class:token_dbg={tokenisation_debug}
           >
             {token.orthography}
           </span>
@@ -82,6 +84,10 @@
 <style>
   rt:before {
     content: attr(data-rt);
+  }
+
+  .token_dbg {
+    @apply bg-slate-50 border-solid border-2 hover:bg-slate-200;
   }
 
 </style>
