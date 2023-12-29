@@ -100,7 +100,7 @@
     <DbgGlobalNav />
   </svelte:fragment>
 
-  <svelte:fragment slot="mid-mid">
+  <div slot="mid-mid">
     <p>TITLE:</p>
 
     <h1 class="font-bold">{data.metadata.title}</h1>
@@ -114,9 +114,9 @@
       on:token_click={handleClick}
     ></AnnotatedText>
 
-  </svelte:fragment>
+  </div>
 
-  <svelte:fragment slot="right">
+  <div slot="right">
     <div class="p-4 bg-rose-50">
       <p>Last hovered:</p>
       <TokenInfoPane 
@@ -170,14 +170,14 @@
 
     </div>
 
-  </svelte:fragment>
+  </div>
 
-  <svelte:fragment slot="mid-bottom">
+  <div slot="mid-bottom">
     DEBUG
     <DbgJsonData {data} />
     <DbgJsonData name='tokenFormData bindings' data={tokenFormData} />
     <DbgJsonData name='page params' data={$page.params} />
-  </svelte:fragment>
+  </div>
 </PaneLayout>
 
 

@@ -3,6 +3,7 @@
 .splitpanes.panestyletheme {
     .splitpanes__pane {
         @apply bg-white;
+        overflow: scroll;
     }
 
     .splitpanes__splitter {
