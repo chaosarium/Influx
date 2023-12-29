@@ -11,7 +11,7 @@
   <Splitpanes theme="panestyletheme" dblClickSplitter={false} pushOtherPanes={false}>
     
     {#if show_left}
-      <Pane maxSize={20} size={10} snapSize={5}>
+      <Pane maxSize={20} size={0} snapSize={5}>
         <slot name="left">left empty slot</slot>
       </Pane>
     {/if}
@@ -38,7 +38,7 @@
       </Splitpanes>
     </Pane>
     
-    <Pane size={40} snapSize={10}>
+    <Pane size={50} snapSize={10}>
       <slot name="right">right empty slot</slot>
     </Pane>
 

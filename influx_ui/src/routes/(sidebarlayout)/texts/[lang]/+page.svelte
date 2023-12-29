@@ -4,16 +4,24 @@
   export let data;
   import DbgJsonData from "$lib/dbg/DbgJsonData.svelte";
   import PageTitle from '$lib/components/PageTitle.svelte';
+  import TextEntry from './TextEntry.svelte';
 </script>
 
-<PageTitle>Text for {$page.params.lang}</PageTitle> 
+<div class="p-3">
 
-<!-- {@debug data} -->
+  <PageTitle>Text for {$page.params.lang}</PageTitle> 
 
-<ul>
-  {#each data.text_entries as entry}
-    <li>{entry.metadata.title}; [{entry.metadata.tags}]; <a href="{$page.params.lang}/{entry.filename}">{entry.filename}</a></li>
-  {/each}
-</ul>
+  <!-- {@debug data} -->
 
-<DbgJsonData {data} />
+  <div class="my-3">
+    <ul class="space-y-3">
+      {#each data.text_entries as text_entry}
+        <!-- <li>{text_entrie.metadata.title}; [{text_entrie.metadata.tags}]; <a href="{$page.params.lang}/{text_entrie.filename}">{text_entrie.filename}</a></li> -->
+        <TextEntry {text_entry} />
+      {/each}
+    </ul>
+  </div>
+
+
+  <DbgJsonData {data} />
+</div>

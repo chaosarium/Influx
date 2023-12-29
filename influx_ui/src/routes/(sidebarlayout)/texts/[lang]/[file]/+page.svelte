@@ -94,21 +94,33 @@
 
 </script>
 
-<PaneLayout show_left={false}>
+<PaneLayout show_left={false} show_mid_top={false}>
 
-  <div slot="mid-mid">
-    <p>TITLE:</p>
+  <div slot="mid-mid" class="h-full">
 
-    <h1 class="font-bold">{data.metadata.title}</h1>
+    <!-- content column -->
+    <div class="flex justify-center my-auto h-full">
+      <div class="mx-3 my-auto max-w-[800px] flex-auto">
+        
+        <h1 class="font-bold text-3xl mt-4 mb-2">{data.metadata.title}</h1>
+        <p class="text-gray-500">Tags: {undefined}</p>
+        <p class="text-gray-500">File: {undefined}</p>
+        <p class="text-gray-500">Created: {data.metadata.date_created}</p>
+        <p class="text-gray-500">Modified: {data.metadata.date_modified}</p>
+        <p class="text-gray-500">Last Viewed: {undefined}</p>
 
-    <p>ANNOTATED TEXT:</p>
 
-    <AnnotatedText 
-      parsed_doc={data.parsed_doc}
-      tokens_dict={data.tokens_dict}
-      on:token_hover={handleHover} 
-      on:token_click={handleClick}
-    ></AnnotatedText>
+        <AnnotatedText 
+          parsed_doc={data.parsed_doc}
+          tokens_dict={data.tokens_dict}
+          on:token_hover={handleHover} 
+          on:token_click={handleClick}
+          class="my-4"
+        ></AnnotatedText>
+
+      </div>
+    </div>
+
 
   </div>
 
@@ -169,7 +181,6 @@
   </div>
 
   <div slot="mid-bottom">
-    DEBUG
     <DbgJsonData {data} />
     <DbgJsonData name='tokenFormData bindings' data={tokenFormData} />
     <DbgJsonData name='page params' data={$page.params} />

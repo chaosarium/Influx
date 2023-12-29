@@ -10,9 +10,7 @@
   </div>
 
   <div class="pl-[200px]">
-    <div class="p-3">
       <slot>empty slot</slot>
-    </div>
   </div>
 
 </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
   export let href: string | undefined = undefined;
   let moreclass = '';
-	export { moreclass as class };
+  export { moreclass as class };
 </script>
 
 {#if href}
