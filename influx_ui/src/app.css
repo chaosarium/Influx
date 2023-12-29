@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 @layer base {
-  a {
+  /* a {
     @apply underline text-blue-800;
-  }
+  } */
 
 }
 

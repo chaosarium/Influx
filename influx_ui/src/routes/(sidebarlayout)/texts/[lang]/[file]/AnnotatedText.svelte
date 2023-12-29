@@ -3,9 +3,11 @@
     export let parsed_doc;
     export let tokens_dict;
     let tokenisation_debug = true;
+    let moreclass = '';
+    export { moreclass as class };
 </script>
 
-<div class="p-4 leading-8 text-xl bg-white">
+<div class={`leading-8 text-xl ${moreclass}`}>
     {#each parsed_doc.constituents as sentence_constituent}
         {#if sentence_constituent.type == "Whitespace"}
             <span class="whitespace-pre-wrap" class:bg-green={tokenisation_debug}

@@ -1,7 +1,9 @@
+<script>
+    import MainSidebar from "$lib/components/MainSidebarInner.svelte";
+    import PageTitle from "$lib/components/PageTitle.svelte";
 
+</script>
 
-<h1 class="text-3xl font-bold underline">Hello world!</h1>
+<PageTitle>Home</PageTitle> 
 
-<p>The home page isn't that important, yet.</p>
-
-<hr />
+<MainSidebar />

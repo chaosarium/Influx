@@ -15,6 +15,11 @@
     {/if}
   </li>
   <li>
+    token_id: {#if populated && dict_entry}
+      <b>{dict_entry?.id?.id?.String}</b>  
+    {/if}
+  </li>
+  <li>
     phonetic: {#if populated && dict_entry}
       <b>{dict_entry.phonetic}</b>  
     {/if}

@@ -11,11 +11,11 @@ Links
 
 How it looks like right now, with working multilingual sentence segmentation and tokenization:
 
-![preview img](https://share.cleanshot.com/s06w8VZ1ljSvtrRyTjCl+)
+![preview img](https://share.cleanshot.com/MdnsyZxsmq9vdtMJwrX7+)
 
 **Is this usable at its current state?**
 
-No. Not yet. It technically has a functioning database and text reader, but there is not yet any dictionary integration nor translation integration. The UI needs a lot of work. There is also not yet a way to package the app into some binary due to complications with embedding python in rust.
+No. Not yet. It technically has a functioning database and text reader, but there is not yet any dictionary integration nor translation integration. The UI needs a lot of work. I have yet to figure out a way to package a binary built from rust with an embedding python interpreter.
 
 ## Development notes
 
@@ -45,16 +45,25 @@ No. Not yet. It technically has a functioning database and text reader, but ther
 - [ ] read toml application configurations
 - [x] language-specific file listing
 - [ ] ensure uniqueness of vocabulary database entries
+- [ ] dictionary (pop up only for now) support
+- [ ] update added token id if saving unmarked
+- [ ] 
 
-**Phase II - Packaging**
+**Phase II - Backend & Packaging**
 
 - [ ] tauri wrapper
 - [ ] figure out how to package python dependencies (check https://pyo3.rs/v0.14.2/building_and_distribution.html)
 - [ ] document set up process
 - [ ] build CI
+- [ ] API error reporting
+- [ ] Documentation?
+- [ ] Caching Stanza outputs
 
 **Phase III - Frontend Usability**
 
+- [ ] UI design
+- [ ] UI implementation
+- [ ] loading indicators
 - [ ] feedback messages
 - [ ] typescript: export typescript for rust structs
 
@@ -67,7 +76,7 @@ No. Not yet. It technically has a functioning database and text reader, but ther
 
 **Phase V - Code Quality**
 
-- [ ] error handling
+- [ ] better error handling
 - [ ] documentation
 - [ ] security and accounts?
 
@@ -80,7 +89,6 @@ No. Not yet. It technically has a functioning database and text reader, but ther
 
 ### For future self
 
-- Use `toml = "0.8.8"` for toml settings parsing and editing.
 - Current implementation is for rapid development. Change all unwrap to proper error handling. 
 - File on disk could lead to race condition, but probabily won't encounter in single user situation
 - Language settings could be on disk

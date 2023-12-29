@@ -7,7 +7,7 @@
   import TokenInfoPane from './TokenInfoPane.svelte';
   import DesktopLayout from './DesktopLayout.svelte';
   import PaneLayout from '$lib/PaneLayout.svelte';
-    import DbgGlobalNav from '$lib/dbg/DbgGlobalNav.svelte';
+    import MainSidebar from '$lib/components/MainSidebarInner.svelte';
     
   let lastHoveredOrth = '';
   let lastClickedOrth = '';
@@ -94,29 +94,37 @@
 
 </script>
 
-<PaneLayout>
-  <svelte:fragment slot="left">
-    SIDEBAR
-    <DbgGlobalNav />
-  </svelte:fragment>
+<PaneLayout show_left={false} show_mid_top={false}>
 
-  <svelte:fragment slot="mid-mid">
-    <p>TITLE:</p>
+  <div slot="mid-mid" class="h-full">
 
-    <h1 class="font-bold">{data.metadata.title}</h1>
+    <!-- content column -->
+    <div class="flex justify-center my-auto h-full">
+      <div class="mx-3 my-auto max-w-[800px] flex-auto">
+        
+        <h1 class="font-bold text-3xl mt-4 mb-2">{data.metadata.title}</h1>
+        <p class="text-gray-500">Tags: {undefined}</p>
+        <p class="text-gray-500">File: {undefined}</p>
+        <p class="text-gray-500">Created: {data.metadata.date_created}</p>
+        <p class="text-gray-500">Modified: {data.metadata.date_modified}</p>
+        <p class="text-gray-500">Last Viewed: {undefined}</p>
 
-    <p>ANNOTATED TEXT:</p>
 
-    <AnnotatedText 
-      parsed_doc={data.parsed_doc}
-      tokens_dict={data.tokens_dict}
-      on:token_hover={handleHover} 
-      on:token_click={handleClick}
-    ></AnnotatedText>
+        <AnnotatedText 
+          parsed_doc={data.parsed_doc}
+          tokens_dict={data.tokens_dict}
+          on:token_hover={handleHover} 
+          on:token_click={handleClick}
+          class="my-4"
+        ></AnnotatedText>
 
-  </svelte:fragment>
+      </div>
+    </div>
 
-  <svelte:fragment slot="right">
+
+  </div>
+
+  <div slot="right">
     <div class="p-4 bg-rose-50">
       <p>Last hovered:</p>
       <TokenInfoPane 
@@ -170,14 +178,13 @@
 
     </div>
 
-  </svelte:fragment>
+  </div>
 
-  <svelte:fragment slot="mid-bottom">
-    DEBUG
+  <div slot="mid-bottom">
     <DbgJsonData {data} />
     <DbgJsonData name='tokenFormData bindings' data={tokenFormData} />
     <DbgJsonData name='page params' data={$page.params} />
-  </svelte:fragment>
+  </div>
 </PaneLayout>
 
 
