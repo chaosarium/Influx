@@ -7,7 +7,7 @@
   import TokenInfoPane from './TokenInfoPane.svelte';
   import DesktopLayout from './DesktopLayout.svelte';
   import PaneLayout from '$lib/PaneLayout.svelte';
-    import DbgGlobalNav from '$lib/dbg/DbgGlobalNav.svelte';
+    import MainSidebar from '$lib/components/MainSidebarInner.svelte';
     
   let lastHoveredOrth = '';
   let lastClickedOrth = '';
@@ -94,11 +94,7 @@
 
 </script>
 
-<PaneLayout>
-  <svelte:fragment slot="left">
-    SIDEBAR
-    <DbgGlobalNav />
-  </svelte:fragment>
+<PaneLayout show_left={false}>
 
   <div slot="mid-mid">
     <p>TITLE:</p>

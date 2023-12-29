@@ -1,11 +1,12 @@
 <script>
+
   import { page } from '$app/stores';
   export let data;
   import DbgJsonData from "$lib/dbg/DbgJsonData.svelte";
+  import PageTitle from '$lib/components/PageTitle.svelte';
 </script>
 
-<p>Text for language: `{$page.params.lang}`</p>
-<hr>
+<PageTitle>Text for {$page.params.lang}</PageTitle> 
 
 <!-- {@debug data} -->
 

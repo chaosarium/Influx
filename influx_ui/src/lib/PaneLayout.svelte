@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Pane, Splitpanes } from 'svelte-splitpanes';
   export let show_mid_top: boolean = true;
+  export let show_left: boolean = true;
   export let show_mid_bottom: boolean = true;
   // https://github.com/orefalo/svelte-splitpanes/issues/33 may help with pixel sizing the panels
 </script>
@@ -9,9 +10,11 @@
 <div id="appContainer" class="h-screen w-full">
   <Splitpanes theme="panestyletheme" dblClickSplitter={false} pushOtherPanes={false}>
     
-    <Pane maxSize={20} size={10} snapSize={5}>
-      <slot name="left">left empty slot</slot>
-    </Pane>
+    {#if show_left}
+      <Pane maxSize={20} size={10} snapSize={5}>
+        <slot name="left">left empty slot</slot>
+      </Pane>
+    {/if}
 
     <Pane minSize={40} size={50}>
       <Splitpanes theme="panestyletheme" horizontal={true} dblClickSplitter={false} pushOtherPanes={false}>

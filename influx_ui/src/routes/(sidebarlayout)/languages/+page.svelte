@@ -1,19 +1,18 @@
 <script>
   import { page } from '$app/stores';
+    import PageTitle from '$lib/components/PageTitle.svelte';
   export let data;
   import DbgJsonData from "$lib/dbg/DbgJsonData.svelte";
+  import LanguageEntry from './LanguageEntry.svelte';
 </script>
 
-<p>Listing languages</p>
-<hr>
+<PageTitle>Languages</PageTitle> 
 
 <!-- {@debug data} -->
 
 <ul>
   {#each data.language_entries as language_entry}
-    <li>
-      <a href="/texts/{language_entry.identifier}">{language_entry.display_name}</a> [{language_entry.identifier}]
-    </li>    
+    <LanguageEntry {language_entry} />
   {/each}
 </ul>
 

@@ -14,6 +14,8 @@
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
 		"autoprefixer": "^10.4.16",
+		"flowbite": "^2.2.1",
+		"flowbite-svelte": "^0.44.21",
 		"postcss": "^8.4.32",
 		"sass": "^1.69.5",
 		"svelte": "^4.2.7",
@@ -25,6 +27,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@tabler/icons-svelte": "^2.44.0",
 		"@zerodevx/svelte-json-view": "^1.0.7",
 		"svelte-json-tree": "^2.2.0",
 		"svelte-splitpanes": "^0.8.0"
