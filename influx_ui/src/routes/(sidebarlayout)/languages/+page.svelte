@@ -10,10 +10,13 @@
 
 <!-- {@debug data} -->
 
-<ul>
-  {#each data.language_entries as language_entry}
-    <LanguageEntry {language_entry} />
-  {/each}
-</ul>
+<div class="my-3">
+  <ul class="space-y-3">
+    {#each data.language_entries as language_entry}
+      <LanguageEntry {language_entry} />
+    {/each}
+  </ul>
+</div>
+
 
 <DbgJsonData {data} />

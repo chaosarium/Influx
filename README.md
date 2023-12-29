@@ -15,7 +15,7 @@ How it looks like right now, with working multilingual sentence segmentation and
 
 **Is this usable at its current state?**
 
-No. Not yet. It technically has a functioning database and text reader, but there is not yet any dictionary integration nor translation integration. The UI needs a lot of work. There is also not yet a way to package the app into some binary due to complications with embedding python in rust.
+No. Not yet. It technically has a functioning database and text reader, but there is not yet any dictionary integration nor translation integration. The UI needs a lot of work. I have yet to figure out a way to package a binary built from rust with an embedding python interpreter.
 
 ## Development notes
 
@@ -46,6 +46,8 @@ No. Not yet. It technically has a functioning database and text reader, but ther
 - [x] language-specific file listing
 - [ ] ensure uniqueness of vocabulary database entries
 - [ ] dictionary (pop up only for now) support
+- [ ] update added token id if saving unmarked
+- [ ] 
 
 **Phase II - Backend & Packaging**
 
@@ -59,8 +61,9 @@ No. Not yet. It technically has a functioning database and text reader, but ther
 
 **Phase III - Frontend Usability**
 
-= [ ] UI design
-= [ ] UI implementation
+- [ ] UI design
+- [ ] UI implementation
+- [ ] loading indicators
 - [ ] feedback messages
 - [ ] typescript: export typescript for rust structs
 
