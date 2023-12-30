@@ -5,11 +5,11 @@
 </script>
 
 {#if href}
-  <a class={`p-1 border-gray-200 border-2 hover:bg-gray-200 ${moreclass}`} href={href}>
+  <a on:click class={`p-1 border-gray-200 border-2 hover:bg-gray-200 ${moreclass}`} href={href}>
     <slot></slot>
   </a>
 {:else}
-  <button class={`p-1 border-gray-200 border-2 hover:bg-gray-200 ${moreclass}`}>
+  <button on:click class={`p-1 border-gray-200 border-2 hover:bg-gray-200 ${moreclass}`}>
     <slot></slot>
   </button>
 {/if}

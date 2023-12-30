@@ -65,7 +65,7 @@
     }
 
     const result = await response.json();
-    dbgConsoleMessages.log(`success createToken ${JSON.stringify(result)}`);
+    dbgConsoleMessages.push_back(`success createToken ${JSON.stringify(result)}`);
     console.log(result);
   }
   async function updateToken() {
@@ -95,7 +95,7 @@
     }
 
     const result = await response.json();
-    dbgConsoleMessages.log(`success updateToken ${JSON.stringify(result)}`);
+    dbgConsoleMessages.push_back(`success updateToken ${JSON.stringify(result)}`);
     console.log(result);
   }
 
@@ -193,7 +193,7 @@
       <AccordionEntry>
         <h2 slot="header" class="px-3 font-bold bg-blue-50">Output Console</h2>
         <div class="p-3 ">
-          <button on:click={() => {dbgConsoleMessages.log('hi')}}>
+          <button on:click={() => {dbgConsoleMessages.push_back('hi')}}>
             DEBUG CONSOLE
           </button>
           <DbgConsole />

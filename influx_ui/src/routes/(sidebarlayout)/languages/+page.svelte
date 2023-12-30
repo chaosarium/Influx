@@ -1,6 +1,6 @@
 <script>
   import { page } from '$app/stores';
-    import PageTitle from '$lib/components/PageTitle.svelte';
+  import PageTitle from '$lib/components/PageTitle.svelte';
   export let data;
   import DbgJsonData from "$lib/dbg/DbgJsonData.svelte";
   import LanguageEntry from './LanguageEntry.svelte';

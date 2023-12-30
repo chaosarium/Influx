@@ -4,7 +4,7 @@
   let connectionStatus = 'Checking...';
   let intervalId;
   import { IconHome, IconLanguageHiragana, IconCircleFilled, IconBooks, IconVocabulary, IconCalendarRepeat, IconArrowBadgeLeft, IconReportAnalytics, IconSettings } from '@tabler/icons-svelte';
-    import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
   const checkConnection = async () => {
     try {
@@ -29,7 +29,7 @@
     clearInterval(intervalId); 
   });
 
-  import { dbgConsoleMessages, logNotYet } from '$lib/store'
+  // import { active_lang_id } from '$lib/store';
 
 </script>
 
@@ -86,11 +86,21 @@
       <li><Button href="/texts/fr_demo/toy.md" class="flex">
         <span class="inline">dummy text</span>
       </Button></li>
+      <li><Button href="/components" class="flex">
+        <span class="inline">components testing</span>
+      </Button></li>
     </ul>
   </div>
 
   <div>
-    server alive: <IconCircleFilled size={16} stroke={2} class={connectionStatus === 'Connected' ? 'inline text-green-600' : 'inline text-red-600'} />
+    <ul>
+      <li>
+        <!-- active lang id: {$active_lang_id} -->
+      </li>
+      <li>
+        server alive: <IconCircleFilled size={16} stroke={2} class={connectionStatus === 'Connected' ? 'inline text-green-600' : 'inline text-red-600'} />
+      </li>
+    </ul>
   </div>
 
 
