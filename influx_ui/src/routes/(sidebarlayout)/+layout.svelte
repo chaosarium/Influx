@@ -5,7 +5,7 @@
 </script>
 
 <div class="h-screen">
-  <div class="w-[200px] absolute top-0 left-0">
+  <div class="w-[200px] absolute top-0 left-0 border-r-1 border-r-gray-300">
     <MainSidebarInner />
   </div>
 

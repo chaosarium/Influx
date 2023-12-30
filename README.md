@@ -93,6 +93,7 @@ No. Not yet. It technically has a functioning database and text reader, but ther
 - File on disk could lead to race condition, but probabily won't encounter in single user situation
 - Language settings could be on disk
 - security? account? whatever for now as it's localhost
+- influx_api should be renamed influx_server
 
 ## Running development server
 
@@ -140,4 +141,4 @@ Method defaults to GET is unspecified
     - DELETE `/vocab/delete_token` to update a token
 - `docs` to work with docs
     - `/docs/{lang_identifier}` returns list of content, with metadata, for the language specified by `lang_identifier`. Currently only supports markdown content.
-        - `/docs/{lang_identifier}/{filename}` returns a specific piece of content, with metadata, text, tokenised text, and results from querying vocabulary database
+        - `/docs/{lang_identifier}/{filename}` returns a specific piece of content, with metadata, text, lemmatised and tokenised text, and results from querying vocabulary database

@@ -29,9 +29,11 @@
     clearInterval(intervalId); 
   });
 
+  import { dbgConsoleMessages, logNotYet } from '$lib/store'
+
 </script>
 
-<div class="border-2 border-indigo-50 p-3 box-border flex flex-col justify-between h-screen">
+<div class="p-3 box-border flex flex-col justify-between h-screen">
 
 
   <div class="">
