@@ -4,18 +4,23 @@ Prototype for an integrated content-based language learning environment.
 
 [![wakatime](https://wakatime.com/badge/github/chaosarium/Influx.svg?style=for-the-badge)](https://wakatime.com/badge/github/chaosarium/Influx)
 
-Links
+**Is this usable at its current state?**
+
+No. Not yet. It technically has a functioning database and text reader, but there is not yet any dictionary integration nor translation integration. The UI needs a lot of work. I have yet to figure out a way to package a binary built from rust with an embedding python interpreter.
+
+**Its current state**
+
+Some basic UI and working multilingual sentence segmentation and tokenization:
+
+![preview img](https://share.cleanshot.com/jJ7ZTvndt73CCSVy9SDP+)
+![preview img](https://share.cleanshot.com/WBHdH0n27571g1YjRwSD+)
+
+**Links**
 
 - Devlog [here](https://chaosarium.xyz/influx-dev-log/)
 - Proposal [here](https://chaosarium.xyz/2022-07-18-towards-an-integrated-content-based-language-learning-environment-an-exploratory-proposal/)
 
-How it looks like right now, with working multilingual sentence segmentation and tokenization:
 
-![preview img](https://share.cleanshot.com/WBHdH0n27571g1YjRwSD+)
-
-**Is this usable at its current state?**
-
-No. Not yet. It technically has a functioning database and text reader, but there is not yet any dictionary integration nor translation integration. The UI needs a lot of work. I have yet to figure out a way to package a binary built from rust with an embedding python interpreter.
 
 ## Development notes
 
