@@ -48,7 +48,40 @@ function mkLocalStore<T>(key: string, _default: T | null) {
     return { subscribe, set, update }
 }
 
+interface UISettings {
+    theme: string;
+    active_lang_id: string;
+}
+interface AppSettings {
+    ui: UISettings;
+    server: any;
+}
+
+
+
+
+
+export async function fetchSettings() {
+    const res = await fetch('http://127.0.0.1:3000/settings/lang');
+    const json_res: any[] = await res.json(); // TODO export the type from rust
+    console.log(json_res);
+
+    app_settings.update((settings) => {
+        settings.server.lang = json_res;
+        return settings;
+    });
+}
+export const app_settings = writable<AppSettings>({
+    ui: {
+        theme: 'light',
+        active_lang_id: 'en_demo',
+    },
+    server: {
+        lang: [],
+    }
+});
+  
+
 export const testLocalStore = mkLocalStore<string>('test', 'hi')
 export const dbgConsoleMessages = mkVecDequeStore<string>([])
-export const active_lang_id = mkLocalStore<string|null>('active_lang_id', null)
 export const toastQueue = mkToastStore<string>([])

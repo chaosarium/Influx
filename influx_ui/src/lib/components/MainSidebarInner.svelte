@@ -1,10 +1,10 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
 
   let connectionStatus = 'Checking...';
   let intervalId;
   import { IconHome, IconLanguageHiragana, IconCircleFilled, IconBooks, IconVocabulary, IconCalendarRepeat, IconArrowBadgeLeft, IconReportAnalytics, IconSettings } from '@tabler/icons-svelte';
   import Button from './Button.svelte';
+  import { onMount, onDestroy } from 'svelte';
 
   const checkConnection = async () => {
     try {
@@ -29,7 +29,8 @@
     clearInterval(intervalId); 
   });
 
-  // import { active_lang_id } from '$lib/store';
+  import { app_settings } from '$lib/store';
+    import DbgJsonData from '$lib/dbg/DbgJsonData.svelte';
 
 </script>
 
@@ -49,7 +50,7 @@
           <span><IconLanguageHiragana size={24} stroke={2} class="inline" /></span> <span class="ml-1">languages</span>
         </div>
       </Button></li>
-      <li><Button href="/texts" class="flex">
+      <li><Button href={`/texts/${$app_settings.ui.active_lang_id}`} class="flex">
         <div class="items-center inline-flex">
           <span><IconBooks size={24} stroke={2} class="inline" /></span> <span class="ml-1">texts</span>
         </div>
@@ -95,11 +96,17 @@
   <div>
     <ul>
       <li>
-        <!-- active lang id: {$active_lang_id} -->
+        active lang id: {$app_settings.ui.active_lang_id}
+        <select class="border-2" bind:value={$app_settings.ui.active_lang_id}>
+          {#each $app_settings.server.lang as lang_entry}
+            <option value={lang_entry.identifier}>{lang_entry.identifier}</option>
+          {/each}
+        </select>
       </li>
       <li>
         server alive: <IconCircleFilled size={16} stroke={2} class={connectionStatus === 'Connected' ? 'inline text-green-600' : 'inline text-red-600'} />
       </li>
+      <!-- <DbgJsonData data={$app_settings} name={"app_settings"} /> -->
     </ul>
   </div>
 

@@ -1,7 +1,14 @@
 <script>
   import "$lib/../app.css";
   import "$lib/../panestyle.scss";
-    import MainSidebarInner from "$lib/components/MainSidebarInner.svelte";
+  import MainSidebarInner from "$lib/components/MainSidebarInner.svelte";
+  
+  import { onMount, onDestroy } from 'svelte';
+  import { fetchSettings } from '$lib/store';
+  onMount(() => {
+    fetchSettings();
+  });
+
 </script>
 
 <div class="h-screen">
