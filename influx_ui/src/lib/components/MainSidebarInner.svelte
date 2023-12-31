@@ -1,10 +1,10 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
 
   let connectionStatus = 'Checking...';
   let intervalId;
   import { IconHome, IconLanguageHiragana, IconCircleFilled, IconBooks, IconVocabulary, IconCalendarRepeat, IconArrowBadgeLeft, IconReportAnalytics, IconSettings } from '@tabler/icons-svelte';
-    import Button from './Button.svelte';
+  import Button from './Button.svelte';
+  import { onMount, onDestroy } from 'svelte';
 
   const checkConnection = async () => {
     try {
@@ -29,9 +29,12 @@
     clearInterval(intervalId); 
   });
 
+  import { app_settings } from '$lib/store';
+    import DbgJsonData from '$lib/dbg/DbgJsonData.svelte';
+
 </script>
 
-<div class="border-2 border-indigo-50 p-3 box-border flex flex-col justify-between h-screen">
+<div class="p-3 box-border flex flex-col justify-between h-screen">
 
 
   <div class="">
@@ -47,7 +50,7 @@
           <span><IconLanguageHiragana size={24} stroke={2} class="inline" /></span> <span class="ml-1">languages</span>
         </div>
       </Button></li>
-      <li><Button href="/texts" class="flex">
+      <li><Button href={`/texts/${$app_settings.ui.active_lang_id}`} class="flex">
         <div class="items-center inline-flex">
           <span><IconBooks size={24} stroke={2} class="inline" /></span> <span class="ml-1">texts</span>
         </div>
@@ -84,11 +87,27 @@
       <li><Button href="/texts/fr_demo/toy.md" class="flex">
         <span class="inline">dummy text</span>
       </Button></li>
+      <li><Button href="/components" class="flex">
+        <span class="inline">components testing</span>
+      </Button></li>
     </ul>
   </div>
 
   <div>
-    server alive: <IconCircleFilled size={16} stroke={2} class={connectionStatus === 'Connected' ? 'inline text-green-600' : 'inline text-red-600'} />
+    <ul>
+      <li>
+        active lang id: {$app_settings.ui.active_lang_id}
+        <select class="border-2" bind:value={$app_settings.ui.active_lang_id}>
+          {#each $app_settings.server.lang as lang_entry}
+            <option value={lang_entry.identifier}>{lang_entry.identifier}</option>
+          {/each}
+        </select>
+      </li>
+      <li>
+        server alive: <IconCircleFilled size={16} stroke={2} class={connectionStatus === 'Connected' ? 'inline text-green-600' : 'inline text-red-600'} />
+      </li>
+      <!-- <DbgJsonData data={$app_settings} name={"app_settings"} /> -->
+    </ul>
   </div>
 
 

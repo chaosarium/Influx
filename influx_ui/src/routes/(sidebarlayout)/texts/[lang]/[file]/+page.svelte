@@ -7,7 +7,12 @@
   import TokenInfoPane from './TokenInfoPane.svelte';
   import DesktopLayout from './DesktopLayout.svelte';
   import PaneLayout from '$lib/PaneLayout.svelte';
-    import MainSidebar from '$lib/components/MainSidebarInner.svelte';
+  import MainSidebar from '$lib/components/MainSidebarInner.svelte';
+  import DbgConsole from '$lib/dbg/DbgConsole.svelte';
+  import { writable_count, dbgConsoleMessages } from '$lib/store.ts';
+  import { writable } from 'svelte/store';
+    import Accordion from '$lib/components/Accordion.svelte';
+    import AccordionEntry from '$lib/components/AccordionEntry.svelte';
     
   let lastHoveredOrth = '';
   let lastClickedOrth = '';
@@ -60,6 +65,7 @@
     }
 
     const result = await response.json();
+    dbgConsoleMessages.push_back(`success createToken ${JSON.stringify(result)}`);
     console.log(result);
   }
   async function updateToken() {
@@ -89,6 +95,7 @@
     }
 
     const result = await response.json();
+    dbgConsoleMessages.push_back(`success updateToken ${JSON.stringify(result)}`);
     console.log(result);
   }
 
@@ -125,58 +132,75 @@
   </div>
 
   <div slot="right">
-    <div class="p-4 bg-rose-50">
-      <p>Last hovered:</p>
-      <TokenInfoPane 
-        populated={lastHoveredOrth != ''}
-        dict_entry={data.tokens_dict[lastHoveredOrth]}
-      ></TokenInfoPane>
-    </div>
 
+    <Accordion>
 
-    <div class="p-4 bg-amber-50">
-      <p>Last clicked:</p>
-      <TokenInfoPane 
-        populated={lastClickedOrth != ''}
-        dict_entry={data.tokens_dict[lastClickedOrth]}
-      ></TokenInfoPane>
+      <AccordionEntry>
+        <h2 slot="header" class="px-3 font-bold bg-amber-50">Last Clicked</h2>
+        <div class="p-3">
+          <TokenInfoPane 
+            populated={lastClickedOrth != ''}
+            dict_entry={data.tokens_dict[lastClickedOrth]}
+          ></TokenInfoPane>
+        </div>
+      </AccordionEntry>
+      
+      <AccordionEntry>
+        <h2 slot="header" class="px-3 font-bold bg-orange-50">Token Editor</h2>
+        <div class="p-3">
+            <form on:submit|preventDefault={data.tokens_dict[lastClickedOrth].id ? updateToken : createToken}>
+              <label for="orthography">orthography:</label><br>
+              <input class="border-solid border-2 border-gray-400" disabled type="text" id="orthography" bind:value={tokenFormData.orthography}><br>
+    
+              <label for="lemma">lemma:</label><br>
+              <input class="border-solid border-2 border-gray-400" type="text" id="lemma" bind:value={tokenFormData.lemma}><br>
+    
+              <label for="definition">definition:</label><br>
+              <input class="border-solid border-2 border-gray-400" type="text" id="definition" bind:value={tokenFormData.definition}><br>
+    
+              <label for="phonetic">phonetic:</label><br>
+              <input class="border-solid border-2 border-gray-400" type="text" id="phonetic" bind:value={tokenFormData.phonetic}><br>
+              
+              <label for="status">status:</label><br>
+              <select class="border-solid border-2 border-gray-400" id="status" bind:value={tokenFormData.status}>
+                <option value="L1">L1</option>
+                <option value="L2">L2</option>
+                <option value="L3">L3</option>
+                <option value="L4">L4</option>
+                <option value="L5">L5</option>
+                <option value="IGNORED">IGNORED</option>
+              </select><br>
+    
+              <label for="notes">notes:</label><br>
+              <textarea class="border-solid border-2 border-gray-400" id="notes" bind:value={tokenFormData.notes} /><br>
+    
+    
+              <input class="mt-2 border-solid border-2 border-gray-400" type="submit" value="Update Token">
+            </form>
+        </div>
+      </AccordionEntry>
 
-      <div class="p-4 bg-amber-100">
-        <p><b>Editor</b></p>
-        {#if lastClickedOrth != ''}
-          <form on:submit|preventDefault={data.tokens_dict[lastClickedOrth].id ? updateToken : createToken}>
-            <label for="orthography">orthography:</label><br>
-            <input class="border-solid border-2 border-gray-400" disabled type="text" id="orthography" bind:value={tokenFormData.orthography}><br>
+      <AccordionEntry>
+        <h2 slot="header" class="px-3 font-bold bg-rose-50">Last Hovered</h2>
+        <div class="p-3">
+          <TokenInfoPane 
+            populated={lastHoveredOrth != ''}
+            dict_entry={data.tokens_dict[lastHoveredOrth]}
+          ></TokenInfoPane>
+        </div>
+      </AccordionEntry>
+      
+      <AccordionEntry>
+        <h2 slot="header" class="px-3 font-bold bg-blue-50">Output Console</h2>
+        <div class="p-3 ">
+          <button on:click={() => {dbgConsoleMessages.push_back('hi')}}>
+            DEBUG CONSOLE
+          </button>
+          <DbgConsole />
+        </div>
+      </AccordionEntry>
 
-            <label for="lemma">lemma:</label><br>
-            <input class="border-solid border-2 border-gray-400" type="text" id="lemma" bind:value={tokenFormData.lemma}><br>
-
-            <label for="definition">definition:</label><br>
-            <input class="border-solid border-2 border-gray-400" type="text" id="definition" bind:value={tokenFormData.definition}><br>
-
-            <label for="phonetic">phonetic:</label><br>
-            <input class="border-solid border-2 border-gray-400" type="text" id="phonetic" bind:value={tokenFormData.phonetic}><br>
-            
-            <label for="status">status:</label><br>
-            <select class="border-solid border-2 border-gray-400" id="status" bind:value={tokenFormData.status}>
-              <option value="L1">L1</option>
-              <option value="L2">L2</option>
-              <option value="L3">L3</option>
-              <option value="L4">L4</option>
-              <option value="L5">L5</option>
-              <option value="IGNORED">IGNORED</option>
-            </select><br>
-
-            <label for="notes">notes:</label><br>
-            <textarea class="border-solid border-2 border-gray-400" id="notes" bind:value={tokenFormData.notes} /><br>
-
-
-            <input class="mt-2 border-solid border-2 border-gray-400" type="submit" value="Update Token">
-          </form>
-        {/if}
-      </div>
-
-    </div>
+    </Accordion>
 
   </div>
 
