@@ -11,7 +11,7 @@ Links
 
 How it looks like right now, with working multilingual sentence segmentation and tokenization:
 
-![preview img](https://share.cleanshot.com/MdnsyZxsmq9vdtMJwrX7+)
+![preview img](https://share.cleanshot.com/WBHdH0n27571g1YjRwSD+)
 
 **Is this usable at its current state?**
 
