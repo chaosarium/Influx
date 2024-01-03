@@ -92,6 +92,8 @@ impl DB {
 
 #[cfg(test)]
 mod tests {
+    use crate::db::DBLocation;
+
     use super::*;
 
     #[test]
@@ -109,7 +111,7 @@ mod tests {
 
     #[tokio::test]
     async fn db_todos_operations() {
-        let db = DB::create_db(false).await;
+        let db = DB::create_db(DBLocation::Mem).await;
         let add_todo_res1 = db.add_todo_sql("Hello world 1".into()).await.unwrap();
         assert_eq!(add_todo_res1.completed, false);
         assert_eq!(add_todo_res1.text, "Hello world 1");

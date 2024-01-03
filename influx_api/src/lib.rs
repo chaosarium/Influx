@@ -17,6 +17,7 @@ mod error;
 mod nlp;
 
 use db::DB;
+use db::DBLocation;
 use std::env;
 
 #[derive(Clone)] // TODO later use this as state rather than db itself
@@ -28,7 +29,12 @@ pub struct ServerState {
 pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
     println!("launching with disk: {}, seed: {}", disk, seed);
 
-    let db = DB::create_db(disk).await;
+    let db = DB::create_db({
+        match disk {
+            true => DBLocation::Disk(influx_path.canonicalize().unwrap().join("database.db")),
+            false => DBLocation::Mem,
+        }
+    }).await;
 
     if seed {
         let _ = db.seed_todo_table().await;

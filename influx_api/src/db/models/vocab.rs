@@ -229,11 +229,13 @@ impl DB {
 
 #[cfg(test)]
 mod tests {
+    use crate::db::DBLocation;
+
     use super::*;
 
     #[tokio::test]
     async fn test_create_token() {
-        let db = DB::create_db(false).await;
+        let db = DB::create_db(DBLocation::Mem).await;
         let token = Token {
             id: None,
             orthography: "test".to_string(),
@@ -250,7 +252,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_query_token_by_orthography() {
-        let db = DB::create_db(false).await;
+        let db = DB::create_db(DBLocation::Mem).await;
         let token = Token {
             id: None,
             orthography: "test".to_string(),
@@ -272,7 +274,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_querying_lots_of_tokens() {
-        let db = DB::create_db(false).await;
+        let db = DB::create_db(DBLocation::Mem).await;
         db.create_token(Token {
             id: None,
             orthography: "token1".to_string(),
