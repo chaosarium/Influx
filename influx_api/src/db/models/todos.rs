@@ -1,3 +1,5 @@
+use maplit::btreemap;
+
 use super::models_prelude::*;
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -13,16 +15,16 @@ pub struct TodoInDB {
 impl From<TodoInDB> for Value {
     fn from(val: TodoInDB) -> Self {
         match val.id {
-            Some(v) => map![
+            Some(v) => btreemap!{
                     "id".into() => v.into(),
                     "text".into() => val.text.into(),
                     "completed".into() => val.completed.into(),
-            ]
+            }
             .into(),
-            None => map![
+            None => btreemap!{
                 "text".into() => val.text.into(),
                 "completed".into() => val.completed.into()
-            ]
+            }
             .into(),
         }
     }
