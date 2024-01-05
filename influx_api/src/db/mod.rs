@@ -12,6 +12,7 @@ use anyhow::Result;
 pub mod models;
 use models::todos::TodoInDB;
 use models::vocab::Token;
+use models::phrase::Phrase;
 
 #[derive(Clone)]
 pub struct DB {

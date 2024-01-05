@@ -172,7 +172,7 @@ pub async fn get_doc(
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreateToken {
+pub struct CreateTokenPayload {
     pub lang_id: String,
 
     pub orthography: String,
@@ -186,13 +186,13 @@ pub struct CreateToken {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct DeleteToken {
+pub struct DeleteTokenPayload {
     pub id: String,
 }
 
 pub async fn create_token(
     State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<CreateToken>,
+    Json(payload): Json<CreateTokenPayload>,
 ) -> Result<Json<Token>, ServerError> {
     println!("token create attempt payload: {:?}", payload);
     
@@ -218,7 +218,7 @@ pub async fn create_token(
 
 pub async fn delete_token(
     State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<DeleteToken>,
+    Json(payload): Json<DeleteTokenPayload>,
 ) -> Result<Json<Token>, ServerError> {
     println!("token delete attempt payload: {:?}", payload);
     let token = db.delete_token_by_id(payload.id).await?;
@@ -234,7 +234,7 @@ pub async fn lookup_token(
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UpdateToken {
+pub struct UpdateTokenPayload {
     pub id: String,
     pub lang_id: String,
 
@@ -250,7 +250,7 @@ pub struct UpdateToken {
 
 pub async fn update_token(
     State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<UpdateToken>,
+    Json(payload): Json<UpdateTokenPayload>,
 ) -> Result<Json<Token>, ServerError> {
 
     println!("token update attempt payload: {:?}", payload);

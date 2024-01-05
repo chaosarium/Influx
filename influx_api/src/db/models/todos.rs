@@ -1,3 +1,4 @@
+///! a toy database
 use maplit::btreemap;
 
 use super::models_prelude::*;
