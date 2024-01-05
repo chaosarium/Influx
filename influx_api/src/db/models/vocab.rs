@@ -114,6 +114,27 @@ impl DB {
             ),
             Token::fancier_token(
                 "fr_demo",
+                "parler",
+                "speak",
+                "",
+                TokenStatus::L5,
+            ),
+            Token::fancier_token(
+                "fr_demo",
+                "parlerez",
+                "speak",
+                "inflection of parler",
+                TokenStatus::L5,
+            ),
+            Token::fancier_token(
+                "fr_demo",
+                "habitaient",
+                "lived",
+                "inflection of habiter",
+                TokenStatus::L5,
+            ),
+            Token::fancier_token(
+                "fr_demo",
                 "cœur",
                 "heart",
                 "kœʀ",
