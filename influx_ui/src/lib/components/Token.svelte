@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Tooltip from "./TokenTooltip.svelte";
+  import TokenTooltip from "./TokenTooltip.svelte";
   import { createEventDispatcher } from 'svelte';
 
   export let token;
@@ -16,7 +16,7 @@
 
 </script>
 <!-- svelte-ignore a11y -->
-<Tooltip token={token}>
+<TokenTooltip token={token}>
   <div class="inline hover:cursor-default" >
 
     <!-- <ruby>
@@ -79,7 +79,7 @@
   </div>
  
   
-</Tooltip>
+</TokenTooltip>
 
 <style>
   rt:before {

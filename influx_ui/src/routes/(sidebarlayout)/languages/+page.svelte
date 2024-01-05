@@ -14,7 +14,7 @@
   
   <div class="my-3">
     <ul class="space-y-3">
-      {#each $app_settings.server.lang as language_entry}
+      {#each $app_settings.lang as language_entry}
         <LanguageEntry {language_entry} />
       {/each}
     </ul>

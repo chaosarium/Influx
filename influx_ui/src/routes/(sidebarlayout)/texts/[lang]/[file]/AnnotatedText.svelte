@@ -18,7 +18,7 @@
                 {#each sentence_constituent.constituents as constituent}
                     {#if constituent.type == "CompositToken"}
                         <Token
-                            token={tokens_dict[constituent?.text]}
+                            token={tokens_dict[constituent?.orthography]}
                             on:token_hover
                             on:token_click
                             tokenisation_debug={tokenisation_debug}
@@ -27,7 +27,7 @@
                         <!-- ghost SubwordToken -->
                     {:else if constituent.type == "SingleToken"}
                         <Token
-                            token={tokens_dict[constituent?.text]}
+                            token={tokens_dict[constituent?.orthography]}
                             on:token_hover
                             on:token_click
                             tokenisation_debug={tokenisation_debug}
