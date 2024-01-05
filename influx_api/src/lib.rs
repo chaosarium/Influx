@@ -92,10 +92,10 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
             "/vocab/create_token", 
             post(handlers::create_token)
         )
-        .route(
-            "/settings",
-            get(handlers::get_settings)
-        )
+        // .route(
+        //     "/settings",
+        //     get(handlers::get_settings)
+        // )
         .route(
             "/lang",
             get(handlers::get_language_list)

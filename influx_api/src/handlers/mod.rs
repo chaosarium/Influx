@@ -160,7 +160,7 @@ pub async fn get_doc(
 
     let (parsed_doc, tokens_strings): (nlp::Document, Vec<String>) = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).unwrap();
 
-    let tokens_dict = db.get_dict_from_orthography_seq(tokens_strings.clone(), lang_id).await.unwrap();
+    let tokens_dict = db.get_dict_from_text_seq(tokens_strings.clone(), lang_id).await.unwrap();
 
     (StatusCode::OK, Json(json!({
         "metadata": metadata,

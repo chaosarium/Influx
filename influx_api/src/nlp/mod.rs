@@ -74,6 +74,7 @@ enum SentenceConstituent {
         sentence_id: usize,
         ids: Vec<usize>,
         text: String,
+        orthography: String,
         start_char: usize,
         end_char: usize,
     },
@@ -81,12 +82,14 @@ enum SentenceConstituent {
         sentence_id: usize,
         id: usize, // 1-indexed
         text: String,
+        orthography: String,
         lemma: String,
     },
     SingleToken {
         sentence_id: usize,
         id: usize, // 1-indexed
         text: String,
+        orthography: String,
         lemma: String,
         start_char: usize,
         end_char: usize,
@@ -187,6 +190,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<Str
                             sentence_id: sentence_id,
                             ids: subtokenids.clone(),
                             text: stanzatoken_get_text(stanzatoken),
+                            orthography: stanzatoken_get_text(stanzatoken).to_lowercase(),
                             start_char: stanzatoken_get_start_char(stanzatoken),
                             end_char: stanzatoken_get_end_char(stanzatoken),
                         });
@@ -206,6 +210,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<Str
                                     sentence_id: sentence_id,
                                     id: *stanza_token_id,
                                     text: stanzatoken_get_text(stanzatoken),
+                                    orthography: stanzatoken_get_text(stanzatoken).to_lowercase(),
                                     lemma: stanzatoken_get_lemma(stanzatoken),
                                 });
                                 token_strs.push(stanzatoken_get_text(stanzatoken))
@@ -215,6 +220,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<Str
                                     sentence_id: sentence_id,
                                     id: *stanza_token_id,
                                     text: stanzatoken_get_text(stanzatoken),
+                                    orthography: stanzatoken_get_text(stanzatoken).to_lowercase(),
                                     lemma: stanzatoken_get_lemma(stanzatoken),
                                     start_char: stanzatoken_get_start_char(stanzatoken),
                                     end_char: stanzatoken_get_end_char(stanzatoken),
