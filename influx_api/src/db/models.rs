@@ -6,9 +6,9 @@ mod models_prelude {
     pub use ts_rs::TS;
     pub use anyhow::Result;
     
-    pub use crate::map;
     pub(crate) use crate::DB;
 }
 
 pub mod todos;
 pub mod vocab;
+pub mod lang;

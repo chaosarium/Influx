@@ -21,16 +21,22 @@ Some basic UI and working multilingual sentence segmentation and tokenization:
 - Proposal [here](https://chaosarium.xyz/2022-07-18-towards-an-integrated-content-based-language-learning-environment-an-exploratory-proposal/)
 
 
-
 ## Development notes
 
 ### Architecture
 
 - SurrealDB + Axum + Disk as backend service exposing an API
 - Python + Stanza via PyO3 for NLP
-- Svelte frontend that interacts with the API 
+- Svelte + Tailwind frontend that interacts with the API 
 - Tauri as a desktop client
 - fsrs-rs for SRS algorithm
+
+### Key issues to decide / address
+
+- language table in database + tokens relate to language vs. single database file for each language
+- how to handle lemmatization? should Stanza's lemma be used as default? how does user manually assign lemma? should lemma and reflexes be separate entries? how to relate them in the database?
+- how to integrate user-provided dictionaries?
+- how to allow extensions? should there be support for custom nlp scripts?
 
 ### Plan
 
@@ -52,7 +58,6 @@ Some basic UI and working multilingual sentence segmentation and tokenization:
 - [ ] ensure uniqueness of vocabulary database entries
 - [ ] dictionary (pop up only for now) support
 - [ ] update added token id if saving unmarked
-- [ ] 
 
 **Phase II - Backend & Packaging**
 

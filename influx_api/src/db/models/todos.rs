@@ -1,3 +1,5 @@
+use maplit::btreemap;
+
 use super::models_prelude::*;
 
 #[derive(Debug, Serialize, Deserialize, TS)]
@@ -13,16 +15,16 @@ pub struct TodoInDB {
 impl From<TodoInDB> for Value {
     fn from(val: TodoInDB) -> Self {
         match val.id {
-            Some(v) => map![
+            Some(v) => btreemap!{
                     "id".into() => v.into(),
                     "text".into() => val.text.into(),
                     "completed".into() => val.completed.into(),
-            ]
+            }
             .into(),
-            None => map![
+            None => btreemap!{
                 "text".into() => val.text.into(),
                 "completed".into() => val.completed.into()
-            ]
+            }
             .into(),
         }
     }
@@ -92,6 +94,8 @@ impl DB {
 
 #[cfg(test)]
 mod tests {
+    use crate::db::DBLocation;
+
     use super::*;
 
     #[test]
@@ -109,7 +113,7 @@ mod tests {
 
     #[tokio::test]
     async fn db_todos_operations() {
-        let db = DB::create_db(false).await;
+        let db = DB::create_db(DBLocation::Mem).await;
         let add_todo_res1 = db.add_todo_sql("Hello world 1".into()).await.unwrap();
         assert_eq!(add_todo_res1.completed, false);
         assert_eq!(add_todo_res1.text, "Hello world 1");
