@@ -37,8 +37,7 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
     }).await;
 
     if seed {
-        let _ = db.seed_todo_table().await;
-        let _ = db.seed_vocab_table().await;
+        let _ = db.seed_all_tables().await;
     }
 
     let cors = CorsLayer::permissive();
@@ -60,15 +59,15 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
             get(handlers::connection_test)
         )
         // toy examples below
-        .route(
-            "/todos", 
-            get(handlers::todos_index)
-            .post(handlers::todos_create)
-        )
-        .route(
-            "/todos/:id", 
-            delete(handlers::todos_delete)
-        )
+        // .route(
+        //     "/todos", 
+        //     get(handlers::todos_index)
+        //     .post(handlers::todos_create)
+        // )
+        // .route(
+        //     "/todos/:id", 
+        //     delete(handlers::todos_delete)
+        // )
         .route(
             "/docs/:language_identifier", 
             get(handlers::get_docs_list)
@@ -98,8 +97,12 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
             get(handlers::get_settings)
         )
         .route(
-            "/settings/lang",
+            "/lang",
             get(handlers::get_language_list)
+        )
+        .route(
+            "/lang/:id",
+            get(handlers::get_language_by_id)
         )
         .layer(cors)
         .with_state(

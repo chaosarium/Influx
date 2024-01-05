@@ -5,7 +5,7 @@ use axum::{
     response::IntoResponse, http::StatusCode, Json, response::Response
 };
 use serde::{Deserialize, Serialize};
-use crate::ServerState;
+use crate::{ServerState, db::models::{lang::LanguageEntry, vocab::{TokenStatus, SRSInfo, self}}};
 use crate::{db::{DB, models::vocab::Token}, doc_store};
 use crate::doc_store::DocEntry;
 use crate::doc_store::{
@@ -18,6 +18,26 @@ use surrealdb::sql;
 use crate::nlp;
 use std::path::PathBuf;
 
+// https://github.com/tokio-rs/axum/blob/main/examples/anyhow-error-response/src/main.rs
+pub struct ServerError(anyhow::Error);
+impl IntoResponse for ServerError {
+    fn into_response(self) -> Response {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Something went wrong: {}", self.0),
+        )
+            .into_response()
+    }
+}
+impl<E> From<E> for ServerError
+where
+    E: Into<anyhow::Error>,
+{
+    fn from(err: E) -> Self {
+        Self(err.into())
+    }
+}
+
 pub async fn hello_world() -> &'static str {
     "hello world from the influx server :p root route might not be the most useful"
 }
@@ -26,6 +46,7 @@ pub async fn connection_test() -> impl IntoResponse {
     StatusCode::OK
 }
 
+#[deprecated]
 pub async fn todos_index(
     State(ServerState { db, .. }): State<ServerState>, 
 ) -> impl IntoResponse {
@@ -33,11 +54,13 @@ pub async fn todos_index(
     Json(todos)
 }
 
+#[deprecated]
 #[derive(Debug, Deserialize)]
 pub struct CreateTodo {
     text: String,
 }
 
+#[deprecated]
 pub async fn todos_create(
     State(ServerState { db, .. }): State<ServerState>, 
     Json(payload): Json<CreateTodo>,
@@ -47,6 +70,7 @@ pub async fn todos_create(
     (StatusCode::CREATED, Json(todo))
 }
 
+#[deprecated]
 pub async fn todos_delete(
     State(ServerState { db, .. }): State<ServerState>, 
     Path(id): Path<String>
@@ -63,11 +87,20 @@ pub struct GetDocsList {
 }
 
 pub async fn get_language_list(
-    State(ServerState { influx_path, .. }): State<ServerState>, 
-) -> impl IntoResponse {
-    let settings = doc_store::read_settings_file(influx_path).unwrap();
-    Json(settings.lang)
+    State(ServerState { influx_path, db }): State<ServerState>, 
+) -> Result<Json<Vec<LanguageEntry>>, ServerError> {
+    let languages = db.get_languages_vec().await?;
+    Ok(Json(languages))
 }
+
+pub async fn get_language_by_id(
+    State(ServerState { influx_path, db }): State<ServerState>, 
+    Path(id): Path<String>
+) -> Result<Json<Option<LanguageEntry>>, ServerError> {
+    let language = db.get_language(id).await?;
+    Ok(Json(language))
+}
+
 
 pub async fn get_docs_list(
     State(ServerState { influx_path, .. }): State<ServerState>, 
@@ -127,7 +160,7 @@ pub async fn get_doc(
 
     let (parsed_doc, tokens_strings): (nlp::Document, Vec<String>) = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).unwrap();
 
-    let tokens_dict = db.get_token_set_from_orthography_seq(tokens_strings.clone(), lang_id).await.unwrap();
+    let tokens_dict = db.get_dict_from_orthography_seq(tokens_strings.clone(), lang_id).await.unwrap();
 
     (StatusCode::OK, Json(json!({
         "metadata": metadata,
@@ -144,11 +177,60 @@ pub struct CreateToken {
 
     pub orthography: String,
     pub phonetic: String,
-    pub lemma: String,
-    
-    pub status: crate::db::models::vocab::TokenStatus,
     pub definition: String,
     pub notes: String,
+    pub original_context: String,
+    
+    pub status: TokenStatus,
+    pub tags: Vec<String>, 
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DeleteToken {
+    pub id: String,
+}
+
+pub async fn create_token(
+    State(ServerState { db, .. }): State<ServerState>, 
+    Json(payload): Json<CreateToken>,
+) -> Result<Json<Token>, ServerError> {
+    println!("token create attempt payload: {:?}", payload);
+    
+    let token = db.create_token(
+        Token {
+            id: None,
+            lang_id: payload.lang_id,
+
+            orthography: payload.orthography,
+            phonetic: payload.phonetic,
+            definition: payload.definition,
+            notes: payload.notes,  
+            original_context: payload.original_context,
+
+            status: payload.status,
+            tags: payload.tags,
+            srs: SRSInfo::default(),
+        }
+    ).await?;
+
+   Ok(Json(token))
+}
+
+pub async fn delete_token(
+    State(ServerState { db, .. }): State<ServerState>, 
+    Json(payload): Json<DeleteToken>,
+) -> Result<Json<Token>, ServerError> {
+    println!("token delete attempt payload: {:?}", payload);
+    let token = db.delete_token_by_id(payload.id).await?;
+    Ok(Json(token))
+}
+
+pub async fn lookup_token(
+    State(ServerState { db, .. }): State<ServerState>, 
+    Path((lang_id, orthography)): Path<(String, String)>
+) -> Result<Json<Option<Token>>, ServerError> {
+    let token = db.query_token_by_orthography(orthography, lang_id).await?;
+    Ok(Json(token))
 }
 
 #[derive(Debug, Deserialize)]
@@ -158,97 +240,39 @@ pub struct UpdateToken {
 
     pub orthography: String,
     pub phonetic: String,
-    pub lemma: String,
-    
-    pub status: crate::db::models::vocab::TokenStatus,
     pub definition: String,
     pub notes: String,
-}
-#[derive(Debug, Deserialize)]
-pub struct DeleteToken {
-    pub id: String,
-}
-
-pub async fn create_token(
-    State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<CreateToken>,
-) -> impl IntoResponse {
-
-    println!("token create attempt payload: {:?}", payload);
-
-    let token = db.create_token(
-        Token {
-            id: None,
-            lang_id: payload.lang_id.clone(),
-            orthography: payload.orthography.clone(),
-            phonetic: payload.phonetic.clone(),
-            lemma: payload.lemma.clone(),
-            status: payload.status.clone(),
-            definition: payload.definition.clone(),
-            notes: payload.notes.clone(),
-        }
-    ).await.unwrap();
-
-   Json(json!({
-       "success": true,
-       "token": token,
-   }))
-}
-
-pub async fn delete_token(
-    State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<DeleteToken>,
-) -> impl IntoResponse {
-
-    println!("token delete attempt payload: {:?}", payload);
-
-    let token = db.delete_token(payload.id).await.unwrap();
-
-   Json(json!({
-       "success": true,
-       "token": token,
-   }))
-}
-
-pub async fn lookup_token(
-    State(ServerState { db, .. }): State<ServerState>, 
-    Path((lang_id, orthography)): Path<(String, String)>
-) -> impl IntoResponse {
-
-    let token = db.query_token_by_orthography(orthography, lang_id).await.unwrap();
-
-    Json(json!({
-        "success": true,
-        "token": token,
-    }))
+    pub original_context: String,
+    
+    pub status: TokenStatus,
+    pub tags: Vec<String>, 
 }
 
 pub async fn update_token(
     State(ServerState { db, .. }): State<ServerState>, 
     Json(payload): Json<UpdateToken>,
-) -> impl IntoResponse {
+) -> Result<Json<Token>, ServerError> {
 
     println!("token update attempt payload: {:?}", payload);
 
-    let token = db.update_token(
+    let token = db.update_token_by_id(
         Token {
-            // BUG doesn't handle wrong token id but orthography in database
-            // anyway now let's just assume whoever calling this not mess up the id
-            id: Some(sql::thing(format!("tokens:{}", &payload.id).as_str()).unwrap()),
-            lang_id: payload.lang_id.clone(),
-            orthography: payload.orthography.clone(),
-            phonetic: payload.phonetic.clone(),
-            lemma: payload.lemma.clone(),
-            status: payload.status.clone(),
-            definition: payload.definition.clone(),
-            notes: payload.notes.clone(),
-        }
-    ).await.unwrap();
+            id: Some(vocab::mk_vocab_thing(payload.id)),
+            lang_id: payload.lang_id,
 
-   Json(json!({
-       "success": true,
-       "token": token,
-   }))
+            orthography: payload.orthography,
+            phonetic: payload.phonetic,
+            definition: payload.definition,
+            notes: payload.notes,  
+            original_context: payload.original_context,
+
+            status: payload.status,
+            tags: payload.tags,
+            srs: SRSInfo::default(),
+        }
+    ).await?;
+
+   Ok(Json(token))
 }
 
 pub async fn get_settings(

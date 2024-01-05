@@ -42,16 +42,15 @@ pub struct Token {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(type = "string")]
     pub id: Option<Thing>,
-    pub orthography: String,
     pub lang_id: String,
-
-    pub phonetic: String,
     
-    pub status: TokenStatus,
+    pub orthography: String,
+    pub phonetic: String,
     pub definition: String,
     pub notes: String,
     pub original_context: String,
-
+    
+    pub status: TokenStatus,
     pub tags: Vec<String>, 
     pub srs: SRSInfo,
 }
@@ -265,7 +264,7 @@ impl DB {
     pub async fn delete_token_by_id(&self, id: String) -> Result<Token> {
         match self.db.delete(mk_vocab_thing(id)).await? {
             Some::<Token>(v) => Ok(v),
-            _ => Err(anyhow::anyhow!("Error deleting todo"))
+            None => Err(anyhow::anyhow!("Error deleting token"))
         }
     }
 
