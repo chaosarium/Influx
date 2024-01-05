@@ -15,6 +15,12 @@ pub enum TokenStatus {
     IGNORED,
 }
 
+const TABLE: &str = "vocab";
+pub fn mk_vocab_thing(id: String) -> Thing {
+    Thing::from((TABLE.to_string(), id))
+}
+
+
 #[derive(Debug, Serialize, Deserialize, TS, Clone, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "../bindings/")]
 pub struct SRSInfo {
@@ -155,7 +161,7 @@ impl DB {
     pub async fn token_exists(&self, orthography: String, lang_id: String) -> Result<bool> {
         debug_assert!(orthography.to_lowercase() == orthography);
 
-        let sql = "SELECT * FROM vocab WHERE orthography = $orthography AND lang_id = $lang_id";
+        let sql = format!("SELECT * FROM {TABLE} WHERE orthography = $orthography AND lang_id = $lang_id");
         let mut res: Response = self.db
             .query(sql)
             .bind(("orthography", orthography))
@@ -180,7 +186,7 @@ impl DB {
         debug_assert!(token.orthography.to_lowercase() == token.orthography);
         assert!(self.token_exists(token.orthography.clone(), token.lang_id.clone()).await? == false);
 
-        let sql = "CREATE vocab CONTENT $tkn";
+        let sql = format!("CREATE {TABLE} CONTENT $tkn");
         let mut res: Response = self.db
             .query(sql)
             .bind(("tkn", token))
@@ -198,7 +204,7 @@ impl DB {
     pub async fn query_token_by_orthography(&self, orthography: String, lang_id: String) -> Result<Option<Token>> {
         debug_assert!(orthography.to_lowercase() == orthography);
 
-        let sql = "SELECT * FROM vocab WHERE orthography = $orthography AND lang_id = $lang_id";
+        let sql = format!("SELECT * FROM {TABLE} WHERE orthography = $orthography AND lang_id = $lang_id");
         let mut res: Response = self.db
             .query(sql)
             .bind(("orthography", orthography))
@@ -225,7 +231,7 @@ impl DB {
     }
 
     pub async fn query_token_by_id(&self, id: String) -> Result<Option<Token>> {
-        let res = self.db.select(("vocab", id)).await;
+        let res = self.db.select(mk_vocab_thing(id)).await;
 
         // dbg!(&res);
         match res {
@@ -242,7 +248,7 @@ impl DB {
             debug_assert!(orthography.to_lowercase() == *orthography);
         }
 
-        let sql = "SELECT * FROM vocab WHERE orthography INSIDE $orthography AND lang_id = $lang_id";
+        let sql = format!("SELECT * FROM {TABLE} WHERE orthography INSIDE $orthography AND lang_id = $lang_id");
         let mut res: Response = self.db
             .query(sql)
             .bind(("orthography", orthography_set.iter().cloned().collect::<Vec<String>>()))
@@ -257,7 +263,7 @@ impl DB {
     }
 
     pub async fn delete_token_by_id(&self, id: String) -> Result<Token> {
-        match self.db.delete(("vocab", &id)).await? {
+        match self.db.delete(mk_vocab_thing(id)).await? {
             Some::<Token>(v) => Ok(v),
             _ => Err(anyhow::anyhow!("Error deleting todo"))
         }
@@ -314,7 +320,7 @@ impl DB {
             }
         }
 
-        let sql = "UPDATE vocab SET orthography = $orthography, lemma = $lemma, phonetic = $phonetic, status = $status, lang_id = $lang_id, definition = $definition, notes = $notes WHERE id = $id";
+        let sql = format!("UPDATE {TABLE} SET orthography = $orthography, lemma = $lemma, phonetic = $phonetic, status = $status, lang_id = $lang_id, definition = $definition, notes = $notes WHERE id = $id");
         let mut res: Response = self.db
             .query(sql)
             .bind(token)

@@ -41,6 +41,13 @@ impl DB {
         }
     }
 
+    pub async fn seed_all_tables(&self) -> Result<()> {
+        self.seed_todo_table().await?;
+        self.seed_vocab_table().await?;
+        self.seed_lang_table().await?;
+        Ok(())
+    }
+
     pub async fn delete_thing<T: serde::Serialize + for<'a> serde::Deserialize<'a> + std::marker::Sync + std::marker::Send + std::fmt::Debug>(&self, thing: Thing) -> Result<T> {
         match self.db.delete(thing).await? {
             Some::<T>(v) => Ok(v),

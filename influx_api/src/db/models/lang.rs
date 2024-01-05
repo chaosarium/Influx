@@ -4,7 +4,6 @@ use std::collections::HashMap;
 #[derive(Debug, Serialize, Deserialize, TS, Clone, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "../bindings/")]
 pub struct LanguageEntry {
-    // #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(type = "string")]
     pub id: Thing,
     pub code: String,
@@ -30,6 +29,50 @@ pub fn mk_lang_thing(id: String) -> Thing {
 }
 
 impl DB {
+    pub async fn seed_lang_table(&self) -> Result<()> {
+        let languages = vec![
+            LanguageEntry {
+                id: mk_lang_thing("fr_demo".to_string()),
+                code: "fr".to_string(),
+                name: "French".to_string(),
+                dicts: vec![
+                    "dict:///###".to_string(),
+                    "http://www.wordreference.com/fren/###".to_string(),
+                ],
+            },
+            LanguageEntry {
+                id: mk_lang_thing("en_demo".to_string()),
+                code: "en".to_string(),
+                name: "English".to_string(),
+                dicts: vec![
+                    "dict:///###".to_string(),
+                    "http://www.wordreference.com/enfr/###".to_string(),
+                ],
+            },
+            LanguageEntry {
+                id: mk_lang_thing("ja_demo".to_string()),
+                code: "ja".to_string(),
+                name: "Japanese".to_string(),
+                dicts: vec![
+                    "dict:///###".to_string(),
+                ],
+            },
+            LanguageEntry {
+                id: mk_lang_thing("zh-hant_demo".to_string()),
+                code: "zh-hant".to_string(),
+                name: "Mandarin".to_string(),
+                dicts: vec![
+                    "dict:///###".to_string(),
+                ],
+            },
+        ];
+
+        for language in languages {
+            self.create_language(language).await?;
+        }
+
+        Ok(())
+    }
 
     pub async fn language_exists(&self, id: String) -> Result<bool> {
         self.thing_exists::<LanguageEntry>(mk_lang_thing(id)).await
