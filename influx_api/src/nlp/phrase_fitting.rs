@@ -59,6 +59,10 @@ pub fn recursion_best_fit<T: Eq + Hash + Copy>(seq: Vec<T>, trie: &Trie<T>) -> V
     segments
 }
 
+// TODO implement fast dp best fit
+// pub fn dp_best_fit<T: Eq + Hash + Copy>(seq: Vec<T>, trie: &Trie<T>) -> Vec<Vec<T>> {
+// }
+
 
 #[cfg(test)]
 mod test {
