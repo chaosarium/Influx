@@ -10,6 +10,7 @@ use std::env;
 use std::path::PathBuf;
 use indoc::indoc;
 use serde::{Deserialize, Serialize};
+pub mod phrase_fitting;
 
 // from https://pyo3.rs/v0.20.0/
 fn run_some_python() -> PyResult<()> {
