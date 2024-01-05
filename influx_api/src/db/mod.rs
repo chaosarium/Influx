@@ -47,6 +47,18 @@ impl DB {
             _ => Err(anyhow::anyhow!("Error deleting thing"))
         }
     }
+
+    pub async fn select_thing<T: serde::Serialize + for<'a> serde::Deserialize<'a> + std::marker::Sync + std::marker::Send + std::fmt::Debug>(&self, thing: Thing) -> Result<Option<T>> {
+        match self.db.select(thing).await? {
+            Some::<T>(v) => Ok(Some(v)),
+            _ => Ok(None)
+        }
+    }
+
+    pub async fn thing_exists<T: serde::Serialize + for<'a> serde::Deserialize<'a> + std::marker::Sync + std::marker::Send + std::fmt::Debug>(&self, thing: Thing) -> Result<bool> {
+        Ok(self.select_thing::<T>(thing).await?.is_some())
+    }
+
 }
 
 
