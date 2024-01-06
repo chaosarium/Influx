@@ -2,13 +2,13 @@
 use crate::utils::trie::Trie;
 use std::{hash::Hash, vec};
 
-pub fn greedy_fit<T: Eq + Hash + Copy>(seq: Vec<T>, trie: &Trie<T>) -> (Vec<Vec<T>>, Vec<(usize, usize)>) {
+pub fn greedy_fit<T: Eq + Hash + Clone, S>(seq: Vec<T>, trie: &Trie<T, S>) -> (Vec<Vec<T>>, Vec<(usize, usize)>) {
     let positional_prefixes = (0..seq.len())
         .map(|i| {
             let suffix = &seq[i..];
             let mut prefixes = trie.search_prefixes_by_ref(suffix, true);
             if prefixes.len() == 0 {
-                prefixes.push(vec![seq[i]]);
+                prefixes.push(vec![seq[i].clone()]);
             }
             let longest_prefix = prefixes.last().unwrap().clone();
             longest_prefix
@@ -32,7 +32,7 @@ pub fn greedy_fit<T: Eq + Hash + Copy>(seq: Vec<T>, trie: &Trie<T>) -> (Vec<Vec<
 
 
 /// recursive implementation of best fit, but NOT efficient
-pub fn recursion_best_fit_prime<T: Eq + Hash + Copy>(seq: Vec<T>, trie: &Trie<T>) -> (Vec<Vec<T>>, usize) {
+pub fn recursion_best_fit_prime<T: Eq + Hash + Copy, S>(seq: Vec<T>, trie: &Trie<T, S>) -> (Vec<Vec<T>>, usize) {
     if seq.len() == 0 {
         return (vec![], 0);
     }
@@ -57,7 +57,7 @@ pub fn recursion_best_fit_prime<T: Eq + Hash + Copy>(seq: Vec<T>, trie: &Trie<T>
     }
 }
 
-pub fn recursion_best_fit<T: Eq + Hash + Copy>(seq: Vec<T>, trie: &Trie<T>) -> Vec<Vec<T>> {
+pub fn recursion_best_fit<T: Eq + Hash + Copy, S>(seq: Vec<T>, trie: &Trie<T, S>) -> Vec<Vec<T>> {
     let (segments, _) = recursion_best_fit_prime(seq, trie);
     segments
 }
@@ -73,7 +73,7 @@ mod test {
     fn test_greedy_fit1() {
         use super::greedy_fit;
         use crate::utils::trie::Trie;
-        let trie = Trie::new_with_entries(vec![
+        let trie: Trie<i32, ()> = Trie::new_with_entries(vec![
             vec![1, 2, 3], 
             vec![1, 2, 3, 4], 
             vec![1, 2, 3, 4, 5],
@@ -91,7 +91,7 @@ mod test {
     fn test_recursion_best_fit1() {
         use super::recursion_best_fit;
         use crate::utils::trie::Trie;
-        let trie = Trie::new_with_entries(vec![
+        let trie: Trie<i32, ()> = Trie::new_with_entries(vec![
             vec![1, 2, 3], 
             vec![1, 2, 3, 4], 
             vec![1, 2, 3, 4, 5],

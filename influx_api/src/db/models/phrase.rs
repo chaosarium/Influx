@@ -2,7 +2,7 @@
 
 use super::{models_prelude::*, vocab};
 use std::collections::{HashMap, BTreeMap, HashSet};
-use crate::prelude::*;
+use crate::{prelude::*, utils::trie::Trie};
 use vocab::{TokenStatus, SRSInfo};
 
 const TABLE: &str = "phrase";
@@ -104,6 +104,20 @@ impl DB {
         let onset_orthography_set: HashSet<String> = text_seq.iter().cloned().map(|x| x.to_lowercase()).collect::<HashSet<String>>();
         self.query_phrase_by_onset_orthographies(onset_orthography_set, lang_id).await
     }
+}
+
+pub fn mk_phrase_trie(phrases: Vec<Phrase>) -> Trie<String, Phrase> {
+    Trie::new_with_entries_and_payloads(
+        phrases
+            .into_iter()
+            .map(|phrase| {
+                (
+                    phrase.orthography_seq.clone(),
+                    phrase,
+                )
+            })
+            .collect::<Vec<(Vec<String>, Phrase)>>(),
+    )
 }
 
 mod tests {

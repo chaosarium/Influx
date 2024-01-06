@@ -2,16 +2,18 @@ use std::collections::HashMap;
 use std::hash::Hash;
 
 #[derive(Default, Debug)]
-pub struct Trie<T: Eq + Hash + Clone> {
-    children: HashMap<T, Trie<T>>,
+pub struct Trie<T: Eq + Hash + Clone, S> {
+    children: HashMap<T, Trie<T, S>>,
     is_terminal: bool,
+    payload: Option<S>,
 }
 
-impl<T: Eq + Hash + Clone> Trie<T> {
+impl<T: Eq + Hash + Clone, S> Trie<T, S> {
     pub fn new() -> Self {
         Trie {
             children: HashMap::new(),
             is_terminal: false,
+            payload: None,
         }
     }
 
@@ -22,6 +24,16 @@ impl<T: Eq + Hash + Clone> Trie<T> {
             curr = curr.children.entry(x).or_insert(Trie::new());
         }
         curr.is_terminal = true;
+    }
+
+    pub fn insert_with_payload<I>(&mut self, seq: I, payload: S) where I: IntoIterator<Item = T>,
+    {
+        let mut curr = self;
+        for x in seq {
+            curr = curr.children.entry(x).or_insert(Trie::new());
+        }
+        curr.is_terminal = true;
+        curr.payload = Some(payload);
     }
 
     pub fn search<I>(&self, seq: I) -> bool where I: IntoIterator<Item = T>,
@@ -36,6 +48,18 @@ impl<T: Eq + Hash + Clone> Trie<T> {
         curr.is_terminal
     }
 
+    pub fn search_for_payload<I>(&self, seq: I) -> (bool, Option<&S>) where I: IntoIterator<Item = T>,
+    {
+        let mut curr = self;
+        for x in seq {
+            match curr.children.get(&x) {
+                Some(child) => curr = child,
+                None => return (false, None),
+            }
+        }
+        (curr.is_terminal, curr.payload.as_ref())
+    }
+    
     pub fn search_prefixes<I>(&self, seq: I, is_root_valid: bool) -> Vec<Vec<T>> where I: IntoIterator<Item = T>,
     {
         let mut prefixes = vec![];
@@ -68,7 +92,7 @@ impl<T: Eq + Hash + Clone> Trie<T> {
     where 
         I: IntoIterator<Item = &'a T>,
         T: 'a,
-        T: Copy,
+        T: Clone,
     {
         let mut prefixes = vec![];
         let mut curr = self;
@@ -77,14 +101,14 @@ impl<T: Eq + Hash + Clone> Trie<T> {
             match curr.children.get(x) {
                 Some(child) => {
                     curr = child;
-                    prefix.push(*x);
+                    prefix.push(x.clone());
                     if curr.is_terminal || (i == 0 && is_root_valid) {
                         prefixes.push(prefix.clone());
                     }
                 },
                 None => {
                     if i == 0 && is_root_valid {
-                        prefixes.push(vec![*x]);
+                        prefixes.push(vec![x.clone()]);
                     }
                     return prefixes;
                 },
@@ -100,13 +124,21 @@ impl<T: Eq + Hash + Clone> Trie<T> {
         }
         trie
     }
+
+    pub fn new_with_entries_and_payloads(entries: Vec<(Vec<T>, S)>) -> Self {
+        let mut trie = Trie::new();
+        for (x, payload) in entries {
+            trie.insert_with_payload(x, payload);
+        }
+        trie
+    }
 }
 
 #[cfg(test)]
 mod tests {
     #[test]
     fn test_trie_basic() {
-        let mut trie = super::Trie::new();
+        let mut trie: super::Trie<&str, ()> = super::Trie::new();
         trie.insert(vec!["hello", "world"]);
         trie.insert(vec!["world", "wide", "web"]);
 
@@ -118,7 +150,7 @@ mod tests {
 
     #[test]
     fn test_search_prefixes() {
-        let mut trie = super::Trie::new();
+        let mut trie: super::Trie<i32, ()> = super::Trie::new();
         trie.insert(vec![1, 2, 3, 4]);
         trie.insert(vec![1, 2]);
         trie.insert(vec![2, 4]);

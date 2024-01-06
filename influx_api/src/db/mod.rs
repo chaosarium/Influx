@@ -46,6 +46,7 @@ impl DB {
         self.seed_todo_table().await?;
         self.seed_vocab_table().await?;
         self.seed_lang_table().await?;
+        self.seed_phrase_table().await?;
         Ok(())
     }
 

@@ -5,7 +5,7 @@ use axum::{
     response::IntoResponse, http::StatusCode, Json, response::Response
 };
 use serde::{Deserialize, Serialize};
-use crate::{ServerState, db::models::{lang::LanguageEntry, vocab::{TokenStatus, SRSInfo, self}}};
+use crate::{ServerState, db::models::{lang::LanguageEntry, vocab::{TokenStatus, SRSInfo, self}, phrase::{mk_phrase_trie, Phrase}}, utils::trie::Trie};
 use crate::{db::{DB, models::vocab::Token}, doc_store};
 use crate::doc_store::DocEntry;
 use crate::doc_store::{
@@ -164,12 +164,16 @@ pub async fn get_doc(
 
     let parsed_doc: nlp::AnnotatedDocument = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).unwrap();
 
-    let tokens_dict = db.get_dict_from_text_seq(parsed_doc.token_texts.clone(), lang_id).await.unwrap();
+    let tokens_dict = db.get_dict_from_text_seq(parsed_doc.token_texts.clone(), lang_id.clone()).await.unwrap();
+    let potential_phrases: Vec<Phrase> = db.get_phrases_from_text_seq(parsed_doc.token_texts.clone(), lang_id.clone()).await.unwrap();
+    let phrase_trie: Trie<String, Phrase> = mk_phrase_trie(potential_phrases);
+
+    let parsed_doc2 = nlp::phrase_fit_pipeline(parsed_doc, phrase_trie);
 
     (StatusCode::OK, Json(json!({
         "metadata": metadata,
         "text": text,
-        "parsed_doc": parsed_doc,
+        "parsed_doc": parsed_doc2,
         "tokens_dict": tokens_dict,
     }))).into_response()
 }
