@@ -12,6 +12,7 @@ use anyhow::Result;
 pub mod models;
 use models::todos::TodoInDB;
 use models::vocab::Token;
+use models::phrase::Phrase;
 
 #[derive(Clone)]
 pub struct DB {
@@ -45,6 +46,7 @@ impl DB {
         self.seed_todo_table().await?;
         self.seed_vocab_table().await?;
         self.seed_lang_table().await?;
+        self.seed_phrase_table().await?;
         Ok(())
     }
 

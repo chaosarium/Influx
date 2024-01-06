@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import type LanguageEntry from '../routes/(sidebarlayout)/languages/LanguageEntry.svelte';
 export let writable_count = writable(0);
 
 function mkVecDequeStore<T>(xs: T[]) {
@@ -52,36 +53,34 @@ interface UISettings {
     theme: string;
     active_lang_id: string;
 }
+// lang, ui, etc. are all settings
 interface AppSettings {
     ui: UISettings;
-    server: any;
+    lang: LanguageEntry[];
 }
 
 
-
-
-
-export async function fetchSettings() {
-    const res = await fetch('http://127.0.0.1:3000/settings/lang');
-    const json_res: any[] = await res.json(); // TODO export the type from rust
+export async function fetchLanguages() {
+    const res = await fetch('http://127.0.0.1:3000/lang');
+    const json_res: LanguageEntry[] = await res.json();
     console.log(json_res);
 
     app_settings.update((settings) => {
-        settings.server.lang = json_res;
+        settings.lang = json_res;
         return settings;
     });
+}
+export async function fetchSettings() {
+    await fetchLanguages();
 }
 export const app_settings = writable<AppSettings>({
     ui: {
         theme: 'light',
         active_lang_id: 'en_demo',
     },
-    server: {
-        lang: [],
-    }
+    lang: [],
 });
   
-
 export const testLocalStore = mkLocalStore<string>('test', 'hi')
 export const dbgConsoleMessages = mkVecDequeStore<string>([])
 export const toastQueue = mkToastStore<string>([])

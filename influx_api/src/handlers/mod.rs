@@ -1,11 +1,11 @@
 #![allow(unused_imports)]
-
+use ts_rs::TS;
 use axum::{
     extract::{Path, Query, State},
     response::IntoResponse, http::StatusCode, Json, response::Response
 };
 use serde::{Deserialize, Serialize};
-use crate::{ServerState, db::models::{lang::LanguageEntry, vocab::{TokenStatus, SRSInfo, self}}};
+use crate::{ServerState, db::models::{lang::LanguageEntry, vocab::{TokenStatus, SRSInfo, self}, phrase::{mk_phrase_trie, Phrase}}, utils::trie::Trie};
 use crate::{db::{DB, models::vocab::Token}, doc_store};
 use crate::doc_store::DocEntry;
 use crate::doc_store::{
@@ -86,6 +86,10 @@ pub struct GetDocsList {
     lang: String,
 }
 
+// #[derive(TS)]
+// #[ts(export, export_to = "../influx_ui/src/lib/types/")]
+// struct GetLangListResponse (Vec<LanguageEntry>);
+
 pub async fn get_language_list(
     State(ServerState { influx_path, db }): State<ServerState>, 
 ) -> Result<Json<Vec<LanguageEntry>>, ServerError> {
@@ -158,67 +162,55 @@ pub async fn get_doc(
 
     let (metadata, text) = read_md_file(filepath).unwrap();
 
-    let (parsed_doc, tokens_strings): (nlp::Document, Vec<String>) = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).unwrap();
+    let parsed_doc: nlp::AnnotatedDocument = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).unwrap();
 
-    let tokens_dict = db.get_dict_from_orthography_seq(tokens_strings.clone(), lang_id).await.unwrap();
+    let tokens_dict = db.get_dict_from_text_seq(parsed_doc.token_texts.clone(), lang_id.clone()).await.unwrap();
+    let potential_phrases: Vec<Phrase> = db.get_phrases_from_text_seq(parsed_doc.token_texts.clone(), lang_id.clone()).await.unwrap();
+    let phrase_trie: Trie<String, Phrase> = mk_phrase_trie(potential_phrases);
+
+    let parsed_doc2 = nlp::phrase_fit_pipeline(parsed_doc, phrase_trie);
 
     (StatusCode::OK, Json(json!({
         "metadata": metadata,
         "text": text,
-        "tokens_strs": tokens_strings,
+        "parsed_doc": parsed_doc2,
         "tokens_dict": tokens_dict,
-        "parsed_doc": parsed_doc,
     }))).into_response()
 }
 
-#[derive(Debug, Deserialize)]
-pub struct CreateToken {
-    pub lang_id: String,
+// #[derive(Debug, Deserialize)]
+// pub struct CreateTokenPayload {
+//     pub lang_id: String,
 
-    pub orthography: String,
-    pub phonetic: String,
-    pub definition: String,
-    pub notes: String,
-    pub original_context: String,
+//     pub orthography: String,
+//     pub phonetic: String,
+//     pub definition: String,
+//     pub notes: String,
+//     pub original_context: String,
     
-    pub status: TokenStatus,
-    pub tags: Vec<String>, 
-}
+//     pub status: TokenStatus,
+//     pub tags: Vec<String>, 
+// }
 
 #[derive(Debug, Deserialize)]
-pub struct DeleteToken {
+pub struct DeleteTokenPayload {
     pub id: String,
 }
 
 pub async fn create_token(
     State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<CreateToken>,
+    Json(payload): Json<Token>,
 ) -> Result<Json<Token>, ServerError> {
     println!("token create attempt payload: {:?}", payload);
     
-    let token = db.create_token(
-        Token {
-            id: None,
-            lang_id: payload.lang_id,
-
-            orthography: payload.orthography,
-            phonetic: payload.phonetic,
-            definition: payload.definition,
-            notes: payload.notes,  
-            original_context: payload.original_context,
-
-            status: payload.status,
-            tags: payload.tags,
-            srs: SRSInfo::default(),
-        }
-    ).await?;
+    let token = db.create_token(payload).await?;
 
    Ok(Json(token))
 }
 
 pub async fn delete_token(
     State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<DeleteToken>,
+    Json(payload): Json<DeleteTokenPayload>,
 ) -> Result<Json<Token>, ServerError> {
     println!("token delete attempt payload: {:?}", payload);
     let token = db.delete_token_by_id(payload.id).await?;
@@ -233,44 +225,29 @@ pub async fn lookup_token(
     Ok(Json(token))
 }
 
-#[derive(Debug, Deserialize)]
-pub struct UpdateToken {
-    pub id: String,
-    pub lang_id: String,
+// #[derive(Debug, Deserialize)]
+// pub struct UpdateTokenPayload {
+//     pub id: String,
+//     pub lang_id: String,
 
-    pub orthography: String,
-    pub phonetic: String,
-    pub definition: String,
-    pub notes: String,
-    pub original_context: String,
+//     pub orthography: String,
+//     pub phonetic: String,
+//     pub definition: String,
+//     pub notes: String,
+//     pub original_context: String,
     
-    pub status: TokenStatus,
-    pub tags: Vec<String>, 
-}
+//     pub status: TokenStatus,
+//     pub tags: Vec<String>, 
+// }
 
 pub async fn update_token(
     State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<UpdateToken>,
+    Json(payload): Json<Token>,
 ) -> Result<Json<Token>, ServerError> {
 
     println!("token update attempt payload: {:?}", payload);
 
-    let token = db.update_token_by_id(
-        Token {
-            id: Some(vocab::mk_vocab_thing(payload.id)),
-            lang_id: payload.lang_id,
-
-            orthography: payload.orthography,
-            phonetic: payload.phonetic,
-            definition: payload.definition,
-            notes: payload.notes,  
-            original_context: payload.original_context,
-
-            status: payload.status,
-            tags: payload.tags,
-            srs: SRSInfo::default(),
-        }
-    ).await?;
+    let token = db.update_token_by_id(payload).await?;
 
    Ok(Json(token))
 }

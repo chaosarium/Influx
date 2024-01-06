@@ -1,7 +1,10 @@
-<script>
+<script lang="ts">
     import Token from "$lib/components/Token.svelte";
-    export let parsed_doc;
-    export let tokens_dict;
+    import type { Token as TokenT } from "$lib/types/Token";
+    import type { Document } from "$lib/types/Document";
+    import Phrase from "../../../../../lib/components/Phrase.svelte";
+    export let parsed_doc: Document;
+    export let tokens_dict: Record<string, TokenT>;
     let tokenisation_debug = true;
     let moreclass = '';
     export { moreclass as class };
@@ -16,26 +19,29 @@
         {:else if sentence_constituent.type == "Sentence"}
             <span class="py-1 " class:sentence_dbg={tokenisation_debug}>
                 {#each sentence_constituent.constituents as constituent}
-                    {#if constituent.type == "CompositToken"}
-                        <Token
-                            token={tokens_dict[constituent?.text]}
-                            on:token_hover
-                            on:token_click
-                            tokenisation_debug={tokenisation_debug}
-                        />
-                    {:else if constituent.type == "SubwordToken"}
-                        <!-- ghost SubwordToken -->
-                    {:else if constituent.type == "SingleToken"}
-                        <Token
-                            token={tokens_dict[constituent?.text]}
-                            on:token_hover
-                            on:token_click
-                            tokenisation_debug={tokenisation_debug}
-                        />
-                    {:else if constituent.type == "Whitespace"}
-                        <span class="whitespace-pre-wrap" class:bg-green-100={tokenisation_debug}
-                            >{constituent.text}</span
-                        >
+                    {#if constituent.type == "CompositToken" || constituent.type == "SubwordToken" || constituent.type == "SingleToken"}
+                        {#if constituent.shadowed === false}
+                            <Token
+                                constituent={constituent}
+                                token={tokens_dict[constituent?.orthography]}
+                                on:token_hover
+                                on:token_click
+                                tokenisation_debug={tokenisation_debug}
+                            />
+                        {/if}
+                    {:else if constituent.type == "PhraseToken"}
+                        {#if constituent.shadowed === false}
+                            <Phrase
+                                constituent={constituent}
+                                tokenisation_debug={tokenisation_debug}
+                            />
+                        {/if}
+                        {:else if constituent.type == "Whitespace"}
+                        {#if constituent.shadowed === false}
+                            <span class="whitespace-pre-wrap" class:bg-green-100={tokenisation_debug}
+                                >{constituent.text}</span
+                            >
+                        {/if}
                     {/if}
                 {/each}
             </span>

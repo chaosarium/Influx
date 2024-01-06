@@ -3,7 +3,7 @@ use std::collections::{HashMap, BTreeMap, HashSet};
 use crate::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize, TS, Clone, PartialEq, Eq, Hash)]
-#[ts(export, export_to = "../bindings/")]
+#[ts(export, export_to = "../influx_ui/src/lib/types/")]
 pub enum TokenStatus {
     UNMARKED,
     L1,
@@ -22,7 +22,7 @@ pub fn mk_vocab_thing(id: String) -> Thing {
 
 
 #[derive(Debug, Serialize, Deserialize, TS, Clone, PartialEq, Eq, Hash)]
-#[ts(export, export_to = "../bindings/")]
+#[ts(export, export_to = "../influx_ui/src/lib/types/")]
 pub struct SRSInfo {
     dummy: String,
 }
@@ -37,10 +37,10 @@ impl Default for SRSInfo {
 
 
 #[derive(Debug, Serialize, Deserialize, TS, Clone, PartialEq, Eq, Hash)]
-#[ts(export, export_to = "../bindings/")]
+#[ts(export, export_to = "../influx_ui/src/lib/types/")]
 pub struct Token {
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(type = "string")]
+    #[ts(type = "{ tb: string, id: {String: string} }")]
     pub id: Option<Thing>,
     pub lang_id: String,
     
@@ -110,6 +110,27 @@ impl DB {
                 "voix",
                 "voice",
                 "vwa",
+                TokenStatus::L5,
+            ),
+            Token::fancier_token(
+                "fr_demo",
+                "parler",
+                "speak",
+                "",
+                TokenStatus::L5,
+            ),
+            Token::fancier_token(
+                "fr_demo",
+                "parlerez",
+                "speak",
+                "inflection of parler",
+                TokenStatus::L5,
+            ),
+            Token::fancier_token(
+                "fr_demo",
+                "habitaient",
+                "lived",
+                "inflection of habiter",
                 TokenStatus::L5,
             ),
             Token::fancier_token(

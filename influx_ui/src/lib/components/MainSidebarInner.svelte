@@ -98,8 +98,8 @@
       <li>
         active lang id: {$app_settings.ui.active_lang_id}
         <select class="border-2" bind:value={$app_settings.ui.active_lang_id}>
-          {#each $app_settings.server.lang as lang_entry}
-            <option value={lang_entry.identifier}>{lang_entry.identifier}</option>
+          {#each $app_settings.lang as lang_entry}
+            <option value={lang_entry.id.id.String}>{lang_entry.id.id.String}</option>
           {/each}
         </select>
       </li>

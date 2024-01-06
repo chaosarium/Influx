@@ -2,9 +2,9 @@ use super::models_prelude::*;
 use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize, TS, Clone, PartialEq, Eq, Hash)]
-#[ts(export, export_to = "../bindings/")]
+#[ts(export, export_to = "../influx_ui/src/lib/types/")]
 pub struct LanguageEntry {
-    #[ts(type = "string")]
+    #[ts(type = "{ tb: string, id: {String: string} }")]
     pub id: Thing,
     pub code: String,
     pub name: String,

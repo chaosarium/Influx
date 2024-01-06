@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
   import Button from "$lib/components/Button.svelte";
-  export let language_entry;
+  import type { LanguageEntry } from "$lib/types/LanguageEntry";
+  export let language_entry: LanguageEntry;
 </script>
 
 <li>
@@ -9,16 +10,16 @@
     
     <div class="flex flex-row content-between ">
       <div class="flex-auto">
-        <h1 class="font-bold textxl">{language_entry.display_name}</h1>
+        <h1 class="font-bold textxl">{language_entry.name}</h1>
       </div>
       <div class="">
-        <span class="text-gray-500">{language_entry.identifier}</span>
+        <span class="text-gray-500">{language_entry.id.id.String}</span>
       </div>
   
     </div>
 
     <div class="flex flex-row mt-3">
-      <Button href="/texts/{language_entry.identifier}">Texts</Button>
+      <Button href="/texts/{language_entry.id.id.String}">Texts</Button>
       <Button href="#" class='ml-2'>Stats</Button>
       <Button href="#" class='ml-2'>Vocab</Button>
     </div>
