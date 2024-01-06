@@ -32,34 +32,36 @@ pub fn greedy_fit<T: Eq + Hash + Clone, S>(seq: Vec<T>, trie: &Trie<T, S>) -> (V
 
 
 /// recursive implementation of best fit, but NOT efficient
-pub fn recursion_best_fit_prime<T: Eq + Hash + Copy, S>(seq: Vec<T>, trie: &Trie<T, S>) -> (Vec<Vec<T>>, usize) {
+pub fn recursion_best_fit_prime<T: Eq + Hash + Clone, S>(seq: Vec<T>, trie: &Trie<T, S>) -> ((Vec<Vec<T>>, Vec<(usize, usize)>), usize) {
     if seq.len() == 0 {
-        return (vec![], 0);
+        return ((vec![], vec![]), 0);
     }
 
     let mut prefixes = trie.search_prefixes_by_ref(&seq, true);
     if prefixes.len() == 0 {
-        prefixes.push(vec![seq[0]]);
+        prefixes.push(vec![seq[0].clone()]);
     }
     let max_fitting = prefixes.iter().map(|prefix: &Vec<T>| {
             let prefix_len = prefix.len();
             let suffix = seq[prefix_len..].to_vec();
-            let (sub_segments, sub_cost) = recursion_best_fit_prime(suffix, trie);
+            let ((sub_segments, sub_slices), sub_cost) = recursion_best_fit_prime(suffix, trie);
             let mut segments = vec![prefix.clone()];
             segments.extend(sub_segments);
-            (segments, sub_cost + 1)
+            let mut slices = vec![(0, prefix_len)];
+            slices.extend(sub_slices.iter().map(|(start, end)| (start + prefix_len, end + prefix_len)));
+            ((segments, slices), sub_cost + 1)
         })
         .min_by_key(|(_, cost)| *cost);
 
     match max_fitting {
-        Some((segments, cost)) => (segments, cost),
-        None => (vec![], 0),
+        Some(((segments, slices), cost)) => ((segments, slices), cost),
+        None => ((vec![], vec![]), 0),
     }
 }
 
-pub fn recursion_best_fit<T: Eq + Hash + Copy, S>(seq: Vec<T>, trie: &Trie<T, S>) -> Vec<Vec<T>> {
-    let (segments, _) = recursion_best_fit_prime(seq, trie);
-    segments
+pub fn recursion_best_fit<T: Eq + Hash + Clone, S>(seq: Vec<T>, trie: &Trie<T, S>) -> (Vec<Vec<T>>, Vec<(usize, usize)>) {
+    let (res, _) = recursion_best_fit_prime(seq, trie);
+    res
 }
 
 // TODO implement fast dp best fit
@@ -99,9 +101,10 @@ mod test {
             vec![7, 8, 9],
         ]);
         let seq = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
-        let res = recursion_best_fit(seq, &trie);
-        println!("{:?}", &res);
-        assert_eq!(res, vec![vec![1, 2, 3, 4, 5], vec![6], vec![7, 8, 9]]);
+        let (segments, segment_locs) = recursion_best_fit(seq, &trie);
+        println!("{:?}", &segments);
+        assert_eq!(segments, vec![vec![1, 2, 3, 4, 5], vec![6], vec![7, 8, 9]]);
+        assert_eq!(segment_locs, vec![(0, 5), (5, 6), (6, 9)]);
     }
 
 }
