@@ -6,3 +6,4 @@ bindings
 experiments
 .VSCodeCounter
 toy_content/database.db
+influx_api/tmp_database.db
