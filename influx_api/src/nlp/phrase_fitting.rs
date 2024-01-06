@@ -2,7 +2,7 @@
 use crate::utils::trie::Trie;
 use std::{hash::Hash, vec};
 
-pub fn greedy_fit<T: Eq + Hash + Copy>(seq: Vec<T>, trie: &Trie<T>) -> Vec<Vec<T>> {
+pub fn greedy_fit<T: Eq + Hash + Copy>(seq: Vec<T>, trie: &Trie<T>) -> (Vec<Vec<T>>, Vec<(usize, usize)>) {
     let positional_prefixes = (0..seq.len())
         .map(|i| {
             let suffix = &seq[i..];
@@ -16,17 +16,20 @@ pub fn greedy_fit<T: Eq + Hash + Copy>(seq: Vec<T>, trie: &Trie<T>) -> Vec<Vec<T
         .collect::<Vec<_>>();
 
     let mut segments = vec![];
+    let mut segment_locs = vec![];
 
     let mut i: usize = 0;
     while i < seq.len() {
         let prefix = &positional_prefixes[i];
         let prefix_len = prefix.len();
         segments.push(prefix.clone());
+        segment_locs.push((i, i+prefix_len));
         i += prefix_len;
     }
 
-    segments
+    (segments, segment_locs)
 }
+
 
 /// recursive implementation of best fit, but NOT efficient
 pub fn recursion_best_fit_prime<T: Eq + Hash + Copy>(seq: Vec<T>, trie: &Trie<T>) -> (Vec<Vec<T>>, usize) {
@@ -78,9 +81,10 @@ mod test {
             vec![7, 8, 9],
         ]);
         let seq = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
-        let res = greedy_fit(seq, &trie);
-        println!("{:?}", &res);
-        assert_eq!(res, vec![vec![1, 2, 3, 4, 5], vec![6, 7], vec![8], vec![9]]);
+        let (segments, segment_locs) = greedy_fit(seq, &trie);
+        println!("{:?}", &segments);
+        assert_eq!(segments, vec![vec![1, 2, 3, 4, 5], vec![6, 7], vec![8], vec![9]]);
+        assert_eq!(segment_locs, vec![(0, 5), (5, 7), (7, 8), (8, 9)]);
     }
 
     #[test]

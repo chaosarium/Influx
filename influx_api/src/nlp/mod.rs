@@ -11,6 +11,8 @@ use std::env;
 use std::path::PathBuf;
 use indoc::indoc;
 use serde::{Deserialize, Serialize};
+
+use crate::utils::trie::Trie;
 pub mod phrase_fitting;
 
 // from https://pyo3.rs/v0.20.0/
@@ -42,17 +44,18 @@ enum RustyEnum {
 
 type StanzaResult = (String, usize, usize, Vec<Vec<Vec<BTreeMap<String, RustyEnum>>>>);
 
-#[derive(Debug, Deserialize, Serialize, TS)]
+#[derive(Debug, Deserialize, Serialize, TS, PartialEq)]
 #[ts(export, export_to = "../influx_ui/src/lib/types/")]
 #[serde(tag = "type")]
-pub struct Document {
-    text: String,
-    constituents: Vec<DocumentConstituent>,
-    num_sentences: usize,
-    num_tokens: usize,
+pub struct AnnotatedDocument {
+    pub text: String,
+    pub constituents: Vec<DocumentConstituent>,
+    pub num_sentences: usize,
+    pub num_tokens: usize,
+    pub token_texts: Vec<String>, // non-whitespace sequence, original texts in order
 }
 
-#[derive(Debug, Deserialize, Serialize, TS)]
+#[derive(Debug, Deserialize, Serialize, TS, PartialEq)]
 #[ts(export, export_to = "../influx_ui/src/lib/types/")]
 #[serde(tag = "type")]
 enum DocumentConstituent {
@@ -70,7 +73,7 @@ enum DocumentConstituent {
     },
 }
 
-#[derive(Debug, Deserialize, Serialize, TS)]
+#[derive(Debug, Deserialize, Serialize, TS, PartialEq)]
 #[ts(export, export_to = "../influx_ui/src/lib/types/")]
 #[serde(tag = "type")]
 enum SentenceConstituent {
@@ -104,6 +107,12 @@ enum SentenceConstituent {
         start_char: usize,
         end_char: usize,
     },
+    // PhraseToken {
+    //     sentence_id: usize,
+    //     text: String,
+    //     start_char: usize,
+    //     end_char: usize,
+    // },
 }
 
 impl SentenceConstituent {
@@ -173,10 +182,10 @@ fn char_slice(text_chars: &Vec<char>, start_char: usize, end_char: usize) -> Str
     text_chars[start_char..end_char].iter().collect()
 }
 
-fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<String>)> {
+fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument> {
     let text = stanzares.0;
     let text_chars: Vec<char> = text.chars().collect();
-    let mut token_strs: Vec<String> = vec![];
+    let mut token_texts: Vec<String> = vec![];
 
     let mut intermediate_sentences: Vec<DocumentConstituent> = vec![];
 
@@ -199,7 +208,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<Str
                             start_char: stanzatoken_get_start_char(stanzatoken),
                             end_char: stanzatoken_get_end_char(stanzatoken),
                         });
-                        token_strs.push(stanzatoken_get_text(stanzatoken))
+                        token_texts.push(stanzatoken_get_text(stanzatoken))
                     },
                     _ => ()
                 }
@@ -218,7 +227,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<Str
                                     orthography: stanzatoken_get_text(stanzatoken).to_lowercase(),
                                     lemma: stanzatoken_get_lemma(stanzatoken),
                                 });
-                                token_strs.push(stanzatoken_get_text(stanzatoken))
+                                token_texts.push(stanzatoken_get_text(stanzatoken))
                             },
                             false => {
                                 intermediate_tokens.push(SentenceConstituent::SingleToken {
@@ -230,7 +239,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<Str
                                     start_char: stanzatoken_get_start_char(stanzatoken),
                                     end_char: stanzatoken_get_end_char(stanzatoken),
                                 });
-                                token_strs.push(stanzatoken_get_text(stanzatoken))
+                                token_texts.push(stanzatoken_get_text(stanzatoken))
                             }
                         }
                     },
@@ -330,15 +339,17 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<Str
 
     // dbg!(&sentences);
     
-    anyhow::Ok((Document {
+    anyhow::Ok(AnnotatedDocument {
         text: text, 
         constituents: sentences, 
         num_sentences: stanzares.2, 
         num_tokens: stanzares.1, 
-    }, token_strs))
+        token_texts,
+    })
 }
 
-pub fn tokenise_pipeline(text: &str, language: String) -> anyhow::Result<(Document, Vec<String>)> {
+/// given text and language, return a tokenised document before phrase fitting
+pub fn tokenise_pipeline(text: &str, language: String) -> anyhow::Result<AnnotatedDocument> {
 
     let current_dir = env::current_dir()?;
     let pylib_path = current_dir.join("./src/nlp/pylib").canonicalize()?;
@@ -372,6 +383,10 @@ pub fn tokenise_pipeline(text: &str, language: String) -> anyhow::Result<(Docume
     })
 }
 
+pub fn phrase_fit_pipeline(document: AnnotatedDocument, phrases: Trie<String>) {
+
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -380,7 +395,176 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_tokenise_pipeline() {
+    fn test_tokenise_pipeline_small1() {
+        const TEXT: &str = "Hello world! Hi!";
+        
+        let res = tokenise_pipeline(TEXT, "en".to_string());
+        assert!(res.is_ok());
+        let res = res.unwrap();
+        assert_eq!(res, AnnotatedDocument {
+            text: "Hello world! Hi!".to_string(),
+            constituents: vec![
+                DocumentConstituent::Sentence {
+                    id: 0,
+                    text: "Hello world!".to_string(),
+                    start_char: 0,
+                    end_char: 12,
+                    constituents: vec![
+                        SentenceConstituent::SingleToken {
+                            sentence_id: 0,
+                            id: 1,
+                            text: "Hello".to_string(),
+                            orthography: "hello".to_string(),
+                            lemma: "hello".to_string(),
+                            start_char: 0,
+                            end_char: 5,
+                        },
+                        SentenceConstituent::Whitespace {
+                            text: " ".to_string(),
+                            orthography: " ".to_string(),
+                            start_char: 5,
+                            end_char: 6,
+                        },
+                        SentenceConstituent::SingleToken {
+                            sentence_id: 0,
+                            id: 2,
+                            text: "world".to_string(),
+                            orthography: "world".to_string(),
+                            lemma: "world".to_string(),
+                            start_char: 6,
+                            end_char: 11,
+                        },
+                        SentenceConstituent::SingleToken {
+                            sentence_id: 0,
+                            id: 3,
+                            text: "!".to_string(),
+                            orthography: "!".to_string(),
+                            lemma: "!".to_string(),
+                            start_char: 11,
+                            end_char: 12,
+                        },
+                    ],
+                },
+                DocumentConstituent::Whitespace {
+                    text: " ".to_string(),
+                    start_char: 12,
+                    end_char: 13,
+                },
+                DocumentConstituent::Sentence {
+                    id: 1,
+                    text: "Hi!".to_string(),
+                    start_char: 13,
+                    end_char: 16,
+                    constituents: vec![
+                        SentenceConstituent::SingleToken {
+                            sentence_id: 1,
+                            id: 1,
+                            text: "Hi".to_string(),
+                            orthography: "hi".to_string(),
+                            lemma: "hi".to_string(),
+                            start_char: 13,
+                            end_char: 15,
+                        },
+                        SentenceConstituent::SingleToken {
+                            sentence_id: 1,
+                            id: 2,
+                            text: "!".to_string(),
+                            orthography: "!".to_string(),
+                            lemma: "!".to_string(),
+                            start_char: 15,
+                            end_char: 16,
+                        },
+                    ],
+                },
+            ],
+            num_sentences: 2,
+            num_tokens: 5,
+            token_texts: vec!["Hello".to_string(), "world".to_string(), "!".to_string(), "Hi".to_string(), "!".to_string()],
+        });
+    }
+
+    #[test]
+    fn test_tokenise_pipeline_small2() {
+        const TEXT: &str = "Let's  go.";
+        
+        let res = tokenise_pipeline(TEXT, "en".to_string());
+        assert!(res.is_ok());
+        let res = res.unwrap();
+        assert_eq!(res, AnnotatedDocument {
+            text: "Let's  go.".to_string(),
+            constituents: vec![
+                DocumentConstituent::Sentence {
+                    id: 0,
+                    text: "Let's  go.".to_string(),
+                    start_char: 0,
+                    end_char: 10,
+                    constituents: vec![
+                        SentenceConstituent::CompositToken {
+                            sentence_id: 0,
+                            ids: vec![
+                                1,
+                                2,
+                            ],
+                            text: "Let's".to_string(),
+                            orthography: "let's".to_string(),
+                            start_char: 0,
+                            end_char: 5,
+                        },
+                        SentenceConstituent::SubwordToken {
+                            sentence_id: 0,
+                            id: 1,
+                            text: "Let".to_string(),
+                            orthography: "let".to_string(),
+                            lemma: "let".to_string(),
+                        },
+                        SentenceConstituent::SubwordToken {
+                            sentence_id: 0,
+                            id: 2,
+                            text: "'s".to_string(),
+                            orthography: "'s".to_string(),
+                            lemma: "'s".to_string(),
+                        },
+                        SentenceConstituent::Whitespace {
+                            text: "  ".to_string(),
+                            orthography: "  ".to_string(),
+                            start_char: 5,
+                            end_char: 7,
+                        },
+                        SentenceConstituent::SingleToken {
+                            sentence_id: 0,
+                            id: 3,
+                            text: "go".to_string(),
+                            orthography: "go".to_string(),
+                            lemma: "go".to_string(),
+                            start_char: 7,
+                            end_char: 9,
+                        },
+                        SentenceConstituent::SingleToken {
+                            sentence_id: 0,
+                            id: 4,
+                            text: ".".to_string(),
+                            orthography: ".".to_string(),
+                            lemma: ".".to_string(),
+                            start_char: 9,
+                            end_char: 10,
+                        },
+                    ],
+                },
+            ],
+            num_sentences: 1,
+            num_tokens: 3,
+            token_texts: vec![
+                "Let's".to_string(),
+                "Let".to_string(),
+                "'s".to_string(),
+                "go".to_string(),
+                ".".to_string(),
+            ],
+        });
+    }
+
+    #[test]
+    fn test_tokenise_pipeline_large() {
         
         const TEXT: &str = indoc! {
             r#"
@@ -398,7 +582,6 @@ mod tests {
         assert!(res.is_ok());
     }
 
-
     #[test]
     fn test_run_some_python() {
         assert!(run_some_python().is_ok());
@@ -414,7 +597,6 @@ mod tests {
         println!("{:?}", text2.as_bytes());
         // println!("{}", text[0..1].to_string());
         // println!("{}", text[1..2].to_string());
-
     }
 
 }

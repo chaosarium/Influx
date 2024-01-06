@@ -162,16 +162,15 @@ pub async fn get_doc(
 
     let (metadata, text) = read_md_file(filepath).unwrap();
 
-    let (parsed_doc, tokens_strings): (nlp::Document, Vec<String>) = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).unwrap();
+    let parsed_doc: nlp::AnnotatedDocument = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).unwrap();
 
-    let tokens_dict = db.get_dict_from_text_seq(tokens_strings.clone(), lang_id).await.unwrap();
+    let tokens_dict = db.get_dict_from_text_seq(parsed_doc.token_texts.clone(), lang_id).await.unwrap();
 
     (StatusCode::OK, Json(json!({
         "metadata": metadata,
         "text": text,
-        "tokens_strs": tokens_strings,
-        "tokens_dict": tokens_dict,
         "parsed_doc": parsed_doc,
+        "tokens_dict": tokens_dict,
     }))).into_response()
 }
 
