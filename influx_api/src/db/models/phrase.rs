@@ -73,8 +73,21 @@ impl DB {
 
         match res.take(0) {
             Ok(Some::<Phrase>(v)) => Ok(v),
-            Ok(None) => Err(anyhow::anyhow!("sql didn't fail but no token was returned")),
-            Err(e) => Err(anyhow::anyhow!("Error creating token: {:?}", e)),
+            Ok(None) => Err(anyhow::anyhow!("sql didn't fail but no phrase was returned")),
+            Err(e) => Err(anyhow::anyhow!("Error creating phrase: {:?}", e)),
+        }
+    }
+
+    pub async fn query_phrase_by_onset_orthographies(&self, onset_orthography_set: HashSet<String>) -> Result<Vec<Phrase>> {
+        let sql = format!("SELECT * FROM phrase WHERE array::first(orthography_seq) INSIDE $onsets;");
+        let mut res: Response = self.db
+            .query(sql)
+            .bind(("onsets", onset_orthography_set.iter().cloned().collect::<Vec<String>>()))
+            .await?;
+
+        match res.take(0) {
+            Ok::<Vec<Phrase>, _>(v) => Ok(v),
+            _ => Err(anyhow::anyhow!("Error querying phrase"))
         }
     }
 }
@@ -84,11 +97,36 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_create_token() {
+    async fn test_create_phrase() {
         let db = DB::create_db(DBLocation::Mem).await;
         let phrase = Phrase::essential_phrase("en_demo", vec!["hello".to_string(), "world".to_string()]);
         let created = db.create_phrase(phrase).await.unwrap();
-        println!("created: {:?}", created);
+        // dbg!("created: {:?}", created);
         assert_eq!(created.orthography_seq, vec!["hello".to_string(), "world".to_string()]);
+    }
+
+    #[tokio::test]
+    async fn test_query_phrase() {
+        let db = DB::create_db(DBLocation::Mem).await;
+        let phrase = Phrase::essential_phrase("en_demo", vec!["hello".to_string(), "world".to_string()]);
+        let created = db.create_phrase(phrase).await.unwrap();
+        let phrase = Phrase::essential_phrase("en_demo", vec!["world".to_string(), "record".to_string()]);
+        let created = db.create_phrase(phrase).await.unwrap();
+        let phrase = Phrase::essential_phrase("en_demo", vec!["world".to_string(), "wide".to_string(), "web".to_string()]);
+        let created = db.create_phrase(phrase).await.unwrap();
+        let phrase = Phrase::essential_phrase("en_demo", vec!["hello".to_string(), "moon".to_string()]);
+        let created = db.create_phrase(phrase).await.unwrap();
+        
+        let queried = db.query_phrase_by_onset_orthographies(vec!["hello".to_string()].into_iter().collect()).await.unwrap();
+        // dbg!("queried: {:?}", &queried);
+        assert_eq!(queried.len(), 2);
+        assert!(queried.iter().any(|phrase| phrase.orthography_seq == vec!["hello".to_string(), "world".to_string()]));
+        assert!(queried.iter().any(|phrase| phrase.orthography_seq == vec!["hello".to_string(), "moon".to_string()]));
+
+        let queried = db.query_phrase_by_onset_orthographies(vec!["world".to_string(), "earth".to_string()].into_iter().collect()).await.unwrap();
+        // dbg!("queried: {:?}", &queried);
+        assert_eq!(queried.len(), 2);
+        assert!(queried.iter().any(|phrase| phrase.orthography_seq == vec!["world".to_string(), "record".to_string()]));
+        assert!(queried.iter().any(|phrase| phrase.orthography_seq == vec!["world".to_string(), "wide".to_string(), "web".to_string()]));
     }
 }
