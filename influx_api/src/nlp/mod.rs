@@ -11,7 +11,9 @@ use std::env;
 use std::path::PathBuf;
 use indoc::indoc;
 use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
 
+use crate::db::models::phrase::Phrase;
 use crate::utils::trie::Trie;
 pub mod phrase_fitting;
 
@@ -58,7 +60,7 @@ pub struct AnnotatedDocument {
 #[derive(Debug, Deserialize, Serialize, TS, PartialEq)]
 #[ts(export, export_to = "../influx_ui/src/lib/types/")]
 #[serde(tag = "type")]
-enum DocumentConstituent {
+pub enum DocumentConstituent {
     Sentence {
         id: usize, // 0-indexed
         text: String,
@@ -76,7 +78,7 @@ enum DocumentConstituent {
 #[derive(Debug, Deserialize, Serialize, TS, PartialEq)]
 #[ts(export, export_to = "../influx_ui/src/lib/types/")]
 #[serde(tag = "type")]
-enum SentenceConstituent {
+pub enum SentenceConstituent {
     CompositToken {
         sentence_id: usize,
         ids: Vec<usize>,
@@ -187,10 +189,10 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
     let text_chars: Vec<char> = text.chars().collect();
     let mut token_texts: Vec<String> = vec![];
 
-    let mut intermediate_sentences: Vec<DocumentConstituent> = vec![];
+    let mut intermediate_sentences: VecDeque<DocumentConstituent> = VecDeque::new();
 
     for (sentence_id, sentence) in (stanzares.3).iter().enumerate() {
-        let mut intermediate_tokens = vec![];
+        let mut intermediate_tokens: VecDeque<SentenceConstituent> = VecDeque::new();
 
         for token_group in sentence.iter() {
                 
@@ -200,7 +202,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                 match stanzatoken.get("id") {
                     Some(RustyEnum::List(subtokenids)) => {
                         children.extend(subtokenids.clone());
-                        intermediate_tokens.push(SentenceConstituent::CompositToken {
+                        intermediate_tokens.push_back(SentenceConstituent::CompositToken {
                             sentence_id: sentence_id,
                             ids: subtokenids.clone(),
                             text: stanzatoken_get_text(stanzatoken),
@@ -220,7 +222,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                     Some(RustyEnum::Int(stanza_token_id)) => {
                         match children.contains(stanza_token_id) {
                             true => {
-                                intermediate_tokens.push(SentenceConstituent::SubwordToken {
+                                intermediate_tokens.push_back(SentenceConstituent::SubwordToken {
                                     sentence_id: sentence_id,
                                     id: *stanza_token_id,
                                     text: stanzatoken_get_text(stanzatoken),
@@ -230,7 +232,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                                 token_texts.push(stanzatoken_get_text(stanzatoken))
                             },
                             false => {
-                                intermediate_tokens.push(SentenceConstituent::SingleToken {
+                                intermediate_tokens.push_back(SentenceConstituent::SingleToken {
                                     sentence_id: sentence_id,
                                     id: *stanza_token_id,
                                     text: stanzatoken_get_text(stanzatoken),
@@ -265,7 +267,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
         let mut tokens = vec![];
         let mut fill_line = sentence_start;
         while intermediate_tokens.len() > 0 {
-            let token = intermediate_tokens.remove(0); // very bad idea to do O(n) work every time
+            let token = intermediate_tokens.pop_front().unwrap();
 
             match token {
                 SentenceConstituent::SubwordToken { .. } => {
@@ -302,7 +304,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
 
         // dbg!(&tokens);
 
-        intermediate_sentences.push(DocumentConstituent::Sentence {
+        intermediate_sentences.push_back(DocumentConstituent::Sentence {
             id: sentence_id,
             text: char_slice(&text_chars, sentence_start, sentence_end).to_string(),
             start_char: sentence_start,
@@ -316,7 +318,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
     let mut sentences = vec![];
     let mut fill_line = 0;
     while intermediate_sentences.len() > 0 {
-        let sentence = intermediate_sentences.remove(0); // very bad idea to do O(n) work every time
+        let sentence = intermediate_sentences.pop_front().unwrap();
 
         match sentence {
             DocumentConstituent::Whitespace { .. } => {
@@ -383,8 +385,8 @@ pub fn tokenise_pipeline(text: &str, language: String) -> anyhow::Result<Annotat
     })
 }
 
-pub fn phrase_fit_pipeline(document: AnnotatedDocument, phrases: Trie<String>) {
-
+pub fn phrase_fit_pipeline(document: AnnotatedDocument, phrases: Trie<String, Phrase>) -> AnnotatedDocument {
+    document
 }
 
 
