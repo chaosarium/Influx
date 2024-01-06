@@ -6,6 +6,7 @@ use std::collections::{BTreeMap, HashSet};
 use anyhow;
 use pyo3::prelude::*;
 use pyo3::types::{IntoPyDict, PyTuple};
+use ts_rs::TS;
 use std::env;
 use std::path::PathBuf;
 use indoc::indoc;
@@ -41,7 +42,8 @@ enum RustyEnum {
 
 type StanzaResult = (String, usize, usize, Vec<Vec<Vec<BTreeMap<String, RustyEnum>>>>);
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, TS)]
+#[ts(export, export_to = "../influx_ui/src/lib/types/")]
 #[serde(tag = "type")]
 pub struct Document {
     text: String,
@@ -50,7 +52,8 @@ pub struct Document {
     num_tokens: usize,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, TS)]
+#[ts(export, export_to = "../influx_ui/src/lib/types/")]
 #[serde(tag = "type")]
 enum DocumentConstituent {
     Sentence {
@@ -67,7 +70,8 @@ enum DocumentConstituent {
     },
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, TS)]
+#[ts(export, export_to = "../influx_ui/src/lib/types/")]
 #[serde(tag = "type")]
 enum SentenceConstituent {
     CompositToken {

@@ -1,8 +1,9 @@
 <script lang="ts">
   import TokenTooltip from "./TokenTooltip.svelte";
   import { createEventDispatcher } from 'svelte';
+  import type { Token as TokenT } from "$lib/types/Token";
 
-  export let token;
+  export let token: TokenT;
 
   const dispatch = createEventDispatcher();
   const handleMouseEnter = () => {

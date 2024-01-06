@@ -1,7 +1,9 @@
-<script>
+<script lang="ts">
     import Token from "$lib/components/Token.svelte";
-    export let parsed_doc;
-    export let tokens_dict;
+    import type { Token as TokenT } from "$lib/types/Token";
+    import type { Document } from "$lib/types/Document";
+    export let parsed_doc: Document;
+    export let tokens_dict: Record<string, TokenT>;
     let tokenisation_debug = true;
     let moreclass = '';
     export { moreclass as class };

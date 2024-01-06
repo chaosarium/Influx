@@ -139,8 +139,7 @@
         <h2 slot="header" class="px-3 font-bold bg-amber-50">Last Clicked</h2>
         <div class="p-3">
           <TokenInfoPane 
-            populated={lastClickedOrth != ''}
-            dict_entry={data.tokens_dict[lastClickedOrth]}
+            token={data.tokens_dict[lastClickedOrth]}
           ></TokenInfoPane>
         </div>
       </AccordionEntry>
@@ -184,8 +183,7 @@
         <h2 slot="header" class="px-3 font-bold bg-rose-50">Last Hovered</h2>
         <div class="p-3">
           <TokenInfoPane 
-            populated={lastHoveredOrth != ''}
-            dict_entry={data.tokens_dict[lastHoveredOrth]}
+            token={data.tokens_dict[lastHoveredOrth]}
           ></TokenInfoPane>
         </div>
       </AccordionEntry>
