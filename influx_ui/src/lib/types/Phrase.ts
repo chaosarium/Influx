@@ -2,4 +2,14 @@
 import type { SRSInfo } from "./SRSInfo";
 import type { TokenStatus } from "./TokenStatus";
 
-export interface Phrase { id?: { tb: string, id: {String: string} }, lang_id: string, orthography_seq: Array<string>, definition: string, notes: string, original_context: string, status: TokenStatus, tags: Array<string>, srs: SRSInfo, }
+export interface Phrase {
+  id?: { tb: string; id: { String: string } };
+  lang_id: string;
+  orthography_seq: Array<string>;
+  definition: string;
+  notes: string;
+  original_context: string;
+  status: TokenStatus;
+  tags: Array<string>;
+  srs: SRSInfo;
+}
