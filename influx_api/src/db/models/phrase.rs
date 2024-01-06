@@ -78,17 +78,31 @@ impl DB {
         }
     }
 
-    pub async fn query_phrase_by_onset_orthographies(&self, onset_orthography_set: HashSet<String>) -> Result<Vec<Phrase>> {
-        let sql = format!("SELECT * FROM phrase WHERE array::first(orthography_seq) INSIDE $onsets;");
+    /// requires that all orthography in orthography_seq is lowercase
+    pub async fn query_phrase_by_onset_orthographies(&self, onset_orthography_set: HashSet<String>, lang_id: String) -> Result<Vec<Phrase>> {
+        let sql = format!("SELECT * FROM phrase WHERE array::first(orthography_seq) INSIDE $onsets AND lang_id = $lang_id;");
         let mut res: Response = self.db
             .query(sql)
             .bind(("onsets", onset_orthography_set.iter().cloned().collect::<Vec<String>>()))
+            .bind(("lang_id", lang_id))
             .await?;
 
         match res.take(0) {
             Ok::<Vec<Phrase>, _>(v) => Ok(v),
             _ => Err(anyhow::anyhow!("Error querying phrase"))
         }
+    }
+
+    /// does not require that orthographies are lowercase. they will be converted to lowercase
+    pub async fn get_phrases_from_text_set(&self, text_set: HashSet<String>, lang_id: String) -> Result<Vec<Phrase>> {
+        let onset_orthography_set: HashSet<String> = text_set.iter().cloned().map(|x| x.to_lowercase()).collect::<HashSet<String>>();
+        self.query_phrase_by_onset_orthographies(onset_orthography_set, lang_id).await
+    }
+    
+    /// does not require that orthographies are lowercase. they will be converted to lowercase
+    pub async fn get_phrases_from_text_seq(&self, text_seq: Vec<String>, lang_id: String) -> Result<Vec<Phrase>> {
+        let onset_orthography_set: HashSet<String> = text_seq.iter().cloned().map(|x| x.to_lowercase()).collect::<HashSet<String>>();
+        self.query_phrase_by_onset_orthographies(onset_orthography_set, lang_id).await
     }
 }
 
@@ -117,16 +131,24 @@ mod tests {
         let phrase = Phrase::essential_phrase("en_demo", vec!["hello".to_string(), "moon".to_string()]);
         let created = db.create_phrase(phrase).await.unwrap();
         
-        let queried = db.query_phrase_by_onset_orthographies(vec!["hello".to_string()].into_iter().collect()).await.unwrap();
+        let queried = db.query_phrase_by_onset_orthographies(vec!["hello".to_string()].into_iter().collect(), "en_demo".to_string()).await.unwrap();
         // dbg!("queried: {:?}", &queried);
         assert_eq!(queried.len(), 2);
         assert!(queried.iter().any(|phrase| phrase.orthography_seq == vec!["hello".to_string(), "world".to_string()]));
         assert!(queried.iter().any(|phrase| phrase.orthography_seq == vec!["hello".to_string(), "moon".to_string()]));
 
-        let queried = db.query_phrase_by_onset_orthographies(vec!["world".to_string(), "earth".to_string()].into_iter().collect()).await.unwrap();
+        let queried = db.query_phrase_by_onset_orthographies(vec!["world".to_string(), "earth".to_string()].into_iter().collect(), "en_demo".to_string()).await.unwrap();
         // dbg!("queried: {:?}", &queried);
         assert_eq!(queried.len(), 2);
         assert!(queried.iter().any(|phrase| phrase.orthography_seq == vec!["world".to_string(), "record".to_string()]));
         assert!(queried.iter().any(|phrase| phrase.orthography_seq == vec!["world".to_string(), "wide".to_string(), "web".to_string()]));
+
+        let from_text_seq = db.get_phrases_from_text_seq(vec!["Hello".to_string(), "world".to_string(), "record".to_string()], "en_demo".to_string()).await.unwrap();   
+        // dbg!("from_text_seq: {:?}", &from_text_seq);
+        assert_eq!(from_text_seq.len(), 4);
+        assert!(from_text_seq.iter().any(|phrase| phrase.orthography_seq == vec!["hello".to_string(), "world".to_string()]));
+        assert!(from_text_seq.iter().any(|phrase| phrase.orthography_seq == vec!["hello".to_string(), "moon".to_string()]));
+        assert!(from_text_seq.iter().any(|phrase| phrase.orthography_seq == vec!["world".to_string(), "record".to_string()]));
+        assert!(from_text_seq.iter().any(|phrase| phrase.orthography_seq == vec!["world".to_string(), "wide".to_string(), "web".to_string()]));
     }
 }
