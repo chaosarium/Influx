@@ -1,5 +1,5 @@
 #![allow(unused_imports)]
-
+use ts_rs::TS;
 use axum::{
     extract::{Path, Query, State},
     response::IntoResponse, http::StatusCode, Json, response::Response
@@ -85,6 +85,10 @@ pub async fn todos_delete(
 pub struct GetDocsList {
     lang: String,
 }
+
+// #[derive(TS)]
+// #[ts(export, export_to = "../influx_ui/src/lib/types/")]
+// struct GetLangListResponse (Vec<LanguageEntry>);
 
 pub async fn get_language_list(
     State(ServerState { influx_path, db }): State<ServerState>, 

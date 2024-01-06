@@ -4,7 +4,7 @@ use maplit::btreemap;
 use super::models_prelude::*;
 
 #[derive(Debug, Serialize, Deserialize, TS)]
-#[ts(export, export_to = "../bindings/")]
+#[ts(export, export_to = "../influx_ui/src/lib/types/")]
 pub struct TodoInDB {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(type = "string")]

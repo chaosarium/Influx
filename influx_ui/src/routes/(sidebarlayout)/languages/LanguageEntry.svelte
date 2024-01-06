@@ -1,6 +1,7 @@
 <script lang="ts">
   import Button from "$lib/components/Button.svelte";
-  export let language_entry: any;
+  import type { LanguageEntry } from "$lib/types/LanguageEntry";
+  export let language_entry: LanguageEntry;
 </script>
 
 <li>
