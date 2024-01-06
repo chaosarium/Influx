@@ -1,19 +1,20 @@
 <script lang="ts">
   import TokenTooltip from "./TokenTooltip.svelte";
   import { createEventDispatcher } from 'svelte';
+  
   import type { Token as TokenT } from "$lib/types/Token";
-
+  import type { SentenceConstituent } from "$lib/types/SentenceConstituent";
   export let token: TokenT;
+  export let constituent: SentenceConstituent;
 
   const dispatch = createEventDispatcher();
   const handleMouseEnter = () => {
-    dispatch('token_hover', token.orthography);
+    dispatch('token_hover', constituent);
   };
   const handleClick = () => {
-    dispatch('token_click', token.orthography);
+    dispatch('token_click', constituent);
   };
   export let tokenisation_debug: boolean = false;
-
 
 </script>
 <!-- svelte-ignore a11y -->
@@ -68,7 +69,7 @@
             on:click={handleClick}
             class:token_dbg={tokenisation_debug}
           >
-            {token.orthography}
+            {constituent.text}
           </span>
         </ruby>
 

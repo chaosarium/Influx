@@ -175,19 +175,19 @@ pub async fn get_doc(
     }))).into_response()
 }
 
-#[derive(Debug, Deserialize)]
-pub struct CreateTokenPayload {
-    pub lang_id: String,
+// #[derive(Debug, Deserialize)]
+// pub struct CreateTokenPayload {
+//     pub lang_id: String,
 
-    pub orthography: String,
-    pub phonetic: String,
-    pub definition: String,
-    pub notes: String,
-    pub original_context: String,
+//     pub orthography: String,
+//     pub phonetic: String,
+//     pub definition: String,
+//     pub notes: String,
+//     pub original_context: String,
     
-    pub status: TokenStatus,
-    pub tags: Vec<String>, 
-}
+//     pub status: TokenStatus,
+//     pub tags: Vec<String>, 
+// }
 
 #[derive(Debug, Deserialize)]
 pub struct DeleteTokenPayload {
@@ -196,26 +196,11 @@ pub struct DeleteTokenPayload {
 
 pub async fn create_token(
     State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<CreateTokenPayload>,
+    Json(payload): Json<Token>,
 ) -> Result<Json<Token>, ServerError> {
     println!("token create attempt payload: {:?}", payload);
     
-    let token = db.create_token(
-        Token {
-            id: None,
-            lang_id: payload.lang_id,
-
-            orthography: payload.orthography,
-            phonetic: payload.phonetic,
-            definition: payload.definition,
-            notes: payload.notes,  
-            original_context: payload.original_context,
-
-            status: payload.status,
-            tags: payload.tags,
-            srs: SRSInfo::default(),
-        }
-    ).await?;
+    let token = db.create_token(payload).await?;
 
    Ok(Json(token))
 }
@@ -237,44 +222,29 @@ pub async fn lookup_token(
     Ok(Json(token))
 }
 
-#[derive(Debug, Deserialize)]
-pub struct UpdateTokenPayload {
-    pub id: String,
-    pub lang_id: String,
+// #[derive(Debug, Deserialize)]
+// pub struct UpdateTokenPayload {
+//     pub id: String,
+//     pub lang_id: String,
 
-    pub orthography: String,
-    pub phonetic: String,
-    pub definition: String,
-    pub notes: String,
-    pub original_context: String,
+//     pub orthography: String,
+//     pub phonetic: String,
+//     pub definition: String,
+//     pub notes: String,
+//     pub original_context: String,
     
-    pub status: TokenStatus,
-    pub tags: Vec<String>, 
-}
+//     pub status: TokenStatus,
+//     pub tags: Vec<String>, 
+// }
 
 pub async fn update_token(
     State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<UpdateTokenPayload>,
+    Json(payload): Json<Token>,
 ) -> Result<Json<Token>, ServerError> {
 
     println!("token update attempt payload: {:?}", payload);
 
-    let token = db.update_token_by_id(
-        Token {
-            id: Some(vocab::mk_vocab_thing(payload.id)),
-            lang_id: payload.lang_id,
-
-            orthography: payload.orthography,
-            phonetic: payload.phonetic,
-            definition: payload.definition,
-            notes: payload.notes,  
-            original_context: payload.original_context,
-
-            status: payload.status,
-            tags: payload.tags,
-            srs: SRSInfo::default(),
-        }
-    ).await?;
+    let token = db.update_token_by_id(payload).await?;
 
    Ok(Json(token))
 }

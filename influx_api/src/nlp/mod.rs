@@ -100,6 +100,7 @@ enum SentenceConstituent {
     },
     Whitespace {
         text: String,
+        orthography: String, // trivially the same as text, if things are working
         start_char: usize,
         end_char: usize,
     },
@@ -265,6 +266,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<Str
                     if start_char > fill_line {
                         tokens.push(SentenceConstituent::Whitespace {
                             text: char_slice(&text_chars, fill_line, start_char).to_string(),
+                            orthography: char_slice(&text_chars, fill_line, start_char).to_string(),
                             start_char: fill_line,
                             end_char: start_char,
                         })
@@ -276,6 +278,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<(Document, Vec<Str
                     if start_char > fill_line {
                         tokens.push(SentenceConstituent::Whitespace {
                             text: char_slice(&text_chars, fill_line, start_char).to_string(),
+                            orthography: char_slice(&text_chars, fill_line, start_char).to_string(),
                             start_char: fill_line,
                             end_char: start_char,
                         })

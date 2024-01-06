@@ -27,6 +27,7 @@ export type SentenceConstituent = {
 } | {
   "type": "Whitespace";
   text: string;
+  orthography: string;
   start_char: number;
   end_char: number;
 };
