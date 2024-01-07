@@ -50,14 +50,24 @@ Some basic UI and working multilingual sentence segmentation and tokenization:
 - [x] text processing: tokenization, lemmatization, and sentence segmentation
 - [x] document query api
 - [x] basic text reader
-- [ ] token data write requests and confirmations
-- [ ] svelte routing structure
+- [x] token data write requests and confirmations
+- [x] svelte routing structure
 - [x] read toml language configurations
 - [ ] read toml application configurations
 - [x] language-specific file listing
-- [ ] ensure uniqueness of vocabulary database entries
+- [x] ensure uniqueness of vocabulary database entries
 - [ ] dictionary (pop up only for now) support
-- [ ] update added token id if saving unmarked
+- [x] update added token id if saving unmarked
+- [ ] Phrase parsing documentation
+	- [x] some algorithm
+	- [x] algorithm on Document
+	- [ ] efficient algorithm
+	- [x] frontend
+- [x] database
+	- [x] language database
+	- [x] relate language and tokens
+	- [x] lemma handling
+	- [x] always lowercase tokens
 
 **Phase II - Backend & Packaging**
 
