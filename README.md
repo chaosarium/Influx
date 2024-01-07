@@ -17,7 +17,8 @@ Some basic UI and working multilingual sentence segmentation and tokenization:
 
 **Links**
 
-- Devlog [here](https://chaosarium.xyz/influx-dev-log/)
+- Phase I dev log [here](https://chaosarium.xyz/influx-dev-log-phase-i/)
+- Continuous dev log [here](https://chaosarium.xyz/influx-dev-log/)
 - Proposal [here](https://chaosarium.xyz/2022-07-18-towards-an-integrated-content-based-language-learning-environment-an-exploratory-proposal/)
 
 
