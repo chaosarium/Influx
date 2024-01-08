@@ -101,6 +101,7 @@ pub enum SentenceConstituent {
         start_char: usize,
         end_char: usize,
         shadowed: bool,
+        shadows: Vec<SentenceConstituent>,
     },
     SubwordToken {
         sentence_id: usize,
@@ -109,6 +110,7 @@ pub enum SentenceConstituent {
         orthography: String,
         lemma: String,
         shadowed: bool,
+        shadows: Vec<SentenceConstituent>,
     },
     SingleToken {
         sentence_id: usize,
@@ -119,6 +121,7 @@ pub enum SentenceConstituent {
         start_char: usize,
         end_char: usize,
         shadowed: bool,
+        shadows: Vec<SentenceConstituent>,
     },
     Whitespace {
         text: String,
@@ -126,6 +129,7 @@ pub enum SentenceConstituent {
         start_char: usize,
         end_char: usize,
         shadowed: bool,
+        shadows: Vec<SentenceConstituent>,
     },
     PhraseToken {
         sentence_id: usize,
@@ -135,6 +139,7 @@ pub enum SentenceConstituent {
         start_char: usize,
         end_char: usize,
         shadowed: bool,
+        shadows: Vec<SentenceConstituent>,
     },
 }
 
@@ -148,6 +153,17 @@ impl SentenceConstituent {
             SentenceConstituent::PhraseToken { shadowed, .. } => *shadowed = true,
         }
     }
+
+    fn push_shadow(&mut self, shadow: SentenceConstituent) {
+        match self {
+            SentenceConstituent::CompositToken { shadows, .. } => shadows.push(shadow),
+            SentenceConstituent::SubwordToken { shadows, .. } => shadows.push(shadow),
+            SentenceConstituent::SingleToken { shadows, .. } => shadows.push(shadow),
+            SentenceConstituent::Whitespace { shadows, .. } => shadows.push(shadow),
+            SentenceConstituent::PhraseToken { shadows, .. } => shadows.push(shadow),
+        }
+    }
+
     fn get_text(&self) -> String {
         match self {
             SentenceConstituent::CompositToken { text, .. } => text.clone(),
@@ -231,12 +247,13 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
 
         for token_group in sentence.iter() {
                 
-            let mut children: HashSet<usize> = HashSet::new();
+            let mut children2parent: HashMap<usize, usize> = HashMap::new();
 
+            // first pass, collect `CompositToken`s with their shadows temporiarily blank
+            // point childrens to their parents via `children2parent` map
             for stanzatoken in token_group {
                 match stanzatoken.get("id") {
                     Some(RustyEnum::List(subtokenids)) => {
-                        children.extend(subtokenids.clone());
                         intermediate_tokens.push_back(SentenceConstituent::CompositToken {
                             sentence_id: sentence_id,
                             ids: subtokenids.clone(),
@@ -245,32 +262,36 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                             start_char: stanzatoken_get_start_char(stanzatoken),
                             end_char: stanzatoken_get_end_char(stanzatoken),
                             shadowed: false,
+                            shadows: vec![],
                         });
+                        let parent_idx = intermediate_tokens.len() - 1;
+                        children2parent.extend(subtokenids.iter().map(|stanza_token_id| (*stanza_token_id, parent_idx)));
                         orthography_set.insert(stanzatoken_get_text(stanzatoken).to_lowercase());
-                        lemma_set.insert(stanzatoken_get_lemma(stanzatoken).to_lowercase());
                     },
                     _ => ()
                 }
             }
 
+            // second pass, collect non composit tokens, fill in `CompositToken` shadows or add to `intermediate_tokens` depending on whether they are shadowed
             for stanzatoken in token_group {
                 match stanzatoken.get("id") {
                     Some(RustyEnum::List(subtokenids)) => (),
                     Some(RustyEnum::Int(stanza_token_id)) => {
-                        match children.contains(stanza_token_id) {
-                            true => {
-                                intermediate_tokens.push_back(SentenceConstituent::SubwordToken {
+                        match children2parent.get(stanza_token_id) {
+                            Some(parent_idx) => { // shadowed, add to parent's shadows
+                                intermediate_tokens[*parent_idx].push_shadow(SentenceConstituent::SubwordToken {
                                     sentence_id: sentence_id,
                                     id: *stanza_token_id,
                                     text: stanzatoken_get_text(stanzatoken),
                                     orthography: stanzatoken_get_text(stanzatoken).to_lowercase(),
                                     lemma: stanzatoken_get_lemma(stanzatoken).to_lowercase(),
                                     shadowed: true,
+                                    shadows: vec![],
                                 });
                                 orthography_set.insert(stanzatoken_get_text(stanzatoken).to_lowercase());
                                 lemma_set.insert(stanzatoken_get_lemma(stanzatoken).to_lowercase());
                             },
-                            false => {
+                            None => { // not shadowed, add to intermediate_tokens
                                 intermediate_tokens.push_back(SentenceConstituent::SingleToken {
                                     sentence_id: sentence_id,
                                     id: *stanza_token_id,
@@ -280,6 +301,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                                     start_char: stanzatoken_get_start_char(stanzatoken),
                                     end_char: stanzatoken_get_end_char(stanzatoken),
                                     shadowed: false,
+                                    shadows: vec![],
                                 });
                                 orthography_set.insert(stanzatoken_get_text(stanzatoken).to_lowercase());
                                 lemma_set.insert(stanzatoken_get_lemma(stanzatoken).to_lowercase());
@@ -289,7 +311,6 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                     _ => ()
                 }
             }
-
         }
 
         let sentence_start = intermediate_tokens
@@ -322,6 +343,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                             start_char: fill_line,
                             end_char: start_char,
                             shadowed: false,
+                            shadows: vec![],
                         })
                     }
                     fill_line = end_char;
@@ -335,6 +357,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                             start_char: fill_line,
                             end_char: start_char,
                             shadowed: false,
+                            shadows: vec![],
                         })
                     }
                     fill_line = end_char;
@@ -342,7 +365,6 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                 },
                 _ => (),
             }
-
         }
 
         // dbg!(&tokens);
@@ -520,6 +542,7 @@ pub fn phrase_fit_pipeline(document: AnnotatedDocument, potential_phrases: Trie<
                                         start_char: phrase_start_char, 
                                         end_char: phrase_end_char,
                                         shadowed: false,
+                                        shadows: vec![],
                                     }];
                                     res.extend(shadowned_tokens);
                                     res
@@ -580,6 +603,7 @@ mod tests {
                             start_char: 0,
                             end_char: 5,
                             shadowed: false,
+                            shadows: vec![],
                         },
                         SentenceConstituent::Whitespace {
                             text: " ".to_string(),
@@ -587,6 +611,7 @@ mod tests {
                             start_char: 5,
                             end_char: 6,
                             shadowed: false,
+                            shadows: vec![],
                         },
                         SentenceConstituent::SingleToken {
                             sentence_id: 0,
@@ -597,6 +622,7 @@ mod tests {
                             start_char: 6,
                             end_char: 11,
                             shadowed: false,
+                            shadows: vec![],
                         },
                         SentenceConstituent::SingleToken {
                             sentence_id: 0,
@@ -607,6 +633,7 @@ mod tests {
                             start_char: 11,
                             end_char: 12,
                             shadowed: false,
+                            shadows: vec![],
                         },
                     ],
                 },
@@ -630,6 +657,7 @@ mod tests {
                             start_char: 13,
                             end_char: 15,
                             shadowed: false,
+                            shadows: vec![],
                         },
                         SentenceConstituent::SingleToken {
                             sentence_id: 1,
@@ -640,6 +668,7 @@ mod tests {
                             start_char: 15,
                             end_char: 16,
                             shadowed: false,
+                            shadows: vec![],
                         },
                     ],
                 },
@@ -680,22 +709,26 @@ mod tests {
                             start_char: 0,
                             end_char: 5,
                             shadowed: false,
-                        },
-                        SentenceConstituent::SubwordToken {
-                            sentence_id: 0,
-                            id: 1,
-                            text: "Let".to_string(),
-                            orthography: "let".to_string(),
-                            lemma: "let".to_string(),
-                            shadowed: true,
-                        },
-                        SentenceConstituent::SubwordToken {
-                            sentence_id: 0,
-                            id: 2,
-                            text: "'s".to_string(),
-                            orthography: "'s".to_string(),
-                            lemma: "'s".to_string(),
-                            shadowed: true,
+                            shadows: vec![
+                                SentenceConstituent::SubwordToken {
+                                    sentence_id: 0,
+                                    id: 1,
+                                    text: "Let".to_string(),
+                                    orthography: "let".to_string(),
+                                    lemma: "let".to_string(),
+                                    shadowed: true,
+                                    shadows: vec![],
+                                },
+                                SentenceConstituent::SubwordToken {
+                                    sentence_id: 0,
+                                    id: 2,
+                                    text: "'s".to_string(),
+                                    orthography: "'s".to_string(),
+                                    lemma: "'s".to_string(),
+                                    shadowed: true,
+                                    shadows: vec![],
+                                },
+                            ]
                         },
                         SentenceConstituent::Whitespace {
                             text: "  ".to_string(),
@@ -703,6 +736,7 @@ mod tests {
                             start_char: 5,
                             end_char: 7,
                             shadowed: false,
+                            shadows: vec![],
                         },
                         SentenceConstituent::SingleToken {
                             sentence_id: 0,
@@ -713,6 +747,7 @@ mod tests {
                             start_char: 7,
                             end_char: 9,
                             shadowed: false,
+                            shadows: vec![],
                         },
                         SentenceConstituent::SingleToken {
                             sentence_id: 0,
@@ -723,14 +758,15 @@ mod tests {
                             start_char: 9,
                             end_char: 10,
                             shadowed: false,
+                            shadows: vec![],
                         },
                     ],
                 },
             ],
             num_sentences: 1,
             num_tokens: 3,
-            lemma_set: ["let".to_string(), "'s".to_string(), "go".to_string(), ".".to_string()].iter().cloned().collect::<HashSet<String>>(),
-            orthography_set: ["let".to_string(), "'s".to_string(), "go".to_string(), ".".to_string()].iter().cloned().collect::<HashSet<String>>(),
+            orthography_set: ["go".to_string(), ".".to_string(), "let's".to_string(), "let".to_string(), "'s".to_string()].iter().cloned().collect::<HashSet<String>>(),
+            lemma_set: ["go".to_string(), ".".to_string(), "'s".to_string(), "let".to_string()].iter().cloned().collect::<HashSet<String>>(),
             token_dict: None,
             phrase_dict: None,
         });
