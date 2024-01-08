@@ -1,6 +1,6 @@
 #![allow(unused_imports, unused_must_use)]
 use core::panic;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashSet, HashMap};
 
 // use anyhow::Ok;
 use anyhow;
@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 
 use crate::db::models::phrase::Phrase;
+use crate::db::models::vocab::Token;
 use crate::utils::trie::Trie;
 pub mod phrase_fitting;
 
@@ -54,8 +55,20 @@ pub struct AnnotatedDocument {
     pub constituents: Vec<DocumentConstituent>,
     pub num_sentences: usize,
     pub num_tokens: usize,
-    pub token_texts: Vec<String>, // non-whitespace sequence, original texts in order
-    pub phrases: Option<Vec<Phrase>>,
+    
+    pub orthography_set: HashSet<String>,
+    pub lemma_set: HashSet<String>,
+
+    pub token_dict: Option<HashMap<String, Token>>,
+    // pub phrase_dict: Option<HashMap<Vec<String>, Phrase>>, 
+    // JavaScript doesn't support HashMaps with non-string keys, sad. We'll concat the keys into a string for now.
+    pub phrase_dict: Option<HashMap<String, Phrase>>,
+}
+
+impl AnnotatedDocument {
+    pub fn set_token_dict(&mut self, token_dict: HashMap<String, Token>) {
+        self.token_dict = Some(token_dict);
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, TS, PartialEq, Clone)]
@@ -117,6 +130,8 @@ pub enum SentenceConstituent {
     PhraseToken {
         sentence_id: usize,
         text: String,
+        /// lowercase, with each token orthography separated by a space, to support JavaScript key type.
+        normalised_orthography: String, 
         start_char: usize,
         end_char: usize,
         shadowed: bool,
@@ -206,7 +221,8 @@ fn char_slice(text_chars: &Vec<char>, start_char: usize, end_char: usize) -> Str
 fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument> {
     let text = stanzares.0;
     let text_chars: Vec<char> = text.chars().collect();
-    let mut token_texts: Vec<String> = vec![];
+    let mut orthography_set: HashSet<String> = HashSet::new();
+    let mut lemma_set: HashSet<String> = HashSet::new();
 
     let mut intermediate_sentences: VecDeque<DocumentConstituent> = VecDeque::new();
 
@@ -230,7 +246,8 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                             end_char: stanzatoken_get_end_char(stanzatoken),
                             shadowed: false,
                         });
-                        token_texts.push(stanzatoken_get_text(stanzatoken))
+                        orthography_set.insert(stanzatoken_get_text(stanzatoken).to_lowercase());
+                        lemma_set.insert(stanzatoken_get_lemma(stanzatoken).to_lowercase());
                     },
                     _ => ()
                 }
@@ -247,10 +264,11 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                                     id: *stanza_token_id,
                                     text: stanzatoken_get_text(stanzatoken),
                                     orthography: stanzatoken_get_text(stanzatoken).to_lowercase(),
-                                    lemma: stanzatoken_get_lemma(stanzatoken),
+                                    lemma: stanzatoken_get_lemma(stanzatoken).to_lowercase(),
                                     shadowed: true,
                                 });
-                                token_texts.push(stanzatoken_get_text(stanzatoken))
+                                orthography_set.insert(stanzatoken_get_text(stanzatoken).to_lowercase());
+                                lemma_set.insert(stanzatoken_get_lemma(stanzatoken).to_lowercase());
                             },
                             false => {
                                 intermediate_tokens.push_back(SentenceConstituent::SingleToken {
@@ -258,12 +276,13 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                                     id: *stanza_token_id,
                                     text: stanzatoken_get_text(stanzatoken),
                                     orthography: stanzatoken_get_text(stanzatoken).to_lowercase(),
-                                    lemma: stanzatoken_get_lemma(stanzatoken),
+                                    lemma: stanzatoken_get_lemma(stanzatoken).to_lowercase(),
                                     start_char: stanzatoken_get_start_char(stanzatoken),
                                     end_char: stanzatoken_get_end_char(stanzatoken),
                                     shadowed: false,
                                 });
-                                token_texts.push(stanzatoken_get_text(stanzatoken))
+                                orthography_set.insert(stanzatoken_get_text(stanzatoken).to_lowercase());
+                                lemma_set.insert(stanzatoken_get_lemma(stanzatoken).to_lowercase());
                             }
                         }
                     },
@@ -370,8 +389,10 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
         constituents: sentences, 
         num_sentences: stanzares.2, 
         num_tokens: stanzares.1, 
-        token_texts,
-        phrases: None,
+        orthography_set: orthography_set,
+        lemma_set: lemma_set,
+        token_dict: None,
+        phrase_dict: None,
     })
 }
 
@@ -413,11 +434,10 @@ pub fn tokenise_pipeline(text: &str, language: String) -> anyhow::Result<Annotat
 pub fn phrase_fit_pipeline(document: AnnotatedDocument, potential_phrases: Trie<String, Phrase>) -> AnnotatedDocument {
     dbg!(&potential_phrases);
 
-    let mut fitted_doc_cst: VecDeque<DocumentConstituent> = VecDeque::new();
-    let mut phrases_in_doc: Vec<Phrase> = vec![];
-
-    for document_constituent in document.constituents {
-        fitted_doc_cst.push_back({
+    let mut phrase_dict: HashMap<String, Phrase> = HashMap::new();
+    let fitted_doc_cst: Vec<DocumentConstituent> = document.constituents
+        .into_iter()
+        .map(|document_constituent| {
             match document_constituent {
                 DocumentConstituent::Whitespace { text, start_char, end_char } => {
                     DocumentConstituent::Whitespace { text, start_char, end_char }
@@ -484,6 +504,7 @@ pub fn phrase_fit_pipeline(document: AnnotatedDocument, potential_phrases: Trie<
                                 },
                                 (true, Some((lex_start, lex_end))) => {
                                     let phrase = potential_phrases.search_for_payload(lex_constituents_orthographies[lex_start..lex_end].to_vec()).1.unwrap();
+                                    phrase_dict.insert(lex_constituents_orthographies[lex_start..lex_end].join(" "), phrase.clone());
                                     let phrase_start_char = original_constituents[start].get_start_char();
                                     let phrase_end_char = original_constituents[end-1].get_end_char();
                                     let phrase_text = original_constituents[start..end].iter().map(|x| x.get_text()).collect::<Vec<String>>().join("");
@@ -495,6 +516,7 @@ pub fn phrase_fit_pipeline(document: AnnotatedDocument, potential_phrases: Trie<
                                     let mut res = vec![SentenceConstituent::PhraseToken { 
                                         sentence_id: id, 
                                         text: phrase_text, 
+                                        normalised_orthography: lex_constituents_orthographies[lex_start..lex_end].join(" "),
                                         start_char: phrase_start_char, 
                                         end_char: phrase_end_char,
                                         shadowed: false,
@@ -508,37 +530,21 @@ pub fn phrase_fit_pipeline(document: AnnotatedDocument, potential_phrases: Trie<
                         .flatten()
                         .collect::<Vec<SentenceConstituent>>();
 
-                    let phrases_orthography_seqs_in_sentence = lex_phrase_slices_indices
-                        .iter()
-                        .map(|(start, end)| {
-                            lex_constituents_orthographies[*start..*end].to_vec()
-                        })
-                        .collect::<Vec<Vec<String>>>();
-                    dbg!(&phrases_orthography_seqs_in_sentence);
-                    let phrases_in_sentence = phrases_orthography_seqs_in_sentence
-                        .iter()
-                        .map(|orthography_seq| {
-                            let phrase = potential_phrases.search_for_payload(orthography_seq.clone()).1.unwrap();
-                            phrase.clone()
-                        })
-                        .collect::<Vec<Phrase>>();
-                    phrases_in_doc.extend(phrases_in_sentence.clone());
-
-                    // TODO push the phrases into the sentence constituents, and mark the phrase constituents as shadowed
-
                     DocumentConstituent::Sentence { id, text, start_char, end_char, constituents: phrase_non_phrase_sentence }
                 }
             }
-        });
-    }
+        })
+        .collect();
     
     AnnotatedDocument {
         text: document.text,
-        constituents: fitted_doc_cst.into_iter().collect(),
+        constituents: fitted_doc_cst,
         num_sentences: document.num_sentences,
         num_tokens: document.num_tokens,
-        token_texts: document.token_texts,
-        phrases: Some(phrases_in_doc),
+        orthography_set: document.orthography_set,
+        lemma_set: document.lemma_set,
+        token_dict: document.token_dict,
+        phrase_dict: Some(phrase_dict),
     }
 }
 
@@ -640,8 +646,10 @@ mod tests {
             ],
             num_sentences: 2,
             num_tokens: 5,
-            token_texts: vec!["Hello".to_string(), "world".to_string(), "!".to_string(), "Hi".to_string(), "!".to_string()],
-            phrases: None,
+            lemma_set: ["hello".to_string(), "world".to_string(), "hi".to_string(), "!".to_string()].iter().cloned().collect::<HashSet<String>>(),
+            orthography_set: ["hello".to_string(), "world".to_string(), "hi".to_string(), "!".to_string()].iter().cloned().collect::<HashSet<String>>(),
+            token_dict: None,
+            phrase_dict: None,
         });
     }
 
@@ -721,14 +729,10 @@ mod tests {
             ],
             num_sentences: 1,
             num_tokens: 3,
-            token_texts: vec![
-                "Let's".to_string(),
-                "Let".to_string(),
-                "'s".to_string(),
-                "go".to_string(),
-                ".".to_string(),
-            ],
-            phrases: None,
+            lemma_set: ["let".to_string(), "'s".to_string(), "go".to_string(), ".".to_string()].iter().cloned().collect::<HashSet<String>>(),
+            orthography_set: ["let".to_string(), "'s".to_string(), "go".to_string(), ".".to_string()].iter().cloned().collect::<HashSet<String>>(),
+            token_dict: None,
+            phrase_dict: None,
         });
     }
 

@@ -16,7 +16,7 @@ use crate::prelude::*;
 use serde_json::json;
 use surrealdb::sql;
 use crate::nlp;
-use std::path::PathBuf;
+use std::{path::PathBuf, collections::{HashMap, HashSet}};
 
 // https://github.com/tokio-rs/axum/blob/main/examples/anyhow-error-response/src/main.rs
 pub struct ServerError(anyhow::Error);
@@ -162,19 +162,23 @@ pub async fn get_doc(
 
     let (metadata, text) = read_md_file(filepath).unwrap();
 
-    let parsed_doc: nlp::AnnotatedDocument = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).unwrap();
+    // tokenization
+    let mut annotated_doc1: nlp::AnnotatedDocument = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).unwrap();
+    let tokens_dict: HashMap<String, Token> = db.get_dict_from_orthography_set(
+        annotated_doc1.orthography_set.union(&annotated_doc1.lemma_set).cloned().collect::<HashSet<String>>(),
+        lang_id.clone()
+    ).await.unwrap();
+    annotated_doc1.set_token_dict(tokens_dict);
 
-    let tokens_dict = db.get_dict_from_text_seq(parsed_doc.token_texts.clone(), lang_id.clone()).await.unwrap();
-    let potential_phrases: Vec<Phrase> = db.get_phrases_from_text_seq(parsed_doc.token_texts.clone(), lang_id.clone()).await.unwrap();
+    // phrase annotation
+    let potential_phrases: Vec<Phrase> = db.query_phrase_by_onset_orthographies(annotated_doc1.orthography_set.clone(), lang_id.clone()).await.unwrap();
     let phrase_trie: Trie<String, Phrase> = mk_phrase_trie(potential_phrases);
-
-    let parsed_doc2 = nlp::phrase_fit_pipeline(parsed_doc, phrase_trie);
+    let annotated_doc2 = nlp::phrase_fit_pipeline(annotated_doc1, phrase_trie);
 
     (StatusCode::OK, Json(json!({
         "metadata": metadata,
         "text": text,
-        "parsed_doc": parsed_doc2,
-        "tokens_dict": tokens_dict,
+        "annotated_doc": annotated_doc2,
     }))).into_response()
 }
 
