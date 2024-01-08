@@ -535,17 +535,15 @@ pub fn phrase_fit_pipeline(document: AnnotatedDocument, potential_phrases: Trie<
                                     shadowned_tokens.iter_mut().for_each(|x| {
                                         x.mark_shadowed();
                                     });
-                                    let mut res = vec![SentenceConstituent::PhraseToken { 
+                                    vec![SentenceConstituent::PhraseToken { 
                                         sentence_id: id, 
                                         text: phrase_text, 
                                         normalised_orthography: lex_constituents_orthographies[lex_start..lex_end].join(" "),
                                         start_char: phrase_start_char, 
                                         end_char: phrase_end_char,
                                         shadowed: false,
-                                        shadows: vec![],
-                                    }];
-                                    res.extend(shadowned_tokens);
-                                    res
+                                        shadows: shadowned_tokens,
+                                    }]
                                 },
                                 _ => panic!("unreachable"),
                             }
