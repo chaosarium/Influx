@@ -489,6 +489,9 @@ pub fn phrase_fit_pipeline(document: AnnotatedDocument, potential_phrases: Trie<
                             }
                         })
                         .collect::<Vec<&(usize, usize)>>();
+                    if lex_phrase_slices_indices.len() == 0 { // no phrase
+                        return DocumentConstituent::Sentence { id, text, start_char, end_char, constituents: original_constituents };
+                    }
                     let phrase_slices = lex_phrase_slices_indices
                         .iter()
                         .map(|(lex_start, lex_end)| {
