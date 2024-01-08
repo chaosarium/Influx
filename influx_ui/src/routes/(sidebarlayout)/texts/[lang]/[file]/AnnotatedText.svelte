@@ -41,6 +41,8 @@
                                 on:token_hover
                                 on:token_click
                                 tokenisation_debug={tokenisation_debug}
+                                token_dict={token_dict}
+                                phrase_dict={phrase_dict}
                             />
                         {/if}
                         {:else if constituent.type == "Whitespace"}

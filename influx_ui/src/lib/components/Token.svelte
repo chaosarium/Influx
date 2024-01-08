@@ -71,11 +71,8 @@
           >
             {constituent.text}
           </span>
-        </ruby>
-
-        <rt data-rt="{token?.definition}"></rt>
-      </ruby>
-      <rt data-rt="{token?.phonetic}"></rt>
+        </ruby><rt data-rt="{token?.definition}"></rt>
+      </ruby><rt data-rt="{token?.phonetic}"></rt>
     </ruby>
     
   </div>
