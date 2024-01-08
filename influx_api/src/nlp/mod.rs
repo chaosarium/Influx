@@ -437,7 +437,7 @@ pub fn phrase_fit_pipeline(document: AnnotatedDocument, potential_phrases: Trie<
                         })
                         .collect::<Vec<(usize, String)>>();
                     let lex_constituents_orthographies = lex_constituents.iter().map(|(_, orthography)| orthography.clone()).collect::<Vec<String>>();
-                    let lex_phrase_slices_indices = phrase_fitting::recursion_best_fit(lex_constituents_orthographies.clone(), &potential_phrases).1;
+                    let lex_phrase_slices_indices = phrase_fitting::dp_best_fit(lex_constituents_orthographies.clone(), &potential_phrases);
                     let lex_phrase_slices_indices = lex_phrase_slices_indices
                         .iter()
                         .filter(|(start, end)| { // remove trivial phrases
