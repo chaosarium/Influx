@@ -1,17 +1,21 @@
 <script lang="ts">
-    import Token from "$lib/components/Token.svelte";
     import type { Token as TokenT } from "$lib/types/Token";
-    import type { Document } from "$lib/types/Document";
+    import type { Phrase as PhraseT } from "$lib/types/Phrase";
+    import type { AnnotatedDocument } from "$lib/types/AnnotatedDocument";
+    import Token from "$lib/components/Token.svelte";
     import Phrase from "../../../../../lib/components/Phrase.svelte";
-    export let parsed_doc: Document;
-    export let tokens_dict: Record<string, TokenT>;
+    
+    export let annotated_doc: AnnotatedDocument;
     let tokenisation_debug = true;
     let moreclass = '';
+    let token_dict = annotated_doc.token_dict as Record<string, TokenT>;
+    let phrase_dict = annotated_doc.phrase_dict as Record<string, PhraseT>;
+    
     export { moreclass as class };
 </script>
 
 <div class={`leading-8 text-xl ${moreclass}`}>
-    {#each parsed_doc.constituents as sentence_constituent}
+    {#each annotated_doc.constituents as sentence_constituent}
         {#if sentence_constituent.type == "Whitespace"}
             <span class="whitespace-pre-wrap" class:bg-green={tokenisation_debug}
                 >{sentence_constituent.text}</span
@@ -23,7 +27,7 @@
                         {#if constituent.shadowed === false}
                             <Token
                                 constituent={constituent}
-                                token={tokens_dict[constituent?.orthography]}
+                                token={token_dict[constituent.orthography]}
                                 on:token_hover
                                 on:token_click
                                 tokenisation_debug={tokenisation_debug}
@@ -33,6 +37,9 @@
                         {#if constituent.shadowed === false}
                             <Phrase
                                 constituent={constituent}
+                                phrase={phrase_dict[constituent.normalised_orthography]}
+                                on:token_hover
+                                on:token_click
                                 tokenisation_debug={tokenisation_debug}
                             />
                         {/if}

@@ -9,6 +9,7 @@ export type SentenceConstituent = {
   start_char: number;
   end_char: number;
   shadowed: boolean;
+  shadows: Array<SentenceConstituent>;
 } | {
   "type": "SubwordToken";
   sentence_id: number;
@@ -17,6 +18,7 @@ export type SentenceConstituent = {
   orthography: string;
   lemma: string;
   shadowed: boolean;
+  shadows: Array<SentenceConstituent>;
 } | {
   "type": "SingleToken";
   sentence_id: number;
@@ -27,6 +29,7 @@ export type SentenceConstituent = {
   start_char: number;
   end_char: number;
   shadowed: boolean;
+  shadows: Array<SentenceConstituent>;
 } | {
   "type": "Whitespace";
   text: string;
@@ -34,11 +37,14 @@ export type SentenceConstituent = {
   start_char: number;
   end_char: number;
   shadowed: boolean;
+  shadows: Array<SentenceConstituent>;
 } | {
   "type": "PhraseToken";
   sentence_id: number;
   text: string;
+  normalised_orthography: string;
   start_char: number;
   end_char: number;
   shadowed: boolean;
+  shadows: Array<SentenceConstituent>;
 };

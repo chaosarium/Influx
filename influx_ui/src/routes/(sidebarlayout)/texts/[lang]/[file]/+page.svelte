@@ -1,10 +1,14 @@
 <script lang="ts">
   import { page } from '$app/stores';
-  export let data;
+  export let data: {
+    metadata: any,
+    text: string,
+    annotated_doc: AnnotatedDocument,
+  };
   import Token from "$lib/components/Token.svelte";
   import DbgJsonData from "$lib/dbg/DbgJsonData.svelte";
   import AnnotatedText from './AnnotatedText.svelte';
-  import TokenInfoPane from './TokenInfoPane.svelte';
+  import TokenInfoPane from './ConstituentInfoPane.svelte';
   import DesktopLayout from './DesktopLayout.svelte';
   import PaneLayout from '$lib/wrappers/PaneLayout.svelte';
   import MainSidebar from '$lib/components/MainSidebarInner.svelte';
@@ -15,6 +19,7 @@
   import AccordionEntry from '$lib/components/AccordionEntry.svelte';
   import type { Token as TokenT } from "$lib/types/Token";
   import type { SentenceConstituent } from '$lib/types/SentenceConstituent';
+  import type { AnnotatedDocument } from '$lib/types/AnnotatedDocument';
     
   let last_hovered_sentence_cst: SentenceConstituent | undefined = undefined;
   let last_clicked_sentence_cst: SentenceConstituent | undefined = undefined;
@@ -32,8 +37,8 @@
     return obj[key];
   }
 
-  $: last_hovered_tkn = key_or_undefined(data.tokens_dict, last_hovered_sentence_cst?.orthography)
-  $: last_clicked_tkn = key_or_undefined(data.tokens_dict, last_clicked_sentence_cst?.orthography)
+  $: last_hovered_tkn = key_or_undefined(data.annotated_doc.token_dict, last_hovered_sentence_cst?.orthography)
+  $: last_clicked_tkn = key_or_undefined(data.annotated_doc.token_dict, last_clicked_sentence_cst?.orthography)
 
   let tkn_edit_form_data = {
     id: undefined,
@@ -62,9 +67,12 @@
     if (last_clicked_sentence_cst === undefined) {
       throw new Error("last_clicked_sentence_cst is undefined, cannot create token");
     }
+    if (!data.annotated_doc.token_dict) {
+      throw new Error("data.annotated_doc.token_dict is undefined, cannot create token");
+    }
     let creating_orthography: string = last_clicked_sentence_cst?.orthography;
 
-    data.tokens_dict[creating_orthography] = structuredClone(tkn_edit_form_data);
+    data.annotated_doc.token_dict[creating_orthography] = structuredClone(tkn_edit_form_data);
     const token = tkn_edit_form_data;
 
     const response = await fetch('http://127.0.0.1:3000/vocab/create_token', {
@@ -133,8 +141,7 @@
 
 
         <AnnotatedText 
-          parsed_doc={data.parsed_doc}
-          tokens_dict={data.tokens_dict}
+          annotated_doc={data.annotated_doc}
           on:token_hover={handleSentenceCstHover} 
           on:token_click={handleSentenceCstClick}
           class="my-4"
@@ -154,7 +161,8 @@
         <h2 slot="header" class="px-3 font-bold bg-amber-50">Last Clicked</h2>
         <div class="p-3">
           <TokenInfoPane 
-            token={last_clicked_tkn}
+            constituent={last_clicked_sentence_cst}
+            annotated_doc={data.annotated_doc}
           ></TokenInfoPane>
         </div>
       </AccordionEntry>
@@ -212,7 +220,8 @@
         <h2 slot="header" class="px-3 font-bold bg-rose-50">Last Hovered</h2>
         <div class="p-3">
           <TokenInfoPane 
-            token={last_hovered_tkn}
+            constituent={last_hovered_sentence_cst}
+            annotated_doc={data.annotated_doc}
           ></TokenInfoPane>
         </div>
       </AccordionEntry>

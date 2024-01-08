@@ -48,8 +48,28 @@ impl DB {
 
     pub async fn seed_phrase_table(&self) -> Result<()> {
         let phrases = vec![
-            Phrase::essential_phrase("en_demo", vec!["hello".to_string(), "world".to_string()]),
-            Phrase::essential_phrase("en_demo", vec!["world".to_string(), "wide".to_string(), "web".to_string()]),
+            Phrase {
+                id: None,
+                lang_id: "en_demo".to_string(),
+                orthography_seq: vec!["hello".to_string(), "world".to_string()],
+                definition: "placeholder".to_string(),
+                notes: "a very familiar phrase! (for programmers)".to_string(),
+                original_context: "".to_string(),
+                status: TokenStatus::L5,
+                tags: vec![],
+                srs: SRSInfo::default(),
+            },
+            Phrase {
+                id: None,
+                lang_id: "en_demo".to_string(),
+                orthography_seq: vec!["world".to_string(), "wide".to_string(), "web".to_string()],
+                definition: "placeholder".to_string(),
+                notes: "I wonder what this is".to_string(),
+                original_context: "".to_string(),
+                status: TokenStatus::L3,
+                tags: vec![],
+                srs: SRSInfo::default(),
+            },
         ];
 
         for phrase in phrases {
