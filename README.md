@@ -148,6 +148,25 @@ cd influx_ui
 npm run dev
 ```
 
+## Terminology (used in code base)
+
+- A Document is the entire text, consisting of sentences
+- A sentence is a series of sentence constituents
+- A lexeme is either a token or a phrase
+- Constituent refers to the part as it shows up in the document or sentence, whereas a lexeme refers to the instance currently in or would be in the database
+- A phrase is a list of token orthographies
+- A token is a single unit word or sub-word
+- Orthography refers to the lowercase written form of a token
+- Normalised orthography of a phrase is the orthograpies of the tokens it consists of joint by space; this is a workaround since javascript only likes string keys
+- Text refers to the token's orthography in the original text so it could be partially uppercased
+- A witespace token goes between lexemes within a sentence
+- A whitespace document constituent goes between sentences in a document
+- A composit token are things like `Let's` which contains subword tokens `Let` and `us`
+- A single token are single words like `let` which can't be broken down further
+- A phrase token is a phras pretending to be a token, for exampl `hello word` is a phrase but can also be treated like a grand composit token
+- A token is shadowed if it's part of a bigger token or phrase, e.g. `let` and `us` are shadowed by `Let's`; `hello` and `world` are shadowed by `hello world`
+- Lemma always refers to the orthography of the lemma
+
 ## API design
 
 Method defaults to GET is unspecified
@@ -163,3 +182,5 @@ Method defaults to GET is unspecified
 - `docs` to work with docs
     - `/docs/{lang_identifier}` returns list of content, with metadata, for the language specified by `lang_identifier`. Currently only supports markdown content.
         - `/docs/{lang_identifier}/{filename}` returns a specific piece of content, with metadata, text, lemmatised and tokenised text, and results from querying vocabulary database
+
+

@@ -23,47 +23,56 @@
   import type { AnnotatedDocument } from '$lib/types/AnnotatedDocument';
   import { Option } from '$lib/types/Option';
   import { try_access, try_key, try_lookup } from '$lib/utils';
+    import TokenEditForm from './TokenEditForm.svelte';
+    import PhraseEditForm from './PhraseEditForm.svelte';
 
   let token_dict = data.annotated_doc.token_dict as Record<string, Token>;
   let phrase_dict = data.annotated_doc.phrase_dict as Record<string, Phrase>;
+
 
   let last_hovered_sentence_cst: Option<SentenceConstituent> = Option.None();
   let last_clicked_sentence_cst: Option<SentenceConstituent> = Option.None();
   const handleSentenceCstHover = (event: { detail: SentenceConstituent }) => {
     last_hovered_sentence_cst = Option.Some(event.detail);
-    dbgConsoleMessages.push_back("hovered: " + JSON.stringify(last_hovered_sentence_cst));
+    // dbgConsoleMessages.push_back("hovered: " + JSON.stringify(last_hovered_sentence_cst));
   };
   const handleSentenceCstClick = (event: { detail: SentenceConstituent }) => {
     last_clicked_sentence_cst = Option.Some(event.detail);
     dbgConsoleMessages.push_back("clicked: " + JSON.stringify(last_clicked_sentence_cst));
   };
 
-
   $: last_hovered_lexeme = try_lookup(token_dict, phrase_dict, last_hovered_sentence_cst)
   $: last_clicked_lexeme = try_lookup(token_dict, phrase_dict, last_clicked_sentence_cst)
 
-  let tkn_edit_form_data = {
-    id: undefined,
-    lang_id: undefined,
-    orthography: undefined,
-    phonetic: undefined,
-    definition: undefined,
-    notes: undefined,
-    original_context: undefined,
-    status: undefined,
-    tags: undefined,
-    srs: undefined,
-  };
-  let is_editing: boolean = false;
 
-  function updateTknFormData() {
-    if (last_clicked_sentence_cst && last_clicked_lexeme) {
-      // tkn_edit_form_data = {...data.tokens_dict[last_clicked_tkn_orth]};
-      tkn_edit_form_data = structuredClone(last_clicked_lexeme);
-      is_editing = true;
+  let editing_lexeme: undefined | Token | Phrase = undefined;
+  let lexeme_edit_state: "notEditing" | "newToken" | "existingToken" | "existingPhrase" | "newPhrase" = "notEditing";
+
+  function updateEditingLexeme() {
+    if (last_clicked_lexeme.is_some()) {
+      let last_clicked = last_clicked_lexeme.unwrap();
+      if (last_clicked.type === "Token") {
+        editing_lexeme = structuredClone(last_clicked.value);
+        if (last_clicked.value.id) {
+          lexeme_edit_state = "existingToken";
+        } else {
+          lexeme_edit_state = "newToken";
+        }
+      } else if (last_clicked.type === "Phrase") {
+        editing_lexeme = structuredClone(last_clicked.value);
+        if (last_clicked.value.id) {
+          lexeme_edit_state = "existingPhrase";
+        } else {
+          lexeme_edit_state = "newPhrase";
+        }
+      } else {
+        throw new Error("UNREACHABLE");
+      }
+      dbgConsoleMessages.push_back(`editing_lexeme: ${JSON.stringify(editing_lexeme)}, lexeme_edit_state: ${lexeme_edit_state}`);
     }
   }
-  // $: last_clicked_sentence_cst, updateTknFormData();
+  $: last_clicked_sentence_cst, updateEditingLexeme();
+
 
   async function createToken() {
     if (last_clicked_sentence_cst === undefined) {
@@ -74,8 +83,8 @@
     }
     let creating_orthography: string = last_clicked_sentence_cst?.orthography;
 
-    data.annotated_doc.token_dict[creating_orthography] = structuredClone(tkn_edit_form_data);
-    const token = tkn_edit_form_data;
+    data.annotated_doc.token_dict[creating_orthography] = structuredClone(editing_lexeme);
+    const token = editing_lexeme;
 
     const response = await fetch('http://127.0.0.1:3000/vocab/create_token', {
       method: 'POST',
@@ -92,7 +101,7 @@
 
     const created: Token = await response.json();
     data.tokens_dict[creating_orthography] = created;
-    tkn_edit_form_data = structuredClone(created);
+    editing_lexeme = structuredClone(created);
     dbgConsoleMessages.push_back(`success createToken ${JSON.stringify(created)}`);
   }
   async function updateToken() {
@@ -101,8 +110,8 @@
     }
     let creating_orthography: string = last_clicked_sentence_cst?.orthography;
 
-    data.tokens_dict[creating_orthography] = structuredClone(tkn_edit_form_data);
-    const token = tkn_edit_form_data;
+    data.tokens_dict[creating_orthography] = structuredClone(editing_lexeme);
+    const token = editing_lexeme;
 
     const response = await fetch('http://127.0.0.1:3000/vocab/update_token', {
       method: 'POST',
@@ -119,16 +128,11 @@
 
     const updated = await response.json();
     data.tokens_dict[creating_orthography] = updated;
-    tkn_edit_form_data = structuredClone(updated);
+    editing_lexeme = structuredClone(updated);
     dbgConsoleMessages.push_back(`success updateToken ${JSON.stringify(updated)}`);
   }
 
 </script>
-
-
-
-
-
 
 
 
@@ -185,51 +189,42 @@
       </AccordionEntry>
       
       <AccordionEntry>
-        <h2 slot="header" class="px-3 font-bold bg-orange-50">Token Editor</h2>
+        <h2 slot="header" class="px-3 font-bold bg-orange-50">Lexeme Editor</h2>
         <div class="p-3">
-            <form on:submit|preventDefault={last_clicked_lexeme.id ? updateToken : createToken}>
-              <label for="orthography">orthography:</label><br>
-              <input class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-                disabled type="text" id="orthography" bind:value={tkn_edit_form_data.orthography}
-              ><br>
-    
-              <label for="definition">definition:</label><br>
-              <input class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-                disabled={!is_editing} type="text" id="definition" bind:value={tkn_edit_form_data.definition}
-              ><br>
-    
-              <label for="phonetic">phonetic:</label><br>
-              <input class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-                disabled={!is_editing} type="text" id="phonetic" bind:value={tkn_edit_form_data.phonetic}
-              ><br>
-              
-              <label for="status">status:</label><br>
-              <select required class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-                disabled={!is_editing} id="status" bind:value={tkn_edit_form_data.status}
-              >
-                <option value="L1">L1</option>
-                <option value="L2">L2</option>
-                <option value="L3">L3</option>
-                <option value="L4">L4</option>
-                <option value="L5">L5</option>
-                <option value="KNOWN">IGNORED</option>
-                <option value="IGNORED">IGNORED</option>
-              </select><br>
-    
-              <label for="notes">notes:</label><br>
-              <textarea class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-                disabled={!is_editing} id="notes" bind:value={tkn_edit_form_data.notes} 
-              /><br>
+          {#if lexeme_edit_state === "notEditing"}
+            <p>nothing to edit</p>
+          {:else if lexeme_edit_state === "newToken"}
+            {#if last_clicked_sentence_cst.unwrap()?.orthography != last_clicked_sentence_cst.unwrap()?.lemma} 
+              <p>this is an inflection of <u>{last_clicked_sentence_cst.unwrap()?.lemma}</u></p>
+            {/if}
+            <TokenEditForm 
+              editing_token={editing_lexeme}
+              create_or_update={"create"}
+              on:submit={createToken}
+            />
+          {:else if lexeme_edit_state === "existingToken"}
+            {#if last_clicked_sentence_cst.unwrap()?.orthography != last_clicked_sentence_cst.unwrap()?.lemma} 
+              <p>this is an inflection of <u>{last_clicked_sentence_cst.unwrap()?.lemma}</u></p>
+            {/if}
+            <TokenEditForm 
+              editing_token={editing_lexeme}
+              create_or_update={"update"}
+              on:submit={createToken}
+            />
+          {:else if lexeme_edit_state === "newPhrase"}
+            <PhraseEditForm 
+              editing_phrase={editing_lexeme}
+              create_or_update={"create"}
+            />
+          {:else if lexeme_edit_state === "existingPhrase"}
+            <PhraseEditForm 
+              editing_phrase={editing_lexeme}
+              create_or_update={"update"}
+            />
+          {:else}
+            UNREACHABLE
+          {/if}
 
-              <label for="original_context">original_context:</label><br>
-              <textarea class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-                disabled={!is_editing} id="original_context" bind:value={tkn_edit_form_data.original_context} 
-              /><br>
-    
-              <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-                disabled={!is_editing} type="submit" value={is_editing ? (last_clicked_lexeme.id ? "Update Token" : "Create Token") : "Nothing to Edit"}
-              >
-            </form>
         </div>
       </AccordionEntry>
 
@@ -259,7 +254,7 @@
 
   <div slot="mid-bottom">
     <DbgJsonData {data} />
-    <DbgJsonData name='tokenFormData bindings' data={tkn_edit_form_data} />
+    <DbgJsonData name='tokenFormData bindings' data={editing_lexeme} />
     <DbgJsonData name='page params' data={$page.params} />
     <DbgJsonData name='last_hovered_sentence_cst' data={last_hovered_sentence_cst} />
     <DbgJsonData name='last_clicked_sentence_cst' data={last_clicked_sentence_cst} />
