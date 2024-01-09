@@ -1,13 +1,64 @@
 <script lang="ts">
+    import { dbgConsoleMessages } from "$lib/store";
   import type { Token } from "$lib/types/Token";
+  import { Label, Input } from 'flowbite-svelte';
+  
   export let editing_token: Token;
   export let create_or_update: "create" | "update";
-  import { Label, Input } from 'flowbite-svelte';
+  export let token_dict: Record<string, Token>;
+
+  async function createToken() {
+    let editing_orthography: string = editing_token.orthography;
+    const token = editing_token;
+
+    const response = await fetch('http://127.0.0.1:3000/vocab/create_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(token),
+    });
+
+    if (!response.ok) {
+      const message = `An error has occurred: ${response.status}`;
+      dbgConsoleMessages.push_back(`failed createToken ${message}`);
+    } else {
+      const created: Token = await response.json();
+      token_dict[editing_orthography] = structuredClone(created);
+      editing_token = structuredClone(created);
+      dbgConsoleMessages.push_back(`success createToken ${JSON.stringify(created)}`);
+    }
+  }
+  
+  async function updateToken() {
+    let editing_orthography: string = editing_token.orthography;
+    const token = editing_token;
+
+    const response = await fetch('http://127.0.0.1:3000/vocab/update_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(token),
+    });
+
+    if (!response.ok) {
+      const message = `An error has occurred: ${response.status}`;
+      dbgConsoleMessages.push_back(`failed updateToken ${message}`);
+    } else {
+      const created: Token = await response.json();
+      token_dict[editing_orthography] = structuredClone(created);
+      token_dict = token_dict;
+      editing_token = structuredClone(created);
+      dbgConsoleMessages.push_back(`success createToken ${JSON.stringify(created)}`);
+    }
+
+  }
 
 </script>
 
 
-<form on:submit>
+<form on:submit|preventDefault>
   <label for="orthography">orthography:</label><br>
   <input class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
     disabled type="text" id="orthography" bind:value={editing_token.orthography}
@@ -49,11 +100,16 @@
 
   <!-- TODO tags -->
 
-  <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-    type="submit" value={create_or_update === "create" ? "Create Token" : "Update Token"}
-  >
+  {#if create_or_update === "create"}
+    <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
+      type="submit" value="Create Token" on:click={createToken}
+    >
+  {/if}
 
   {#if create_or_update === "update"}
+    <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
+      type="submit" value="Update Token" on:click={updateToken}
+    >
     <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
       type="button" value="Delete Token"
     >
