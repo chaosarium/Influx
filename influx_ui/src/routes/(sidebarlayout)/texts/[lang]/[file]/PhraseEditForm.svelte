@@ -1,26 +1,44 @@
 <script lang="ts">
+  import type { Token } from "$lib/types/Token";
   import type { Phrase } from "$lib/types/Phrase";
-  export let editing_phrase: Phrase;
+
+  export let editing_lexeme: Phrase;
   export let create_or_update: "create" | "update";
-  import { Label, Input } from 'flowbite-svelte';
+  import { writable_count, dbgConsoleMessages, working_doc } from "$lib/store";
+  import { createEventDispatcher } from 'svelte';
+
+  const dispatch = createEventDispatcher();
+  function dispatchLexemeEdited(updated_lexeme: Token | Phrase) {
+    return () => {
+      dispatch('lexeme_edited', updated_lexeme);
+    }
+  };
+
+  async function createPhrase() {
+
+  }
+
+  async function updatePhrase() {
+
+  }
 
 </script>
 
 
-<form on:submit>
+<form on:submit|preventDefault={create_or_update === "create" ? createPhrase : updatePhrase}>
   <label for="orthography_seq">orthography_seq:</label><br>
   <input class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-    disabled type="text" id="orthography_seq" value={editing_phrase.orthography_seq.join(" ")}
+    disabled type="text" id="orthography_seq" value={editing_lexeme.orthography_seq.join(" ")}
   ><br>
 
   <label for="definition">definition:</label><br>
   <input class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-    type="text" id="definition" bind:value={editing_phrase.definition}
+    type="text" id="definition" bind:value={editing_lexeme.definition}
   ><br>
 
   <label for="status">status:</label><br>
   <select required class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-    id="status" bind:value={editing_phrase.status}
+    id="status" bind:value={editing_lexeme.status}
   >
     <option value="L1">L1</option>
     <option value="L2">L2</option>
@@ -33,7 +51,7 @@
 
   <label for="notes">notes:</label><br>
   <textarea class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-    id="notes" bind:value={editing_phrase.notes} 
+    id="notes" bind:value={editing_lexeme.notes} 
   /><br>
 
   <!-- TODO -->
@@ -44,11 +62,16 @@
 
   <!-- TODO tags -->
 
-  <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-    type="submit" value={create_or_update === "create" ? "Create Phrase" : "Update Phrase"}
-  >
+  {#if create_or_update === "create"}
+    <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
+      type="submit" value="Create Phrase"
+    >
+  {/if}
 
   {#if create_or_update === "update"}
+    <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
+      type="submit" value="Update Phrase"
+    >
     <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
       type="button" value="Delete Phrase"
     >

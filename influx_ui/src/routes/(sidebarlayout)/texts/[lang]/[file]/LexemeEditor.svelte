@@ -20,7 +20,6 @@
     import TokenEditForm from "./TokenEditForm.svelte";
     import PhraseEditForm from "./PhraseEditForm.svelte";
 
-    export let annotated_doc: Record<string, Token>;
     export let last_clicked_sentence_cst: Option<SentenceConstituent>;
 
 
@@ -92,7 +91,7 @@
         </p>
     {/if}
     <TokenEditForm
-        bind:editing_token={editing_lexeme}
+        bind:editing_lexeme={editing_lexeme}
         create_or_update={"create"}
         on:lexeme_edited={handleLexemeEdited}
     />
@@ -103,20 +102,23 @@
         </p>
     {/if}
     <TokenEditForm
-        bind:editing_token={editing_lexeme}
+        bind:editing_lexeme={editing_lexeme}
         create_or_update={"update"}
         on:lexeme_edited={handleLexemeEdited}
     />
 {:else if lexeme_edit_state === "newPhrase"}
-    <!-- <PhraseEditForm
-        bind:editing_phrase={editing_lexeme}
+    <!-- TODO no way to get here yet -->
+    <PhraseEditForm
+        bind:editing_lexeme={editing_lexeme}
         create_or_update={"create"}
-    /> -->
+        on:lexeme_edited={handleLexemeEdited}
+    />
 {:else if lexeme_edit_state === "existingPhrase"}
-    <!-- <PhraseEditForm
-        bind:editing_phrase={editing_lexeme}
+    <PhraseEditForm
+        bind:editing_lexeme={editing_lexeme}
         create_or_update={"update"}
-    /> -->
+        on:lexeme_edited={handleLexemeEdited}
+    />
 {:else}
     UNREACHABLE
 {/if}

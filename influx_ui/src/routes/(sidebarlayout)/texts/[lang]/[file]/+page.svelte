@@ -92,6 +92,15 @@
     <Accordion>
 
       <AccordionEntry>
+        <h2 slot="header" class="px-3 font-bold bg-orange-50">Lexeme Editor</h2>
+        <div class="p-3">
+          <LexemeEditor 
+            last_clicked_sentence_cst={last_clicked_sentence_cst}
+          ></LexemeEditor>
+        </div>
+      </AccordionEntry>
+
+      <AccordionEntry>
         <h2 slot="header" class="px-3 font-bold bg-amber-50">Last Clicked</h2>
         <div class="p-3">
           <TokenInfoPane 
@@ -101,15 +110,6 @@
         </div>
       </AccordionEntry>
       
-      <AccordionEntry>
-        <h2 slot="header" class="px-3 font-bold bg-orange-50">Lexeme Editor</h2>
-        <div class="p-3">
-          <LexemeEditor 
-            last_clicked_sentence_cst={last_clicked_sentence_cst}
-          ></LexemeEditor>
-        </div>
-      </AccordionEntry>
-
       <AccordionEntry>
         <h2 slot="header" class="px-3 font-bold bg-rose-50">Last Hovered</h2>
         <div class="p-3">
