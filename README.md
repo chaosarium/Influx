@@ -15,6 +15,10 @@ Some basic UI and working multilingual sentence segmentation and tokenization:
 ![preview img](https://share.cleanshot.com/jJ7ZTvndt73CCSVy9SDP+)
 ![preview img](https://share.cleanshot.com/WBHdH0n27571g1YjRwSD+)
 
+Also now with phrase support!
+
+![gif](https://share.cleanshot.com/t9BcLVrJxhTWV81TXp5b+)
+
 **Links**
 
 - Phase I dev log [here](https://chaosarium.xyz/influx-dev-log-phase-i/)
