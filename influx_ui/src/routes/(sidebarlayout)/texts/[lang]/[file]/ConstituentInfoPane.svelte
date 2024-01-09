@@ -9,8 +9,8 @@
 
     export let constituent: Option<SentenceConstituent>;
     export let annotated_doc: AnnotatedDocument;
-    let token_dict = annotated_doc.token_dict as Record<string, Token>;
-    let phrase_dict = annotated_doc.phrase_dict as Record<string, Phrase>;
+    $: token_dict = annotated_doc.token_dict as Record<string, Token>;
+    $: phrase_dict = annotated_doc.phrase_dict as Record<string, Phrase>;
 
     let lexeme: Option<Lexeme> = Option.None();
 

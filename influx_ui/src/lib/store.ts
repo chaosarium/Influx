@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import type LanguageEntry from '../routes/(sidebarlayout)/languages/LanguageEntry.svelte';
+import type { AnnotatedDocument } from './types/AnnotatedDocument';
 export let writable_count = writable(0);
 
 function mkVecDequeStore<T>(xs: T[]) {
@@ -59,6 +60,36 @@ interface AppSettings {
     lang: LanguageEntry[];
 }
 
+interface WorkingDocument {
+    metadata: any,
+    text: string,
+    annotated_doc: AnnotatedDocument,
+}
+export const working_doc = writable<WorkingDocument>({
+    metadata: {},
+    text: "no text loaded",
+    annotated_doc: {
+        type: "AnnotatedDocument",
+        text: "no text loaded",
+        constituents: [],
+        num_sentences: 0,
+        num_tokens: 0,
+        orthography_set: [],
+        lemma_set: [],
+        token_dict: {},
+        phrase_dict: {},
+    },
+});
+export async function fetchWorkingDocument(lang: string, file: string) {
+    const res = await fetch(`http://127.0.0.1:3000/docs/${lang}/${file}`);
+    const json_res: {
+        metadata: any,
+        text: string,
+        annotated_doc: AnnotatedDocument,
+    } = await res.json();
+
+    working_doc.set(json_res);
+}
 
 export async function fetchLanguages() {
     const res = await fetch('http://127.0.0.1:3000/lang');

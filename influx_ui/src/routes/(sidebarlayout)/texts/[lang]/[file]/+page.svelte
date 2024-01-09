@@ -1,10 +1,9 @@
 <script lang="ts">
   import { page } from '$app/stores';
-  export let data: {
-    metadata: any,
-    text: string,
-    annotated_doc: AnnotatedDocument,
-  };
+  // export let data: {
+  //   lang: string,
+  //   file: string,
+  // };
   import TokenC from "$lib/components/TokenC.svelte";
   import DbgJsonData from "$lib/dbg/DbgJsonData.svelte";
   import AnnotatedText from './AnnotatedText.svelte';
@@ -13,7 +12,7 @@
   import PaneLayout from '$lib/wrappers/PaneLayout.svelte';
   import MainSidebar from '$lib/components/MainSidebarInner.svelte';
   import DbgConsole from '$lib/dbg/DbgConsole.svelte';
-  import { writable_count, dbgConsoleMessages } from '$lib/store';
+  import { writable_count, dbgConsoleMessages, fetchWorkingDocument, working_doc } from '$lib/store';
   import { writable } from 'svelte/store';
   import Accordion from '$lib/components/Accordion.svelte';
   import AccordionEntry from '$lib/components/AccordionEntry.svelte';
@@ -23,13 +22,19 @@
   import type { AnnotatedDocument } from '$lib/types/AnnotatedDocument';
   import { Option } from '$lib/types/Option';
   import { try_access, try_key, try_lookup } from '$lib/utils';
-    import TokenEditForm from './TokenEditForm.svelte';
-    import PhraseEditForm from './PhraseEditForm.svelte';
-    import LexemeEditor from './LexemeEditor.svelte';
+  import LexemeEditor from './LexemeEditor.svelte';
 
-  let token_dict = data.annotated_doc.token_dict as Record<string, Token>;
-  let phrase_dict = data.annotated_doc.phrase_dict as Record<string, Phrase>;
+  import { onMount, onDestroy } from 'svelte';
+  import { fetchSettings } from '$lib/store';
 
+  let mount_ready = false;
+  onMount(async () => {
+    await fetchWorkingDocument($page.params.lang, $page.params.file);
+    mount_ready = true;
+  });
+
+  $: token_dict = $working_doc.annotated_doc.token_dict as Record<string, Token>;
+  $: phrase_dict = $working_doc.annotated_doc.phrase_dict as Record<string, Phrase>;
 
   let last_hovered_sentence_cst: Option<SentenceConstituent> = Option.None();
   let last_clicked_sentence_cst: Option<SentenceConstituent> = Option.None();
@@ -60,19 +65,20 @@
     <div class="flex justify-center my-auto h-full">
       <div class="mx-3 my-auto max-w-[800px] flex-auto">
         
-        <h1 class="font-bold text-3xl mt-4 mb-2">{data.metadata.title}</h1>
+        <h1 class="font-bold text-3xl mt-4 mb-2">{$working_doc.metadata.title}</h1>
         <p class="text-gray-500">Tags: {undefined}</p>
         <p class="text-gray-500">File: {undefined}</p>
-        <p class="text-gray-500">Created: {data.metadata.date_created}</p>
-        <p class="text-gray-500">Modified: {data.metadata.date_modified}</p>
+        <p class="text-gray-500">Created: {$working_doc.metadata.date_created}</p>
+        <p class="text-gray-500">Modified: {$working_doc.metadata.date_modified}</p>
         <p class="text-gray-500">Last Viewed: {undefined}</p>
 
 
         <AnnotatedText 
-          annotated_doc={data.annotated_doc}
+          annotated_doc={$working_doc.annotated_doc}
           on:token_hover={handleSentenceCstHover} 
           on:token_click={handleSentenceCstClick}
           class="my-4"
+          mount_ready={mount_ready}
         ></AnnotatedText>
 
       </div>
@@ -90,7 +96,7 @@
         <div class="p-3">
           <TokenInfoPane 
             constituent={last_clicked_sentence_cst}
-            annotated_doc={data.annotated_doc}
+            annotated_doc={$working_doc.annotated_doc}
           ></TokenInfoPane>
         </div>
       </AccordionEntry>
@@ -99,8 +105,6 @@
         <h2 slot="header" class="px-3 font-bold bg-orange-50">Lexeme Editor</h2>
         <div class="p-3">
           <LexemeEditor 
-            bind:token_dict={token_dict}
-            bind:phrase_dict={phrase_dict}
             last_clicked_sentence_cst={last_clicked_sentence_cst}
           ></LexemeEditor>
         </div>
@@ -111,7 +115,7 @@
         <div class="p-3">
           <TokenInfoPane 
             constituent={last_hovered_sentence_cst}
-            annotated_doc={data.annotated_doc}
+            annotated_doc={$working_doc.annotated_doc}
           ></TokenInfoPane>
         </div>
       </AccordionEntry>
@@ -131,7 +135,7 @@
   </div>
 
   <div slot="mid-bottom">
-    <DbgJsonData {data} />
+    <DbgJsonData name='working_doc' data={$working_doc} />
     <DbgJsonData name='page params' data={$page.params} />
     <DbgJsonData name='last_hovered_sentence_cst' data={last_hovered_sentence_cst} />
     <DbgJsonData name='last_clicked_sentence_cst' data={last_clicked_sentence_cst} />

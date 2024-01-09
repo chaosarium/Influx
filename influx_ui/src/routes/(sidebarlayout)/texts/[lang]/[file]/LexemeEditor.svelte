@@ -7,7 +7,7 @@
     import PaneLayout from "$lib/wrappers/PaneLayout.svelte";
     import MainSidebar from "$lib/components/MainSidebarInner.svelte";
     import DbgConsole from "$lib/dbg/DbgConsole.svelte";
-    import { writable_count, dbgConsoleMessages } from "$lib/store";
+    import { writable_count, dbgConsoleMessages, working_doc } from "$lib/store";
     import { writable } from "svelte/store";
     import Accordion from "$lib/components/Accordion.svelte";
     import AccordionEntry from "$lib/components/AccordionEntry.svelte";
@@ -20,13 +20,14 @@
     import TokenEditForm from "./TokenEditForm.svelte";
     import PhraseEditForm from "./PhraseEditForm.svelte";
 
-    export let token_dict: Record<string, Token>;
-    export let phrase_dict: Record<string, Phrase>;
+    export let annotated_doc: Record<string, Token>;
     export let last_clicked_sentence_cst: Option<SentenceConstituent>;
 
+
+
     $: last_clicked_lexeme = try_lookup(
-        token_dict,
-        phrase_dict,
+        $working_doc.annotated_doc.token_dict,
+        $working_doc.annotated_doc.phrase_dict,
         last_clicked_sentence_cst,
     );
 
@@ -66,6 +67,8 @@
         }
     }
     $: last_clicked_sentence_cst, updateEditingLexeme();
+
+
 </script>
 
 {#if lexeme_edit_state === "notEditing"}
@@ -78,7 +81,6 @@
     {/if}
     <TokenEditForm
         bind:editing_token={editing_lexeme}
-        bind:token_dict
         create_or_update={"create"}
     />
 {:else if lexeme_edit_state === "existingToken"}
@@ -89,19 +91,18 @@
     {/if}
     <TokenEditForm
         bind:editing_token={editing_lexeme}
-        bind:token_dict
         create_or_update={"update"}
     />
 {:else if lexeme_edit_state === "newPhrase"}
-    <PhraseEditForm
-        editing_phrase={editing_lexeme}
+    <!-- <PhraseEditForm
+        bind:editing_phrase={editing_lexeme}
         create_or_update={"create"}
-    />
+    /> -->
 {:else if lexeme_edit_state === "existingPhrase"}
-    <PhraseEditForm
-        editing_phrase={editing_lexeme}
+    <!-- <PhraseEditForm
+        bind:editing_phrase={editing_lexeme}
         create_or_update={"update"}
-    />
+    /> -->
 {:else}
     UNREACHABLE
 {/if}

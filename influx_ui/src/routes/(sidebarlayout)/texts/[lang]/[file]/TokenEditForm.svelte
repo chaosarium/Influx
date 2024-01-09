@@ -1,11 +1,10 @@
 <script lang="ts">
-    import { dbgConsoleMessages } from "$lib/store";
   import type { Token } from "$lib/types/Token";
   import { Label, Input } from 'flowbite-svelte';
   
   export let editing_token: Token;
   export let create_or_update: "create" | "update";
-  export let token_dict: Record<string, Token>;
+  import { writable_count, dbgConsoleMessages, working_doc } from "$lib/store";
 
   async function createToken() {
     let editing_orthography: string = editing_token.orthography;
@@ -24,7 +23,7 @@
       dbgConsoleMessages.push_back(`failed createToken ${message}`);
     } else {
       const created: Token = await response.json();
-      token_dict[editing_orthography] = structuredClone(created);
+      $working_doc.annotated_doc.token_dict[editing_orthography] = structuredClone(created);
       editing_token = structuredClone(created);
       dbgConsoleMessages.push_back(`success createToken ${JSON.stringify(created)}`);
     }
@@ -47,8 +46,7 @@
       dbgConsoleMessages.push_back(`failed updateToken ${message}`);
     } else {
       const created: Token = await response.json();
-      token_dict[editing_orthography] = structuredClone(created);
-      token_dict = token_dict;
+      $working_doc.annotated_doc.token_dict[editing_orthography] = structuredClone(created);
       editing_token = structuredClone(created);
       dbgConsoleMessages.push_back(`success createToken ${JSON.stringify(created)}`);
     }
