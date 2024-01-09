@@ -5,7 +5,7 @@
     text: string,
     annotated_doc: AnnotatedDocument,
   };
-  import Token from "$lib/components/Token.svelte";
+  import TokenC from "$lib/components/TokenC.svelte";
   import DbgJsonData from "$lib/dbg/DbgJsonData.svelte";
   import AnnotatedText from './AnnotatedText.svelte';
   import TokenInfoPane from './ConstituentInfoPane.svelte';
@@ -17,28 +17,30 @@
   import { writable } from 'svelte/store';
   import Accordion from '$lib/components/Accordion.svelte';
   import AccordionEntry from '$lib/components/AccordionEntry.svelte';
-  import type { Token as TokenT } from "$lib/types/Token";
+  import type { Token } from "$lib/types/Token";
+  import type { Phrase } from "$lib/types/Phrase";
   import type { SentenceConstituent } from '$lib/types/SentenceConstituent';
   import type { AnnotatedDocument } from '$lib/types/AnnotatedDocument';
-    
-  let last_hovered_sentence_cst: SentenceConstituent | undefined = undefined;
-  let last_clicked_sentence_cst: SentenceConstituent | undefined = undefined;
-  const handleSentenceCstHover = (event: { detail: SentenceConstituent; }) => {
-    last_hovered_sentence_cst = event.detail;
+  import { Option } from '$lib/types/Option';
+  import { try_access, try_key, try_lookup } from '$lib/utils';
+
+  let token_dict = data.annotated_doc.token_dict as Record<string, Token>;
+  let phrase_dict = data.annotated_doc.phrase_dict as Record<string, Phrase>;
+
+  let last_hovered_sentence_cst: Option<SentenceConstituent> = Option.None();
+  let last_clicked_sentence_cst: Option<SentenceConstituent> = Option.None();
+  const handleSentenceCstHover = (event: { detail: SentenceConstituent }) => {
+    last_hovered_sentence_cst = Option.Some(event.detail);
+    dbgConsoleMessages.push_back("hovered: " + JSON.stringify(last_hovered_sentence_cst));
   };
-  const handleSentenceCstClick = (event: { detail: SentenceConstituent; }) => {
-    last_clicked_sentence_cst = event.detail;
+  const handleSentenceCstClick = (event: { detail: SentenceConstituent }) => {
+    last_clicked_sentence_cst = Option.Some(event.detail);
+    dbgConsoleMessages.push_back("clicked: " + JSON.stringify(last_clicked_sentence_cst));
   };
 
-  function key_or_undefined(obj: any, key: string | undefined) {
-    if (key === undefined) {
-      return undefined;
-    }
-    return obj[key];
-  }
 
-  $: last_hovered_tkn = key_or_undefined(data.annotated_doc.token_dict, last_hovered_sentence_cst?.orthography)
-  $: last_clicked_tkn = key_or_undefined(data.annotated_doc.token_dict, last_clicked_sentence_cst?.orthography)
+  $: last_hovered_lexeme = try_lookup(token_dict, phrase_dict, last_hovered_sentence_cst)
+  $: last_clicked_lexeme = try_lookup(token_dict, phrase_dict, last_clicked_sentence_cst)
 
   let tkn_edit_form_data = {
     id: undefined,
@@ -55,13 +57,13 @@
   let is_editing: boolean = false;
 
   function updateTknFormData() {
-    if (last_clicked_sentence_cst && last_clicked_tkn) {
+    if (last_clicked_sentence_cst && last_clicked_lexeme) {
       // tkn_edit_form_data = {...data.tokens_dict[last_clicked_tkn_orth]};
-      tkn_edit_form_data = structuredClone(last_clicked_tkn);
+      tkn_edit_form_data = structuredClone(last_clicked_lexeme);
       is_editing = true;
     }
   }
-  $: last_clicked_sentence_cst, updateTknFormData();
+  // $: last_clicked_sentence_cst, updateTknFormData();
 
   async function createToken() {
     if (last_clicked_sentence_cst === undefined) {
@@ -121,8 +123,23 @@
     dbgConsoleMessages.push_back(`success updateToken ${JSON.stringify(updated)}`);
   }
 
-
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <PaneLayout show_left={false} show_mid_top={false}>
 
@@ -170,7 +187,7 @@
       <AccordionEntry>
         <h2 slot="header" class="px-3 font-bold bg-orange-50">Token Editor</h2>
         <div class="p-3">
-            <form on:submit|preventDefault={last_clicked_tkn.id ? updateToken : createToken}>
+            <form on:submit|preventDefault={last_clicked_lexeme.id ? updateToken : createToken}>
               <label for="orthography">orthography:</label><br>
               <input class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
                 disabled type="text" id="orthography" bind:value={tkn_edit_form_data.orthography}
@@ -210,7 +227,7 @@
               /><br>
     
               <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-                disabled={!is_editing} type="submit" value={is_editing ? (last_clicked_tkn.id ? "Update Token" : "Create Token") : "Nothing to Edit"}
+                disabled={!is_editing} type="submit" value={is_editing ? (last_clicked_lexeme.id ? "Update Token" : "Create Token") : "Nothing to Edit"}
               >
             </form>
         </div>
@@ -244,6 +261,10 @@
     <DbgJsonData {data} />
     <DbgJsonData name='tokenFormData bindings' data={tkn_edit_form_data} />
     <DbgJsonData name='page params' data={$page.params} />
+    <DbgJsonData name='last_hovered_sentence_cst' data={last_hovered_sentence_cst} />
+    <DbgJsonData name='last_clicked_sentence_cst' data={last_clicked_sentence_cst} />
+    <DbgJsonData name='last_hovered_lexeme' data={last_hovered_lexeme} />
+    <DbgJsonData name='last_clicked_lexeme' data={last_clicked_lexeme} />
   </div>
 </PaneLayout>
 

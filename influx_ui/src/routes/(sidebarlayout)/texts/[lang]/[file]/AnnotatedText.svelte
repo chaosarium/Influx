@@ -2,8 +2,8 @@
     import type { Token as TokenT } from "$lib/types/Token";
     import type { Phrase as PhraseT } from "$lib/types/Phrase";
     import type { AnnotatedDocument } from "$lib/types/AnnotatedDocument";
-    import Token from "$lib/components/Token.svelte";
-    import Phrase from "../../../../../lib/components/Phrase.svelte";
+    import Token from "$lib/components/TokenC.svelte";
+    import Phrase from "../../../../../lib/components/PhraseC.svelte";
     
     export let annotated_doc: AnnotatedDocument;
     let tokenisation_debug = true;

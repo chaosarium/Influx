@@ -2,9 +2,9 @@
   import TokenTooltip from "./TokenTooltip.svelte";
   import { createEventDispatcher } from 'svelte';
   
-  import type { Token as TokenT } from "$lib/types/Token";
+  import type { Token } from "$lib/types/Token";
   import type { SentenceConstituent } from "$lib/types/SentenceConstituent";
-  export let token: TokenT;
+  export let token: Token;
   export let constituent: SentenceConstituent;
 
   const dispatch = createEventDispatcher();
