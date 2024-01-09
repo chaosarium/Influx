@@ -6,6 +6,17 @@
   export let create_or_update: "create" | "update";
   import { writable_count, dbgConsoleMessages, working_doc } from "$lib/store";
 
+  import { createEventDispatcher } from 'svelte';
+  import type { Phrase } from "$lib/types/Phrase";
+
+  const dispatch = createEventDispatcher();
+  function dispatchLexemeEdited(updated_lexeme: Token | Phrase) {
+    return () => {
+      dispatch('lexeme_edited', updated_lexeme);
+    }
+  };
+
+
   async function createToken() {
     let editing_orthography: string = editing_token.orthography;
     const token = editing_token;
@@ -22,10 +33,10 @@
       const message = `An error has occurred: ${response.status}`;
       dbgConsoleMessages.push_back(`failed createToken ${message}`);
     } else {
-      const created: Token = await response.json();
-      $working_doc.annotated_doc.token_dict[editing_orthography] = structuredClone(created);
-      editing_token = structuredClone(created);
-      dbgConsoleMessages.push_back(`success createToken ${JSON.stringify(created)}`);
+      const edited: Token = await response.json();
+      $working_doc.annotated_doc.token_dict[editing_orthography] = structuredClone(edited);
+      dispatchLexemeEdited(structuredClone(edited))();
+      dbgConsoleMessages.push_back(`success createToken ${JSON.stringify(edited)}`);
     }
   }
   
@@ -45,10 +56,10 @@
       const message = `An error has occurred: ${response.status}`;
       dbgConsoleMessages.push_back(`failed updateToken ${message}`);
     } else {
-      const created: Token = await response.json();
-      $working_doc.annotated_doc.token_dict[editing_orthography] = structuredClone(created);
-      editing_token = structuredClone(created);
-      dbgConsoleMessages.push_back(`success createToken ${JSON.stringify(created)}`);
+      const edited: Token = await response.json();
+      $working_doc.annotated_doc.token_dict[editing_orthography] = structuredClone(edited);
+      dispatchLexemeEdited(structuredClone(edited))();
+      dbgConsoleMessages.push_back(`success createToken ${JSON.stringify(edited)}`);
     }
 
   }
@@ -56,7 +67,7 @@
 </script>
 
 
-<form on:submit|preventDefault>
+<form on:submit|preventDefault={create_or_update === "create" ? createToken : updateToken}>
   <label for="orthography">orthography:</label><br>
   <input class="border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
     disabled type="text" id="orthography" bind:value={editing_token.orthography}
@@ -100,13 +111,13 @@
 
   {#if create_or_update === "create"}
     <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-      type="submit" value="Create Token" on:click={createToken}
+      type="submit" value="Create Token"
     >
   {/if}
 
   {#if create_or_update === "update"}
     <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-      type="submit" value="Update Token" on:click={updateToken}
+      type="submit" value="Update Token"
     >
     <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
       type="button" value="Delete Token"

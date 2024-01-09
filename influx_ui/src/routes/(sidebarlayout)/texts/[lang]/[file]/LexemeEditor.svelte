@@ -68,6 +68,18 @@
     }
     $: last_clicked_sentence_cst, updateEditingLexeme();
 
+    const handleLexemeEdited = (event: { detail: Token | Phrase }) => {
+        editing_lexeme = structuredClone(event.detail);
+        last_clicked_lexeme = try_lookup(
+            $working_doc.annotated_doc.token_dict,
+            $working_doc.annotated_doc.phrase_dict,
+            last_clicked_sentence_cst,
+        );
+        dbgConsoleMessages.push_back(
+            `handleLexemeEdited updated editor to: ${JSON.stringify(editing_lexeme)}`,
+        );
+        updateEditingLexeme();
+    };
 
 </script>
 
@@ -82,6 +94,7 @@
     <TokenEditForm
         bind:editing_token={editing_lexeme}
         create_or_update={"create"}
+        on:lexeme_edited={handleLexemeEdited}
     />
 {:else if lexeme_edit_state === "existingToken"}
     {#if last_clicked_sentence_cst.unwrap()?.orthography != last_clicked_sentence_cst.unwrap()?.lemma}
@@ -92,6 +105,7 @@
     <TokenEditForm
         bind:editing_token={editing_lexeme}
         create_or_update={"update"}
+        on:lexeme_edited={handleLexemeEdited}
     />
 {:else if lexeme_edit_state === "newPhrase"}
     <!-- <PhraseEditForm
@@ -108,3 +122,4 @@
 {/if}
 
 <DbgJsonData name="editing_lexeme" data={editing_lexeme} />
+<DbgJsonData name="last_clicked_lexeme" data={last_clicked_lexeme} />
