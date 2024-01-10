@@ -1,15 +1,15 @@
 <script lang="ts">
   import TokenTooltip from "./TokenTooltip.svelte";
   import { createEventDispatcher } from 'svelte';
-  import type { Phrase as PhraseT } from "$lib/types/Phrase";
-  import type { Token as TokenT } from "$lib/types/Token";
+  import type { Phrase as Phrase } from "$lib/types/Phrase";
+  import type { Token } from "$lib/types/Token";
   import type { SentenceConstituent } from "$lib/types/SentenceConstituent";
-    import Token from "./Token.svelte";
+  import TokenC from "./TokenC.svelte";
   
   export let constituent: SentenceConstituent;
-  export let phrase: PhraseT;
-  export let token_dict: Record<string, TokenT>;
-  export let phrase_dict: Record<string, PhraseT>;
+  export let phrase: Phrase;
+  export let token_dict: Record<string, Token>;
+  export let phrase_dict: Record<string, Phrase>;
 
   const dispatch = createEventDispatcher();
   const handleMouseEnter = () => {
@@ -58,7 +58,7 @@
           >
                     {#each constituent.shadows as sub_constituent}
                       {#if sub_constituent.type == "CompositToken" || sub_constituent.type == "SingleToken"}
-                        <Token
+                        <TokenC
                             constituent={sub_constituent}
                             token={token_dict[sub_constituent.orthography]}
                             tokenisation_debug={false}
@@ -101,7 +101,7 @@
           >
                     {#each constituent.shadows as sub_constituent}
                       {#if sub_constituent.type == "CompositToken" || sub_constituent.type == "SingleToken"}
-                        <Token
+                        <TokenC
                             constituent={sub_constituent}
                             token={token_dict[sub_constituent.orthography]}
                             tokenisation_debug={false}

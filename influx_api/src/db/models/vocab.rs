@@ -106,6 +106,13 @@ impl DB {
     pub async fn seed_vocab_table(&self) -> Result<()> {
         let tokens = vec![
             Token::fancier_token(
+                "en_demo",
+                "first",
+                "1st",
+                "ehh",
+                TokenStatus::L5,
+            ),
+            Token::fancier_token(
                 "fr_demo",
                 "voix",
                 "voice",
