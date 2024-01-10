@@ -58,15 +58,14 @@ Also now with phrase support!
 - [x] token data write requests and confirmations
 - [x] svelte routing structure
 - [x] read toml language configurations
-- [ ] read toml application configurations
+- [x] read toml application configurations
 - [x] language-specific file listing
 - [x] ensure uniqueness of vocabulary database entries
-- [ ] dictionary (pop up only for now) support
 - [x] update added token id if saving unmarked
-- [ ] Phrase parsing documentation
+- [x] Phrase parsing
 	- [x] some algorithm
 	- [x] algorithm on Document
-	- [ ] efficient algorithm
+	- [x] efficient algorithm
 	- [x] frontend
 - [x] database
 	- [x] language database
@@ -86,11 +85,12 @@ Also now with phrase support!
 
 **Phase III - Frontend Usability**
 
+- [ ] dictionary (pop up only for now) support
 - [ ] UI design
 - [ ] UI implementation
 - [ ] loading indicators
 - [ ] feedback messages
-- [ ] typescript: export typescript for rust structs
+- [x] typescript: export typescript for rust structs
 
 **Phase IV - Frontend Language Learning Features**
 
