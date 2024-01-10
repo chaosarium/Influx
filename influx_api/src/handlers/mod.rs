@@ -107,14 +107,12 @@ pub async fn get_language_by_id(
 
 
 pub async fn get_docs_list(
-    State(ServerState { influx_path, .. }): State<ServerState>, 
+    State(ServerState { influx_path, db }): State<ServerState>, 
     Path(lang_id): Path<String>
 ) -> Response {
 
     // check if lang_id exists, if not return 404
-    let settings = doc_store::read_settings_file(influx_path.clone()).unwrap();
-    let lang_exists = settings.lang.iter().any(|l| l.identifier == lang_id);
-    if !lang_exists {
+    if !db.language_exists(lang_id.clone()).await.unwrap() {
         return (StatusCode::NOT_FOUND, Json(json!({
             "error": format!("lang_id {} not found", lang_id),
         }))).into_response()
@@ -131,6 +129,7 @@ pub async fn get_docs_list(
 
 }
 
+#[deprecated]
 pub fn get_language_code(settings: &doc_store::Settings, lang_id: String) -> Option<String> {
     settings
         .lang
@@ -147,15 +146,13 @@ pub async fn get_doc(
 ) -> impl IntoResponse {
 
     // check if lang_id exists, if not return 404
-    let settings = doc_store::read_settings_file(influx_path.clone()).unwrap();
-    let lang_exists = settings.lang.iter().any(|l| l.identifier == lang_id);
-    if !lang_exists {
+    if !db.language_exists(lang_id.clone()).await.unwrap() {
         return (StatusCode::NOT_FOUND, Json(json!({
             "error": format!("lang_id {} not found", lang_id),
         }))).into_response()
     }
 
-    let language_code = get_language_code(&settings, lang_id.clone()).unwrap();
+    let language_code = db.get_code_for_language(lang_id.clone()).await.unwrap().unwrap();
 
     let filepath = influx_path.join(PathBuf::from(&lang_id)).join(PathBuf::from(&file));
     println!("trying to access {}", &filepath.display());
@@ -256,6 +253,7 @@ pub async fn update_token(
    Ok(Json(token))
 }
 
+#[deprecated]
 pub async fn get_settings(
     State(ServerState { influx_path, .. }): State<ServerState>, 
 ) -> impl IntoResponse {

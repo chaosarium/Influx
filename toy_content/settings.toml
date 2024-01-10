@@ -11,31 +11,32 @@
 
 # todo theme
 
+# languages moved to lang database
 
-[[lang]]
-identifier = 'fr_demo'
-display_name = 'French'
-code = 'fr'
-'dict1' = 'dict:///###' # macos built in dict
-'dict2' = 'http://www.wordreference.com/fren/###'
+# [[lang]]
+# identifier = 'fr_demo'
+# display_name = 'French'
+# code = 'fr'
+# 'dict1' = 'dict:///###' # macos built in dict
+# 'dict2' = 'http://www.wordreference.com/fren/###'
 
-[[lang]]
-identifier = 'en_demo'
-display_name = 'English'
-code = 'en'
-'dict1' = 'dict:///###' # macos built in dict
-'dict2' = 'http://www.wordreference.com/enfr/###'
+# [[lang]]
+# identifier = 'en_demo'
+# display_name = 'English'
+# code = 'en'
+# 'dict1' = 'dict:///###' # macos built in dict
+# 'dict2' = 'http://www.wordreference.com/enfr/###'
 
-[[lang]]
-identifier = 'ja_demo'
-display_name = 'Japanese'
-code = 'ja'
-'dict1' = 'dict:///###'
-'dict2' = ''
+# [[lang]]
+# identifier = 'ja_demo'
+# display_name = 'Japanese'
+# code = 'ja'
+# 'dict1' = 'dict:///###'
+# 'dict2' = ''
 
-[[lang]]
-identifier = 'zh-hant_demo'
-display_name = 'Mandarin'
-code = 'zh-hant'
-'dict1' = 'dict:///###'
-'dict2' = ''
+# [[lang]]
+# identifier = 'zh-hant_demo'
+# display_name = 'Mandarin'
+# code = 'zh-hant'
+# 'dict1' = 'dict:///###'
+# 'dict2' = ''
