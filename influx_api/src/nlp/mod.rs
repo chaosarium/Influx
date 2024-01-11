@@ -19,18 +19,26 @@ use crate::utils::trie::Trie;
 pub mod phrase_fitting;
 
 // from https://pyo3.rs/v0.20.0/
-fn run_some_python() -> PyResult<()> {
+pub fn run_some_python() -> PyResult<()> {
     Python::with_gil(|py| {
         let sys = py.import("sys")?;
         let version: String = sys.getattr("version")?.extract()?;
-
-        let locals = [("os", py.import("os")?)].into_py_dict(py);
+        
         let code = "os.getenv('USER') or os.getenv('USERNAME') or 'Unknown'";
+        let locals = [("os", py.import("os")?)].into_py_dict(py);
         let user: String = py.eval(code, None, Some(&locals))?.extract()?;
-
-        py.eval("help('modules')", None, None)?;
-
         println!("Hello {}, I'm Python {}", user, version);
+
+        // println!("listing available python modules...");
+        // py.eval("help('modules')", None, None)?;
+        
+        println!("python's sys.path...");
+        let pythonsyspath: Vec<String> = sys.getattr("path")?.extract()?;
+        println!("{:?}", pythonsyspath);
+
+        println!("trying to import stanza");
+        let stanza = PyModule::import(py, "stanza")?;
+
         Ok(())
     })
 }

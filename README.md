@@ -76,7 +76,7 @@ Also now with phrase support!
 **Phase II - Backend & Packaging**
 
 - [ ] tauri wrapper
-- [ ] figure out how to package python dependencies (check https://pyo3.rs/v0.14.2/building_and_distribution.html)
+- [ ] figure out how to package python dependencies (check https://pyo3.rs/v0.14.2/building_and_distribution.html or https://pyoxidizer.readthedocs.io/en/stable/pyoxidizer_rust.html)
 - [ ] document set up process
 - [ ] build CI
 - [ ] API error reporting
