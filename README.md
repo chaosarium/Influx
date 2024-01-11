@@ -122,27 +122,46 @@ Also now with phrase support!
 
 ## Running development server
 
-### Setting up python
-
-Try not using conda, it didn't work
-Try not using mac's built-in python, it didn't work
-Installing stanza in virtual environment doesn't work for some reason. have to install it on the system python
-
-```sh 
-brew install python@3.10
-brew install pipenv
-python3.10 -m pip install stanza
-pipenv install
-pipenv shell
-
-rm /opt/homebrew/Cellar/python\@3*/**/EXTERNALLY-MANAGED
-```
-
 ### Running influx server
 
 ```sh
 cd influx_api
 cargo run
+```
+
+### Running nlp server
+
+Python install
+
+```sh
+brew install python@3.10
+cd Influx
+python3.10 -m venv py_venv
+source py_venv/bin/activate
+```
+
+check it's the right python
+
+```sh
+which python
+```
+
+make sure it's `.../Influx/py_venv/bin/python`
+
+```sh
+python -m pip install stanza==1.7.0 Flask==3.0.0 nuitka==1.9.7
+```
+
+Compilling NLP server
+
+```sh
+python -m nuitka --follow-imports --onefile main.py
+```
+
+Run a development server
+
+```sh
+python main.py --port 3001 --influx_path ../toy_content
 ```
 
 ### Running frontend
@@ -186,5 +205,3 @@ Method defaults to GET is unspecified
 - `docs` to work with docs
     - `/docs/{lang_identifier}` returns list of content, with metadata, for the language specified by `lang_identifier`. Currently only supports markdown content.
         - `/docs/{lang_identifier}/{filename}` returns a specific piece of content, with metadata, text, lemmatised and tokenised text, and results from querying vocabulary database
-
-

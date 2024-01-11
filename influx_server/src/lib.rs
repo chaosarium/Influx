@@ -36,8 +36,8 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
         }
     }).await;
 
-    println!("initializing python");
-    let _ = nlp::run_some_python().unwrap();
+    // println!("initializing python");
+    // let _ = nlp::run_some_python().unwrap();
 
     if seed {
         let _ = db.seed_all_tables().await;

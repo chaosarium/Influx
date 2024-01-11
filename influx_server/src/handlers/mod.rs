@@ -139,6 +139,7 @@ pub fn get_language_code(settings: &doc_store::Settings, lang_id: String) -> Opt
 }
 
 
+
 // TODO do error handling like above
 pub async fn get_doc(
     State(ServerState { db, influx_path }): State<ServerState>, 
@@ -160,7 +161,7 @@ pub async fn get_doc(
     let (metadata, text) = read_md_file(filepath).unwrap();
 
     // tokenization
-    let mut annotated_doc1: nlp::AnnotatedDocument = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).unwrap();
+    let mut annotated_doc1: nlp::AnnotatedDocument = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).await.unwrap();
     let tokens_dict: HashMap<String, Token> = db.get_dict_from_orthography_set(
         annotated_doc1.orthography_set.union(&annotated_doc1.lemma_set).cloned().collect::<HashSet<String>>(),
         lang_id.clone()
