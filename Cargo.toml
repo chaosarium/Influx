@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "influx_server", 
+    "influx_ui/src-tauri", 
 ]
 
 [package]
