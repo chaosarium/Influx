@@ -2483,22 +2483,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "influx"
-version = "0.1.0"
-dependencies = [
- "influx_server",
- "surrealdb",
- "tokio",
-]
-
-[[package]]
 name = "influx_app"
 version = "0.1.0"
 dependencies = [
+ "influx_server",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
+ "tokio",
 ]
 
 [[package]]
