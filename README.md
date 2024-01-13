@@ -171,6 +171,20 @@ cd influx_ui
 npm run dev
 ```
 
+## Building
+
+### Running Tauri development server
+
+```sh
+cargo tauri dev
+```
+
+Build:
+
+```sh
+cargo tauri build --target aarch64-apple-darwin
+```
+
 ## Terminology (used in code base)
 
 - A Document is the entire text, consisting of sentences
