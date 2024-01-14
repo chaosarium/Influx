@@ -63,6 +63,7 @@ pub fn load_and_parse_toml_file<T: for<'a> Deserialize<'a>>(path: PathBuf) -> an
     Ok(parsed)
 }
 
+#[deprecated]
 pub fn read_settings_file(influx_path: PathBuf) -> anyhow::Result<Settings> {
     let path = influx_path.join("settings.toml");
     let settings = load_and_parse_toml_file::<Settings>(path);

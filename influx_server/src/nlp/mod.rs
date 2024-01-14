@@ -4,8 +4,8 @@ use std::collections::{BTreeMap, HashSet, HashMap};
 
 // use anyhow::Ok;
 use anyhow;
-use pyo3::prelude::*;
-use pyo3::types::{IntoPyDict, PyTuple};
+// use pyo3::prelude::*;
+// use pyo3::types::{IntoPyDict, PyTuple};
 use ts_rs::TS;
 use std::env;
 use std::path::PathBuf;
@@ -17,37 +17,41 @@ use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
 use crate::utils::trie::Trie;
 pub mod phrase_fitting;
+use serde_json::json;
+use reqwest::Client;
+use serde_json::value::Value;
 
 // from https://pyo3.rs/v0.20.0/
-fn run_some_python() -> PyResult<()> {
-    Python::with_gil(|py| {
-        let sys = py.import("sys")?;
-        let version: String = sys.getattr("version")?.extract()?;
+// #[deprecated]
+// pub fn run_some_python() -> PyResult<()> {
+//     Python::with_gil(|py| {
+//         let sys = py.import("sys")?;
+//         let version: String = sys.getattr("version")?.extract()?;
+        
+//         let code = "os.getenv('USER') or os.getenv('USERNAME') or 'Unknown'";
+//         let locals = [("os", py.import("os")?)].into_py_dict(py);
+//         let user: String = py.eval(code, None, Some(&locals))?.extract()?;
+//         println!("Hello {}, I'm Python {}", user, version);
 
-        let locals = [("os", py.import("os")?)].into_py_dict(py);
-        let code = "os.getenv('USER') or os.getenv('USERNAME') or 'Unknown'";
-        let user: String = py.eval(code, None, Some(&locals))?.extract()?;
+//         // println!("listing available python modules...");
+//         // py.eval("help('modules')", None, None)?;
+        
+//         println!("python's sys.path...");
+//         let pythonsyspath: Vec<String> = sys.getattr("path")?.extract()?;
+//         println!("{:?}", pythonsyspath);
 
-        py.eval("help('modules')", None, None)?;
+//         println!("trying to import stanza");
+//         let stanza = PyModule::import(py, "stanza")?;
 
-        println!("Hello {}, I'm Python {}", user, version);
-        Ok(())
-    })
-}
+//         Ok(())
+//     })
+// }
 
-#[derive(FromPyObject, Debug)]
-enum RustyEnum {
-    #[pyo3(transparent, annotation = "str")]
-    String(String),
-    #[pyo3(transparent, annotation = "int")]
-    Int(usize),
-    #[pyo3(transparent, annotation = "tuple")]
-    List(Vec<usize>),
-}
+
 
 type StanzaResult = (String, usize, usize, Vec<Vec<Vec<BTreeMap<String, RustyEnum>>>>);
 
-#[derive(Debug, Deserialize, Serialize, TS, PartialEq, Clone)]
+#[derive(Debug, Deserialize, Serialize, TS, PartialEq, Clone, Default)]
 #[ts(export, export_to = "../influx_ui/src/lib/types/")]
 #[serde(tag = "type")]
 pub struct AnnotatedDocument {
@@ -202,30 +206,30 @@ impl SentenceConstituent {
     }
 }
 
-fn stanzatoken_get_text(stanzatoken: &BTreeMap<String, RustyEnum>) -> String {
+fn stanzatoken_get_text(stanzatoken: &BTreeMap<String, Value>) -> String {
     match stanzatoken.get("text") {
-        Some(RustyEnum::String(text)) => text.clone(),
+        Some(Value::String(text)) => text.clone(),
         _ => {panic!("ouch")}
     }
 }
 
-fn stanzatoken_get_start_char(stanzatoken: &BTreeMap<String, RustyEnum>) -> usize {
+fn stanzatoken_get_start_char(stanzatoken: &BTreeMap<String, Value>) -> usize {
     match stanzatoken.get("start_char") {
-        Some(RustyEnum::Int(start_char)) => *start_char,
+        Some(Value::Number(start_char)) => start_char.as_u64().unwrap() as usize,
         _ => {panic!("ouch")}
     }
 }
 
-fn stanzatoken_get_end_char(stanzatoken: &BTreeMap<String, RustyEnum>) -> usize {
+fn stanzatoken_get_end_char(stanzatoken: &BTreeMap<String, Value>) -> usize {
     match stanzatoken.get("end_char") {
-        Some(RustyEnum::Int(end_char)) => *end_char,
+        Some(Value::Number(end_char)) => end_char.as_u64().unwrap() as usize,
         _ => {panic!("ouch")}
     }
 }
 
-fn stanzatoken_get_lemma(stanzatoken: &BTreeMap<String, RustyEnum>) -> String {
+fn stanzatoken_get_lemma(stanzatoken: &BTreeMap<String, Value>) -> String {
     match stanzatoken.get("lemma") {
-        Some(RustyEnum::String(lemma)) => lemma.clone(),
+        Some(Value::String(lemma)) => lemma.clone(),
         _ => {panic!("ouch")}
     }
 }
@@ -234,15 +238,15 @@ fn char_slice(text_chars: &Vec<char>, start_char: usize, end_char: usize) -> Str
     text_chars[start_char..end_char].iter().collect()
 }
 
-fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument> {
-    let text = stanzares.0;
+fn stanza2document(stanzares: NLPServerReturn) -> anyhow::Result<AnnotatedDocument> {
+    let text = stanzares.text;
     let text_chars: Vec<char> = text.chars().collect();
     let mut orthography_set: HashSet<String> = HashSet::new();
     let mut lemma_set: HashSet<String> = HashSet::new();
 
     let mut intermediate_sentences: VecDeque<DocumentConstituent> = VecDeque::new();
 
-    for (sentence_id, sentence) in (stanzares.3).iter().enumerate() {
+    for (sentence_id, sentence) in (stanzares.constituents).iter().enumerate() {
         let mut intermediate_tokens: VecDeque<SentenceConstituent> = VecDeque::new();
 
         for token_group in sentence.iter() {
@@ -253,7 +257,8 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
             // point childrens to their parents via `children2parent` map
             for stanzatoken in token_group {
                 match stanzatoken.get("id") {
-                    Some(RustyEnum::List(subtokenids)) => {
+                    Some(Value::Array(subtokenids_arr)) => {
+                        let subtokenids = subtokenids_arr.iter().map(|x| x.as_u64().unwrap() as usize).collect::<Vec<usize>>();
                         intermediate_tokens.push_back(SentenceConstituent::CompositToken {
                             sentence_id: sentence_id,
                             ids: subtokenids.clone(),
@@ -275,13 +280,14 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
             // second pass, collect non composit tokens, fill in `CompositToken` shadows or add to `intermediate_tokens` depending on whether they are shadowed
             for stanzatoken in token_group {
                 match stanzatoken.get("id") {
-                    Some(RustyEnum::List(subtokenids)) => (),
-                    Some(RustyEnum::Int(stanza_token_id)) => {
-                        match children2parent.get(stanza_token_id) {
+                    Some(Value::Array(subtokenids)) => (),
+                    Some(Value::Number(stanza_token_id_num)) => {
+                        let stanza_token_id = stanza_token_id_num.as_u64().unwrap() as usize;
+                        match children2parent.get(&stanza_token_id) {
                             Some(parent_idx) => { // shadowed, add to parent's shadows
                                 intermediate_tokens[*parent_idx].push_shadow(SentenceConstituent::SubwordToken {
                                     sentence_id: sentence_id,
-                                    id: *stanza_token_id,
+                                    id: stanza_token_id,
                                     text: stanzatoken_get_text(stanzatoken),
                                     orthography: stanzatoken_get_text(stanzatoken).to_lowercase(),
                                     lemma: stanzatoken_get_lemma(stanzatoken).to_lowercase(),
@@ -294,7 +300,7 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
                             None => { // not shadowed, add to intermediate_tokens
                                 intermediate_tokens.push_back(SentenceConstituent::SingleToken {
                                     sentence_id: sentence_id,
-                                    id: *stanza_token_id,
+                                    id: stanza_token_id,
                                     text: stanzatoken_get_text(stanzatoken),
                                     orthography: stanzatoken_get_text(stanzatoken).to_lowercase(),
                                     lemma: stanzatoken_get_lemma(stanzatoken).to_lowercase(),
@@ -409,8 +415,8 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
     anyhow::Ok(AnnotatedDocument {
         text: text, 
         constituents: sentences, 
-        num_sentences: stanzares.2, 
-        num_tokens: stanzares.1, 
+        num_sentences: stanzares.num_sentences, 
+        num_tokens: stanzares.num_tokens, 
         orthography_set: orthography_set,
         lemma_set: lemma_set,
         token_dict: None,
@@ -418,39 +424,87 @@ fn stanza2document(stanzares: StanzaResult) -> anyhow::Result<AnnotatedDocument>
     })
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+struct NLPServerReturn {
+    text: String,
+    num_tokens: usize, 
+    num_sentences: usize, 
+    constituents: Vec<Vec<Vec<BTreeMap<String, Value>>>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+// #[derive(FromPyObject, Debug)]
+enum RustyEnum {
+    // #[pyo3(transparent, annotation = "str")]
+    String(String),
+    // #[pyo3(transparent, annotation = "int")]
+    Int(usize),
+    // #[pyo3(transparent, annotation = "tuple")]
+    List(Vec<usize>),
+}
+
 /// given text and language, return a tokenised document before phrase fitting
-pub fn tokenise_pipeline(text: &str, language: String) -> anyhow::Result<AnnotatedDocument> {
+pub async fn tokenise_pipeline(text: &str, language: String) -> anyhow::Result<AnnotatedDocument> {
 
-    let current_dir = env::current_dir()?;
-    let pylib_path = current_dir.join("./src/nlp/pylib").canonicalize()?;
+    // let current_dir = env::current_dir()?;
+    // let pylib_path = current_dir.join("./src/nlp/pylib").canonicalize()?; 
 
-    Python::with_gil(|py| {
-        let stanza = PyModule::import(py, "stanza")?;
+    // Python::with_gil(|py| {
+    //     let stanza = PyModule::import(py, "stanza")?;
 
-        let pylib_path_str = pylib_path.to_str().unwrap();
-        let code = indoc!(
-            r#"
-            import sys, os
-            sys.path.insert(0, os.path.abspath("{path}"))
-            from stanza_integration import fun
-            "#
-        );
-        let code = code.replace("{path}", pylib_path_str);
+    //     let pylib_path_str = pylib_path.to_str().unwrap();
+    //     let code = indoc!(
+    //         r#"
+    //         import sys, os
+    //         sys.path.insert(0, os.path.abspath("{path}"))
+    //         from stanza_integration import fun
+    //         "#
+    //     );
+    //     let code = code.replace("{path}", pylib_path_str);
 
-        let fun: Py<PyAny> = PyModule::from_code(
-            py, &code, "", "",
-        )?.getattr("fun")?.into();
+    //     let fun: Py<PyAny> = PyModule::from_code(
+    //         py, &code, "", "",
+    //     )?.getattr("fun")?.into();
 
-        let callret = fun
-            .call1(py, (text, language))?
-            .extract::<StanzaResult>(py);
+    //     let callret = fun
+    //         .call1(py, (text, language))?
+    //         .extract::<StanzaResult>(py);
 
-        // dbg!(&callret);
+    //     // dbg!(&callret);
 
-        let converteddoc = stanza2document(callret?)?;
+    //     let converteddoc = stanza2document(callret?)?;
 
+    //     Ok(converteddoc)
+    // })
+
+
+    let client = Client::new();
+    let url = format!("http://127.0.0.1:3001/tokeniser/{}", language);
+    let payload = json!({
+        "text": text
+    });
+    let response = client.post(&url)
+        .json(&payload)
+        .send()
+        .await?;
+
+    dbg!(&response);
+    if response.status().is_success() {
+        println!("Request to NLP server succeeded");
+        let res_json: NLPServerReturn = response
+            .json::<NLPServerReturn>()
+            .await?;
+        dbg!(&res_json);
+
+        let converteddoc = stanza2document(res_json)?;
+
+        // let annotated_document: AnnotatedDocument = res_json;
         Ok(converteddoc)
-    })
+    } else {
+        Err(anyhow::anyhow!("Request to NLP server failed"))
+    }
+
+
 }
 
 pub fn phrase_fit_pipeline(document: AnnotatedDocument, potential_phrases: Trie<String, Phrase>) -> AnnotatedDocument {
@@ -579,11 +633,11 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn test_tokenise_pipeline_small1() {
+    #[tokio::test]
+    async fn test_tokenise_pipeline_small1() {
         const TEXT: &str = "Hello world! Hi!";
         
-        let res = tokenise_pipeline(TEXT, "en".to_string());
+        let res = tokenise_pipeline(TEXT, "en".to_string()).await;
         assert!(res.is_ok());
         let res = res.unwrap();
         assert_eq!(res, AnnotatedDocument {
@@ -683,11 +737,11 @@ mod tests {
         });
     }
 
-    #[test]
-    fn test_tokenise_pipeline_small2() {
+    #[tokio::test]
+    async fn test_tokenise_pipeline_small2() {
         const TEXT: &str = "Let's  go.";
         
-        let res = tokenise_pipeline(TEXT, "en".to_string());
+        let res = tokenise_pipeline(TEXT, "en".to_string()).await;
         assert!(res.is_ok());
         let res = res.unwrap();
         assert_eq!(res, AnnotatedDocument {
@@ -775,8 +829,8 @@ mod tests {
 
     // TODO phrase fitting tests
 
-    #[test]
-    fn test_tokenise_pipeline_large() {
+    #[tokio::test]
+    async fn test_tokenise_pipeline_large() {
         
         const TEXT: &str = indoc! {
             r#"
@@ -789,15 +843,15 @@ mod tests {
             "#
         };
         
-        let res = tokenise_pipeline(TEXT, "en".to_string());
+        let res = tokenise_pipeline(TEXT, "en".to_string()).await;
         dbg!(&res);
         assert!(res.is_ok());
     }
 
-    #[test]
-    fn test_run_some_python() {
-        assert!(run_some_python().is_ok());
-    }
+    // #[test]
+    // fn test_run_some_python() {
+    //     assert!(run_some_python().is_ok());
+    // }
 
     #[test]
     fn test_bytes() {

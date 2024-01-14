@@ -5,5 +5,9 @@ temp.db
 bindings
 experiments
 .VSCodeCounter
+toy_content/stanza_resources
 toy_content/database.db
-influx_api/tmp_database.db
+influx_server/tmp_database.db
+py_venv
+nlp_server/main.build
+nlp_server/main.onefile-build

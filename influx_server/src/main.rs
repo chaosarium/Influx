@@ -1,8 +1,8 @@
 #![allow(unused_imports)]
 use std::env;
 
-use pyo3::prelude::*;
-use pyo3::types::IntoPyDict;
+// use pyo3::prelude::*;
+// use pyo3::types::IntoPyDict;
 
 use clap::Parser;
 
@@ -31,7 +31,7 @@ async fn main() {
     } 
     println!("Content path: {:?}", args.influx_path);
 
-    influx_api::launch(
+    influx_server::launch(
         args.disk, 
         !args.no_seed, 
         args.influx_path.into()

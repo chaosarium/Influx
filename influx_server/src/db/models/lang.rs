@@ -65,6 +65,14 @@ impl DB {
                     "dict:///###".to_string(),
                 ],
             },
+            LanguageEntry {
+                id: mk_lang_thing("de_not_exist".to_string()),
+                code: "de".to_string(),
+                name: "Non-existent".to_string(),
+                dicts: vec![
+                    "dict:///###".to_string(),
+                ],
+            },
         ];
 
         for language in languages {
