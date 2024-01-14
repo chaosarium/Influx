@@ -104,6 +104,7 @@ Also now with phrase support!
 - [ ] better error handling
 - [ ] documentation
 - [ ] security and accounts?
+- [ ] make db item a trait
 
 **Phase ? - Future**
 

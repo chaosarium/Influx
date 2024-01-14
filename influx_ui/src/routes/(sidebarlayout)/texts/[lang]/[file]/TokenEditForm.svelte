@@ -62,6 +62,39 @@
 
   }
 
+  async function deleteToken() {
+    let editing_orthography: string = editing_lexeme.orthography;
+    const token = editing_lexeme;
+
+    const response = await fetch('http://127.0.0.1:3000/vocab/delete_token', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(token),
+    });
+
+    if (!response.ok) {
+      const message = `An error has occurred: ${response.status}`;
+      dbgConsoleMessages.push_back(`failed deleteToken ${message}`);
+    } else {
+      const edited: Token = await response.json();
+      $working_doc.annotated_doc.token_dict[editing_orthography] = {
+        lang_id: token.lang_id,
+        orthography: token.orthography,
+        definition: "",
+        phonetic: "",
+        status: "UNMARKED",
+        notes: "",
+        original_context: "",
+        tags: [],
+        srs: {"dummy": "dummy"}
+      };
+      dispatchLexemeEdited(structuredClone(edited))();
+      dbgConsoleMessages.push_back(`success deleteToken ${JSON.stringify(edited)}`);
+    }
+  }
+
 </script>
 
 
@@ -118,7 +151,7 @@
       type="submit" value="Update Token"
     >
     <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-      type="button" value="Delete Token"
+      type="button" value="Delete Token" on:click={deleteToken}
     >
   {/if}
 
