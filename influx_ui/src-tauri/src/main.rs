@@ -15,7 +15,7 @@ async fn main() {
 
   tokio::spawn(async move {
     println!("spawning influx_server");
-    let _launched = influx_server::launch(false, true, "".into()).await;
+    let _launched = influx_server::launch(false, true, "/Users/chaosarium/Dev/Influx/toy_content".into()).await;
   });
 
 
