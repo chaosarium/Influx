@@ -47,30 +47,6 @@ pub async fn connection_test() -> impl IntoResponse {
 }
 
 #[deprecated]
-pub async fn todos_index(
-    State(ServerState { db, .. }): State<ServerState>, 
-) -> impl IntoResponse {
-    let todos = db.get_todos_sql().await.unwrap();
-    Json(todos)
-}
-
-#[deprecated]
-#[derive(Debug, Deserialize)]
-pub struct CreateTodo {
-    text: String,
-}
-
-#[deprecated]
-pub async fn todos_create(
-    State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<CreateTodo>,
-) -> impl IntoResponse {
-    let todo = db.add_todo_sql(payload.text).await.unwrap();
-
-    (StatusCode::CREATED, Json(todo))
-}
-
-#[deprecated]
 pub async fn todos_delete(
     State(ServerState { db, .. }): State<ServerState>, 
     Path(id): Path<String>
@@ -86,25 +62,7 @@ pub struct GetDocsList {
     lang: String,
 }
 
-// #[derive(TS)]
-// #[ts(export, export_to = "../influx_ui/src/lib/types/")]
-// struct GetLangListResponse (Vec<LanguageEntry>);
-
-pub async fn get_language_list(
-    State(ServerState { influx_path, db }): State<ServerState>, 
-) -> Result<Json<Vec<LanguageEntry>>, ServerError> {
-    let languages = db.get_languages_vec().await?;
-    Ok(Json(languages))
-}
-
-pub async fn get_language_by_id(
-    State(ServerState { influx_path, db }): State<ServerState>, 
-    Path(id): Path<String>
-) -> Result<Json<Option<LanguageEntry>>, ServerError> {
-    let language = db.get_language(id).await?;
-    Ok(Json(language))
-}
-
+pub mod lang_handlers;
 
 pub async fn get_docs_list(
     State(ServerState { influx_path, db }): State<ServerState>, 
@@ -137,7 +95,6 @@ pub fn get_language_code(settings: &doc_store::Settings, lang_id: String) -> Opt
         .find(|l| l.identifier == lang_id)
         .map(|l| l.code.clone())
 }
-
 
 
 // TODO do error handling like above
@@ -180,85 +137,14 @@ pub async fn get_doc(
     }))).into_response()
 }
 
-// #[derive(Debug, Deserialize)]
-// pub struct CreateTokenPayload {
-//     pub lang_id: String,
+pub mod vocab_handlers;
+pub mod phrase_handlers;
 
-//     pub orthography: String,
-//     pub phonetic: String,
-//     pub definition: String,
-//     pub notes: String,
-//     pub original_context: String,
-    
-//     pub status: TokenStatus,
-//     pub tags: Vec<String>, 
+// #[deprecated]
+// pub async fn get_settings(
+//     State(ServerState { influx_path, .. }): State<ServerState>, 
+// ) -> impl IntoResponse {
+//     Json(
+//         doc_store::read_settings_file(influx_path).unwrap()
+//     )
 // }
-
-#[derive(Debug, Deserialize)]
-pub struct DeleteTokenPayload {
-    pub id: String,
-}
-
-pub async fn create_token(
-    State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<Token>,
-) -> Result<Json<Token>, ServerError> {
-    println!("token create attempt payload: {:?}", payload);
-    
-    let token = db.create_token(payload).await?;
-
-   Ok(Json(token))
-}
-
-pub async fn delete_token(
-    State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<DeleteTokenPayload>,
-) -> Result<Json<Token>, ServerError> {
-    println!("token delete attempt payload: {:?}", payload);
-    let token = db.delete_token_by_id(payload.id).await?;
-    Ok(Json(token))
-}
-
-pub async fn lookup_token(
-    State(ServerState { db, .. }): State<ServerState>, 
-    Path((lang_id, orthography)): Path<(String, String)>
-) -> Result<Json<Option<Token>>, ServerError> {
-    let token = db.query_token_by_orthography(orthography, lang_id).await?;
-    Ok(Json(token))
-}
-
-// #[derive(Debug, Deserialize)]
-// pub struct UpdateTokenPayload {
-//     pub id: String,
-//     pub lang_id: String,
-
-//     pub orthography: String,
-//     pub phonetic: String,
-//     pub definition: String,
-//     pub notes: String,
-//     pub original_context: String,
-    
-//     pub status: TokenStatus,
-//     pub tags: Vec<String>, 
-// }
-
-pub async fn update_token(
-    State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<Token>,
-) -> Result<Json<Token>, ServerError> {
-
-    println!("token update attempt payload: {:?}", payload);
-
-    let token = db.update_token_by_id(payload).await?;
-
-   Ok(Json(token))
-}
-
-#[deprecated]
-pub async fn get_settings(
-    State(ServerState { influx_path, .. }): State<ServerState>, 
-) -> impl IntoResponse {
-    Json(
-        doc_store::read_settings_file(influx_path).unwrap()
-    )
-}

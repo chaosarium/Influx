@@ -289,11 +289,15 @@ impl DB {
         }
     }
 
-    pub async fn delete_token_by_id(&self, id: String) -> Result<Token> {
-        match self.db.delete(mk_vocab_thing(id)).await? {
+    pub async fn delete_token_by_thing(&self, thing: Thing) -> Result<Token> {
+        match self.db.delete(thing).await? {
             Some::<Token>(v) => Ok(v),
-            None => Err(anyhow::anyhow!("Error deleting token"))
+            None => Err(anyhow::anyhow!("Error deleting token, was it even in the database?"))
         }
+    }
+
+    pub async fn delete_token_by_id(&self, id: String) -> Result<Token> {
+        self.delete_token_by_thing(mk_vocab_thing(id)).await
     }
 
     /// query tokens, return set with unmarked tokens for missing orthographies
@@ -347,18 +351,27 @@ impl DB {
             }
         }
 
-        let sql = format!("UPDATE {TABLE} SET orthography = $orthography, lemma = $lemma, phonetic = $phonetic, status = $status, lang_id = $lang_id, definition = $definition, notes = $notes WHERE id = $id");
-        let mut res: Response = self.db
-            .query(sql)
-            .bind(token)
+        let updated: Option<Token> = self.db.update(token.id.as_ref().unwrap())
+            .content(token)
             .await?;
 
-        // dbg!(&res);
-        match res.take(0) {
-            Ok(Some::<Token>(v)) => Ok(v),
-            Ok(None) => Err(anyhow::anyhow!("sql didn't fail but no token was returned")),
-            Err(e) => Err(anyhow::anyhow!("Error updating token: {:?}", e)),
+        match updated {
+            Some(v) => Ok(v),
+            None => Err(anyhow::anyhow!("Error updating token"))
         }
+
+        // let sql = format!("UPDATE {TABLE} SET orthography = $orthography, lemma = $lemma, phonetic = $phonetic, status = $status, lang_id = $lang_id, definition = $definition, notes = $notes WHERE id = $id");
+        // let mut res: Response = self.db
+        //     .query(sql)
+        //     .bind(token)
+        //     .await?;
+
+        // // dbg!(&res);
+        // match res.take(0) {
+        //     Ok(Some::<Token>(v)) => Ok(v),
+        //     Ok(None) => Err(anyhow::anyhow!("sql didn't fail but no token was returned")),
+        //     Err(e) => Err(anyhow::anyhow!("Error updating token: {:?}", e)),
+        // }
     }
 
 }

@@ -81,19 +81,27 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
         )
         .route(
             "/vocab/token/:language_identifier/:orthography", 
-            get(handlers::lookup_token)
+            get(handlers::vocab_handlers::lookup_token)
         )
         .route(
             "/vocab/delete_token", 
-            delete(handlers::delete_token)
+            delete(handlers::vocab_handlers::delete_token)
         )
         .route(
             "/vocab/update_token", 
-            post(handlers::update_token)
+            post(handlers::vocab_handlers::update_token)
         )
         .route(
             "/vocab/create_token", 
-            post(handlers::create_token)
+            post(handlers::vocab_handlers::create_token)
+        )
+        .route(
+            "/phrase/update_phrase", 
+            post(handlers::phrase_handlers::update_phrase)
+        )
+        .route(
+            "/phrase/delete_phrase", 
+            delete(handlers::phrase_handlers::delete_phrase)
         )
         // .route(
         //     "/settings",
@@ -101,11 +109,11 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
         // )
         .route(
             "/lang",
-            get(handlers::get_language_list)
+            get(handlers::lang_handlers::get_language_list)
         )
         .route(
             "/lang/:id",
-            get(handlers::get_language_by_id)
+            get(handlers::lang_handlers::get_language_by_id)
         )
         .layer(cors)
         .with_state(
