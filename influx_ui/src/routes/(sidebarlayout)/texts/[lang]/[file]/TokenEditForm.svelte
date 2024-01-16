@@ -57,7 +57,7 @@
       const edited: Token = await response.json();
       $working_doc.annotated_doc.token_dict[editing_orthography] = structuredClone(edited);
       dispatchLexemeEdited(structuredClone(edited))();
-      dbgConsoleMessages.push_back(`success createToken ${JSON.stringify(edited)}`);
+      dbgConsoleMessages.push_back(`success updateToken ${JSON.stringify(edited)}`);
     }
 
   }
