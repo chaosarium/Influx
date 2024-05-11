@@ -13,7 +13,8 @@ pub fn mk_phrase_thing(id: String) -> Thing {
 #[derive(Debug, Serialize, Deserialize, TS, Clone, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "../influx_ui/src/lib/types/")]
 pub struct Phrase {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
     #[ts(type = "{ tb: string, id: {String: string} }")]
     pub id: Option<Thing>,
     pub lang_id: String,

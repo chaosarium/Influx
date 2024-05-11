@@ -9,26 +9,26 @@ readme = "../README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = "0.7.2"
-tokio = { version = "1.35.1", features = ["full"] }
+axum = "0.7.5"
+tokio = { version = "1.37.0", features = ["full"] }
 tower = { version = "0.4.13", features = ["util", "timeout"] }
-tower-http = { version = "0.5.0", features = ["add-extension", "trace", "cors"] }
+tower-http = { version = "0.5.2", features = ["add-extension", "trace", "cors"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-serde = { version = "1.0.193", features = ["derive"] }
-uuid = { version = "1.6.1", features = ["serde", "v4"] }
+serde = { version = "1.0.201", features = ["derive"] }
+uuid = { version = "1.8.0", features = ["serde", "v4"] }
 tracing = "0.1.40"
 
-thiserror = "1.0.51"
-anyhow = "1.0.76"
+thiserror = "1.0.60"
+anyhow = "1.0.83"
 clap = { version = "4.4.11", features = ["derive"] }
-ts-rs = { version = "7.0", features = ["format"] }
+ts-rs = { version = "8.1.0", features = ["format"] }
 yaml-front-matter = "0.1.0"
-chrono = { version="0.4.31", features = ["serde"] }
+chrono = { version="0.4.38", features = ["serde"] }
 maplit = "1.0.2"
 serde_json = "1.0"
 reqwest = { version="0.11.23", features=["json"] }
-surrealdb = {version = "1.0.2", features = ['kv-mem', 'kv-rocksdb'] }
+surrealdb = {version = "1.4.2", features = ['kv-mem', 'kv-rocksdb'] }
 # pyo3 = { version="0.20.0", features = ['auto-initialize'] }
 indoc = "2.0.4"
 toml = "0.8.8"

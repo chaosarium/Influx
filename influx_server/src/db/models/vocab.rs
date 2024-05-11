@@ -39,7 +39,8 @@ impl Default for SRSInfo {
 #[derive(Debug, Serialize, Deserialize, TS, Clone, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "../influx_ui/src/lib/types/")]
 pub struct Token {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
     #[ts(type = "{ tb: string, id: {String: string} }")]
     pub id: Option<Thing>,
     pub lang_id: String,

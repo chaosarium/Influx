@@ -6,7 +6,8 @@ use super::models_prelude::*;
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[ts(export, export_to = "../influx_ui/src/lib/types/")]
 pub struct TodoInDB {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
     #[ts(type = "string")]
     pub id: Option<Thing>,
     pub text: String,
@@ -17,14 +18,14 @@ impl From<TodoInDB> for Value {
     fn from(val: TodoInDB) -> Self {
         match val.id {
             Some(v) => btreemap!{
-                    "id".into() => v.into(),
-                    "text".into() => val.text.into(),
-                    "completed".into() => val.completed.into(),
+                    "id" => v.into(),
+                    "text" => val.text.into(),
+                    "completed" => val.completed.into(),
             }
             .into(),
             None => btreemap!{
-                "text".into() => val.text.into(),
-                "completed".into() => val.completed.into()
+                "text" => val.text.into(),
+                "completed"=> val.completed.into()
             }
             .into(),
         }
@@ -35,12 +36,12 @@ impl DB {
     pub async fn seed_todo_table(&self) -> Result<()> {
         self.add_todo_sql("todo1".into()).await.unwrap();
         self.add_todo_sql("todo2".into()).await.unwrap();
-        
+
         Ok(())
     }
 
-    pub async fn add_todo_sql(&self, text: String) -> Result<TodoInDB> { 
-        let sql = "CREATE todos SET text = $title, completed = false"; 
+    pub async fn add_todo_sql(&self, text: String) -> Result<TodoInDB> {
+        let sql = "CREATE todos SET text = $title, completed = false";
         let mut res: Response = self.db
             .query(sql)
             .bind(("title", text))
@@ -137,12 +138,12 @@ mod tests {
         let deleted = db.delete_todo_sql(add_todo_res1.id.unwrap().id.to_raw()).await.unwrap();
         let todos = db.get_todos_sql().await.unwrap();
         assert_eq!(todos.len(), 2);
-        
+
         let deleted = db.delete_thing::<TodoInDB>(add_todo_res2.id.unwrap()).await.unwrap();
         assert_eq!(deleted.text, "Hello world 2");
         let todos = db.get_todos_sql().await.unwrap();
         assert_eq!(todos.len(), 1);
-        
+
         let deleted = db.delete_thing::<TodoInDB>(add_todo_res3.id.unwrap()).await.unwrap();
         assert_eq!(deleted.text, "Hello world 3");
         let todos = db.get_todos_sql().await.unwrap();
