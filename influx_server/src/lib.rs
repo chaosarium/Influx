@@ -116,6 +116,14 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
             "/lang/:id",
             get(handlers::lang_handlers::get_language_by_id)
         )
+        .route(
+            "/extern/macos_dict/:language_identifier/:orthography",
+            get(handlers::integration_handlers::lookup_in_macos_dict)
+        )
+        .route(
+            "/extern/translate",
+            post(handlers::integration_handlers::extern_translate)
+        )
         .layer(cors)
         .with_state(
             ServerState {

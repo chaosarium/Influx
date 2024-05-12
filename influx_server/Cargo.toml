@@ -34,6 +34,7 @@ indoc = "2.0.5"
 toml = "0.8.12"
 open = "5.1.2"
 async-trait = "0.1.80"
+google_translator = "0.2.3"
 
 # [profile.dev]
 # opt-level = 0

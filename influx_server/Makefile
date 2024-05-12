@@ -1,2 +1,0 @@
-serve:
-	cargo run

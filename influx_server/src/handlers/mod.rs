@@ -139,6 +139,7 @@ pub async fn get_doc(
 
 pub mod vocab_handlers;
 pub mod phrase_handlers;
+pub mod integration_handlers;
 
 // #[deprecated]
 // pub async fn get_settings(

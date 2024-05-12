@@ -1,8 +1,12 @@
 serve:
-	$(MAKE) serve -C influx_server
+	cd influx_server && cargo run
 
 web:
-	$(MAKE) dev -C influx_ui
+	cd influx_ui && npm run dev
 
 nlp:
-	$(MAKE) rundev -C nlp_server
+	cd nlp_server && source ../py_venv/bin/activate && python main.py --port 3001 --influx_path ../toy_content
+
+nlpbin:
+	cd nlp_server && ./main.bin --port 3001 --influx_path ../toy_content
+

@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template
 import argparse
 import stanza
+from deep_translator import (GoogleTranslator, ChatGptTranslator, MicrosoftTranslator, PonsTranslator, LingueeTranslator, MyMemoryTranslator, YandexTranslator, PapagoTranslator, DeeplTranslator, QcriTranslator)
 
 app = Flask(__name__)
 context = {
@@ -22,7 +23,7 @@ def tokenise_text(text: str, language: str) -> tuple[str, int, int, list[list[li
     for sentence in doc.sentences:
         constituents.append([token.to_dict() for token in sentence.tokens])
     
-    print(constituents)
+    # print(constituents)
         
     return {
         'text': doc.text,
@@ -45,6 +46,45 @@ def tokeniser_handler(lang_code):
     text = data.get('text', '')
     print(f'Received text: {text}, lang_code: {lang_code}')
     return tokenise_text(text, lang_code)
+
+@app.route('/extern_translate', methods=["POST"])
+def google_translate_handler():
+    data = request.get_json()
+    text = data.get('text')
+    from_lang_id = data.get('from_lang_id')
+    to_lang_id = data.get('to_lang_id')
+    provider = data.get('provider')
+    try:
+        match provider:
+            case 'google':
+                translator = GoogleTranslator(source=from_lang_id, target=to_lang_id)
+            case 'chatgpt':
+                translator = ChatGptTranslator(source=from_lang_id, target=to_lang_id)
+            case 'microsoft':
+                translator = MicrosoftTranslator(source=from_lang_id, target=to_lang_id)
+            case 'pons':
+                translator = PonsTranslator(source=from_lang_id, target=to_lang_id)
+            case 'linguee':
+                translator = LingueeTranslator(source=from_lang_id, target=to_lang_id)
+            case 'mymemory':
+                translator = MyMemoryTranslator(source=from_lang_id, target=to_lang_id)
+            case 'yandex':
+                translator = YandexTranslator(source=from_lang_id, target=to_lang_id)
+            case 'papago':
+                translator = PapagoTranslator(source=from_lang_id, target=to_lang_id)
+            case 'deepl':
+                translator = DeeplTranslator(source=from_lang_id, target=to_lang_id)
+            case 'qcri':
+                translator = QcriTranslator(source=from_lang_id, target=to_lang_id)
+            case _:
+                return 'Invalid provider'
+        translated_text = translator.translate(text)
+    except Exception as e:
+        translated_text = str(e)
+    print(translated_text)
+    return {
+        "translated_text": translated_text
+    }
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Arguments for NLP server")
