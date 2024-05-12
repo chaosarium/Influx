@@ -32,6 +32,8 @@ surrealdb = {version = "1.4.2", features = ['kv-mem', 'kv-rocksdb'] }
 # pyo3 = { version="0.20.0", features = ['auto-initialize'] }
 indoc = "2.0.5"
 toml = "0.8.12"
+open = "5.1.2"
+async-trait = "0.1.80"
 
 # [profile.dev]
 # opt-level = 0
