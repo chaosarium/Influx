@@ -15,6 +15,7 @@ mod handlers;
 mod prelude;
 mod error;
 mod nlp;
+mod integration;
 
 use db::DB;
 use db::DBLocation;
@@ -54,53 +55,53 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
 
     let app = Router::new()
         .route(
-            "/", 
+            "/",
             get(handlers::hello_world)
         )
         .route(
-            "/test", 
+            "/test",
             get(handlers::connection_test)
         )
         // toy examples below
         // .route(
-        //     "/todos", 
+        //     "/todos",
         //     get(handlers::todos_index)
         //     .post(handlers::todos_create)
         // )
         // .route(
-        //     "/todos/:id", 
+        //     "/todos/:id",
         //     delete(handlers::todos_delete)
         // )
         .route(
-            "/docs/:language_identifier", 
+            "/docs/:language_identifier",
             get(handlers::get_docs_list)
         )
         .route(
-            "/docs/:language_identifier/:file", 
+            "/docs/:language_identifier/:file",
             get(handlers::get_doc)
         )
         .route(
-            "/vocab/token/:language_identifier/:orthography", 
+            "/vocab/token/:language_identifier/:orthography",
             get(handlers::vocab_handlers::lookup_token)
         )
         .route(
-            "/vocab/delete_token", 
+            "/vocab/delete_token",
             delete(handlers::vocab_handlers::delete_token)
         )
         .route(
-            "/vocab/update_token", 
+            "/vocab/update_token",
             post(handlers::vocab_handlers::update_token)
         )
         .route(
-            "/vocab/create_token", 
+            "/vocab/create_token",
             post(handlers::vocab_handlers::create_token)
         )
         .route(
-            "/phrase/update_phrase", 
+            "/phrase/update_phrase",
             post(handlers::phrase_handlers::update_phrase)
         )
         .route(
-            "/phrase/delete_phrase", 
+            "/phrase/delete_phrase",
             delete(handlers::phrase_handlers::delete_phrase)
         )
         // .route(
