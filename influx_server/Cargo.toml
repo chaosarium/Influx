@@ -3,7 +3,7 @@ name = "influx_server"
 version = "0.1.0"
 edition = "2021"
 authors = ["Lómenoirë Mortecc."]
-rust-version = "1.74.1"
+rust-version = "1.78"
 readme = "../README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -21,20 +21,20 @@ tracing = "0.1.40"
 
 thiserror = "1.0.60"
 anyhow = "1.0.83"
-clap = { version = "4.4.11", features = ["derive"] }
+clap = { version = "4.5.4", features = ["derive"] }
 ts-rs = { version = "8.1.0", features = ["format"] }
 yaml-front-matter = "0.1.0"
 chrono = { version="0.4.38", features = ["serde"] }
 maplit = "1.0.2"
 serde_json = "1.0"
-reqwest = { version="0.11.23", features=["json"] }
+reqwest = { version="0.12.4", features=["json"] }
 surrealdb = {version = "1.4.2", features = ['kv-mem', 'kv-rocksdb'] }
 # pyo3 = { version="0.20.0", features = ['auto-initialize'] }
-indoc = "2.0.4"
-toml = "0.8.8"
+indoc = "2.0.5"
+toml = "0.8.12"
 
-[profile.dev]
-opt-level = 0
+# [profile.dev]
+# opt-level = 0
 
 # [target.aarch64-apple-darwin]
 # rustflags = ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
