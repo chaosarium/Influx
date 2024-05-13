@@ -13,7 +13,8 @@ pub fn mk_phrase_thing(id: String) -> Thing {
 #[derive(Debug, Serialize, Deserialize, TS, Clone, PartialEq, Eq, Hash)]
 #[ts(export, export_to = "../influx_ui/src/lib/types/")]
 pub struct Phrase {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
     #[ts(type = "{ tb: string, id: {String: string} }")]
     pub id: Option<Thing>,
     pub lang_id: String,
@@ -80,7 +81,7 @@ impl DB {
     }
 
     /// requires that all orthography in orthography_seq is lowercase
-    /// requires that all orthography in orthography_seq is not already in database
+    /// orthography_seq is not already in database
     pub async fn create_phrase(&self, phrase: Phrase) -> Result<Phrase> {
         assert!(phrase.orthography_seq.iter().all(|s| s.to_lowercase() == *s));
         // TODO assert it does not exist
@@ -113,6 +114,33 @@ impl DB {
         }
     }
 
+    /// requires that all orthography in orthography_seq is lowercase
+    pub async fn query_phrase_by_orthography_seq(&self, orthography_seq: Vec<String>, lang_id: String) -> Result<Vec<Phrase>> {
+        let sql = format!("SELECT * FROM phrase WHERE orthography_seq = $orthography_seq AND lang_id = $lang_id;");
+        let mut res: Response = self.db
+            .query(sql)
+            .bind(("orthography_seq", orthography_seq))
+            .bind(("lang_id", lang_id))
+            .await?;
+
+        match res.take(0) {
+            Ok::<Vec<Phrase>, _>(v) => Ok(v),
+            _ => Err(anyhow::anyhow!("Error querying phrase"))
+        }
+    }
+
+    pub async fn query_phrase_by_id(&self, id: String) -> Result<Option<Phrase>> {
+        let res = self.db.select(mk_phrase_thing(id)).await;
+
+        // dbg!(&res);
+        match res {
+            Ok(Some::<Phrase>(v)) => Ok(Some(v)),
+            Ok(None) => Ok(None),
+            Err(e) => Err(anyhow::anyhow!("Error querying phrase: {:?}", e)),
+        }
+    }
+
+
     /// does not require that orthographies are lowercase. they will be converted to lowercase
     pub async fn get_phrases_from_text_set(&self, text_set: HashSet<String>, lang_id: String) -> Result<Vec<Phrase>> {
         let onset_orthography_set: HashSet<String> = text_set.iter().cloned().map(|x| x.to_lowercase()).collect::<HashSet<String>>();
@@ -123,6 +151,46 @@ impl DB {
     pub async fn get_phrases_from_text_seq(&self, text_seq: Vec<String>, lang_id: String) -> Result<Vec<Phrase>> {
         let onset_orthography_set: HashSet<String> = text_seq.iter().cloned().map(|x| x.to_lowercase()).collect::<HashSet<String>>();
         self.query_phrase_by_onset_orthographies(onset_orthography_set, lang_id).await
+    }
+
+    /// requires that all orthography in orthography_seq is lowercase
+    /// orthography_seq is already in database
+    pub async fn update_phrase_by_id(&self, phrase: Phrase) -> Result<Phrase> {
+        assert!(phrase.orthography_seq.iter().all(|s| s.to_lowercase() == *s));
+        assert!(phrase.id.is_some());
+
+        {
+            let existing_phrase = self.query_phrase_by_id(phrase.id.clone().unwrap().id.to_string()).await?;
+            assert!(existing_phrase.is_some());
+            let existing_phrase = existing_phrase.unwrap();
+            if phrase.orthography_seq != existing_phrase.orthography_seq {
+                // TODO check if new orthography_seq is already in database
+            }
+        }
+
+        let updated: Option<Phrase> = self.db.update(phrase.id.as_ref().unwrap())
+            .content(phrase)
+            .await?;
+
+        match updated {
+            Some(v) => Ok(v),
+            None => Err(anyhow::anyhow!("Error updating phrase"))
+        }
+
+    }
+
+    pub async fn delete_phrase_by_thing(&self, thing: Thing) -> Result<Phrase> {
+        match self.db.delete(thing).await? {
+            Some::<Phrase>(v) => Ok(v),
+            None => Err(anyhow::anyhow!("Error deleting phrase, was it even in the database?"))
+        }
+    }
+
+    pub async fn delete_phrase_by_id(&self, id: String) -> Result<Phrase> {
+        match self.db.delete(mk_phrase_thing(id)).await? {
+            Some::<Phrase>(v) => Ok(v),
+            None => Err(anyhow::anyhow!("Error deleting phrase, was it even in the database?"))
+        }
     }
 }
 
@@ -184,5 +252,28 @@ mod tests {
         assert!(from_text_seq.iter().any(|phrase| phrase.orthography_seq == vec!["hello".to_string(), "moon".to_string()]));
         assert!(from_text_seq.iter().any(|phrase| phrase.orthography_seq == vec!["world".to_string(), "record".to_string()]));
         assert!(from_text_seq.iter().any(|phrase| phrase.orthography_seq == vec!["world".to_string(), "wide".to_string(), "web".to_string()]));
+    }
+
+    #[tokio::test]
+    async fn test_query_phrase_by_orthography_seq() {
+        let db = DB::create_db(DBLocation::Mem).await;
+        let phrase = Phrase::essential_phrase("en_demo", vec!["hello".to_string(), "moon".to_string()]);
+        let created = db.create_phrase(phrase).await.unwrap();
+
+        let updated = db.update_phrase_by_id(Phrase {
+            id: created.id.clone(),
+            lang_id: "en_demo".to_string(),
+            orthography_seq: vec!["hello".to_string(), "moon".to_string()],
+            definition: "placeholder".to_string(),
+            notes: "updated notes".to_string(),
+            original_context: "".to_string(),
+            status: TokenStatus::L5,
+            tags: vec![],
+            srs: SRSInfo::default(),
+        }).await.unwrap();
+
+        let queried = db.query_phrase_by_orthography_seq(vec!["hello".to_string(), "moon".to_string()], "en_demo".to_string()).await.unwrap();
+        assert_eq!(queried.len(), 1);
+        assert_eq!(queried[0].notes, "updated notes".to_string());
     }
 }

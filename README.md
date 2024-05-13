@@ -104,6 +104,7 @@ Also now with phrase support!
 - [ ] better error handling
 - [ ] documentation
 - [ ] security and accounts?
+- [ ] make db item a trait
 
 **Phase ? - Future**
 
@@ -192,6 +193,7 @@ cargo tauri build --target aarch64-apple-darwin
 - A lexeme is either a token or a phrase
 - Constituent refers to the part as it shows up in the document or sentence, whereas a lexeme refers to the instance currently in or would be in the database
 - A phrase is a list of token orthographies
+- A slice is a sequence of lexemes
 - A token is a single unit word or sub-word
 - Orthography refers to the lowercase written form of a token
 - Normalised orthography of a phrase is the orthograpies of the tokens it consists of joint by space; this is a workaround since javascript only likes string keys

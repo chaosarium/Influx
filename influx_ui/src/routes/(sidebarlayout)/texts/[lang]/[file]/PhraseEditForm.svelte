@@ -15,11 +15,35 @@
   };
 
   async function createPhrase() {
-
+    dbgConsoleMessages.push_back(`createPhrase not yet implemented`);
   }
 
   async function updatePhrase() {
+    let editing_orthography_seq: string[] = editing_lexeme.orthography_seq;
+    let editing_normalised_orthography: string = editing_orthography_seq.join(" ");
+    const phrase = editing_lexeme;
 
+    const response = await fetch('http://127.0.0.1:3000/phrase/update_phrase', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(phrase),
+    });
+
+    if (!response.ok) {
+      const message = `An error has occurred: ${response.status}`;
+      dbgConsoleMessages.push_back(`failed updatePhrase ${message}`);
+    } else {
+      const edited: Phrase = await response.json();
+      $working_doc.annotated_doc.phrase_dict[editing_normalised_orthography] = structuredClone(edited);
+      dispatchLexemeEdited(structuredClone(edited))();
+      dbgConsoleMessages.push_back(`success updatePhrase ${JSON.stringify(edited)}`);
+    }
+  }
+
+  async function deletePhrase() {
+    dbgConsoleMessages.push_back(`deletePhrase not yet implemented`);
   }
 
 </script>
@@ -73,7 +97,7 @@
       type="submit" value="Update Phrase"
     >
     <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" 
-      type="button" value="Delete Phrase"
+      type="button" value="Delete Phrase" on:click={deletePhrase}
     >
   {/if}
 

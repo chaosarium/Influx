@@ -1,4 +1,4 @@
-#![allow(unused_imports)]
+#![allow(unused_imports, unused_must_use)]
 use std::env;
 
 // use pyo3::prelude::*;

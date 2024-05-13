@@ -11,3 +11,7 @@ influx_server/tmp_database.db
 py_venv
 nlp_server/main.build
 nlp_server/main.onefile-build
+.zed/settings.json
+nlp_server/dist
+nlp_server/build
+nlp_server/main.spec
