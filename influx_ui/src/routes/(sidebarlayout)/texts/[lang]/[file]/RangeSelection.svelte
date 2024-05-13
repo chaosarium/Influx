@@ -6,6 +6,7 @@
     import type { DocumentConstituent } from "$lib/types/DocumentConstituent";
     import type { SentenceConstituent } from "$lib/types/SentenceConstituent";
     import type { DocumentSlice } from "$lib/types/Aliases";
+    import { is_cst_in_slice } from "$lib/utils";
   export let last_focused_slice: Option<DocumentSlice>;
   export let annotated_doc: AnnotatedDocument;
 
@@ -61,7 +62,7 @@
     });
   }
 
-  function gt_slice_content(slice: DocumentSlice): string {
+  function gt_slice_content(slice: DocumentSlice): string[] {
     let ss = slice[0][0];
     let es = slice[1][0];
     let st = slice[0][1];
@@ -75,23 +76,16 @@
     let related_cons = annotated_doc.constituents.slice(ssi, esi+1);
     let related_cons_flat = flatten_document_cons(related_cons);
     let slice_cons = related_cons_flat.filter((con) => {
-      switch (con.type) {
-        case "SingleToken":
-        case "SubwordToken":
-          return ((con.sentence_id == ss && con.id >= st) || con.sentence_id > ss) && ((con.sentence_id == es && con.id <= et) || con.sentence_id < es);
-        case "PhraseToken":
-        case "CompositToken":
-        case "Whitespace":
-          return con.start_char >= sc && con.end_char <= ec;
-      }
+      return is_cst_in_slice(slice, con);
     })
-    let slice_string = slice_cons.map((con) => con.text).join("");
-    return slice_string;
+    let slice_content = slice_cons.map((con) => con.text);
+    return slice_content;
   }
+
 </script>
 
 
-<p><em>last focused slice</em></p>
+<p><em>slice selection</em></p>
 <ol>
   {#if last_focused_slice.is_none()}
     <li>
@@ -99,13 +93,19 @@
     </li>
   {:else}
     <li>
-      last focused slice: {JSON.stringify(last_focused_slice)}
+      slice: {JSON.stringify(last_focused_slice)}
     </li>
     <li>
-      slice content (string): {gt_slice_content(last_focused_slice.unwrap())}
+      slice content (csts): {JSON.stringify(gt_slice_content(last_focused_slice.unwrap()))}
+    </li>
+    <li>
+      slice content (string): {gt_slice_content(last_focused_slice.unwrap()).join("")}
     </li>
   {/if}
 </ol>
 
 
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup">
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Translate">
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="TTS">
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Copy">

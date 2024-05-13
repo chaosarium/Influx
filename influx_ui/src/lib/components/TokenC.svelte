@@ -8,13 +8,8 @@
   export let constituent: SentenceConstituent;
 
   const dispatch = createEventDispatcher();
-  const handleMouseEnter = () => {
-    dispatch('token_hover', constituent);
-  };
-  const handleClick = () => {
-    dispatch('token_click', constituent);
-  };
   export let tokenisation_debug: boolean = false;
+  export let is_focused: boolean = false;
 
 </script>
 <!-- svelte-ignore a11y -->
@@ -65,9 +60,15 @@
             class:border-amber-400={token.status === 'L3'}
             class:border-lime-400={token.status === 'L4'}
             class:border-teal-400={token.status === 'L5'}
-            on:mouseenter={handleMouseEnter}
-            on:click={handleClick}
+            on:mouseenter={() => dispatch('token_mouseenter', constituent)}
+            on:click={() => dispatch('token_click', constituent)}
+            on:mousedown={() => dispatch('token_mousedown', constituent)}
+            on:mouseup={() => dispatch('token_mouseup', constituent)}
             class:token_dbg={tokenisation_debug}
+            class:underline={is_focused}
+            class:decoration-double={is_focused}
+            class:decoration-2={is_focused}
+            class:decoration-blue-500={is_focused}
           >
             {constituent.text}
           </span>

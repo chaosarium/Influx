@@ -5,19 +5,14 @@
   import type { Token } from "$lib/types/Token";
   import type { SentenceConstituent } from "$lib/types/SentenceConstituent";
   import TokenC from "./TokenC.svelte";
-  
+    import { is_cst_in_slice } from "$lib/utils";
+    export let last_focused_slice: Option<DocumentSlice>;
   export let constituent: SentenceConstituent;
   export let phrase: Phrase;
   export let token_dict: Record<string, Token>;
   export let phrase_dict: Record<string, Phrase>;
 
   const dispatch = createEventDispatcher();
-  const handleMouseEnter = () => {
-    dispatch('token_hover', constituent);
-  };
-  const handleClick = () => {
-    dispatch('token_click', constituent);
-  };
   export let tokenisation_debug: boolean = false;
 
   let altKeyPressed = false;
@@ -29,6 +24,7 @@
   function handleKeyUp(event: KeyboardEvent) {
     altKeyPressed = event.altKey;
   }
+  export let is_focused: boolean = false;
 
 </script>
 
@@ -52,9 +48,17 @@
             class:border-amber-400={phrase.status === 'L3'}
             class:border-lime-400={phrase.status === 'L4'}
             class:border-teal-400={phrase.status === 'L5'}
-            on:mouseenter={handleMouseEnter}
-            on:click={handleClick}
+            on:mouseenter={() => dispatch('token_mouseenter', constituent)}
+            on:click={() => dispatch('token_click', constituent)}
+            on:mousedown={() => dispatch('token_mousedown', constituent)}
+            on:mouseup={() => dispatch('token_mouseup', constituent)}
             class:token_dbg={tokenisation_debug}
+
+            class:underline={is_focused}
+            class:decoration-double={is_focused}
+            class:decoration-2={is_focused}
+            class:decoration-blue-500={is_focused}
+
           >
                     {#each constituent.shadows as sub_constituent}
                       {#if sub_constituent.type == "CompositToken" || sub_constituent.type == "SingleToken"}
@@ -62,7 +66,8 @@
                             constituent={sub_constituent}
                             token={token_dict[sub_constituent.orthography]}
                             tokenisation_debug={false}
-                        />
+                            is_focused={last_focused_slice.is_some() ? is_cst_in_slice(last_focused_slice.unwrap(), constituent) : false}
+                          />
                       {:else if sub_constituent.type == "Whitespace"}
                         <span class="whitespace-pre-wrap" class:bg-green-100={tokenisation_debug}
                             >{sub_constituent.text}</span
@@ -105,8 +110,11 @@
                             constituent={sub_constituent}
                             token={token_dict[sub_constituent.orthography]}
                             tokenisation_debug={false}
-                            on:token_hover
+                            on:token_mouseenter
                             on:token_click
+                            on:token_mousedown
+                            on:token_mouseup
+                            is_focused={last_focused_slice.is_some() ? is_cst_in_slice(last_focused_slice.unwrap(), sub_constituent) : false}
                         />
                       {:else if sub_constituent.type == "Whitespace"}
                         <span class="whitespace-pre-wrap" class:bg-green-100={tokenisation_debug}
