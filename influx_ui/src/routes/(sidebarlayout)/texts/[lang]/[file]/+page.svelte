@@ -23,9 +23,11 @@
   import { Option } from '$lib/types/Option';
   import { try_access, try_key, try_lookup } from '$lib/utils';
   import LexemeEditor from './LexemeEditor.svelte';
+  import SliceLookup from "./SliceLookup.svelte";
 
   import { onMount, onDestroy } from 'svelte';
   import { fetchSettings } from '$lib/store';
+    import type { DocumentSlice } from '$lib/types/Aliases';
 
   let mount_ready = false;
   onMount(async () => {
@@ -38,6 +40,8 @@
 
   let last_hovered_sentence_cst: Option<SentenceConstituent> = Option.None();
   let last_clicked_sentence_cst: Option<SentenceConstituent> = Option.None();
+  let last_focused_slice: Option<DocumentSlice> = Option.None(); // [[start_sentence_id, start_token_id, start_char], [end_sentence_id (incl), end_token_id (incl), end_char (excl)]]
+
   const handleSentenceCstHover = (event: { detail: SentenceConstituent }) => {
     last_hovered_sentence_cst = Option.Some(event.detail);
     // dbgConsoleMessages.push_back("hovered: " + JSON.stringify(last_hovered_sentence_cst));
@@ -45,10 +49,30 @@
   const handleSentenceCstClick = (event: { detail: SentenceConstituent }) => {
     last_clicked_sentence_cst = Option.Some(event.detail);
     dbgConsoleMessages.push_back("clicked: " + JSON.stringify(last_clicked_sentence_cst));
+    // update last focused slice
+    switch (event.detail.type) {
+      case "SubwordToken":
+      case "SingleToken":
+        last_focused_slice = Option.Some([
+          [event.detail.sentence_id, event.detail.id, event.detail.start_char], 
+          [event.detail.sentence_id, event.detail.id, event.detail.end_char]
+        ]);
+        break;
+      case "Whitespace":
+        break;
+      case "CompositToken":
+      case "PhraseToken":
+        last_focused_slice = Option.Some([
+          [event.detail.sentence_id, event.detail.shadows[0].id, event.detail.shadows[0].start_char], 
+          [event.detail.sentence_id, event.detail.shadows[event.detail.shadows.length-1].id, event.detail.shadows[event.detail.shadows.length-1].end_char]
+        ]);
+        break;
+    }
   };
 
   $: last_hovered_lexeme = try_lookup(token_dict, phrase_dict, last_hovered_sentence_cst)
   $: last_clicked_lexeme = try_lookup(token_dict, phrase_dict, last_clicked_sentence_cst)
+
 
 </script>
 
@@ -97,6 +121,16 @@
           <LexemeEditor 
             last_clicked_sentence_cst={last_clicked_sentence_cst}
           ></LexemeEditor>
+        </div>
+      </AccordionEntry>
+
+      <AccordionEntry>
+        <h2 slot="header" class="px-3 font-bold bg-orange-50">Lookups</h2>
+        <div class="p-3">
+          <SliceLookup 
+            last_focused_slice={last_focused_slice}
+            annotated_doc={$working_doc.annotated_doc}
+          ></SliceLookup>
         </div>
       </AccordionEntry>
 
