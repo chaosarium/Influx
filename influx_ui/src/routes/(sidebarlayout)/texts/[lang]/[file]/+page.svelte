@@ -24,7 +24,7 @@
   import { try_access, try_key, try_lookup } from '$lib/utils';
   import LexemeEditor from './LexemeEditor.svelte';
   import RangeSelection from "./RangeSelection.svelte";
-
+  import { app_settings } from '$lib/store';
   import { onMount, onDestroy } from 'svelte';
   import { fetchSettings } from '$lib/store';
   import type { DocumentSlice } from '$lib/types/Aliases';
@@ -207,6 +207,7 @@
   <div slot="mid-bottom">
     <DbgJsonData name='working_doc' data={$working_doc} />
     <DbgJsonData name='page params' data={$page.params} />
+    <DbgJsonData name='app settings' data={$app_settings} />
     <DbgJsonData name='last_hovered_sentence_cst' data={last_hovered_sentence_cst} />
     <DbgJsonData name='last_clicked_sentence_cst' data={last_clicked_sentence_cst} />
     <DbgJsonData name='last_hovered_lexeme' data={last_hovered_lexeme} />

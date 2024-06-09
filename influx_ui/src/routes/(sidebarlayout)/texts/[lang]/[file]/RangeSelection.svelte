@@ -8,6 +8,7 @@
     import type { SentenceConstituent } from "$lib/types/SentenceConstituent";
     import type { DocumentSlice } from "$lib/types/Aliases";
     import { is_cst_in_slice } from "$lib/utils";
+    import { dbgConsoleMessages } from '$lib/store';
   export let last_focused_slice: Option<DocumentSlice>;
   export let annotated_doc: AnnotatedDocument;
 
@@ -84,10 +85,38 @@
   }
 
   async function lookup_button_click() {
-    // {{host}}/extern/macos_dict/fr_demo/voix
     let query = gt_slice_content(last_focused_slice.unwrap()).join("");
     let lang_code = $page.params.lang;
-    const res = await fetch(`http://127.0.0.1:3000/extern/macos_dict/${lang_code}/${query}`);
+    const response = await fetch(`http://127.0.0.1:3000/extern/macos_dict/${lang_code}/${query}`);
+  }
+
+  let translated_text: string = ""
+  async function translate_button_click() {
+    let query = gt_slice_content(last_focused_slice.unwrap()).join("");
+    let lang_code = $page.params.lang;
+
+    const response = await fetch('http://127.0.0.1:3000/extern/translate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        "from_lang_id": "en", 
+        "to_lang_id": "fr", 
+        "source_sequence": query,
+        "provider": "google"
+      }),
+    });
+
+    if (!response.ok) {
+      const message = `An error has occurred: ${response.status}`;
+      dbgConsoleMessages.push_back(`failed calling extern/translate ${message}`);
+      } else {
+      console.log(response);
+      const res_json = await response.json();
+      translated_text = res_json.translated_text;
+    }
+
   }
 
 
@@ -110,11 +139,14 @@
     <li>
       slice content (string): {gt_slice_content(last_focused_slice.unwrap()).join("")}
     </li>
+    <li>
+      translated: <span class="bg-yellow-200 ">{translated_text}</span>
+    </li>
   {/if}
 </ol>
 
 
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup" on:click={lookup_button_click}>
-<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Translate">
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Translate" on:click={translate_button_click}>
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="TTS">
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Copy">
