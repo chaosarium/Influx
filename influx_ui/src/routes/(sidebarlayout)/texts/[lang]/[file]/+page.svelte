@@ -27,7 +27,7 @@
 
   import { onMount, onDestroy } from 'svelte';
   import { fetchSettings } from '$lib/store';
-    import type { DocumentSlice } from '$lib/types/Aliases';
+  import type { DocumentSlice } from '$lib/types/Aliases';
 
   let mount_ready = false;
   onMount(async () => {

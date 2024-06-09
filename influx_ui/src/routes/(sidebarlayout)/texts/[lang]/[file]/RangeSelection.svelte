@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from '$app/stores';
     import type { Token } from "$lib/types/Token";
     import type { Lexeme } from "$lib/types/Lexeme";
     import { Option } from "$lib/types/Option";
@@ -82,6 +83,14 @@
     return slice_content;
   }
 
+  async function lookup_button_click() {
+    // {{host}}/extern/macos_dict/fr_demo/voix
+    let query = gt_slice_content(last_focused_slice.unwrap()).join("");
+    let lang_code = $page.params.lang;
+    const res = await fetch(`http://127.0.0.1:3000/extern/macos_dict/${lang_code}/${query}`);
+  }
+
+
 </script>
 
 
@@ -105,7 +114,7 @@
 </ol>
 
 
-<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup">
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup" on:click={lookup_button_click}>
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Translate">
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="TTS">
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Copy">
