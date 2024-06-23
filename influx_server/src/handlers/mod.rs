@@ -5,7 +5,7 @@ use axum::{
     response::IntoResponse, http::StatusCode, Json, response::Response
 };
 use serde::{Deserialize, Serialize};
-use crate::{ServerState, db::models::{lang::LanguageEntry, vocab::{TokenStatus, SRSInfo, self}, phrase::{mk_phrase_trie, Phrase}}, utils::trie::Trie};
+use crate::{db::models::{lang::LanguageEntry, phrase::{mk_phrase_trie, Phrase}, vocab::{self, SRSInfo, TokenStatus}}, doc_store::write_md_file, utils::trie::Trie, ServerState};
 use crate::{db::{DB, models::vocab::Token}, doc_store};
 use crate::doc_store::DocEntry;
 use crate::doc_store::{
@@ -17,6 +17,9 @@ use serde_json::json;
 use surrealdb::sql;
 use crate::nlp;
 use std::{path::PathBuf, collections::{HashMap, HashSet}};
+use md5;
+use std::fs;
+use serde_json;
 
 // https://github.com/tokio-rs/axum/blob/main/examples/anyhow-error-response/src/main.rs
 pub struct ServerError(anyhow::Error);
@@ -97,6 +100,13 @@ pub fn get_language_code(settings: &doc_store::Settings, lang_id: String) -> Opt
 }
 
 
+fn text_checksum(text: String) -> String {
+    let digest = md5::compute(text);
+    format!("{:x}", digest)
+}
+
+
+
 // TODO do error handling like above
 pub async fn get_doc(
     State(ServerState { db, influx_path }): State<ServerState>, 
@@ -115,25 +125,42 @@ pub async fn get_doc(
     let filepath = influx_path.join(PathBuf::from(&lang_id)).join(PathBuf::from(&file));
     println!("trying to access {}", &filepath.display());
 
-    let (metadata, text) = read_md_file(filepath).unwrap();
-
-    // tokenization
-    let mut annotated_doc1: nlp::AnnotatedDocument = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).await.unwrap();
+    let (metadata, text) = read_md_file(filepath.clone()).unwrap();
+    let text_checksum: String = text_checksum(text.clone());
+    
+    let nlp_filepath = influx_path.join(PathBuf::from(".nlp_cache")).join(PathBuf::from(format!("{}.nlp", &text_checksum)));
+    
+    let mut tokenised_doc: nlp::AnnotatedDocument = if nlp_filepath.exists() {
+        let nlp_file_content = fs::read_to_string(nlp_filepath).unwrap();
+        let it: nlp::AnnotatedDocument = serde_json::from_str(&nlp_file_content).unwrap();
+        assert_eq!(it.text, text); // if this fails... md5 checksum collision?
+        it
+    } else {
+        // run tokenisation pipeline and cache it
+        let it = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).await.unwrap();
+        let serialized_doc = serde_json::to_string(&it).unwrap();
+        if !nlp_filepath.exists() {
+            fs::create_dir_all(nlp_filepath.parent().unwrap()).unwrap();
+        }
+        fs::write(nlp_filepath, serialized_doc).unwrap();
+        it
+    };
+    
     let tokens_dict: HashMap<String, Token> = db.get_dict_from_orthography_set(
-        annotated_doc1.orthography_set.union(&annotated_doc1.lemma_set).cloned().collect::<HashSet<String>>(),
+        tokenised_doc.orthography_set.union(&tokenised_doc.lemma_set).cloned().collect::<HashSet<String>>(),
         lang_id.clone()
     ).await.unwrap();
-    annotated_doc1.set_token_dict(tokens_dict);
+    tokenised_doc.set_token_dict(tokens_dict);
 
     // phrase annotation
-    let potential_phrases: Vec<Phrase> = db.query_phrase_by_onset_orthographies(annotated_doc1.orthography_set.clone(), lang_id.clone()).await.unwrap();
+    let potential_phrases: Vec<Phrase> = db.query_phrase_by_onset_orthographies(tokenised_doc.orthography_set.clone(), lang_id.clone()).await.unwrap();
     let phrase_trie: Trie<String, Phrase> = mk_phrase_trie(potential_phrases);
-    let annotated_doc2 = nlp::phrase_fit_pipeline(annotated_doc1, phrase_trie);
+    let tokenised_phrased_annotated_doc = nlp::phrase_fit_pipeline(tokenised_doc, phrase_trie);
 
     (StatusCode::OK, Json(json!({
         "metadata": metadata,
         "text": text,
-        "annotated_doc": annotated_doc2,
+        "annotated_doc": tokenised_phrased_annotated_doc,
     }))).into_response()
 }
 

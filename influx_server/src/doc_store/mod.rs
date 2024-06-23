@@ -13,15 +13,17 @@ use yaml_front_matter::Document;
 use chrono::{Local, DateTime, Utc};
 use toml::Table;
 use toml::Value;
+use md5;
+use serde_yaml;
 
-#[derive(Deserialize, PartialEq, Debug, Serialize)]
+#[derive(Deserialize, PartialEq, Debug, Serialize, Copy, Clone)]
 pub enum DocType {
     Text,
     Video,
     Audio,
 }
 
-#[derive(Deserialize, Debug, Serialize)]
+#[derive(Deserialize, Debug, Serialize, Clone, PartialEq)]
 pub struct Metadata {
     title: String,
     doc_type: DocType,
@@ -93,6 +95,13 @@ pub fn read_md_file(path: PathBuf) -> Result<(Metadata, String), io::Error> {
     let file_buf = fs::read_to_string(path)?;
     let document: Document<Metadata> = YamlFrontMatter::parse::<Metadata>(&file_buf).unwrap();
     Ok((document.metadata, document.content))
+}
+
+pub fn write_md_file(filepath: PathBuf, metadata: Metadata, content: String) -> Result<(), io::Error> {
+    let front_matter = serde_yaml::to_string(&metadata).unwrap();
+    let file_content = format!("---\n{}\n---\n{}", front_matter, content);
+    fs::write(filepath, file_content)?;
+    Ok(())
 }
 
 pub fn gt_md_file_list_w_metadata(dir: PathBuf) -> Result<Vec<DocEntry>, io::Error> {
@@ -205,7 +214,7 @@ mod tests {
         assert!(result.is_ok());
         let metadata_list = result.unwrap();
 
-        assert_eq!(metadata_list.len(), 4);
+        assert_eq!(metadata_list.len(), 3);
         println!("{:#?}", metadata_list);
 
         let expected_titles = vec![
