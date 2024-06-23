@@ -15,3 +15,4 @@ nlp_server/main.onefile-build
 nlp_server/dist
 nlp_server/build
 nlp_server/main.spec
+toy_content/.nlp_cache
