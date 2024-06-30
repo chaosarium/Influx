@@ -84,16 +84,23 @@
     return slice_content;
   }
 
-  async function lookup_button_click() {
+  // returns the current selection (in concatinated string) and the language code (from the page params)
+  function gt_selection_context(): [string, string] {
     let query = gt_slice_content(last_focused_slice.unwrap()).join("");
     let lang_code = $page.params.lang;
+    return [query, lang_code];
+  }
+
+  // hand selection to the nlp backend
+  async function lookup_button_click() {
+    let [query, lang_code] = gt_selection_context();
     const response = await fetch(`http://127.0.0.1:3000/extern/macos_dict/${lang_code}/${query}`);
   }
 
+  // hand selection to the nlp backend, and get back a translation
   let translated_text: string = ""
   async function translate_button_click() {
-    let query = gt_slice_content(last_focused_slice.unwrap()).join("");
-    let lang_code = $page.params.lang;
+    let [query, lang_code] = gt_selection_context();
 
     const response = await fetch('http://127.0.0.1:3000/extern/translate', {
       method: 'POST',
@@ -119,6 +126,60 @@
 
   }
 
+  // call browser's tts api with selection
+  async function tts_button_click() {
+    let [query, lang_code] = gt_selection_context();
+    
+    const synth = window.speechSynthesis;
+    const voices = synth.getVoices();
+
+    // temporarily fix tts lang code, will make this configurable in the future
+    console.log("lang_code: ", lang_code);
+    if (lang_code == "fr_demo") {
+      lang_code = "fr-FR";
+    }
+
+    const speak = (text: string, tts_lang_code: string, tts_speaker_name: string, tts_speed: number) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      const voice = voices.find((v) => v.lang === tts_lang_code && v.name === tts_speaker_name);
+      console.log("voice being selected: ", voice, " among ", voices);
+      if (voice) {
+        utterance.voice = voice;
+      }
+      utterance.rate = tts_speed;
+      synth.speak(utterance);
+    };
+
+    let tts_speaker_name = "Thomas";
+    let tts_speed = 1.0;
+    speak(query, lang_code, tts_speaker_name, tts_speed);
+  }
+
+  // Implement some APIs for opening an URL (presumably for dictionary or translator but can also be used for other things) either in a broser new tab, browser new window, a tauri webview, or a tauri window. For tauri webview/window, there's an additional option for whether to replace an exesting lookup webview/window or not.
+  type WebOpenLocation = "new_tab" | "new_window"| "tauri_webview_new" | "tauri_webview_replace" | "tauri_window_new" | "tauri_window_replace";
+
+  function influx_open_url(url: string, location: WebOpenLocation) {
+    switch (location) {
+      case "new_tab":
+        window.open(url, '_blank');
+        break;
+      case 'new_window':
+        window.open(url, '_blank', 'toolbar=0,location=0,menubar=0');
+        break;
+      case 'tauri_webview_new':
+        // todo
+        break;        
+      case 'tauri_webview_replace':
+        // todo
+        break;        
+      case 'tauri_window_new':
+        // todo
+        break;        
+      case 'tauri_window_replace':
+        // todo
+        break;        
+    }
+  }
 
 </script>
 
@@ -146,7 +207,12 @@
 </ol>
 
 
-<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup" on:click={lookup_button_click}>
-<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Translate" on:click={translate_button_click}>
-<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="TTS">
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup (Mac Dictionary)" on:click={lookup_button_click}>
+<br>
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Translate (Google Translate API)" on:click={translate_button_click}>
+<br>
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup (Web Dict in tab)" on:click={() => influx_open_url('https://www.wordreference.com/fren/', 'new_tab')}>
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup (Web Dict in new window)" on:click={() => influx_open_url('https://www.wordreference.com/fren/', 'new_window')}>
+<br>
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="TTS (OS Voices)" on:click={tts_button_click}>
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Copy">

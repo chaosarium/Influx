@@ -22,8 +22,8 @@ async fn main() {
   
   let mut nlp_server_child_cmd = tokio::process::Command::from(
     std::process::Command::from(
-      tauri::api::process::Command::new_sidecar("main.bin")
-        .expect("failed to setup `main.bin` sidecar")
+      tauri::api::process::Command::new_sidecar("nlp_server")
+        .expect("failed to setup `nlp_server` sidecar")
     ));
 
   dbg!(&nlp_server_child_cmd);

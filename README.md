@@ -176,6 +176,8 @@ npm run dev
 
 ### Running Tauri development server
 
+Currently only supports Apple Silicon
+
 ```sh
 cargo tauri dev
 ```
