@@ -84,17 +84,20 @@
     return slice_content;
   }
 
+  // returns the current selection (in concatinated string) and the language code (from the page params)
   function gt_selection_context(): [string, string] {
     let query = gt_slice_content(last_focused_slice.unwrap()).join("");
     let lang_code = $page.params.lang;
     return [query, lang_code];
   }
 
+  // hand selection to the nlp backend
   async function lookup_button_click() {
     let [query, lang_code] = gt_selection_context();
     const response = await fetch(`http://127.0.0.1:3000/extern/macos_dict/${lang_code}/${query}`);
   }
 
+  // hand selection to the nlp backend, and get back a translation
   let translated_text: string = ""
   async function translate_button_click() {
     let [query, lang_code] = gt_selection_context();
@@ -123,6 +126,7 @@
 
   }
 
+  // call browser's tts api with selection
   async function tts_button_click() {
     let [query, lang_code] = gt_selection_context();
     
@@ -149,6 +153,32 @@
     let tts_speaker_name = "Thomas";
     let tts_speed = 1.0;
     speak(query, lang_code, tts_speaker_name, tts_speed);
+  }
+
+  // Implement some APIs for opening an URL (presumably for dictionary or translator but can also be used for other things) either in a broser new tab, browser new window, a tauri webview, or a tauri window. For tauri webview/window, there's an additional option for whether to replace an exesting lookup webview/window or not.
+  type WebOpenLocation = "new_tab" | "new_window"| "tauri_webview_new" | "tauri_webview_replace" | "tauri_window_new" | "tauri_window_replace";
+
+  function influx_open_url(url: string, location: WebOpenLocation) {
+    switch (location) {
+      case "new_tab":
+        window.open(url, '_blank');
+        break;
+      case 'new_window':
+        window.open(url, '_blank', 'toolbar=0,location=0,menubar=0');
+        break;
+      case 'tauri_webview_new':
+        // todo
+        break;        
+      case 'tauri_webview_replace':
+        // todo
+        break;        
+      case 'tauri_window_new':
+        // todo
+        break;        
+      case 'tauri_window_replace':
+        // todo
+        break;        
+    }
   }
 
 </script>
@@ -180,6 +210,9 @@
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup (Mac Dictionary)" on:click={lookup_button_click}>
 <br>
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Translate (Google Translate API)" on:click={translate_button_click}>
+<br>
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup (Web Dict in tab)" on:click={() => influx_open_url('https://www.wordreference.com/fren/', 'new_tab')}>
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup (Web Dict in new window)" on:click={() => influx_open_url('https://www.wordreference.com/fren/', 'new_window')}>
 <br>
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="TTS (OS Voices)" on:click={tts_button_click}>
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Copy">
