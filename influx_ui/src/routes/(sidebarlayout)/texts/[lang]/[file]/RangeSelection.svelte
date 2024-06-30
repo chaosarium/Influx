@@ -84,16 +84,20 @@
     return slice_content;
   }
 
-  async function lookup_button_click() {
+  function gt_selection_context(): [string, string] {
     let query = gt_slice_content(last_focused_slice.unwrap()).join("");
     let lang_code = $page.params.lang;
+    return [query, lang_code];
+  }
+
+  async function lookup_button_click() {
+    let [query, lang_code] = gt_selection_context();
     const response = await fetch(`http://127.0.0.1:3000/extern/macos_dict/${lang_code}/${query}`);
   }
 
   let translated_text: string = ""
   async function translate_button_click() {
-    let query = gt_slice_content(last_focused_slice.unwrap()).join("");
-    let lang_code = $page.params.lang;
+    let [query, lang_code] = gt_selection_context();
 
     const response = await fetch('http://127.0.0.1:3000/extern/translate', {
       method: 'POST',
@@ -119,6 +123,33 @@
 
   }
 
+  async function tts_button_click() {
+    let [query, lang_code] = gt_selection_context();
+    
+    const synth = window.speechSynthesis;
+    const voices = synth.getVoices();
+
+    // temporarily fix tts lang code, will make this configurable in the future
+    console.log("lang_code: ", lang_code);
+    if (lang_code == "fr_demo") {
+      lang_code = "fr-FR";
+    }
+
+    const speak = (text: string, tts_lang_code: string, tts_speaker_name: string, tts_speed: number) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      const voice = voices.find((v) => v.lang === tts_lang_code && v.name === tts_speaker_name);
+      console.log("voice being selected: ", voice, " among ", voices);
+      if (voice) {
+        utterance.voice = voice;
+      }
+      utterance.rate = tts_speed;
+      synth.speak(utterance);
+    };
+
+    let tts_speaker_name = "Thomas";
+    let tts_speed = 1.0;
+    speak(query, lang_code, tts_speaker_name, tts_speed);
+  }
 
 </script>
 
@@ -146,7 +177,9 @@
 </ol>
 
 
-<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup" on:click={lookup_button_click}>
-<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Translate" on:click={translate_button_click}>
-<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="TTS">
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Lookup (Mac Dictionary)" on:click={lookup_button_click}>
+<br>
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Translate (Google Translate API)" on:click={translate_button_click}>
+<br>
+<input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="TTS (OS Voices)" on:click={tts_button_click}>
 <input class="mt-2 border-solid border-2 border-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed" type="button" value="Copy">
