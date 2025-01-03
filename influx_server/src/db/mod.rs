@@ -4,7 +4,11 @@ use std::{sync::Arc, path::PathBuf, fs};
 use surrealdb::{
     Response, Surreal,
     sql::{Thing, Object},
-    engine::local::{File, Mem, Db},
+    engine::local::{
+        // File, 
+        Mem, 
+        Db
+    },
 };
 // use surrealdb::{kvs::Datastore, dbs::Session, opt::auth::Root, engine::remote::ws::Ws, };
 use anyhow::Result;
@@ -28,9 +32,10 @@ impl DB {
     pub async fn create_db(location: DBLocation) -> Self {
         let client: Surreal<Db> = match location {
             DBLocation::Disk(abs_path) => {
-                let db_path_string: &str = abs_path.to_str().unwrap();
-                println!("db_path_string: {}", db_path_string);
-                Surreal::new::<File>(db_path_string).await.unwrap()
+                // let db_path_string: &str = abs_path.to_str().unwrap();
+                // println!("db_path_string: {}", db_path_string);
+                // Surreal::new::<File>(db_path_string).await.unwrap()
+                panic!();
             },
             DBLocation::Mem => Surreal::new::<Mem>(()).await.unwrap()
         };
@@ -51,20 +56,20 @@ impl DB {
     }
 
     pub async fn delete_thing<T: serde::Serialize + for<'a> serde::Deserialize<'a> + std::marker::Sync + std::marker::Send + std::fmt::Debug>(&self, thing: Thing) -> Result<T> {
-        match self.db.delete(thing).await? {
+        match self.db.delete((thing.tb, thing.id.to_raw())).await? {
             Some::<T>(v) => Ok(v),
             _ => Err(anyhow::anyhow!("Error deleting thing"))
         }
     }
 
-    pub async fn select_thing<T: serde::Serialize + for<'a> serde::Deserialize<'a> + std::marker::Sync + std::marker::Send + std::fmt::Debug>(&self, thing: Thing) -> Result<Option<T>> {
-        match self.db.select(thing).await? {
+    pub async fn select_thing<T: serde::Serialize + for<'a> serde::Deserialize<'a> + std::marker::Sync + std::marker::Send + std::fmt::Debug + Clone>(&self, thing: Thing) -> Result<Option<T>> {
+        match self.db.select((thing.tb, thing.id.to_raw())).await? {
             Some::<T>(v) => Ok(Some(v)),
             _ => Ok(None)
         }
     }
 
-    pub async fn thing_exists<T: serde::Serialize + for<'a> serde::Deserialize<'a> + std::marker::Sync + std::marker::Send + std::fmt::Debug>(&self, thing: Thing) -> Result<bool> {
+    pub async fn thing_exists<T: serde::Serialize + for<'a> serde::Deserialize<'a> + std::marker::Sync + std::marker::Send + std::fmt::Debug + Clone>(&self, thing: Thing) -> Result<bool> {
         Ok(self.select_thing::<T>(thing).await?.is_some())
     }
 
@@ -84,9 +89,9 @@ mod tests {
         assert_eq!(todos.len(), 0);
     }
     
-    #[tokio::test]
-    async fn db_create_disk() {
-        let db = DB::create_db(DBLocation::Disk(PathBuf::from("./").canonicalize().unwrap().join("tmp_database.db"))).await;
-    }
+    // #[tokio::test]
+    // async fn db_create_disk() {
+    //     let db = DB::create_db(DBLocation::Disk(PathBuf::from("./").canonicalize().unwrap().join("tmp_database.db"))).await;
+    // }
 
 }

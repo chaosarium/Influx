@@ -21,7 +21,7 @@ use db::DB;
 use db::DBLocation;
 use std::env;
 
-#[derive(Clone)] // TODO later use this as state rather than db itself
+#[derive(Clone)]
 pub struct ServerState {
     db: DB,
     influx_path: PathBuf,
@@ -73,15 +73,15 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
         //     delete(handlers::todos_delete)
         // )
         .route(
-            "/docs/:language_identifier",
+            "/docs/{language_identifier}",
             get(handlers::get_docs_list)
         )
         .route(
-            "/docs/:language_identifier/:file",
+            "/docs/{language_identifier}/{file}",
             get(handlers::get_doc)
         )
         .route(
-            "/vocab/token/:language_identifier/:orthography",
+            "/vocab/token/{language_identifier}/{orthography}",
             get(handlers::vocab_handlers::lookup_token)
         )
         .route(
@@ -113,11 +113,11 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
             get(handlers::lang_handlers::get_language_list)
         )
         .route(
-            "/lang/:id",
+            "/lang/{id}",
             get(handlers::lang_handlers::get_language_by_id)
         )
         .route(
-            "/extern/macos_dict/:language_identifier/:orthography",
+            "/extern/macos_dict/{language_identifier}/{orthography}",
             get(handlers::integration_handlers::lookup_in_macos_dict)
         )
         .route(

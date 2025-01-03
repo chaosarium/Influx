@@ -130,7 +130,7 @@ impl DB {
     }
 
     pub async fn query_phrase_by_id(&self, id: String) -> Result<Option<Phrase>> {
-        let res = self.db.select(mk_phrase_thing(id)).await;
+        let res = self.db.select((TABLE, id)).await;
 
         // dbg!(&res);
         match res {
@@ -167,8 +167,9 @@ impl DB {
                 // TODO check if new orthography_seq is already in database
             }
         }
-
-        let updated: Option<Phrase> = self.db.update(phrase.id.as_ref().unwrap())
+        
+        let thing = phrase.id.as_ref().unwrap();
+        let updated: Option<Phrase> = self.db.update((thing.tb.clone(), thing.id.to_raw()))
             .content(phrase)
             .await?;
 
@@ -180,14 +181,14 @@ impl DB {
     }
 
     pub async fn delete_phrase_by_thing(&self, thing: Thing) -> Result<Phrase> {
-        match self.db.delete(thing).await? {
+        match self.db.delete((thing.tb, thing.id.to_raw())).await? {
             Some::<Phrase>(v) => Ok(v),
             None => Err(anyhow::anyhow!("Error deleting phrase, was it even in the database?"))
         }
     }
 
     pub async fn delete_phrase_by_id(&self, id: String) -> Result<Phrase> {
-        match self.db.delete(mk_phrase_thing(id)).await? {
+        match self.db.delete((TABLE, id)).await? {
             Some::<Phrase>(v) => Ok(v),
             None => Err(anyhow::anyhow!("Error deleting phrase, was it even in the database?"))
         }

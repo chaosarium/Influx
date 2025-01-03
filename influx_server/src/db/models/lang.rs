@@ -87,19 +87,20 @@ impl DB {
     }
 
     pub async fn create_language(&self, language: LanguageEntry) -> Result<LanguageEntry> {
-        let created: Result<Vec<LanguageEntry>, surrealdb::Error> = self.db
+        let created: Result<Option<Vec<LanguageEntry>>, surrealdb::Error> = self.db
             .create(TABLE)
             .content(language)
             .await;
 
         match created {
-            Ok(mut v) => {
+            Ok(Some(mut v)) => {
                 if v.len() == 1 {
                     Ok(v.pop().unwrap())
                 } else {
                     Err(anyhow::anyhow!("Created {} languages? Doesn't make sense", v.len()))
                 }
             },
+            Ok(None) => Err(anyhow::anyhow!("somehow got none")),
             Err(e) => Err(anyhow::anyhow!("Error creating language: {}", e))
         }
     }
@@ -117,7 +118,7 @@ impl DB {
 
     pub async fn get_language(&self, id: String) -> Result<Option<LanguageEntry>> {
         let language: Result<Option<LanguageEntry>, surrealdb::Error> = self.db
-            .select(mk_lang_thing(id))
+            .select((TABLE, id))
             .await;
 
         match language {
@@ -128,7 +129,7 @@ impl DB {
 
     pub async fn get_code_for_language(&self, id: String) -> Result<Option<String>> {
         let language: Result<Option<LanguageEntry>, surrealdb::Error> = self.db
-            .select(mk_lang_thing(id))
+            .select((TABLE, id))
             .await;
 
         match language {

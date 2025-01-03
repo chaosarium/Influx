@@ -259,7 +259,7 @@ impl DB {
     }
 
     pub async fn query_token_by_id(&self, id: String) -> Result<Option<Token>> {
-        let res = self.db.select(mk_vocab_thing(id)).await;
+        let res = self.db.select((TABLE, id)).await;
 
         // dbg!(&res);
         match res {
@@ -291,7 +291,7 @@ impl DB {
     }
 
     pub async fn delete_token_by_thing(&self, thing: Thing) -> Result<Token> {
-        match self.db.delete(thing).await? {
+        match self.db.delete((thing.tb, thing.id.to_raw())).await? {
             Some::<Token>(v) => Ok(v),
             None => Err(anyhow::anyhow!("Error deleting token, was it even in the database?"))
         }
@@ -352,7 +352,8 @@ impl DB {
             }
         }
 
-        let updated: Option<Token> = self.db.update(token.id.as_ref().unwrap())
+        let thing = token.id.as_ref().unwrap();
+        let updated: Option<Token> = self.db.update((thing.tb.clone(), thing.id.to_raw()))
             .content(token)
             .await?;
 
