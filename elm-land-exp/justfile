@@ -1,0 +1,5 @@
+server:
+    npx elm-land server
+
+tauri:
+    cargo tauri dev
