@@ -1,0 +1,2 @@
+run:
+    uv run python main.py --port 3001 --influx_path ../toy_content

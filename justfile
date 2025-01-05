@@ -7,16 +7,8 @@ web:
 tauri:
 	cd influx_ui && cargo tauri dev
 
+dbserver:
+    surreal start rocksdb:surrealtemp.db -A --user root --pass root
+
 nlp:
-	cd nlp_server && source ../py_venv/bin/activate && python main.py --port 3001 --influx_path ../toy_content
-
-nlpbuild:
-	cd nlp_server && source ../py_venv/bin/activate && pyinstaller --onefile main.py --name nlp_server-aarch64-apple-darwin
-
-nlpclean:
-	rm -rf nlp_server/dist
-	rm -rf nlp_server/build
-	rm -rf nlp_server/nlp_server.spec
-
-nlpbin:
-	./nlp_server/dist/nlp_server --port 3001 --influx_path ../toy_content
+    cd influx_nlp && just run

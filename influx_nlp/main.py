@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request
 import argparse
 import stanza
 from deep_translator import (GoogleTranslator, ChatGptTranslator, MicrosoftTranslator, PonsTranslator, LingueeTranslator, MyMemoryTranslator, YandexTranslator, PapagoTranslator, DeeplTranslator, QcriTranslator)
