@@ -2,13 +2,10 @@
 
 use std::{sync::Arc, path::PathBuf, fs};
 use surrealdb::{
-    Response, Surreal,
-    sql::{Thing, Object},
-    engine::local::{
+    engine::{local::{
         // File, 
-        Mem, 
-        Db
-    },
+        Db, Mem
+    }, remote::ws::Ws}, sql::{Object, Thing}, Response, Surreal
 };
 // use surrealdb::{kvs::Datastore, dbs::Session, opt::auth::Root, engine::remote::ws::Ws, };
 use anyhow::Result;
@@ -20,24 +17,33 @@ use models::phrase::Phrase;
 
 #[derive(Clone)]
 pub struct DB {
-    pub db: Arc<Surreal<Db>>,
+    pub db: Arc<Surreal<surrealdb::engine::any::Any>>,
 }
 
 pub enum DBLocation {
     Disk(PathBuf),
     Mem,
+    Localhost,
 }
 
 impl DB {
     pub async fn create_db(location: DBLocation) -> Self {
-        let client: Surreal<Db> = match location {
+        let client = match location {
             DBLocation::Disk(abs_path) => {
                 // let db_path_string: &str = abs_path.to_str().unwrap();
                 // println!("db_path_string: {}", db_path_string);
                 // Surreal::new::<File>(db_path_string).await.unwrap()
                 panic!();
             },
-            DBLocation::Mem => Surreal::new::<Mem>(()).await.unwrap()
+            DBLocation::Mem => surrealdb::engine::any::connect("memory").await.unwrap(),
+            DBLocation::Localhost => {
+                let db = surrealdb::engine::any::connect("ws://localhost:8000").await.unwrap();
+                db.signin(surrealdb::opt::auth::Root {
+                    username: "root",
+                    password: "root",
+                }).await.unwrap();
+                db
+            },
         };
 
         client.use_ns("influx_ns").use_db("influx_db").await.unwrap();

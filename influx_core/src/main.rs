@@ -14,7 +14,7 @@ struct Args {
     disk: bool,
 
     /// Whether to not seed database
-    #[arg(short, long, default_value_t = false)]
+    #[arg(short, long, default_value_t = true)]
     no_seed: bool,
 
     /// Path to content directory
@@ -31,7 +31,7 @@ async fn main() {
     } 
     println!("Content path: {:?}", args.influx_path);
 
-    influx_server::launch(
+    influx_core::launch(
         args.disk, 
         !args.no_seed, 
         args.influx_path.into()

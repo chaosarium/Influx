@@ -33,7 +33,7 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
     let db = DB::create_db({
         match disk {
             true => DBLocation::Disk(influx_path.canonicalize().unwrap().join("database.db")),
-            false => DBLocation::Mem,
+            false => DBLocation::Localhost,
         }
     }).await;
 
