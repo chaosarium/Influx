@@ -1,3 +1,5 @@
+# this is deprecated. using database instead for now
+
 # where to run influx server
 # port = 3000 todo doesn't work yet
 

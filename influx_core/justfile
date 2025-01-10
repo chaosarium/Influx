@@ -1,0 +1,2 @@
+runpg:
+    cargo run -- --db-choice postgres-server

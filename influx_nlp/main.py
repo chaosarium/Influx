@@ -12,7 +12,7 @@ context = {
 
 def tokenise_text(text: str, language: str) -> tuple[str, int, int, list[list[list[dict[str, str|int]]]]]:
     if not language in context['loaded_pipelines']:
-        nlp = stanza.Pipeline(lang=language, processors='tokenize, lemma', model_dir=f"{context['influx_path']}/stanza_resources/", logging_level='WARN')
+        nlp = stanza.Pipeline(lang=language, processors='tokenize, lemma', model_dir=f"{context['influx_path']}/_stanza_resources/", logging_level='WARN')
         context['loaded_pipelines'][language] = nlp
     else:
         nlp = context['loaded_pipelines'][language]

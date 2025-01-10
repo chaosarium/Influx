@@ -1,4 +1,5 @@
 #![allow(unused_imports)]
+use tracing::info;
 use ts_rs::TS;
 use axum::{
     extract::{Path, Query, State},
@@ -112,6 +113,8 @@ pub async fn get_doc(
     State(ServerState { db, influx_path }): State<ServerState>, 
     Path((lang_identifier, file)): Path<(String, String)>
 ) -> impl IntoResponse {
+    
+    info!("getting doc: lang_identifier = {}, file = {}", lang_identifier, file);
 
     // check if lang_id exists, if not return 404
     if !db.language_identifier_exists(lang_identifier.clone()).await.unwrap() {
@@ -130,7 +133,7 @@ pub async fn get_doc(
     let (metadata, text) = read_md_file(filepath.clone()).unwrap();
     let text_checksum: String = text_checksum(text.clone());
     
-    let nlp_filepath = influx_path.join(PathBuf::from(".nlp_cache")).join(PathBuf::from(format!("{}.nlp", &text_checksum)));
+    let nlp_filepath = influx_path.join(PathBuf::from("_influx_nlp_cache")).join(PathBuf::from(format!("{}.nlp", &text_checksum)));
     
     let mut tokenised_doc: nlp::AnnotatedDocument = if nlp_filepath.exists() {
         let nlp_file_content = fs::read_to_string(nlp_filepath).unwrap();
@@ -144,7 +147,8 @@ pub async fn get_doc(
         if !nlp_filepath.exists() {
             fs::create_dir_all(nlp_filepath.parent().unwrap()).unwrap();
         }
-        fs::write(nlp_filepath, serialized_doc).unwrap();
+        fs::write(nlp_filepath.clone(), serialized_doc).unwrap();
+        info!("wrote nlp cache file to {}", nlp_filepath.display());
         it
     };
     

@@ -23,5 +23,8 @@ pub async fn get_language_by_identifier(
     Path(id): Path<String>
 ) -> Result<Json<Option<LanguageEntry>>, ServerError> {
     let language = db.get_language_by_identifier(id).await?;
+    if language.is_none() {
+        return Err(anyhow::anyhow!("Language not found").into());
+    }
     Ok(Json(language))
 }
