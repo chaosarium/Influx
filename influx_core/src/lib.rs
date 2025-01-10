@@ -1,19 +1,21 @@
-#![allow(dead_code, unused_variables, unused_macros, unused_imports)]
+#![allow(warnings)]
 
 use axum::{
     Router,
     routing::{get, post, delete}, http::Method,
 };
+use clap::{Parser, ValueEnum};
 use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
 use std::path::{Path, PathBuf};
+use log::{info, trace, warn};
+use std::fs::write;
 
-mod db;
-mod doc_store;
+pub mod db;
+pub(crate) mod doc_store;
 mod utils;
 mod handlers;
 mod prelude;
-mod error;
 mod nlp;
 mod integration;
 
@@ -21,37 +23,45 @@ use db::DB;
 use db::DBLocation;
 use std::env;
 
+#[derive(Debug, ValueEnum, Clone, Copy)]
+pub enum DBChoice {
+    SurrealMemory,
+    SurrealDisk,
+    SurrealServer,
+    PostgresServer,
+    // IDEA might be able to embed DuckDB
+}
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+pub struct InfluxCoreArgs {
+    /// what database backend to use
+    #[arg(short, long, default_value = "surreal-server")]
+    pub db_choice: DBChoice,
+    
+    /// Whether to seed database
+    #[arg(short, long, default_value_t = false)]
+    pub seed: bool,
+
+    /// path to content directory
+    #[arg(short, long, default_value = "../toy_content")]
+    pub influx_path: String,
+}
+
 #[derive(Clone)]
 pub struct ServerState {
     db: DB,
     influx_path: PathBuf,
 }
 
-pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
-    println!("launching with disk: {}, seed: {}", disk, seed);
+pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
+    info!("Whether to seed: {}", args.seed);
 
-    let db = DB::create_db({
-        match disk {
-            true => DBLocation::Disk(influx_path.canonicalize().unwrap().join("database.db")),
-            false => DBLocation::Localhost,
-        }
-    }).await;
+    let db = DB::create_db(args.db_choice).await?;
 
-    // println!("initializing python");
-    // let _ = nlp::run_some_python().unwrap();
-
-    if seed {
+    if args.seed {
         let _ = db.seed_all_tables().await;
     }
-
-    let cors = CorsLayer::permissive();
-
-    // a stricter version that broke something i don't remember
-    // let cors = CorsLayer::new()
-        // allow `GET` and `POST` when accessing the resource
-        // .allow_methods(Any)
-        // allow requests from any origin
-        // .allow_origin(Any);
 
     let app = Router::new()
         .route(
@@ -114,7 +124,7 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
         )
         .route(
             "/lang/{id}",
-            get(handlers::lang_handlers::get_language_by_id)
+            get(handlers::lang_handlers::get_language_by_identifier)
         )
         .route(
             "/extern/macos_dict/{language_identifier}/{orthography}",
@@ -124,15 +134,55 @@ pub async fn launch(disk: bool, seed: bool, influx_path: PathBuf) {
             "/extern/translate",
             post(handlers::integration_handlers::extern_translate)
         )
-        .layer(cors)
+        .layer(CorsLayer::permissive())
         .with_state(
             ServerState {
                 db,
-                influx_path,
+                influx_path: args.influx_path.into(),
             }
         );
 
-    let listener = TcpListener::bind("127.0.0.1:3000").await.unwrap();
-    println!("Starting Influx server at http://{:?}", listener.local_addr().unwrap());
-    axum::serve(listener, app).await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:3000").await?;
+    info!("Starting Influx server at http://{:?}", listener.local_addr()?);
+    axum::serve(listener, app).await?;
+    Ok(())
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generate_elm_bindings() {
+        use crate::db::models::lang;
+        use crate::doc_store;
+        
+        let mut out_buf = vec![];
+        elm_rs::export!("Bindings", &mut out_buf, {
+            encoders: [
+                lang::LanguageEntry, 
+                doc_store::DocType,
+                doc_store::Metadata,
+                doc_store::DocEntry,
+                doc_store::Settings,
+                doc_store::LanguageSetting,
+            ],
+            decoders: [
+                lang::LanguageEntry, 
+                doc_store::DocType,
+                doc_store::Metadata,
+                doc_store::DocEntry,
+                doc_store::Settings,
+                doc_store::LanguageSetting,
+            ],
+            queries: [],
+            query_fields: [],
+        })
+        .unwrap();
+        let out_str = String::from_utf8(out_buf).unwrap();
+
+        let out_path = "../influx_client/src/Bindings.elm";
+        write(out_path, out_str).expect("Unable to write file");
+    }
 }

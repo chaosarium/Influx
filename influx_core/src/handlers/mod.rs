@@ -5,7 +5,7 @@ use axum::{
     response::IntoResponse, http::StatusCode, Json, response::Response
 };
 use serde::{Deserialize, Serialize};
-use crate::{db::models::{lang::LanguageEntry, phrase::{mk_phrase_trie, Phrase}, vocab::{self, SRSInfo, TokenStatus}}, doc_store::write_md_file, utils::trie::Trie, ServerState};
+use crate::{db::models::{lang::LanguageEntry, phrase::{mk_phrase_trie, Phrase}, vocab::{self, TokenStatus}}, doc_store::write_md_file, utils::trie::Trie, ServerState};
 use crate::{db::{DB, models::vocab::Token}, doc_store};
 use crate::doc_store::DocEntry;
 use crate::doc_store::{
@@ -73,7 +73,7 @@ pub async fn get_docs_list(
 ) -> Response {
 
     // check if lang_id exists, if not return 404
-    if !db.language_exists(lang_id.clone()).await.unwrap() {
+    if !db.language_identifier_exists(lang_id.clone()).await.unwrap() {
         return (StatusCode::NOT_FOUND, Json(json!({
             "error": format!("lang_id {} not found", lang_id),
         }))).into_response()
@@ -110,19 +110,21 @@ fn text_checksum(text: String) -> String {
 // TODO do error handling like above
 pub async fn get_doc(
     State(ServerState { db, influx_path }): State<ServerState>, 
-    Path((lang_id, file)): Path<(String, String)>
+    Path((lang_identifier, file)): Path<(String, String)>
 ) -> impl IntoResponse {
 
     // check if lang_id exists, if not return 404
-    if !db.language_exists(lang_id.clone()).await.unwrap() {
+    if !db.language_identifier_exists(lang_identifier.clone()).await.unwrap() {
         return (StatusCode::NOT_FOUND, Json(json!({
-            "error": format!("lang_id {} not found", lang_id),
+            "error": format!("lang_id {} not found", lang_identifier),
         }))).into_response()
     }
+    
+    let lang_entry = db.get_language_by_identifier(lang_identifier.clone()).await.unwrap().unwrap();
+    let lang_id = lang_entry.id.clone().unwrap();
+    let lang_code = lang_entry.code.clone();
 
-    let language_code = db.get_code_for_language(lang_id.clone()).await.unwrap().unwrap();
-
-    let filepath = influx_path.join(PathBuf::from(&lang_id)).join(PathBuf::from(&file));
+    let filepath = influx_path.join(PathBuf::from(&lang_identifier)).join(PathBuf::from(&file));
     println!("trying to access {}", &filepath.display());
 
     let (metadata, text) = read_md_file(filepath.clone()).unwrap();
@@ -137,7 +139,7 @@ pub async fn get_doc(
         it
     } else {
         // run tokenisation pipeline and cache it
-        let it = nlp::tokenise_pipeline(text.as_str(), language_code.clone()).await.unwrap();
+        let it = nlp::tokenise_pipeline(text.as_str(), lang_code.clone()).await.unwrap();
         let serialized_doc = serde_json::to_string(&it).unwrap();
         if !nlp_filepath.exists() {
             fs::create_dir_all(nlp_filepath.parent().unwrap()).unwrap();
@@ -147,13 +149,13 @@ pub async fn get_doc(
     };
     
     let tokens_dict: HashMap<String, Token> = db.get_dict_from_orthography_set(
+        lang_id.clone(),
         tokenised_doc.orthography_set.union(&tokenised_doc.lemma_set).cloned().collect::<HashSet<String>>(),
-        lang_id.clone()
     ).await.unwrap();
     tokenised_doc.set_token_dict(tokens_dict);
 
     // phrase annotation
-    let potential_phrases: Vec<Phrase> = db.query_phrase_by_onset_orthographies(tokenised_doc.orthography_set.clone(), lang_id.clone()).await.unwrap();
+    let potential_phrases: Vec<Phrase> = db.query_phrase_by_onset_orthographies(lang_id.clone(), tokenised_doc.orthography_set.clone()).await.unwrap();
     let phrase_trie: Trie<String, Phrase> = mk_phrase_trie(potential_phrases);
     let tokenised_phrased_annotated_doc = nlp::phrase_fit_pipeline(tokenised_doc, phrase_trie);
 
@@ -167,12 +169,3 @@ pub async fn get_doc(
 pub mod vocab_handlers;
 pub mod phrase_handlers;
 pub mod integration_handlers;
-
-// #[deprecated]
-// pub async fn get_settings(
-//     State(ServerState { influx_path, .. }): State<ServerState>, 
-// ) -> impl IntoResponse {
-//     Json(
-//         doc_store::read_settings_file(influx_path).unwrap()
-//     )
-// }

@@ -14,7 +14,7 @@ pub async fn update_phrase(
     Json(payload): Json<Phrase>,
 ) -> Result<Json<Phrase>, ServerError> {
     println!("phrase update attempt payload: {:?}", payload);
-    let phrase = db.update_phrase_by_id(payload).await?;
+    let phrase = db.update_phrase(payload).await?;
     Ok(Json(phrase))
 }
 
@@ -27,8 +27,8 @@ pub async fn delete_phrase(
         None => {
             return Err(ServerError(anyhow::anyhow!("cannot delete if no id")));
         },
-        Some(thing) => {
-            let phrase = db.delete_phrase_by_thing(thing).await?;
+        Some(id) => {
+            let phrase = db.delete_phrase(id).await?;
             Ok(Json(phrase))
         },
     }

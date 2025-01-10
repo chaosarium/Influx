@@ -1,154 +1,145 @@
+use crate::db::{deserialize_surreal_thing_opt, InfluxResourceId};
 ///! a toy database
 use maplit::btreemap;
+use surrealdb::RecordIdKey;
 
-use super::models_prelude::*;
+use super::*;
 
-#[derive(Debug, Serialize, Deserialize, TS)]
-#[ts(export, export_to = "../influx_ui/src/lib/types/")]
-pub struct TodoInDB {
-    // #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    #[ts(type = "string")]
-    pub id: Option<Thing>,
+#[derive(Debug, Serialize, Deserialize, Elm, ElmEncode, ElmDecode)]
+pub struct TodoItem {
+    #[serde(deserialize_with = "deserialize_surreal_thing_opt")]
+    pub id: Option<InfluxResourceId>,
     pub text: String,
     pub completed: bool,
 }
 
-impl From<TodoInDB> for Value {
-    fn from(val: TodoInDB) -> Self {
-        match val.id {
-            Some(v) => btreemap!{
-                    "id" => v.into(),
-                    "text" => val.text.into(),
-                    "completed" => val.completed.into(),
-            }
-            .into(),
-            None => btreemap!{
-                "text" => val.text.into(),
-                "completed"=> val.completed.into()
-            }
-            .into(),
-        }
-    }
-}
-
+use super::DB::*;
 impl DB {
-    pub async fn seed_todo_table(&self) -> Result<()> {
-        self.add_todo_sql("todo1".into()).await.unwrap();
-        self.add_todo_sql("todo2".into()).await.unwrap();
+    pub async fn add_todo(&self, text: String) -> Result<TodoItem> {
+        match self {
+            Surreal { engine } => {
+                let sql = "CREATE todos SET text = $title, completed = false;";
+                let mut res: Response = engine.query(sql).bind(("title", text)).await?;
 
-        Ok(())
-    }
+                match res.take(0) {
+                    Ok(Some::<TodoItem>(v)) => Ok(v),
+                    _ => Err(anyhow::anyhow!("Error creating todo")),
+                }
+            }
+            Postgres { pool } => {
+                let record = sqlx::query_as!(
+                    TodoItem,
+                    r#"
+                        INSERT INTO todos (text, completed)
+                        VALUES ($1, false)
+                        RETURNING id as "id: Option<InfluxResourceId>", text, completed
+                    "#,
+                    text
+                )
+                .fetch_one(pool.as_ref())
+                .await?;
 
-    pub async fn add_todo_sql(&self, text: String) -> Result<TodoInDB> {
-        let sql = "CREATE todos SET text = $title, completed = false";
-        let mut res: Response = self.db
-            .query(sql)
-            .bind(("title", text))
-            .await?;
-
-        // dbg!(&res);
-        match res.take(0) {
-            Ok(Some::<TodoInDB>(v)) => Ok(v),
-            _ => Err(anyhow::anyhow!("Error creating todo"))
+                Ok(record)
+            }
         }
     }
 
-    pub async fn get_todos_sql(&self) -> Result<Vec<TodoInDB>> {
-        let sql = "SELECT * FROM todos";
-        let mut res: Response = self.db
-            .query(sql)
-            .await?;
+    pub async fn get_todos(&self) -> Result<Vec<TodoItem>> {
+        match self {
+            Surreal { engine } => {
+                let sql = "SELECT * FROM todos;";
+                let mut res: Response = engine.query(sql).await?;
 
-        // dbg!(&res);
-        match res.take(0) {
-            Ok::<Vec<TodoInDB>, _>(v) => Ok(v),
-            _ => Err(anyhow::anyhow!("Error getting todos"))
+                match res.take(0) {
+                    Ok::<Vec<TodoItem>, _>(v) => Ok(v),
+                    _ => Err(anyhow::anyhow!("Error getting todos")),
+                }
+            }
+            Postgres { pool } => {
+                let records = sqlx::query_as!(
+                    TodoItem,
+                    r#"
+                        SELECT id as "id: Option<InfluxResourceId>", text, completed
+                        FROM todos
+                    "#
+                )
+                .fetch_all(pool.as_ref())
+                .await?;
+
+                Ok(records)
+            }
         }
     }
 
-    pub async fn delete_todo_sql(&self, id: String) -> Result<TodoInDB> {
-        // let sql = "DELETE todos WHERE id = $id";
-        // let mut res: Response = self.db
-        //     .query(sql)
-        //     .bind(("id", &id))
-        //     .await?;
+    pub async fn delete_todo(&self, id: InfluxResourceId) -> Result<TodoItem> {
+        match self {
+            Surreal { engine } => match engine.delete(("todos", id)).await? {
+                Some::<TodoItem>(v) => Ok(v),
+                _ => Err(anyhow::anyhow!("Error deleting todo")),
+            },
+            Postgres { pool } => {
+                let record = sqlx::query_as!(
+                    TodoItem,
+                    r#"
+                        DELETE FROM todos
+                        WHERE id = $1
+                        RETURNING id as "id: Option<InfluxResourceId>", text, completed
+                    "#,
+                    id.as_i64()?
+                )
+                .fetch_one(pool.as_ref())
+                .await?;
 
-        // dbg!(&res);
-        // match res.take(0) {
-        //     Ok::<Vec<TodoInDB>, _>(v) => Ok(v),
-        //     _ => Err(anyhow::anyhow!("Error deleting todo"))
-        // }
-
-        // let res: Option<TodoInDB> = self.db.delete(("todos", &id)).await?;
-        // dbg!(&res);
-        // hmmm why does sql version not work?
-
-        match self.db.delete(("todos", &id)).await? {
-            Some::<TodoInDB>(v) => Ok(v),
-            _ => Err(anyhow::anyhow!("Error deleting todo"))
+                Ok(record)
+            }
         }
     }
-
-
-
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::db::DBLocation;
-
     use super::*;
-
-    #[test]
-    fn test_todo_struct() {
-        let todo = TodoInDB {
-            id: None,
-            text: "text".into(),
-            completed: false,
-        };
-
-        let val: Value = todo.into();
-
-        println!("{:?}", val);
-    }
+    use crate::db::DBLocation;
 
     #[tokio::test]
     async fn db_todos_operations() {
-        let db = DB::create_db(DBLocation::Mem).await;
-        let add_todo_res1 = db.add_todo_sql("Hello world 1".into()).await.unwrap();
-        assert_eq!(add_todo_res1.completed, false);
-        assert_eq!(add_todo_res1.text, "Hello world 1");
-        let add_todo_res2 = db.add_todo_sql("Hello world 2".into()).await.unwrap();
-        assert_eq!(add_todo_res2.completed, false);
-        assert_eq!(add_todo_res2.text, "Hello world 2");
-        let add_todo_res3 = db.add_todo_sql("Hello world 3".into()).await.unwrap();
-        assert_eq!(add_todo_res3.completed, false);
-        assert_eq!(add_todo_res3.text, "Hello world 3");
+        for db_choice in [
+            crate::DBChoice::SurrealMemory,
+            crate::DBChoice::PostgresServer,
+        ] {
+            let db = DB::create_db(db_choice).await.unwrap();
+            let add_todo_res1 = db.add_todo("Hello world 1".into()).await.unwrap();
+            assert_eq!(add_todo_res1.completed, false);
+            assert_eq!(add_todo_res1.text, "Hello world 1");
+            let add_todo_res2 = db.add_todo("Hello world 2".into()).await.unwrap();
+            assert_eq!(add_todo_res2.completed, false);
+            assert_eq!(add_todo_res2.text, "Hello world 2");
+            let add_todo_res3 = db.add_todo("Hello world 3".into()).await.unwrap();
+            assert_eq!(add_todo_res3.completed, false);
+            assert_eq!(add_todo_res3.text, "Hello world 3");
 
-        assert_ne!(add_todo_res1.id, add_todo_res2.id);
-        assert_ne!(add_todo_res1.id, add_todo_res3.id);
+            assert_ne!(add_todo_res1.id, add_todo_res2.id);
+            assert_ne!(add_todo_res1.id, add_todo_res3.id);
 
-        let todos = db.get_todos_sql().await.unwrap();
-        assert_eq!(todos.len(), 3);
-        for todo in todos {
-            println!("{:?}", todo);
+            let todos = db.get_todos().await.unwrap();
+            assert_eq!(todos.len(), 3);
+            for todo in todos {
+                println!("{:?}", todo);
+            }
+
+            let deleted = db.delete_todo(add_todo_res1.id.unwrap()).await.unwrap();
+            let todos = db.get_todos().await.unwrap();
+            assert_eq!(todos.len(), 2);
+
+            let deleted = db.delete_todo(add_todo_res2.id.unwrap()).await.unwrap();
+            assert_eq!(deleted.text, "Hello world 2");
+            let todos = db.get_todos().await.unwrap();
+            assert_eq!(todos.len(), 1);
+
+            let deleted = db.delete_todo(add_todo_res3.id.unwrap()).await.unwrap();
+            assert_eq!(deleted.text, "Hello world 3");
+            let todos = db.get_todos().await.unwrap();
+            assert_eq!(todos.len(), 0);
         }
-
-        let deleted = db.delete_todo_sql(add_todo_res1.id.unwrap().id.to_raw()).await.unwrap();
-        let todos = db.get_todos_sql().await.unwrap();
-        assert_eq!(todos.len(), 2);
-
-        let deleted = db.delete_thing::<TodoInDB>(add_todo_res2.id.unwrap()).await.unwrap();
-        assert_eq!(deleted.text, "Hello world 2");
-        let todos = db.get_todos_sql().await.unwrap();
-        assert_eq!(todos.len(), 1);
-
-        let deleted = db.delete_thing::<TodoInDB>(add_todo_res3.id.unwrap()).await.unwrap();
-        assert_eq!(deleted.text, "Hello world 3");
-        let todos = db.get_todos_sql().await.unwrap();
-        assert_eq!(todos.len(), 0);
-
     }
-
 }

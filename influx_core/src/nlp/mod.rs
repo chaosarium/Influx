@@ -49,11 +49,9 @@ use serde_json::value::Value;
 
 
 
-type StanzaResult = (String, usize, usize, Vec<Vec<Vec<BTreeMap<String, RustyEnum>>>>);
+// type StanzaResult = (String, usize, usize, Vec<Vec<Vec<BTreeMap<String, RustyEnum>>>>);
 
-#[derive(Debug, Deserialize, Serialize, TS, PartialEq, Clone, Default)]
-#[ts(export, export_to = "../influx_ui/src/lib/types/")]
-#[serde(tag = "type")]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
 pub struct AnnotatedDocument {
     pub text: String,
     pub constituents: Vec<DocumentConstituent>,
@@ -75,9 +73,7 @@ impl AnnotatedDocument {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, TS, PartialEq, Clone)]
-#[ts(export, export_to = "../influx_ui/src/lib/types/")]
-#[serde(tag = "type")]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub enum DocumentConstituent {
     Sentence {
         id: usize, // 0-indexed
@@ -93,9 +89,8 @@ pub enum DocumentConstituent {
     },
 }
 
-#[derive(Debug, Deserialize, Serialize, TS, PartialEq, Clone)]
-#[ts(export, export_to = "../influx_ui/src/lib/types/")]
-#[serde(tag = "type")]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+// #[serde(tag = "type")]
 pub enum SentenceConstituent {
     CompositToken {
         sentence_id: usize,
@@ -432,19 +427,19 @@ struct NLPServerReturn {
     constituents: Vec<Vec<Vec<BTreeMap<String, Value>>>>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-// #[derive(FromPyObject, Debug)]
-enum RustyEnum {
-    // #[pyo3(transparent, annotation = "str")]
-    String(String),
-    // #[pyo3(transparent, annotation = "int")]
-    Int(usize),
-    // #[pyo3(transparent, annotation = "tuple")]
-    List(Vec<usize>),
-}
+// #[derive(Debug, Deserialize, Serialize)]
+// // #[derive(FromPyObject, Debug)]
+// enum RustyEnum {
+//     // #[pyo3(transparent, annotation = "str")]
+//     String(String),
+//     // #[pyo3(transparent, annotation = "int")]
+//     Int(usize),
+//     // #[pyo3(transparent, annotation = "tuple")]
+//     List(Vec<usize>),
+// }
 
 /// given text and language, return a tokenised document before phrase fitting
-pub async fn tokenise_pipeline(text: &str, language: String) -> anyhow::Result<AnnotatedDocument> {
+pub async fn tokenise_pipeline(text: &str, language_code: String) -> anyhow::Result<AnnotatedDocument> {
 
     // let current_dir = env::current_dir()?;
     // let pylib_path = current_dir.join("./src/nlp/pylib").canonicalize()?; 
@@ -479,7 +474,7 @@ pub async fn tokenise_pipeline(text: &str, language: String) -> anyhow::Result<A
 
 
     let client = Client::new();
-    let url = format!("http://127.0.0.1:3001/tokeniser/{}", language);
+    let url = format!("http://127.0.0.1:3001/tokeniser/{}", language_code);
     let payload = json!({
         "text": text
     });

@@ -1,5 +1,5 @@
 serve:
-	cd influx_server && cargo run
+	cd influx_core && cargo run
 
 web:
 	cd influx_ui && npm run dev
@@ -7,8 +7,11 @@ web:
 tauri:
 	cd influx_ui && cargo tauri dev
 
-dbserver:
+surreal:
     surreal start rocksdb:surrealtemp.db -A --user root --pass root
+
+surrealmem:
+    surreal start memory -A --user root --pass root
 
 nlp:
     cd influx_nlp && just run

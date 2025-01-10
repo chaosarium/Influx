@@ -3,7 +3,7 @@ name = "influx_core"
 version = "0.1.0"
 edition = "2021"
 authors = ["Lómenoirë Mortecc."]
-rust-version = "1.78"
+rust-version = "1.80"
 readme = "../README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -40,9 +40,16 @@ async-trait = "0.1.84"
 google_translator = "0.2.3"
 md5 = "0.7.0"
 serde_yaml = "0.9.34"
+elm_rs = {version="0.2.2", features=['chrono']}
+log = "0.4.22"
+env_logger = "0.11.6"
+sqlx = {version = "0.8.3", features = [ "postgres", "runtime-tokio", "tls-native-tls" ]}
+dotenvy = "0.15.7"
+
 
 # [profile.dev]
 # opt-level = 0
 
 # [target.aarch64-apple-darwin]
 # rustflags = ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
+

@@ -1,7 +1,6 @@
 use axum::extract::Path;
 use serde::Deserialize;
 use super::ServerError;
-use crate::db::models::vocab::Token;
 use axum::Json;
 use crate::ServerState;
 use axum::extract::State;

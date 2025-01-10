@@ -7,6 +7,7 @@ use std::fs;
 use std::fs::DirEntry;
 use std::io;
 use std::path::{Path, PathBuf};
+use elm_rs::{Elm, ElmEncode, ElmDecode, ElmQuery, ElmQueryField};
 use serde::{Deserialize, Serialize};
 use yaml_front_matter::YamlFrontMatter;
 use yaml_front_matter::Document;
@@ -16,14 +17,14 @@ use toml::Value;
 use md5;
 use serde_yaml;
 
-#[derive(Deserialize, PartialEq, Debug, Serialize, Copy, Clone)]
+#[derive(Deserialize, PartialEq, Debug, Serialize, Copy, Clone, Elm, ElmEncode, ElmDecode)]
 pub enum DocType {
     Text,
     Video,
     Audio,
 }
 
-#[derive(Deserialize, Debug, Serialize, Clone, PartialEq)]
+#[derive(Deserialize, Debug, Serialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode)]
 pub struct Metadata {
     title: String,
     doc_type: DocType,
@@ -32,7 +33,7 @@ pub struct Metadata {
     date_modified: DateTime::<Utc>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
 pub struct DocEntry {
     path: PathBuf,
     filename: PathBuf,
@@ -40,13 +41,13 @@ pub struct DocEntry {
 }
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Elm, ElmEncode, ElmDecode)]
 pub struct Settings {
     pub port: Option<u16>,
     pub lang: Vec<LanguageSetting>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Elm, ElmEncode, ElmDecode)]
 pub struct LanguageSetting {
     pub identifier: String,
     pub display_name: String,

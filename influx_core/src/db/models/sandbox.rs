@@ -1,3 +1,4 @@
+#![deprecated]
 use super::{lang, models_prelude::*};
 use crate::prelude::*;
 use std::collections::{BTreeMap, HashMap, HashSet};

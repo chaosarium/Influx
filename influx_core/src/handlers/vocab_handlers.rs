@@ -26,8 +26,8 @@ pub async fn delete_token(
         None => {
             return Err(ServerError(anyhow::anyhow!("cannot delete if no id")));
         },
-        Some(thing) => {
-            let token = db.delete_token_by_thing(thing).await?;
+        Some(id) => {
+            let token = db.delete_token(id).await?;
             Ok(Json(token))
         },
     }
@@ -37,7 +37,7 @@ pub async fn lookup_token(
     State(ServerState { db, .. }): State<ServerState>, 
     Path((lang_id, orthography)): Path<(String, String)>
 ) -> Result<Json<Option<Token>>, ServerError> {
-    let token = db.query_token_by_orthography(orthography, lang_id).await?;
+    let token = db.query_token_by_lang_identifier_and_orthography(lang_id, orthography).await?;
     Ok(Json(token))
 }
 
@@ -46,6 +46,6 @@ pub async fn update_token(
     Json(payload): Json<Token>,
 ) -> Result<Json<Token>, ServerError> {
     println!("token update attempt payload: {:?}", payload);
-    let token = db.update_token_by_id(payload).await?;
+    let token = db.update_token(payload).await?;
     Ok(Json(token))
 }

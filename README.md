@@ -119,7 +119,7 @@ Also now with phrase support!
 - File on disk could lead to race condition, but probabily won't encounter in single user situation
 - Language settings could be on disk
 - security? account? whatever for now as it's localhost
-- influx_api should be renamed influx_server
+- influx_api should be renamed influx_core
 
 ## Running development server
 
