@@ -113,6 +113,164 @@ docEntryEncoder struct =
         ]
 
 
+type alias Token =
+    { id : Maybe (InfluxResourceId)
+    , langId : InfluxResourceId
+    , orthography : String
+    , phonetic : String
+    , definition : String
+    , notes : String
+    , originalContext : String
+    , status : TokenStatus
+    }
+
+
+tokenEncoder : Token -> Json.Encode.Value
+tokenEncoder struct =
+    Json.Encode.object
+        [ ( "id", (Maybe.withDefault Json.Encode.null << Maybe.map (influxResourceIdEncoder)) struct.id )
+        , ( "lang_id", (influxResourceIdEncoder) struct.langId )
+        , ( "orthography", (Json.Encode.string) struct.orthography )
+        , ( "phonetic", (Json.Encode.string) struct.phonetic )
+        , ( "definition", (Json.Encode.string) struct.definition )
+        , ( "notes", (Json.Encode.string) struct.notes )
+        , ( "original_context", (Json.Encode.string) struct.originalContext )
+        , ( "status", (tokenStatusEncoder) struct.status )
+        ]
+
+
+type TokenStatus
+    = Unmarked
+    | L1
+    | L2
+    | L3
+    | L4
+    | L5
+    | Known
+    | Ignored
+
+
+tokenStatusEncoder : TokenStatus -> Json.Encode.Value
+tokenStatusEncoder enum =
+    case enum of
+        Unmarked ->
+            Json.Encode.string "UNMARKED"
+        L1 ->
+            Json.Encode.string "L1"
+        L2 ->
+            Json.Encode.string "L2"
+        L3 ->
+            Json.Encode.string "L3"
+        L4 ->
+            Json.Encode.string "L4"
+        L5 ->
+            Json.Encode.string "L5"
+        Known ->
+            Json.Encode.string "KNOWN"
+        Ignored ->
+            Json.Encode.string "IGNORED"
+
+type alias Phrase =
+    { id : Maybe (InfluxResourceId)
+    , langId : InfluxResourceId
+    , orthographySeq : List (String)
+    , definition : String
+    , notes : String
+    , originalContext : String
+    , status : TokenStatus
+    }
+
+
+phraseEncoder : Phrase -> Json.Encode.Value
+phraseEncoder struct =
+    Json.Encode.object
+        [ ( "id", (Maybe.withDefault Json.Encode.null << Maybe.map (influxResourceIdEncoder)) struct.id )
+        , ( "lang_id", (influxResourceIdEncoder) struct.langId )
+        , ( "orthography_seq", (Json.Encode.list (Json.Encode.string)) struct.orthographySeq )
+        , ( "definition", (Json.Encode.string) struct.definition )
+        , ( "notes", (Json.Encode.string) struct.notes )
+        , ( "original_context", (Json.Encode.string) struct.originalContext )
+        , ( "status", (tokenStatusEncoder) struct.status )
+        ]
+
+
+type DocumentConstituent
+    = Sentence { id : Int, text : String, startChar : Int, endChar : Int, constituents : List (SentenceConstituent) }
+    | DocumentWhitespace { text : String, startChar : Int, endChar : Int }
+
+
+documentConstituentEncoder : DocumentConstituent -> Json.Encode.Value
+documentConstituentEncoder enum =
+    case enum of
+        Sentence { id, text, startChar, endChar, constituents } ->
+            Json.Encode.object [ ( "Sentence", Json.Encode.object [ ( "id", (Json.Encode.int) id ), ( "text", (Json.Encode.string) text ), ( "start_char", (Json.Encode.int) startChar ), ( "end_char", (Json.Encode.int) endChar ), ( "constituents", (Json.Encode.list (sentenceConstituentEncoder)) constituents ) ] ) ]
+        DocumentWhitespace { text, startChar, endChar } ->
+            Json.Encode.object [ ( "DocumentWhitespace", Json.Encode.object [ ( "text", (Json.Encode.string) text ), ( "start_char", (Json.Encode.int) startChar ), ( "end_char", (Json.Encode.int) endChar ) ] ) ]
+
+type SentenceConstituent
+    = CompositToken { sentenceId : Int, ids : List (Int), text : String, orthography : String, startChar : Int, endChar : Int, shadowed : Bool, shadows : List (SentenceConstituent) }
+    | SubwordToken { sentenceId : Int, id : Int, text : String, orthography : String, lemma : String, shadowed : Bool, shadows : List (SentenceConstituent) }
+    | SingleToken { sentenceId : Int, id : Int, text : String, orthography : String, lemma : String, startChar : Int, endChar : Int, shadowed : Bool, shadows : List (SentenceConstituent) }
+    | SentenceWhitespace { text : String, orthography : String, startChar : Int, endChar : Int, shadowed : Bool, shadows : List (SentenceConstituent) }
+    | PhraseToken { sentenceId : Int, text : String, normalisedOrthography : String, startChar : Int, endChar : Int, shadowed : Bool, shadows : List (SentenceConstituent) }
+
+
+sentenceConstituentEncoder : SentenceConstituent -> Json.Encode.Value
+sentenceConstituentEncoder enum =
+    case enum of
+        CompositToken { sentenceId, ids, text, orthography, startChar, endChar, shadowed, shadows } ->
+            Json.Encode.object [ ( "CompositToken", Json.Encode.object [ ( "sentence_id", (Json.Encode.int) sentenceId ), ( "ids", (Json.Encode.list (Json.Encode.int)) ids ), ( "text", (Json.Encode.string) text ), ( "orthography", (Json.Encode.string) orthography ), ( "start_char", (Json.Encode.int) startChar ), ( "end_char", (Json.Encode.int) endChar ), ( "shadowed", (Json.Encode.bool) shadowed ), ( "shadows", (Json.Encode.list (sentenceConstituentEncoder)) shadows ) ] ) ]
+        SubwordToken { sentenceId, id, text, orthography, lemma, shadowed, shadows } ->
+            Json.Encode.object [ ( "SubwordToken", Json.Encode.object [ ( "sentence_id", (Json.Encode.int) sentenceId ), ( "id", (Json.Encode.int) id ), ( "text", (Json.Encode.string) text ), ( "orthography", (Json.Encode.string) orthography ), ( "lemma", (Json.Encode.string) lemma ), ( "shadowed", (Json.Encode.bool) shadowed ), ( "shadows", (Json.Encode.list (sentenceConstituentEncoder)) shadows ) ] ) ]
+        SingleToken { sentenceId, id, text, orthography, lemma, startChar, endChar, shadowed, shadows } ->
+            Json.Encode.object [ ( "SingleToken", Json.Encode.object [ ( "sentence_id", (Json.Encode.int) sentenceId ), ( "id", (Json.Encode.int) id ), ( "text", (Json.Encode.string) text ), ( "orthography", (Json.Encode.string) orthography ), ( "lemma", (Json.Encode.string) lemma ), ( "start_char", (Json.Encode.int) startChar ), ( "end_char", (Json.Encode.int) endChar ), ( "shadowed", (Json.Encode.bool) shadowed ), ( "shadows", (Json.Encode.list (sentenceConstituentEncoder)) shadows ) ] ) ]
+        SentenceWhitespace { text, orthography, startChar, endChar, shadowed, shadows } ->
+            Json.Encode.object [ ( "SentenceWhitespace", Json.Encode.object [ ( "text", (Json.Encode.string) text ), ( "orthography", (Json.Encode.string) orthography ), ( "start_char", (Json.Encode.int) startChar ), ( "end_char", (Json.Encode.int) endChar ), ( "shadowed", (Json.Encode.bool) shadowed ), ( "shadows", (Json.Encode.list (sentenceConstituentEncoder)) shadows ) ] ) ]
+        PhraseToken { sentenceId, text, normalisedOrthography, startChar, endChar, shadowed, shadows } ->
+            Json.Encode.object [ ( "PhraseToken", Json.Encode.object [ ( "sentence_id", (Json.Encode.int) sentenceId ), ( "text", (Json.Encode.string) text ), ( "normalised_orthography", (Json.Encode.string) normalisedOrthography ), ( "start_char", (Json.Encode.int) startChar ), ( "end_char", (Json.Encode.int) endChar ), ( "shadowed", (Json.Encode.bool) shadowed ), ( "shadows", (Json.Encode.list (sentenceConstituentEncoder)) shadows ) ] ) ]
+
+type alias GetDocResponse =
+    { metadata : DocMetadata
+    , text : String
+    , annotatedDoc : AnnotatedDocument
+    }
+
+
+getDocResponseEncoder : GetDocResponse -> Json.Encode.Value
+getDocResponseEncoder struct =
+    Json.Encode.object
+        [ ( "metadata", (docMetadataEncoder) struct.metadata )
+        , ( "text", (Json.Encode.string) struct.text )
+        , ( "annotated_doc", (annotatedDocumentEncoder) struct.annotatedDoc )
+        ]
+
+
+type alias AnnotatedDocument =
+    { text : String
+    , constituents : List (DocumentConstituent)
+    , numSentences : Int
+    , numTokens : Int
+    , orthographySet : List (String)
+    , lemmaSet : List (String)
+    , tokenDict : Maybe (Dict String (Token))
+    , phraseDict : Maybe (Dict String (Phrase))
+    }
+
+
+annotatedDocumentEncoder : AnnotatedDocument -> Json.Encode.Value
+annotatedDocumentEncoder struct =
+    Json.Encode.object
+        [ ( "text", (Json.Encode.string) struct.text )
+        , ( "constituents", (Json.Encode.list (documentConstituentEncoder)) struct.constituents )
+        , ( "num_sentences", (Json.Encode.int) struct.numSentences )
+        , ( "num_tokens", (Json.Encode.int) struct.numTokens )
+        , ( "orthography_set", (Json.Encode.list (Json.Encode.string)) struct.orthographySet )
+        , ( "lemma_set", (Json.Encode.list (Json.Encode.string)) struct.lemmaSet )
+        , ( "token_dict", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.dict identity (tokenEncoder))) struct.tokenDict )
+        , ( "phrase_dict", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.dict identity (phraseEncoder))) struct.phraseDict )
+        ]
+
+
 influxResourceIdDecoder : Json.Decode.Decoder InfluxResourceId
 influxResourceIdDecoder = 
     Json.Decode.oneOf
@@ -178,5 +336,163 @@ docEntryDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "path" (Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "filename" (Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "metadata" (docMetadataDecoder)))
+
+
+tokenDecoder : Json.Decode.Decoder Token
+tokenDecoder =
+    Json.Decode.succeed Token
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" (Json.Decode.nullable (influxResourceIdDecoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lang_id" (influxResourceIdDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "orthography" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "phonetic" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "definition" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "notes" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "original_context" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "status" (tokenStatusDecoder)))
+
+
+tokenStatusDecoder : Json.Decode.Decoder TokenStatus
+tokenStatusDecoder = 
+    Json.Decode.oneOf
+        [ Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "UNMARKED" ->
+                            Json.Decode.succeed Unmarked
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "L1" ->
+                            Json.Decode.succeed L1
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "L2" ->
+                            Json.Decode.succeed L2
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "L3" ->
+                            Json.Decode.succeed L3
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "L4" ->
+                            Json.Decode.succeed L4
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "L5" ->
+                            Json.Decode.succeed L5
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "KNOWN" ->
+                            Json.Decode.succeed Known
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "IGNORED" ->
+                            Json.Decode.succeed Ignored
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        ]
+
+phraseDecoder : Json.Decode.Decoder Phrase
+phraseDecoder =
+    Json.Decode.succeed Phrase
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" (Json.Decode.nullable (influxResourceIdDecoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lang_id" (influxResourceIdDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "orthography_seq" (Json.Decode.list (Json.Decode.string))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "definition" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "notes" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "original_context" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "status" (tokenStatusDecoder)))
+
+
+documentConstituentDecoder : Json.Decode.Decoder DocumentConstituent
+documentConstituentDecoder = 
+        let
+            elmRsConstructSentence id text startChar endChar constituents =
+                        Sentence { id = id, text = text, startChar = startChar, endChar = endChar, constituents = constituents }
+            elmRsConstructDocumentWhitespace text startChar endChar =
+                        DocumentWhitespace { text = text, startChar = startChar, endChar = endChar }
+        in
+    Json.Decode.oneOf
+        [ Json.Decode.field "Sentence" (Json.Decode.succeed elmRsConstructSentence |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "start_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "end_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "constituents" (Json.Decode.list (sentenceConstituentDecoder)))))
+        , Json.Decode.field "DocumentWhitespace" (Json.Decode.succeed elmRsConstructDocumentWhitespace |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "start_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "end_char" (Json.Decode.int))))
+        ]
+
+sentenceConstituentDecoder : Json.Decode.Decoder SentenceConstituent
+sentenceConstituentDecoder = 
+        let
+            elmRsConstructCompositToken sentenceId ids text orthography startChar endChar shadowed shadows =
+                        CompositToken { sentenceId = sentenceId, ids = ids, text = text, orthography = orthography, startChar = startChar, endChar = endChar, shadowed = shadowed, shadows = shadows }
+            elmRsConstructSubwordToken sentenceId id text orthography lemma shadowed shadows =
+                        SubwordToken { sentenceId = sentenceId, id = id, text = text, orthography = orthography, lemma = lemma, shadowed = shadowed, shadows = shadows }
+            elmRsConstructSingleToken sentenceId id text orthography lemma startChar endChar shadowed shadows =
+                        SingleToken { sentenceId = sentenceId, id = id, text = text, orthography = orthography, lemma = lemma, startChar = startChar, endChar = endChar, shadowed = shadowed, shadows = shadows }
+            elmRsConstructSentenceWhitespace text orthography startChar endChar shadowed shadows =
+                        SentenceWhitespace { text = text, orthography = orthography, startChar = startChar, endChar = endChar, shadowed = shadowed, shadows = shadows }
+            elmRsConstructPhraseToken sentenceId text normalisedOrthography startChar endChar shadowed shadows =
+                        PhraseToken { sentenceId = sentenceId, text = text, normalisedOrthography = normalisedOrthography, startChar = startChar, endChar = endChar, shadowed = shadowed, shadows = shadows }
+        in
+    Json.Decode.oneOf
+        [ Json.Decode.field "CompositToken" (Json.Decode.succeed elmRsConstructCompositToken |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "sentence_id" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "ids" (Json.Decode.list (Json.Decode.int)))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "orthography" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "start_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "end_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "shadowed" (Json.Decode.bool))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "shadows" (Json.Decode.list (sentenceConstituentDecoder)))))
+        , Json.Decode.field "SubwordToken" (Json.Decode.succeed elmRsConstructSubwordToken |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "sentence_id" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "orthography" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lemma" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "shadowed" (Json.Decode.bool))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "shadows" (Json.Decode.list (sentenceConstituentDecoder)))))
+        , Json.Decode.field "SingleToken" (Json.Decode.succeed elmRsConstructSingleToken |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "sentence_id" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "orthography" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lemma" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "start_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "end_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "shadowed" (Json.Decode.bool))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "shadows" (Json.Decode.list (sentenceConstituentDecoder)))))
+        , Json.Decode.field "SentenceWhitespace" (Json.Decode.succeed elmRsConstructSentenceWhitespace |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "orthography" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "start_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "end_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "shadowed" (Json.Decode.bool))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "shadows" (Json.Decode.list (sentenceConstituentDecoder)))))
+        , Json.Decode.field "PhraseToken" (Json.Decode.succeed elmRsConstructPhraseToken |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "sentence_id" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "normalised_orthography" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "start_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "end_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "shadowed" (Json.Decode.bool))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "shadows" (Json.Decode.list (sentenceConstituentDecoder)))))
+        ]
+
+getDocResponseDecoder : Json.Decode.Decoder GetDocResponse
+getDocResponseDecoder =
+    Json.Decode.succeed GetDocResponse
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "metadata" (docMetadataDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "annotated_doc" (annotatedDocumentDecoder)))
+
+
+annotatedDocumentDecoder : Json.Decode.Decoder AnnotatedDocument
+annotatedDocumentDecoder =
+    Json.Decode.succeed AnnotatedDocument
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "constituents" (Json.Decode.list (documentConstituentDecoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "num_sentences" (Json.Decode.int)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "num_tokens" (Json.Decode.int)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "orthography_set" (Json.Decode.list (Json.Decode.string))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lemma_set" (Json.Decode.list (Json.Decode.string))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "token_dict" (Json.Decode.nullable (Json.Decode.dict (tokenDecoder)))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "phrase_dict" (Json.Decode.nullable (Json.Decode.dict (phraseDecoder)))))
 
 

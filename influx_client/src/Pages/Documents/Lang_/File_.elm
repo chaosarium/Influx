@@ -1,8 +1,8 @@
 module Pages.Documents.Lang_.File_ exposing (Model, Msg, page)
 
 import Api
-import Api.LanguageList
-import Bindings exposing (LanguageEntry)
+import Api.GetAnnotatedDoc
+import Bindings exposing (GetDocResponse, LanguageEntry)
 import Components.DbgDisplay
 import Components.Topbar
 import Effect exposing (Effect)
@@ -12,13 +12,14 @@ import Http
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
+import Utils
 import View exposing (View)
 
 
 page : Shared.Model -> Route { lang : String, file : String } -> Page Model Msg
 page shared route =
     Page.new
-        { init = init
+        { init = init { languageId = route.params.lang, filepath = route.params.file }
         , update = update
         , subscriptions = subscriptions
         , view = view route
@@ -34,13 +35,18 @@ type alias ThisRoute =
 
 
 type alias Model =
-    { langData : Api.Data (List LanguageEntry) }
+    { data : Api.Data GetDocResponse }
 
 
-init : () -> ( Model, Effect Msg )
-init () =
-    ( { langData = Api.Loading }
-    , Effect.sendCmd (Api.LanguageList.getLanguages { onResponse = ApiResponded })
+init :
+    { languageId : String
+    , filepath : String
+    }
+    -> ()
+    -> ( Model, Effect Msg )
+init args () =
+    ( { data = Api.Loading }
+    , Effect.sendCmd (Api.GetAnnotatedDoc.get args ApiResponded)
     )
 
 
@@ -49,7 +55,7 @@ init () =
 
 
 type Msg
-    = ApiResponded (Result Http.Error (List LanguageEntry))
+    = ApiResponded (Result Http.Error GetDocResponse)
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -60,10 +66,10 @@ update msg model =
                 _ =
                     Debug.log "ApiResponded" res
             in
-            ( { model | langData = Api.Success res }, Effect.none )
+            ( { model | data = Api.Success res }, Effect.none )
 
         ApiResponded (Err httpError) ->
-            ( { model | langData = Api.Failure httpError }, Effect.none )
+            ( { model | data = Api.Failure httpError }, Effect.none )
 
 
 
@@ -79,23 +85,13 @@ subscriptions model =
 -- VIEW
 
 
-viewLanguage : LanguageEntry -> Html.Html msg
-viewLanguage language =
-    Html.li []
-        [ Html.span [] [ Html.text language.name ]
-        , Html.text " "
-        , Html.span [] [ Html.text ("[" ++ language.identifier ++ "]") ]
-        , Html.text " "
-        , Html.span [] [ Html.a [ Html.Attributes.href ("/documents/" ++ language.identifier) ] [ Html.text "documents" ] ]
-        ]
-
-
 view : ThisRoute -> Model -> View Msg
 view route model =
-    { title = "Pages.Languages"
+    { title = "File view"
     , body =
         [ Components.Topbar.view {}
         , Components.DbgDisplay.view "route" route
-        , Html.h1 [] [ Html.text ("lang: " ++ route.params.lang ++ ", file: " ++ route.params.file) ]
+        , Html.h1 [] [ Html.text ("lang: " ++ route.params.lang ++ ", file: " ++ Utils.unwrappedPercentDecode route.params.file) ]
+        , Components.DbgDisplay.view "model" model
         ]
     }

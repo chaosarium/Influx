@@ -1,21 +1,21 @@
-module Api.DocumentList exposing (..)
+module Api.GetDocuments exposing (..)
 
-import Bindings exposing (DocEntry, docEntryDecoder)
+import Bindings
 import Http
 import Json.Decode
 
 
-decoder : Json.Decode.Decoder (List DocEntry)
+decoder : Json.Decode.Decoder (List Bindings.DocEntry)
 decoder =
-    Json.Decode.list docEntryDecoder
+    Json.Decode.list Bindings.docEntryDecoder
 
 
-getDocuments :
+get :
     { languageId : String
-    , onResponse : Result Http.Error (List DocEntry) -> msg
+    , onResponse : Result Http.Error (List Bindings.DocEntry) -> msg
     }
     -> Cmd msg
-getDocuments options =
+get options =
     let
         url =
             "http://127.0.0.1:3000/docs/" ++ options.languageId

@@ -1,4 +1,4 @@
-module Api exposing (Data(..), toUserFriendlyMessage)
+module Api exposing (Data(..), stringOfHttpErrMsg)
 
 import Http
 
@@ -9,25 +9,22 @@ type Data value
     | Failure Http.Error
 
 
-toUserFriendlyMessage : Http.Error -> String
-toUserFriendlyMessage httpError =
-    case httpError of
-        Http.BadUrl _ ->
-            -- The URL is malformed, probably caused by a typo
-            "This page requested a bad URL"
+stringOfHttpErrMsg : Http.Error -> String
+stringOfHttpErrMsg httpError =
+    "HTTP error: "
+        ++ (case httpError of
+                Http.BadUrl e ->
+                    "Bad URL: " ++ e
 
-        Http.Timeout ->
-            -- Happens after
-            "Request took too long to respond"
+                Http.Timeout ->
+                    "Timeout"
 
-        Http.NetworkError ->
-            -- Happens if the user is offline or the API isn't online
-            "Could not connect to the API"
+                Http.NetworkError ->
+                    "Network error"
 
-        Http.BadStatus code ->
-            -- Connected to the API, but something went wrong
-            "Unexpected response from API: " ++ String.fromInt code
+                Http.BadStatus code ->
+                    "Bad response status: " ++ String.fromInt code
 
-        Http.BadBody _ ->
-            -- Our JSON decoder didn't match what the API sent
-            "Unexpected response from API"
+                Http.BadBody e ->
+                    "Bad response body: " ++ e
+           )

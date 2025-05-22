@@ -1,7 +1,7 @@
 module Pages.Languages exposing (Model, Msg, page)
 
 import Api
-import Api.LanguageList
+import Api.GetLanguages
 import Bindings exposing (LanguageEntry)
 import Components.Topbar
 import Effect exposing (Effect)
@@ -35,7 +35,7 @@ type alias Model =
 init : () -> ( Model, Effect Msg )
 init () =
     ( { langData = Api.Loading }
-    , Effect.sendCmd (Api.LanguageList.getLanguages { onResponse = ApiResponded })
+    , Effect.sendCmd (Api.GetLanguages.get { onResponse = ApiResponded })
     )
 
 
@@ -87,7 +87,7 @@ viewLanguage language =
 
 view : Model -> View Msg
 view model =
-    { title = "Pages.Languages"
+    { title = "Language listing"
     , body =
         [ Components.Topbar.view {}
         , case model.langData of
@@ -95,7 +95,7 @@ view model =
                 div [] [ Html.text "Loading..." ]
 
             Api.Failure httpError ->
-                div [] [ Html.text "Error: ", Html.text (Api.toUserFriendlyMessage httpError) ]
+                div [] [ Html.text "Error: ", Html.text (Api.stringOfHttpErrMsg httpError) ]
 
             Api.Success languages ->
                 div []

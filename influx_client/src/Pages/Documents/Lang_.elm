@@ -1,7 +1,7 @@
 module Pages.Documents.Lang_ exposing (Model, Msg, page)
 
 import Api
-import Api.DocumentList
+import Api.GetDocuments
 import Bindings exposing (DocEntry)
 import Components.DbgDisplay
 import Components.Topbar
@@ -40,7 +40,7 @@ type alias Model =
 init : String -> () -> ( Model, Effect Msg )
 init lang () =
     ( { docData = Api.Loading }
-    , Effect.sendCmd (Api.DocumentList.getDocuments { onResponse = ApiResponded, languageId = lang })
+    , Effect.sendCmd (Api.GetDocuments.get { onResponse = ApiResponded, languageId = lang })
     )
 
 
@@ -91,7 +91,7 @@ viewDocEntry lang document =
 
 view : ThisRoute -> Model -> View Msg
 view route model =
-    { title = "Pages.Languages"
+    { title = "Document listing"
     , body =
         [ Components.Topbar.view {}
         , Components.DbgDisplay.view "route" route
@@ -101,7 +101,7 @@ view route model =
                 div [] [ Html.text "Loading..." ]
 
             Api.Failure httpError ->
-                div [] [ Html.text "Error: ", Html.text (Api.toUserFriendlyMessage httpError) ]
+                div [] [ Html.text "Error: ", Html.text (Api.stringOfHttpErrMsg httpError) ]
 
             Api.Success documents ->
                 div []
