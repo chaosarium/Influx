@@ -1,6 +1,7 @@
 #![allow(unused_imports, unused_must_use)]
 use core::panic;
 use std::collections::{BTreeMap, HashSet, HashMap};
+use elm_rs::{Elm, ElmEncode, ElmDecode, ElmQuery, ElmQueryField};
 
 // use anyhow::Ok;
 use anyhow;
@@ -51,7 +52,7 @@ use serde_json::value::Value;
 
 // type StanzaResult = (String, usize, usize, Vec<Vec<Vec<BTreeMap<String, RustyEnum>>>>);
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default, Elm, ElmEncode, ElmDecode)]
 pub struct AnnotatedDocument {
     pub text: String,
     pub constituents: Vec<DocumentConstituent>,
@@ -73,7 +74,7 @@ impl AnnotatedDocument {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 pub enum DocumentConstituent {
     Sentence {
         id: usize, // 0-indexed
@@ -82,14 +83,14 @@ pub enum DocumentConstituent {
         end_char: usize,
         constituents: Vec<SentenceConstituent>,
     },
-    Whitespace {
+    DocumentWhitespace {
         text: String,
         start_char: usize,
         end_char: usize,
     },
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 // #[serde(tag = "type")]
 pub enum SentenceConstituent {
     CompositToken {
@@ -122,7 +123,7 @@ pub enum SentenceConstituent {
         shadowed: bool,
         shadows: Vec<SentenceConstituent>,
     },
-    Whitespace {
+    SentenceWhitespace {
         text: String,
         orthography: String, // trivially the same as text, if things are working
         start_char: usize,
@@ -148,7 +149,7 @@ impl SentenceConstituent {
             SentenceConstituent::CompositToken { shadowed, .. } => *shadowed = true,
             SentenceConstituent::SubwordToken { shadowed, .. } => *shadowed = true,
             SentenceConstituent::SingleToken { shadowed, .. } => *shadowed = true,
-            SentenceConstituent::Whitespace { shadowed, .. } => *shadowed = true,
+            SentenceConstituent::SentenceWhitespace { shadowed, .. } => *shadowed = true,
             SentenceConstituent::PhraseToken { shadowed, .. } => *shadowed = true,
         }
     }
@@ -158,7 +159,7 @@ impl SentenceConstituent {
             SentenceConstituent::CompositToken { shadows, .. } => shadows.push(shadow),
             SentenceConstituent::SubwordToken { shadows, .. } => shadows.push(shadow),
             SentenceConstituent::SingleToken { shadows, .. } => shadows.push(shadow),
-            SentenceConstituent::Whitespace { shadows, .. } => shadows.push(shadow),
+            SentenceConstituent::SentenceWhitespace { shadows, .. } => shadows.push(shadow),
             SentenceConstituent::PhraseToken { shadows, .. } => shadows.push(shadow),
         }
     }
@@ -168,7 +169,7 @@ impl SentenceConstituent {
             SentenceConstituent::CompositToken { text, .. } => text.clone(),
             SentenceConstituent::SubwordToken { text, .. } => text.clone(),
             SentenceConstituent::SingleToken { text, .. } => text.clone(),
-            SentenceConstituent::Whitespace { text, .. } => text.clone(),
+            SentenceConstituent::SentenceWhitespace { text, .. } => text.clone(),
             SentenceConstituent::PhraseToken { text, .. } => text.clone(),
         }
     }
@@ -177,7 +178,7 @@ impl SentenceConstituent {
             SentenceConstituent::CompositToken { .. } => true,
             SentenceConstituent::SubwordToken { .. } => false,
             SentenceConstituent::SingleToken { .. } => true,
-            SentenceConstituent::Whitespace { .. } => true,
+            SentenceConstituent::SentenceWhitespace { .. } => true,
             SentenceConstituent::PhraseToken { .. } => true,
         }
     }
@@ -186,7 +187,7 @@ impl SentenceConstituent {
             SentenceConstituent::CompositToken { start_char, .. } => *start_char,
             SentenceConstituent::SubwordToken { .. } => panic!("SubwordToken has no start_char"),
             SentenceConstituent::SingleToken { start_char, .. } => *start_char,
-            SentenceConstituent::Whitespace { start_char, .. } => *start_char,
+            SentenceConstituent::SentenceWhitespace { start_char, .. } => *start_char,
             SentenceConstituent::PhraseToken { start_char, .. } => *start_char,
         }
     }
@@ -195,7 +196,7 @@ impl SentenceConstituent {
             SentenceConstituent::CompositToken { end_char, .. } => *end_char,
             SentenceConstituent::SubwordToken { .. } => panic!("SubwordToken has no end_char"),
             SentenceConstituent::SingleToken { end_char, .. } => *end_char,
-            SentenceConstituent::Whitespace { end_char, .. } => *end_char,
+            SentenceConstituent::SentenceWhitespace { end_char, .. } => *end_char,
             SentenceConstituent::PhraseToken { end_char, .. } => *end_char,
         }
     }
@@ -338,7 +339,7 @@ fn stanza2document(stanzares: NLPServerReturn) -> anyhow::Result<AnnotatedDocume
                 },
                 SentenceConstituent::CompositToken { start_char, end_char, .. } => {
                     if start_char > fill_line {
-                        tokens.push(SentenceConstituent::Whitespace {
+                        tokens.push(SentenceConstituent::SentenceWhitespace {
                             text: char_slice(&text_chars, fill_line, start_char).to_string(),
                             orthography: char_slice(&text_chars, fill_line, start_char).to_string(),
                             start_char: fill_line,
@@ -352,7 +353,7 @@ fn stanza2document(stanzares: NLPServerReturn) -> anyhow::Result<AnnotatedDocume
                 },
                 SentenceConstituent::SingleToken { start_char, end_char, .. } => {
                     if start_char > fill_line {
-                        tokens.push(SentenceConstituent::Whitespace {
+                        tokens.push(SentenceConstituent::SentenceWhitespace {
                             text: char_slice(&text_chars, fill_line, start_char).to_string(),
                             orthography: char_slice(&text_chars, fill_line, start_char).to_string(),
                             start_char: fill_line,
@@ -387,12 +388,12 @@ fn stanza2document(stanzares: NLPServerReturn) -> anyhow::Result<AnnotatedDocume
         let sentence = intermediate_sentences.pop_front().unwrap();
 
         match sentence {
-            DocumentConstituent::Whitespace { .. } => {
+            DocumentConstituent::DocumentWhitespace { .. } => {
                 sentences.push(sentence)
             },
             DocumentConstituent::Sentence { start_char, end_char, .. } => {
                 if start_char > fill_line {
-                    sentences.push(DocumentConstituent::Whitespace {
+                    sentences.push(DocumentConstituent::DocumentWhitespace {
                         text: char_slice(&text_chars, fill_line, start_char).to_string(),
                         start_char: fill_line,
                         end_char: start_char,
@@ -510,8 +511,8 @@ pub fn phrase_fit_pipeline(document: AnnotatedDocument, potential_phrases: Trie<
         .into_iter()
         .map(|document_constituent| {
             match document_constituent {
-                DocumentConstituent::Whitespace { text, start_char, end_char } => {
-                    DocumentConstituent::Whitespace { text, start_char, end_char }
+                DocumentConstituent::DocumentWhitespace { text, start_char, end_char } => {
+                    DocumentConstituent::DocumentWhitespace { text, start_char, end_char }
                 },
                 DocumentConstituent::Sentence { id, text, start_char, end_char, constituents } => {
                     let original_constituents = constituents.clone();
@@ -655,7 +656,7 @@ mod tests {
                             shadowed: false,
                             shadows: vec![],
                         },
-                        SentenceConstituent::Whitespace {
+                        SentenceConstituent::SentenceWhitespace {
                             text: " ".to_string(),
                             orthography: " ".to_string(),
                             start_char: 5,
@@ -687,7 +688,7 @@ mod tests {
                         },
                     ],
                 },
-                DocumentConstituent::Whitespace {
+                DocumentConstituent::DocumentWhitespace {
                     text: " ".to_string(),
                     start_char: 12,
                     end_char: 13,
@@ -780,7 +781,7 @@ mod tests {
                                 },
                             ]
                         },
-                        SentenceConstituent::Whitespace {
+                        SentenceConstituent::SentenceWhitespace {
                             text: "  ".to_string(),
                             orthography: "  ".to_string(),
                             start_char: 5,

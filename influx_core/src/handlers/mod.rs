@@ -21,6 +21,8 @@ use std::{path::PathBuf, collections::{HashMap, HashSet}};
 use md5;
 use std::fs;
 use serde_json;
+use elm_rs::{Elm, ElmEncode, ElmDecode, ElmQuery, ElmQueryField};
+
 
 // https://github.com/tokio-rs/axum/blob/main/examples/anyhow-error-response/src/main.rs
 pub struct ServerError(anyhow::Error);
@@ -91,14 +93,14 @@ pub async fn get_docs_list(
 
 }
 
-#[deprecated]
-pub fn get_language_code(settings: &doc_store::Settings, lang_id: String) -> Option<String> {
-    settings
-        .lang
-        .iter()
-        .find(|l| l.identifier == lang_id)
-        .map(|l| l.code.clone())
-}
+// #[deprecated]
+// pub fn get_language_code(settings: &doc_store::Settings, lang_id: String) -> Option<String> {
+//     settings
+//         .lang
+//         .iter()
+//         .find(|l| l.identifier == lang_id)
+//         .map(|l| l.code.clone())
+// }
 
 
 fn text_checksum(text: String) -> String {
@@ -106,6 +108,12 @@ fn text_checksum(text: String) -> String {
     format!("{:x}", digest)
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Elm, ElmEncode, ElmDecode)]
+pub struct GetDocResponse {
+    metadata: doc_store::DocMetadata,
+    text: String,
+    annotated_doc: nlp::AnnotatedDocument,
+}
 
 
 // TODO do error handling like above
@@ -163,11 +171,12 @@ pub async fn get_doc(
     let phrase_trie: Trie<String, Phrase> = mk_phrase_trie(potential_phrases);
     let tokenised_phrased_annotated_doc = nlp::phrase_fit_pipeline(tokenised_doc, phrase_trie);
 
-    (StatusCode::OK, Json(json!({
-        "metadata": metadata,
-        "text": text,
-        "annotated_doc": tokenised_phrased_annotated_doc,
-    }))).into_response()
+    let result = GetDocResponse {
+        metadata,
+        text,
+        annotated_doc: tokenised_phrased_annotated_doc,
+    };
+    (StatusCode::OK, Json(result)).into_response()
 }
 
 pub mod vocab_handlers;

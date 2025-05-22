@@ -25,7 +25,7 @@ pub enum DocType {
 }
 
 #[derive(Deserialize, Debug, Serialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode)]
-pub struct Metadata {
+pub struct DocMetadata {
     title: String,
     doc_type: DocType,
     tags: Vec<String>,
@@ -33,28 +33,22 @@ pub struct Metadata {
     date_modified: DateTime::<Utc>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, Clone, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
 pub struct DocEntry {
     path: PathBuf,
     filename: PathBuf,
-    metadata: Metadata,
+    metadata: DocMetadata,
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Elm, ElmEncode, ElmDecode)]
-pub struct Settings {
-    pub port: Option<u16>,
-    pub lang: Vec<LanguageSetting>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Elm, ElmEncode, ElmDecode)]
-pub struct LanguageSetting {
-    pub identifier: String,
-    pub display_name: String,
-    pub code: String,
-    pub dict1: Option<String>,
-    pub dict2: Option<String>,
-}
+// #[derive(Serialize, Deserialize, Debug, Elm, ElmEncode, ElmDecode)]
+// pub struct LanguageSetting {
+//     pub identifier: String,
+//     pub display_name: String,
+//     pub code: String,
+//     pub dict1: Option<String>,
+//     pub dict2: Option<String>,
+// }
 
 /// Loads a TOML file from the given path and parses it into a type `T`.
 ///
@@ -66,12 +60,12 @@ pub fn load_and_parse_toml_file<T: for<'a> Deserialize<'a>>(path: PathBuf) -> an
     Ok(parsed)
 }
 
-#[deprecated]
-pub fn read_settings_file(influx_path: PathBuf) -> anyhow::Result<Settings> {
-    let path = influx_path.join("settings.toml");
-    let settings = load_and_parse_toml_file::<Settings>(path);
-    settings
-}
+// #[deprecated]
+// pub fn read_settings_file(influx_path: PathBuf) -> anyhow::Result<Settings> {
+//     let path = influx_path.join("settings.toml");
+//     let settings = load_and_parse_toml_file::<Settings>(path);
+//     settings
+// }
 
 
 fn get_md_files_list(dir: PathBuf) -> Result<Vec<fs::DirEntry>, io::Error> {
@@ -88,17 +82,17 @@ fn get_md_files_list(dir: PathBuf) -> Result<Vec<fs::DirEntry>, io::Error> {
     Ok(md_entries)
 }
 
-fn get_md_file_metadata(path: PathBuf) -> Result<Metadata, io::Error> {
+fn get_md_file_metadata(path: PathBuf) -> Result<DocMetadata, io::Error> {
     Ok((read_md_file(path)?).0)
 }
 
-pub fn read_md_file(path: PathBuf) -> Result<(Metadata, String), io::Error> {
+pub fn read_md_file(path: PathBuf) -> Result<(DocMetadata, String), io::Error> {
     let file_buf = fs::read_to_string(path)?;
-    let document: Document<Metadata> = YamlFrontMatter::parse::<Metadata>(&file_buf).unwrap();
+    let document: Document<DocMetadata> = YamlFrontMatter::parse::<DocMetadata>(&file_buf).unwrap();
     Ok((document.metadata, document.content))
 }
 
-pub fn write_md_file(filepath: PathBuf, metadata: Metadata, content: String) -> Result<(), io::Error> {
+pub fn write_md_file(filepath: PathBuf, metadata: DocMetadata, content: String) -> Result<(), io::Error> {
     let front_matter = serde_yaml::to_string(&metadata).unwrap();
     let file_content = format!("---\n{}\n---\n{}", front_matter, content);
     fs::write(filepath, file_content)?;
@@ -157,17 +151,17 @@ de Digne depuis 1806.
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_toml_parsing() {
-        let value = "foo = 'bar'".parse::<Table>().unwrap();
-        assert_eq!(value["foo"].as_str(), Some("bar"));
+    // #[test]
+    // fn test_toml_parsing() {
+    //     let value = "foo = 'bar'".parse::<Table>().unwrap();
+    //     assert_eq!(value["foo"].as_str(), Some("bar"));
 
-        let path = PathBuf::from("../toy_content/settings.toml");
-        let settings = load_and_parse_toml_file::<Settings>(path);
+    //     let path = PathBuf::from("../toy_content/settings.toml");
+    //     let settings = load_and_parse_toml_file::<Settings>(path);
 
-        dbg!(&settings);
+    //     dbg!(&settings);
     
-    }
+    // }
 
 
     #[test]
@@ -179,7 +173,7 @@ mod tests {
     #[test]
     fn test_frontmatter_extract() {
         
-        let document: Document<Metadata> = YamlFrontMatter::parse::<Metadata>(&SAMPLE_MD_DOC).unwrap();
+        let document: Document<DocMetadata> = YamlFrontMatter::parse::<DocMetadata>(&SAMPLE_MD_DOC).unwrap();
 
         assert_eq!(document.metadata.title, "Livre premier--Un juste, Chapitre I");
         assert_eq!(document.metadata.doc_type, DocType::Text);

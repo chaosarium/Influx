@@ -5,6 +5,7 @@ use anyhow::Result;
 use log::warn;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use DB::*;
+use elm_rs::{Elm, ElmEncode, ElmDecode, ElmQuery, ElmQueryField};
 
 #[derive(
     Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode, sqlx::Type,
@@ -21,7 +22,7 @@ pub enum TokenStatus {
     IGNORED,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
 pub struct Token {
     #[serde(deserialize_with = "deserialize_surreal_thing_opt")]
     pub id: Option<InfluxResourceId>,

@@ -151,6 +151,8 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use crate::db::models;
+
     use super::*;
 
     #[test]
@@ -161,20 +163,32 @@ mod tests {
         let mut out_buf = vec![];
         elm_rs::export!("Bindings", &mut out_buf, {
             encoders: [
+                db::InfluxResourceId,
                 lang::LanguageEntry, 
                 doc_store::DocType,
-                doc_store::Metadata,
+                doc_store::DocMetadata,
                 doc_store::DocEntry,
-                doc_store::Settings,
-                doc_store::LanguageSetting,
+                db::models::vocab::Token,
+                db::models::vocab::TokenStatus,
+                db::models::phrase::Phrase,
+                nlp::DocumentConstituent,
+                nlp::SentenceConstituent,
+                handlers::GetDocResponse,
+                nlp::AnnotatedDocument,
             ],
             decoders: [
+                db::InfluxResourceId,
                 lang::LanguageEntry, 
                 doc_store::DocType,
-                doc_store::Metadata,
+                doc_store::DocMetadata,
                 doc_store::DocEntry,
-                doc_store::Settings,
-                doc_store::LanguageSetting,
+                db::models::vocab::Token,
+                db::models::vocab::TokenStatus,
+                db::models::phrase::Phrase,
+                nlp::DocumentConstituent,
+                nlp::SentenceConstituent,
+                handlers::GetDocResponse,
+                nlp::AnnotatedDocument,
             ],
             queries: [],
             query_fields: [],

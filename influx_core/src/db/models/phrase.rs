@@ -4,6 +4,7 @@ use crate::db::{deserialize_surreal_thing, deserialize_surreal_thing_opt};
 use crate::{db::InfluxResourceId, prelude::*, utils::trie::Trie};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use vocab::TokenStatus;
+use elm_rs::{Elm, ElmEncode, ElmDecode, ElmQuery, ElmQueryField};
 use DB::*;
 
 const TABLE: &str = "phrase";
@@ -11,7 +12,7 @@ pub fn mk_phrase_thing(id: String) -> Thing {
     Thing::from((TABLE.to_string(), id))
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
 pub struct Phrase {
     #[serde(deserialize_with = "deserialize_surreal_thing_opt")]
     pub id: Option<InfluxResourceId>,
