@@ -68,7 +68,7 @@
                             tokenisation_debug={false}
                             is_focused={last_focused_slice.is_some() ? is_cst_in_slice(last_focused_slice.unwrap(), constituent) : false}
                           />
-                      {:else if sub_constituent.type == "Whitespace"}
+                      {:else if sub_constituent.type == "SentenceWhitespace"}
                         <span class="whitespace-pre-wrap" class:bg-green-100={tokenisation_debug}
                             >{sub_constituent.text}</span
                         >
@@ -116,7 +116,7 @@
                             on:token_mouseup
                             is_focused={last_focused_slice.is_some() ? is_cst_in_slice(last_focused_slice.unwrap(), sub_constituent) : false}
                         />
-                      {:else if sub_constituent.type == "Whitespace"}
+                      {:else if sub_constituent.type == "SentenceWhitespace"}
                         <span class="whitespace-pre-wrap" class:bg-green-100={tokenisation_debug}
                             >{sub_constituent.text}</span
                         >

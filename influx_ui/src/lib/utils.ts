@@ -27,7 +27,7 @@ export function try_lookup(token_dict: Record<string, Token>, phrase_dict: Recor
     let c = constituent.unwrap();
     if (c.type === "SingleToken" || c.type === "SubwordToken" || c.type === "CompositToken") {
         return Option.Some({ type: "Token", value: token_dict[c.orthography] });
-    } else if (c.type === "Whitespace") {
+    } else if (c.type === "SentenceWhitespace") {
         return Option.None();  
     } else if (c.type === "PhraseToken") {
         return Option.Some({ type: "Phrase", value: phrase_dict[c.normalised_orthography] });
@@ -50,7 +50,7 @@ export function is_cst_in_slice(slice: DocumentSlice, con: SentenceConstituent):
             return ((con.sentence_id == ss && con.id >= st) || con.sentence_id > ss) && ((con.sentence_id == es && con.id <= et) || con.sentence_id < es);
         case "PhraseToken":
         case "CompositToken":
-        case "Whitespace":
+        case "SentenceWhitespace":
             return con.start_char >= sc && con.end_char <= ec;
     }
 }

@@ -23,7 +23,7 @@
           return flatten_sentence_cons(sentence_con.shadows);
         case "CompositToken":
           return flatten_sentence_cons(sentence_con.shadows);
-        case "Whitespace":
+        case "SentenceWhitespace":
           return [sentence_con];
       }
     });
@@ -40,7 +40,7 @@
           end_char: document_con.end_char,
           constituents: flatten_sentence_cons(document_con.constituents),
         };
-      case "Whitespace":
+      case "DocumentWhitespace":
         return document_con;
     }
   }
@@ -50,9 +50,9 @@
       switch (document_con.type) {
         case "Sentence":
           return flatten_sentence_cons(document_con.constituents);
-        case "Whitespace":
+        case "DocumentWhitespace":
           return [{
-            type: "Whitespace",
+            type: "DocumentDocumentWhitespace",
             text: document_con.text,
             orthography: document_con.text,
             start_char: document_con.start_char,

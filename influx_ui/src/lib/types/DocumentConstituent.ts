@@ -9,7 +9,7 @@ export type DocumentConstituent = {
   end_char: number;
   constituents: Array<SentenceConstituent>;
 } | {
-  "type": "Whitespace";
+  "type": "DocumentWhitespace";
   text: string;
   start_char: number;
   end_char: number;

@@ -33,7 +33,7 @@
             <li>
                 {#if c.type === "SingleToken" || c.type === "SubwordToken" || c.type === "CompositToken"}
                     orthography: <b>{c.orthography}</b>
-                {:else if c.type === "Whitespace"}
+                {:else if c.type === "SentenceWhitespace"}
                     UNREACHABLE
                 {:else if c.type === "PhraseToken"}
                     normalised_orthography: <b>{c.normalised_orthography}</b>
@@ -42,7 +42,7 @@
             <li>
                 {#if c.type === "SingleToken" || c.type === "SubwordToken"}
                     lemma: <b>{c.lemma}</b>
-                {:else if c.type === "Whitespace" || c.type === "CompositToken"}
+                {:else if c.type === "SentenceWhitespace" || c.type === "CompositToken"}
                     lemma: N/A
                 {:else if c.type === "PhraseToken"}
                     lemma: N/A

@@ -57,7 +57,7 @@
             [event.detail.sentence_id, event.detail.id, event.detail.end_char]
           ]);
           break;
-        case "Whitespace":
+        case "SentenceWhitespace":
           break;
         case "CompositToken":
         case "PhraseToken":
@@ -82,7 +82,7 @@
           [event.detail.sentence_id, event.detail.id, event.detail.end_char]
         ]);
         break;
-      case "Whitespace":
+      case "SentenceWhitespace":
         break;
       case "CompositToken":
       case "PhraseToken":

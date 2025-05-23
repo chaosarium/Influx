@@ -31,7 +31,7 @@ export type SentenceConstituent = {
   shadowed: boolean;
   shadows: Array<SentenceConstituent>;
 } | {
-  "type": "Whitespace";
+  "type": "SentenceWhitespace";
   text: string;
   orthography: string;
   start_char: number;

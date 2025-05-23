@@ -20,7 +20,7 @@
 
 {#if mount_ready}
     <div class={`leading-8 text-xl ${moreclass}`}>
-        {#each annotated_doc.constituents as sentence_constituent}{#if sentence_constituent.type == "Whitespace"}<span
+        {#each annotated_doc.constituents as sentence_constituent}{#if sentence_constituent.type == "DocumentWhitespace"}<span
                     class="whitespace-pre-wrap"
                     class:bg-green={tokenisation_debug}
                     >{sentence_constituent.text}</span
@@ -51,7 +51,7 @@
                                     is_focused={last_focused_slice.is_some() ? is_cst_in_slice(last_focused_slice.unwrap(), constituent) : false}
                                     last_focused_slice={last_focused_slice}
 
-                                />{/if}{:else if constituent.type == "Whitespace"}{#if constituent.shadowed === false}<span
+                                />{/if}{:else if constituent.type == "SentenceWhitespace"}{#if constituent.shadowed === false}<span
                                     class="whitespace-pre-wrap"
                                     class:bg-green-100={tokenisation_debug}
                                     >{constituent.text}</span
