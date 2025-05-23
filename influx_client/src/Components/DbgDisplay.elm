@@ -4,12 +4,22 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 
 
+enableDebug : Bool
+enableDebug =
+    True
+
+
 view : String -> a -> Html msg
 view title props =
-    div [ class "dbg-container-div" ]
-        [ pre [ class "dbg-json-pre" ]
-            [ Html.b []
-                [ Html.text (title ++ ": ") ]
-            , Html.text (Debug.toString props)
+    if enableDebug then
+        div [ class "dbg-container-div" ]
+            [ details []
+                [ summary []
+                    [ Html.b [] [ Html.text title ] ]
+                , pre [ class "dbg-json-pre" ]
+                    [ Html.text (Debug.toString props) ]
+                ]
             ]
-        ]
+
+    else
+        text ""

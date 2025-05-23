@@ -12,15 +12,15 @@ decoder =
 
 get :
     { languageId : String
-    , onResponse : Result Http.Error (List Bindings.DocEntry) -> msg
     }
+    -> (Result Http.Error (List Bindings.DocEntry) -> msg)
     -> Cmd msg
-get options =
+get args onResponse =
     let
         url =
-            "http://127.0.0.1:3000/docs/" ++ options.languageId
+            "http://127.0.0.1:3000/docs/" ++ args.languageId
     in
     Http.get
         { url = url
-        , expect = Http.expectJson options.onResponse decoder
+        , expect = Http.expectJson onResponse decoder
         }

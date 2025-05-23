@@ -35,7 +35,7 @@ type alias Model =
 init : () -> ( Model, Effect Msg )
 init () =
     ( { langData = Api.Loading }
-    , Effect.sendCmd (Api.GetLanguages.get { onResponse = ApiResponded })
+    , Effect.sendCmd (Api.GetLanguages.get {} ApiResponded)
     )
 
 

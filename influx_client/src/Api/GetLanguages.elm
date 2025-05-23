@@ -10,9 +10,9 @@ decoder =
     Json.Decode.list Bindings.languageEntryDecoder
 
 
-get : { onResponse : Result Http.Error (List Bindings.LanguageEntry) -> msg } -> Cmd msg
-get options =
+get : {} -> (Result Http.Error (List Bindings.LanguageEntry) -> msg) -> Cmd msg
+get args onResponse =
     Http.get
         { url = "http://127.0.0.1:3000/lang"
-        , expect = Http.expectJson options.onResponse decoder
+        , expect = Http.expectJson onResponse decoder
         }

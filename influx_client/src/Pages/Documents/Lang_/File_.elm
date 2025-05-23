@@ -3,8 +3,11 @@ module Pages.Documents.Lang_.File_ exposing (Model, Msg, page)
 import Api
 import Api.GetAnnotatedDoc
 import Bindings exposing (GetDocResponse, LanguageEntry)
+import Components.AnnotatedText
 import Components.DbgDisplay
 import Components.Topbar
+import Datastore.DictContext
+import Datastore.DocContext
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (alt, class, src, style)
@@ -35,7 +38,10 @@ type alias ThisRoute =
 
 
 type alias Model =
-    { data : Api.Data GetDocResponse }
+    { get_doc_api_res : Api.Data GetDocResponse
+    , working_doc : Datastore.DocContext.T
+    , working_dict : Datastore.DictContext.T
+    }
 
 
 init :
@@ -45,7 +51,10 @@ init :
     -> ()
     -> ( Model, Effect Msg )
 init args () =
-    ( { data = Api.Loading }
+    ( { get_doc_api_res = Api.Loading
+      , working_doc = Datastore.DocContext.empty
+      , working_dict = Datastore.DictContext.empty
+      }
     , Effect.sendCmd (Api.GetAnnotatedDoc.get args ApiResponded)
     )
 
@@ -66,10 +75,16 @@ update msg model =
                 _ =
                     Debug.log "ApiResponded" res
             in
-            ( { model | data = Api.Success res }, Effect.none )
+            ( { model
+                | get_doc_api_res = Api.Success res
+                , working_doc = Datastore.DocContext.fromAnnotatedDocument res.annotatedDoc
+                , working_dict = Datastore.DictContext.fromAnnotatedDocument res.annotatedDoc
+              }
+            , Effect.none
+            )
 
         ApiResponded (Err httpError) ->
-            ( { model | data = Api.Failure httpError }, Effect.none )
+            ( { model | get_doc_api_res = Api.Failure httpError }, Effect.none )
 
 
 
@@ -82,6 +97,7 @@ subscriptions model =
 
 
 
+-- Annotated Text view
 -- VIEW
 
 
@@ -92,6 +108,15 @@ view route model =
         [ Components.Topbar.view {}
         , Components.DbgDisplay.view "route" route
         , Html.h1 [] [ Html.text ("lang: " ++ route.params.lang ++ ", file: " ++ Utils.unwrappedPercentDecode route.params.file) ]
+        , case model.get_doc_api_res of
+            Api.Loading ->
+                Html.text "Loading..."
+
+            Api.Failure err ->
+                Html.text ("Error: " ++ Api.stringOfHttpErrMsg err)
+
+            Api.Success _ ->
+                Components.AnnotatedText.view model.working_dict model.working_doc
         , Components.DbgDisplay.view "model" model
         ]
     }
