@@ -3,24 +3,38 @@ module Components.AnnotatedText exposing (view)
 import Bindings exposing (..)
 import Datastore.DictContext
 import Datastore.DocContext
+import Datastore.FocusContext
 import Dict
 import Html exposing (Html, div, span)
 import Html.Attributes exposing (class, style)
-import Utils exposing (rb, rt, rtc, ruby)
+import Html.Events exposing (onMouseDown, onMouseEnter, onMouseOver, onMouseUp)
+import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
 
 
-view : Datastore.DictContext.T -> Datastore.DocContext.T -> Html msg
-view dict_ctx doc_ctx =
+view :
+    { dict : Datastore.DictContext.T
+    , mouse_handler : Datastore.FocusContext.Msg -> msg
+    , focus_predicate : SentenceConstituent -> Bool
+    }
+    -> Datastore.DocContext.T
+    -> Html msg
+view args doc =
     div [ class "annotated-doc-div" ]
-        (List.map (viewDocumentConstituent dict_ctx) doc_ctx.constituents)
+        (List.map (viewDocumentConstituent args) doc.constituents)
 
 
-viewDocumentConstituent : Datastore.DictContext.T -> DocumentConstituent -> Html msg
-viewDocumentConstituent dict_ctx constituent =
+viewDocumentConstituent :
+    { dict : Datastore.DictContext.T
+    , mouse_handler : Datastore.FocusContext.Msg -> msg
+    , focus_predicate : SentenceConstituent -> Bool
+    }
+    -> DocumentConstituent
+    -> Html msg
+viewDocumentConstituent args constituent =
     case constituent of
         Sentence { constituents } ->
             span [ class "sentence-span" ]
-                (List.filterMap (viewSentenceConstituent dict_ctx) constituents)
+                (List.filterMap (viewSentenceConstituent args) constituents)
 
         DocumentWhitespace { text } ->
             span [ class "document-whitespace-span" ] [ Html.text text ]
@@ -68,7 +82,7 @@ viewPhraseSubconstituent dict_ctx cst =
             span [ class "single-token-span" ] [ Html.text text ]
 
         PhraseToken _ ->
-            Utils.unreachableHtml
+            Utils.unreachableHtml "phrase within phrase???"
 
         SentenceWhitespace { text } ->
             span [ class "sentence-whitespace-span" ] [ Html.text text ]
@@ -104,15 +118,36 @@ tokenStatusToClass status =
 
 viewUnregisteredTkn : List (Html.Attribute msg) -> String -> Html msg
 viewUnregisteredTkn attrs text =
-    span attrs [ Html.text (text ++ " [WARNING: NO STATUS]") ]
+    span attrs [ Html.text (text ++ " [ERR: NO STATUS]") ]
 
 
-viewRegisteredTkn : List (Html.Attribute msg) -> String -> Token -> Html msg
-viewRegisteredTkn attrs text tkn =
+viewRegisteredTkn :
+    { dict : Datastore.DictContext.T
+    , mouse_handler : Datastore.FocusContext.Msg -> msg
+    , focus_predicate : SentenceConstituent -> Bool
+    }
+    -> List (Html.Attribute msg)
+    -> String
+    -> Token
+    -> SentenceConstituent
+    -> Html msg
+viewRegisteredTkn args attrs text tkn cst =
     ruby []
         [ rb []
             [ span
-                (List.concat [ attrs, [ tokenStatusToClass tkn.status ] ])
+                (attrs
+                    ++ [ tokenStatusToClass tkn.status
+                       , onMouseEnter (args.mouse_handler (Datastore.FocusContext.SelectMouseOver cst))
+                       , onMouseDown (args.mouse_handler (Datastore.FocusContext.SelectMouseDown cst))
+                       , onMouseUp (args.mouse_handler (Datastore.FocusContext.SelectMouseUp ()))
+                       ]
+                    ++ (if args.focus_predicate cst then
+                            [ class "tkn-focus" ]
+
+                        else
+                            []
+                       )
+                )
                 [ Html.text text ]
             ]
         , rt [] [ Html.text tkn.definition ]
@@ -122,8 +157,26 @@ viewRegisteredTkn attrs text tkn =
         ]
 
 
-viewSentenceConstituent : Datastore.DictContext.T -> SentenceConstituent -> Maybe (Html msg)
-viewSentenceConstituent dict_ctx cst =
+viewRegisteredPhrase : List (Html.Attribute msg) -> Datastore.DictContext.T -> Phrase -> List SentenceConstituent -> Html msg
+viewRegisteredPhrase attrs dict_ctx phrase shadows =
+    ruby []
+        [ rb []
+            [ span
+                (List.concat [ attrs, [ tokenStatusToClass phrase.status ] ])
+                (List.map (viewPhraseSubconstituent dict_ctx) shadows)
+            ]
+        , rt [] [ Html.text phrase.definition ]
+        ]
+
+
+viewSentenceConstituent :
+    { dict : Datastore.DictContext.T
+    , mouse_handler : Datastore.FocusContext.Msg -> msg
+    , focus_predicate : SentenceConstituent -> Bool
+    }
+    -> SentenceConstituent
+    -> Maybe (Html msg)
+viewSentenceConstituent args cst =
     if getShadowed cst then
         Nothing
 
@@ -131,32 +184,36 @@ viewSentenceConstituent dict_ctx cst =
         Just
             (case cst of
                 CompositToken { text } ->
-                    case tokenDictLookup dict_ctx text of
+                    case tokenDictLookup args.dict text of
                         Nothing ->
                             viewUnregisteredTkn [ class "composit-token-span" ] text
 
                         Just tkn ->
-                            viewRegisteredTkn [ class "composit-token-span" ] text tkn
+                            viewRegisteredTkn args [ class "composit-token-span" ] text tkn cst
 
                 SubwordToken { text, orthography } ->
-                    case tokenDictLookup dict_ctx orthography of
+                    case tokenDictLookup args.dict orthography of
                         Nothing ->
                             viewUnregisteredTkn [ class "subword-token-span" ] text
 
                         Just tkn ->
-                            viewRegisteredTkn [ class "subword-token-span" ] text tkn
+                            viewRegisteredTkn args [ class "subword-token-span" ] text tkn cst
 
                 SingleToken { text, orthography } ->
-                    case tokenDictLookup dict_ctx orthography of
+                    case tokenDictLookup args.dict orthography of
                         Nothing ->
                             viewUnregisteredTkn [ class "single-token-span", class "tkn-nostatus" ] text
 
                         Just tkn ->
-                            viewRegisteredTkn [ class "single-token-span" ] text tkn
+                            viewRegisteredTkn args [ class "single-token-span" ] text tkn cst
 
-                PhraseToken { shadows } ->
-                    span [ class "phrase-span" ]
-                        (List.map (viewPhraseSubconstituent dict_ctx) shadows)
+                PhraseToken { normalisedOrthography, shadows } ->
+                    case phraseDictLookup args.dict normalisedOrthography of
+                        Nothing ->
+                            unreachableHtml "Phrase not found in dict"
+
+                        Just phrase ->
+                            viewRegisteredPhrase [ class "phrase-span" ] args.dict phrase shadows
 
                 SentenceWhitespace { text } ->
                     span [ class "sentence-whitespace-span" ] [ Html.text text ]

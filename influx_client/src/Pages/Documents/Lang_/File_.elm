@@ -3,15 +3,18 @@ module Pages.Documents.Lang_.File_ exposing (Model, Msg, page)
 import Api
 import Api.GetAnnotatedDoc
 import Bindings exposing (GetDocResponse, LanguageEntry)
+import Browser.Events exposing (onMouseUp)
 import Components.AnnotatedText
 import Components.DbgDisplay
 import Components.Topbar
 import Datastore.DictContext
 import Datastore.DocContext
+import Datastore.FocusContext
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (alt, class, src, style)
 import Http
+import Json.Decode
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
@@ -41,6 +44,7 @@ type alias Model =
     { get_doc_api_res : Api.Data GetDocResponse
     , working_doc : Datastore.DocContext.T
     , working_dict : Datastore.DictContext.T
+    , focus_ctx : Datastore.FocusContext.T
     }
 
 
@@ -54,7 +58,9 @@ init args () =
     ( { get_doc_api_res = Api.Loading
       , working_doc = Datastore.DocContext.empty
       , working_dict = Datastore.DictContext.empty
+      , focus_ctx = Datastore.FocusContext.new
       }
+      -- TODO combine working_doc and focus_ctx into some module?
     , Effect.sendCmd (Api.GetAnnotatedDoc.get args ApiResponded)
     )
 
@@ -65,6 +71,7 @@ init args () =
 
 type Msg
     = ApiResponded (Result Http.Error GetDocResponse)
+    | SelectionMouseEvent Datastore.FocusContext.Msg
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -86,6 +93,9 @@ update msg model =
         ApiResponded (Err httpError) ->
             ( { model | get_doc_api_res = Api.Failure httpError }, Effect.none )
 
+        SelectionMouseEvent m ->
+            ( { model | focus_ctx = Datastore.FocusContext.update m model.focus_ctx }, Effect.none )
+
 
 
 -- SUBSCRIPTIONS
@@ -93,7 +103,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    onMouseUp (Json.Decode.succeed (SelectionMouseEvent (Datastore.FocusContext.SelectMouseUp ())))
 
 
 
@@ -116,7 +126,20 @@ view route model =
                 Html.text ("Error: " ++ Api.stringOfHttpErrMsg err)
 
             Api.Success _ ->
-                Components.AnnotatedText.view model.working_dict model.working_doc
-        , Components.DbgDisplay.view "model" model
+                Components.AnnotatedText.view
+                    { dict = model.working_dict
+                    , mouse_handler = SelectionMouseEvent
+                    , focus_predicate =
+                        case model.focus_ctx.slice_selection of
+                            Nothing ->
+                                \_ -> False
+
+                            Just slice ->
+                                Datastore.FocusContext.isCstInSlice slice
+                    }
+                    model.working_doc
+
+        -- , Components.DbgDisplay.view "model" model
+        , Components.DbgDisplay.view "focus context" model.focus_ctx
         ]
     }

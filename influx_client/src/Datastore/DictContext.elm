@@ -10,6 +10,10 @@ type alias T =
     }
 
 
+type alias TestT =
+    Dict (List String) Phrase
+
+
 empty : T
 empty =
     { tokenDict = Dict.empty

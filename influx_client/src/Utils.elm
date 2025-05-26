@@ -20,10 +20,10 @@ percentEncode s =
     Url.percentEncode s
 
 
-unreachableHtml : Html.Html msg
-unreachableHtml =
+unreachableHtml : String -> Html.Html msg
+unreachableHtml s =
     Html.div [ Html.Attributes.class "err-unreachable" ]
-        [ Html.text "UNREACHABLE" ]
+        [ Html.text ("UNREACHABLE: " ++ s) ]
 
 
 ruby =
