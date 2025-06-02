@@ -20,3 +20,4 @@ toy_content/_influx_nlp_cache
 */target
 surrealtemp.db
 influx_core/.env
+**/elm-stuff

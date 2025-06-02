@@ -40,3 +40,12 @@ rtc =
 
 rb =
     Html.node "rb"
+
+
+classIf : Html.Attribute msg -> Bool -> List (Html.Attribute msg) -> List (Html.Attribute msg)
+classIf attr cond attrs =
+    if cond then
+        attr :: attrs
+
+    else
+        attrs

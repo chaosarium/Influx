@@ -94,7 +94,7 @@ update msg model =
             ( { model | get_doc_api_res = Api.Failure httpError }, Effect.none )
 
         SelectionMouseEvent m ->
-            ( { model | focus_ctx = Datastore.FocusContext.update m model.focus_ctx }, Effect.none )
+            ( { model | focus_ctx = Datastore.FocusContext.update model.working_doc.text m model.focus_ctx }, Effect.none )
 
 
 
@@ -140,6 +140,12 @@ view route model =
                     model.working_doc
 
         -- , Components.DbgDisplay.view "model" model
+        , div []
+            [ Html.text
+                ("selected text: "
+                    ++ Maybe.withDefault "" model.focus_ctx.selected_text
+                )
+            ]
         , Components.DbgDisplay.view "focus context" model.focus_ctx
         ]
     }

@@ -116,6 +116,9 @@ tokenStatusToClass status =
             class "tkn-known"
 
 
+{-| When token missing from dictionary context, show error message.
+Should not normally happen.
+-}
 viewUnregisteredTkn : List (Html.Attribute msg) -> String -> Html msg
 viewUnregisteredTkn attrs text =
     span attrs [ Html.text (text ++ " [ERR: NO STATUS]") ]
@@ -140,13 +143,9 @@ viewRegisteredTkn args attrs text tkn cst =
                        , onMouseEnter (args.mouse_handler (Datastore.FocusContext.SelectMouseOver cst))
                        , onMouseDown (args.mouse_handler (Datastore.FocusContext.SelectMouseDown cst))
                        , onMouseUp (args.mouse_handler (Datastore.FocusContext.SelectMouseUp ()))
+                       , class "clickable-tkn-span"
                        ]
-                    ++ (if args.focus_predicate cst then
-                            [ class "tkn-focus" ]
-
-                        else
-                            []
-                       )
+                    |> Utils.classIf (class "tkn-focus") (args.focus_predicate cst)
                 )
                 [ Html.text text ]
             ]
@@ -157,13 +156,29 @@ viewRegisteredTkn args attrs text tkn cst =
         ]
 
 
-viewRegisteredPhrase : List (Html.Attribute msg) -> Datastore.DictContext.T -> Phrase -> List SentenceConstituent -> Html msg
-viewRegisteredPhrase attrs dict_ctx phrase shadows =
+viewRegisteredPhrase :
+    { dict : Datastore.DictContext.T
+    , mouse_handler : Datastore.FocusContext.Msg -> msg
+    , focus_predicate : SentenceConstituent -> Bool
+    }
+    -> List (Html.Attribute msg)
+    -> Phrase
+    -> SentenceConstituent
+    -> List SentenceConstituent
+    -> Html msg
+viewRegisteredPhrase args attrs phrase cst shadows =
     ruby []
         [ rb []
             [ span
-                (List.concat [ attrs, [ tokenStatusToClass phrase.status ] ])
-                (List.map (viewPhraseSubconstituent dict_ctx) shadows)
+                (attrs
+                    ++ [ onMouseEnter (args.mouse_handler (Datastore.FocusContext.SelectMouseOver cst))
+                       , onMouseDown (args.mouse_handler (Datastore.FocusContext.SelectMouseDown cst))
+                       , onMouseUp (args.mouse_handler (Datastore.FocusContext.SelectMouseUp ()))
+                       , tokenStatusToClass phrase.status
+                       ]
+                    |> Utils.classIf (class "tkn-focus") (args.focus_predicate cst)
+                )
+                (List.map (viewPhraseSubconstituent args.dict) shadows)
             ]
         , rt [] [ Html.text phrase.definition ]
         ]
@@ -213,7 +228,7 @@ viewSentenceConstituent args cst =
                             unreachableHtml "Phrase not found in dict"
 
                         Just phrase ->
-                            viewRegisteredPhrase [ class "phrase-span" ] args.dict phrase shadows
+                            viewRegisteredPhrase args [ class "phrase-span" ] phrase cst shadows
 
                 SentenceWhitespace { text } ->
                     span [ class "sentence-whitespace-span" ] [ Html.text text ]
