@@ -24,8 +24,10 @@ type alias SliceSelecting =
 type alias T =
     { last_hovered_at : Maybe SentenceConstituent
     , mouse_down_at : Maybe SentenceConstituent
+    , last_mouse_down_at : Maybe SentenceConstituent
     , slice_selection : Maybe SliceSelection
     , selected_text : Maybe String
+    , constituent_selection : Maybe SentenceConstituent
     }
 
 
@@ -34,13 +36,16 @@ new =
     { last_hovered_at = Nothing
     , slice_selection = Nothing
     , mouse_down_at = Nothing
+    , last_mouse_down_at = Nothing
     , selected_text = Nothing
+    , constituent_selection = Nothing
     }
 
 
 type Msg
     = SelectMouseDown SentenceConstituent
-    | SelectMouseOver SentenceConstituent
+    | SelectMouseEnter SentenceConstituent
+      -- | SelectMouseOut SentenceConstituent
     | SelectMouseUp ()
 
 
@@ -147,9 +152,14 @@ mouseEventUpdate : Msg -> T -> T
 mouseEventUpdate msg t =
     case msg of
         SelectMouseDown down_at ->
-            { t | mouse_down_at = Just down_at, slice_selection = Just (sliceBetween down_at down_at) }
+            { t
+                | mouse_down_at = Just down_at
+                , last_mouse_down_at = Just down_at
+                , slice_selection = Just (sliceBetween down_at down_at)
+                , constituent_selection = Nothing
+            }
 
-        SelectMouseOver cst ->
+        SelectMouseEnter cst ->
             case ( t.mouse_down_at, cst ) of
                 ( Just down_at, last_hovered_at ) ->
                     { t
@@ -168,6 +178,12 @@ mouseEventUpdate msg t =
                     { t
                         | mouse_down_at = Nothing
                         , slice_selection = Just (sliceBetween down_at last_hovered_at)
+                        , constituent_selection =
+                            if down_at == last_hovered_at then
+                                Just down_at
+
+                            else
+                                Nothing
                     }
 
                 _ ->

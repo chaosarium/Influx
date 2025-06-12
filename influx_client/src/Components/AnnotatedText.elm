@@ -1,4 +1,4 @@
-module Components.AnnotatedText exposing (view)
+module Components.AnnotatedText exposing (view, viewSentenceConstituent)
 
 import Bindings exposing (..)
 import Datastore.DictContext
@@ -7,7 +7,7 @@ import Datastore.FocusContext
 import Dict
 import Html exposing (Html, div, span)
 import Html.Attributes exposing (class, style)
-import Html.Events exposing (onMouseDown, onMouseEnter, onMouseOver, onMouseUp)
+import Html.Events exposing (onMouseDown, onMouseEnter, onMouseUp)
 import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
 
 
@@ -140,7 +140,7 @@ viewRegisteredTkn args attrs text tkn cst =
             [ span
                 (attrs
                     ++ [ tokenStatusToClass tkn.status
-                       , onMouseEnter (args.mouse_handler (Datastore.FocusContext.SelectMouseOver cst))
+                       , onMouseEnter (args.mouse_handler (Datastore.FocusContext.SelectMouseEnter cst))
                        , onMouseDown (args.mouse_handler (Datastore.FocusContext.SelectMouseDown cst))
                        , onMouseUp (args.mouse_handler (Datastore.FocusContext.SelectMouseUp ()))
                        , class "clickable-tkn-span"
@@ -171,7 +171,7 @@ viewRegisteredPhrase args attrs phrase cst shadows =
         [ rb []
             [ span
                 (attrs
-                    ++ [ onMouseEnter (args.mouse_handler (Datastore.FocusContext.SelectMouseOver cst))
+                    ++ [ onMouseEnter (args.mouse_handler (Datastore.FocusContext.SelectMouseEnter cst))
                        , onMouseDown (args.mouse_handler (Datastore.FocusContext.SelectMouseDown cst))
                        , onMouseUp (args.mouse_handler (Datastore.FocusContext.SelectMouseUp ()))
                        , tokenStatusToClass phrase.status

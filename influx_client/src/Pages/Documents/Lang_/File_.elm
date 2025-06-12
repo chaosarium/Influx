@@ -12,7 +12,7 @@ import Datastore.DocContext
 import Datastore.FocusContext
 import Effect exposing (Effect)
 import Html exposing (..)
-import Html.Attributes exposing (alt, class, src, style)
+import Html.Attributes exposing (alt, class, src)
 import Http
 import Json.Decode
 import Page exposing (Page)
@@ -113,6 +113,19 @@ subscriptions model =
 
 view : ThisRoute -> Model -> View Msg
 view route model =
+    let
+        viewContext =
+            { dict = model.working_dict
+            , mouse_handler = SelectionMouseEvent
+            , focus_predicate =
+                case model.focus_ctx.slice_selection of
+                    Nothing ->
+                        \_ -> False
+
+                    Just slice ->
+                        Datastore.FocusContext.isCstInSlice slice
+            }
+    in
     { title = "File view"
     , body =
         [ Components.Topbar.view {}
@@ -127,16 +140,7 @@ view route model =
 
             Api.Success _ ->
                 Components.AnnotatedText.view
-                    { dict = model.working_dict
-                    , mouse_handler = SelectionMouseEvent
-                    , focus_predicate =
-                        case model.focus_ctx.slice_selection of
-                            Nothing ->
-                                \_ -> False
-
-                            Just slice ->
-                                Datastore.FocusContext.isCstInSlice slice
-                    }
+                    viewContext
                     model.working_doc
 
         -- , Components.DbgDisplay.view "model" model
@@ -146,6 +150,18 @@ view route model =
                     ++ Maybe.withDefault "" model.focus_ctx.selected_text
                 )
             ]
-        , Components.DbgDisplay.view "focus context" model.focus_ctx
+        , div []
+            [ span []
+                [ Html.text "selected const: " ]
+            , Maybe.withDefault
+                (Html.text "")
+                (Maybe.andThen (Components.AnnotatedText.viewSentenceConstituent viewContext) model.focus_ctx.constituent_selection)
+            ]
+        , Components.DbgDisplay.view "focus_ctx.last_hovered_at" model.focus_ctx.last_hovered_at
+        , Components.DbgDisplay.view "focus_ctx.mouse_down_at" model.focus_ctx.mouse_down_at
+        , Components.DbgDisplay.view "focus_ctx.last_mouse_down_at" model.focus_ctx.last_mouse_down_at
+        , Components.DbgDisplay.view "focus_ctx.slice_selection" model.focus_ctx.slice_selection
+        , Components.DbgDisplay.view "focus_ctx.selected_text" model.focus_ctx.selected_text
+        , Components.DbgDisplay.view "focus_ctx.constituent_selection" model.focus_ctx.constituent_selection
         ]
     }

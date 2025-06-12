@@ -2,6 +2,8 @@ module Components.DbgDisplay exposing (view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Json.Decode exposing (decodeString, value)
+import Json.Encode exposing (Value)
 
 
 enableDebug : Bool

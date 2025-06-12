@@ -177,7 +177,7 @@ type alias Phrase =
     , definition : String
     , notes : String
     , originalContext : String
-    , status : TokenStatus
+    , status : TokenStatus 
     }
 
 
