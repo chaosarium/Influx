@@ -15,6 +15,8 @@ view :
     { dict : Datastore.DictContext.T
     , mouse_handler : Datastore.FocusContext.Msg -> msg
     , focus_predicate : SentenceConstituent -> Bool
+    , cst_display_predicate : SentenceConstituent -> Bool
+    , doc_cst_display_predicate : DocumentConstituent -> Bool
     }
     -> Datastore.DocContext.T
     -> Html msg
@@ -27,17 +29,23 @@ viewDocumentConstituent :
     { dict : Datastore.DictContext.T
     , mouse_handler : Datastore.FocusContext.Msg -> msg
     , focus_predicate : SentenceConstituent -> Bool
+    , cst_display_predicate : SentenceConstituent -> Bool
+    , doc_cst_display_predicate : DocumentConstituent -> Bool
     }
     -> DocumentConstituent
     -> Html msg
 viewDocumentConstituent args constituent =
-    case constituent of
-        Sentence { constituents } ->
-            span [ class "sentence-span" ]
-                (List.filterMap (viewSentenceConstituent args) constituents)
+    if not (args.doc_cst_display_predicate constituent) then
+        Utils.htmlEmpty
 
-        DocumentWhitespace { text } ->
-            span [ class "document-whitespace-span" ] [ Html.text text ]
+    else
+        case constituent of
+            Sentence { constituents } ->
+                span [ class "sentence-span" ]
+                    (List.filterMap (viewSentenceConstituent args) constituents)
+
+            DocumentWhitespace { text } ->
+                span [ class "document-whitespace-span" ] [ Html.text text ]
 
 
 getShadowed : SentenceConstituent -> Bool
@@ -128,6 +136,8 @@ viewRegisteredTkn :
     { dict : Datastore.DictContext.T
     , mouse_handler : Datastore.FocusContext.Msg -> msg
     , focus_predicate : SentenceConstituent -> Bool
+    , cst_display_predicate : SentenceConstituent -> Bool
+    , doc_cst_display_predicate : DocumentConstituent -> Bool
     }
     -> List (Html.Attribute msg)
     -> String
@@ -160,6 +170,8 @@ viewRegisteredPhrase :
     { dict : Datastore.DictContext.T
     , mouse_handler : Datastore.FocusContext.Msg -> msg
     , focus_predicate : SentenceConstituent -> Bool
+    , cst_display_predicate : SentenceConstituent -> Bool
+    , doc_cst_display_predicate : DocumentConstituent -> Bool
     }
     -> List (Html.Attribute msg)
     -> Phrase
@@ -188,11 +200,13 @@ viewSentenceConstituent :
     { dict : Datastore.DictContext.T
     , mouse_handler : Datastore.FocusContext.Msg -> msg
     , focus_predicate : SentenceConstituent -> Bool
+    , cst_display_predicate : SentenceConstituent -> Bool
+    , doc_cst_display_predicate : DocumentConstituent -> Bool
     }
     -> SentenceConstituent
     -> Maybe (Html msg)
 viewSentenceConstituent args cst =
-    if getShadowed cst then
+    if getShadowed cst || not (args.cst_display_predicate cst) then
         Nothing
 
     else

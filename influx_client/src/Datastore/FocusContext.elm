@@ -2,6 +2,7 @@ module Datastore.FocusContext exposing (..)
 
 import Api.GetAnnotatedDoc exposing (get)
 import Bindings exposing (AnnotatedDocument, DocumentConstituent(..), SentenceConstituent)
+import Browser exposing (Document)
 
 
 type alias SliceSelection =
@@ -156,7 +157,7 @@ mouseEventUpdate msg t =
                 | mouse_down_at = Just down_at
                 , last_mouse_down_at = Just down_at
                 , slice_selection = Just (sliceBetween down_at down_at)
-                , constituent_selection = Nothing
+                , constituent_selection = Just down_at
             }
 
         SelectMouseEnter cst ->
@@ -226,4 +227,14 @@ isCstInSlice slice con =
             startChar >= slice.sc && endChar <= slice.ec
 
         Bindings.SentenceWhitespace { startChar, endChar } ->
+            startChar >= slice.sc && endChar <= slice.ec
+
+
+isDocCstInSlice : SliceSelection -> DocumentConstituent -> Bool
+isDocCstInSlice slice con =
+    case con of
+        Bindings.Sentence { id } ->
+            id >= slice.ss && id <= slice.es
+
+        Bindings.DocumentWhitespace { startChar, endChar } ->
             startChar >= slice.sc && endChar <= slice.ec

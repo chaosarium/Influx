@@ -49,3 +49,7 @@ classIf attr cond attrs =
 
     else
         attrs
+
+
+htmlEmpty =
+    Html.text ""

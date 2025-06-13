@@ -71,7 +71,8 @@ init args () =
 
 type Msg
     = ApiResponded (Result Http.Error GetDocResponse)
-    | SelectionMouseEvent Datastore.FocusContext.Msg
+    | SelectionMouseEvent Datastore.FocusContext.Msg -- will update focus context
+    | NoopMouseEvent Datastore.FocusContext.Msg -- for mouse events that don't change the focus context
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -96,6 +97,9 @@ update msg model =
         SelectionMouseEvent m ->
             ( { model | focus_ctx = Datastore.FocusContext.update model.working_doc.text m model.focus_ctx }, Effect.none )
 
+        NoopMouseEvent _ ->
+            ( model, Effect.none )
+
 
 
 -- SUBSCRIPTIONS
@@ -114,7 +118,7 @@ subscriptions model =
 view : ThisRoute -> Model -> View Msg
 view route model =
     let
-        viewContext =
+        annotatedDocViewCtx =
             { dict = model.working_dict
             , mouse_handler = SelectionMouseEvent
             , focus_predicate =
@@ -124,6 +128,29 @@ view route model =
 
                     Just slice ->
                         Datastore.FocusContext.isCstInSlice slice
+            , cst_display_predicate = \_ -> True
+            , doc_cst_display_predicate = \_ -> True
+            }
+    in
+    let
+        selectedConstViewCtx =
+            { dict = model.working_dict
+            , mouse_handler = NoopMouseEvent
+            , focus_predicate = \_ -> False
+            , cst_display_predicate =
+                case model.focus_ctx.slice_selection of
+                    Nothing ->
+                        \_ -> False
+
+                    Just slice ->
+                        Datastore.FocusContext.isCstInSlice slice
+            , doc_cst_display_predicate =
+                case model.focus_ctx.slice_selection of
+                    Nothing ->
+                        \_ -> False
+
+                    Just slice ->
+                        Datastore.FocusContext.isDocCstInSlice slice
             }
     in
     { title = "File view"
@@ -140,28 +167,33 @@ view route model =
 
             Api.Success _ ->
                 Components.AnnotatedText.view
-                    viewContext
+                    annotatedDocViewCtx
                     model.working_doc
 
-        -- , Components.DbgDisplay.view "model" model
+        -- selected text
         , div []
             [ Html.text
                 ("selected text: "
                     ++ Maybe.withDefault "" model.focus_ctx.selected_text
                 )
             ]
+
+        -- selected constituent
         , div []
             [ span []
                 [ Html.text "selected const: " ]
             , Maybe.withDefault
                 (Html.text "")
-                (Maybe.andThen (Components.AnnotatedText.viewSentenceConstituent viewContext) model.focus_ctx.constituent_selection)
+                (Maybe.andThen (Components.AnnotatedText.viewSentenceConstituent selectedConstViewCtx) model.focus_ctx.constituent_selection)
             ]
-        , Components.DbgDisplay.view "focus_ctx.last_hovered_at" model.focus_ctx.last_hovered_at
-        , Components.DbgDisplay.view "focus_ctx.mouse_down_at" model.focus_ctx.mouse_down_at
-        , Components.DbgDisplay.view "focus_ctx.last_mouse_down_at" model.focus_ctx.last_mouse_down_at
-        , Components.DbgDisplay.view "focus_ctx.slice_selection" model.focus_ctx.slice_selection
-        , Components.DbgDisplay.view "focus_ctx.selected_text" model.focus_ctx.selected_text
-        , Components.DbgDisplay.view "focus_ctx.constituent_selection" model.focus_ctx.constituent_selection
+
+        -- whole text but selected only
+        , div []
+            [ span []
+                [ Html.text "selection, rich display: " ]
+            , Components.AnnotatedText.view
+                selectedConstViewCtx
+                model.working_doc
+            ]
         ]
     }
