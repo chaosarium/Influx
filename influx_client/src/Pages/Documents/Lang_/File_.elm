@@ -6,10 +6,11 @@ import Bindings exposing (GetDocResponse, LanguageEntry)
 import Browser.Events exposing (onMouseUp)
 import Components.AnnotatedText
 import Components.DbgDisplay
+import Components.TermEditForm
 import Components.Topbar
-import Datastore.DictContext
-import Datastore.DocContext
-import Datastore.FocusContext
+import Datastore.DictContext as DictContext
+import Datastore.DocContext as DocContext
+import Datastore.FocusContext as FocusContext
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (alt, class, src)
@@ -42,9 +43,10 @@ type alias ThisRoute =
 
 type alias Model =
     { get_doc_api_res : Api.Data GetDocResponse
-    , working_doc : Datastore.DocContext.T
-    , working_dict : Datastore.DictContext.T
-    , focus_ctx : Datastore.FocusContext.T
+    , working_doc : DocContext.T
+    , working_dict : DictContext.T
+    , focus_ctx : FocusContext.T
+    , form_model : Components.TermEditForm.Model
     }
 
 
@@ -56,9 +58,10 @@ init :
     -> ( Model, Effect Msg )
 init args () =
     ( { get_doc_api_res = Api.Loading
-      , working_doc = Datastore.DocContext.empty
-      , working_dict = Datastore.DictContext.empty
-      , focus_ctx = Datastore.FocusContext.new
+      , working_doc = DocContext.empty
+      , working_dict = DictContext.empty
+      , focus_ctx = FocusContext.new
+      , form_model = Components.TermEditForm.empty
       }
       -- TODO combine working_doc and focus_ctx into some module?
     , Effect.sendCmd (Api.GetAnnotatedDoc.get args ApiResponded)
@@ -71,12 +74,14 @@ init args () =
 
 type Msg
     = ApiResponded (Result Http.Error GetDocResponse)
-    | SelectionMouseEvent Datastore.FocusContext.Msg -- will update focus context
-    | NoopMouseEvent Datastore.FocusContext.Msg -- for mouse events that don't change the focus context
+    | SelectionMouseEvent FocusContext.Msg -- will update focus context
+    | NoopMouseEvent FocusContext.Msg -- for mouse events that don't change the focus context
+    | FormEvent Components.TermEditForm.Msg
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
+    -- base event handling
     case msg of
         ApiResponded (Ok res) ->
             let
@@ -85,8 +90,8 @@ update msg model =
             in
             ( { model
                 | get_doc_api_res = Api.Success res
-                , working_doc = Datastore.DocContext.fromAnnotatedDocument res.annotatedDoc
-                , working_dict = Datastore.DictContext.fromAnnotatedDocument res.annotatedDoc
+                , working_doc = DocContext.fromAnnotatedDocument res.annotatedDoc
+                , working_dict = DictContext.fromAnnotatedDocument res.annotatedDoc
               }
             , Effect.none
             )
@@ -95,9 +100,19 @@ update msg model =
             ( { model | get_doc_api_res = Api.Failure httpError }, Effect.none )
 
         SelectionMouseEvent m ->
-            ( { model | focus_ctx = Datastore.FocusContext.update model.working_doc.text m model.focus_ctx }, Effect.none )
+            ( { model
+                | focus_ctx = FocusContext.update model.working_doc.text m model.focus_ctx
+                , form_model = Components.TermEditForm.update model.working_dict (Components.TermEditForm.EditingConUpdated model.focus_ctx.constituent_selection) model.form_model
+              }
+            , Effect.none
+            )
 
-        NoopMouseEvent _ ->
+        FormEvent m ->
+            ( { model | form_model = Components.TermEditForm.update model.working_dict m model.form_model }
+            , Effect.none
+            )
+
+        _ ->
             ( model, Effect.none )
 
 
@@ -107,7 +122,8 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    onMouseUp (Json.Decode.succeed (SelectionMouseEvent (Datastore.FocusContext.SelectMouseUp ())))
+    -- onMouseUp (Json.Decode.succeed (SelectionMouseEvent (FocusContext.SelectMouseUp ())))
+    Sub.none
 
 
 
@@ -127,7 +143,7 @@ view route model =
                         \_ -> False
 
                     Just slice ->
-                        Datastore.FocusContext.isCstInSlice slice
+                        FocusContext.isCstInSlice slice
             , cst_display_predicate = \_ -> True
             , doc_cst_display_predicate = \_ -> True
             }
@@ -143,14 +159,14 @@ view route model =
                         \_ -> False
 
                     Just slice ->
-                        Datastore.FocusContext.isCstInSlice slice
+                        FocusContext.isCstInSlice slice
             , doc_cst_display_predicate =
                 case model.focus_ctx.slice_selection of
                     Nothing ->
                         \_ -> False
 
                     Just slice ->
-                        Datastore.FocusContext.isDocCstInSlice slice
+                        FocusContext.isDocCstInSlice slice
             }
     in
     { title = "File view"
@@ -166,9 +182,11 @@ view route model =
                 Html.text ("Error: " ++ Api.stringOfHttpErrMsg err)
 
             Api.Success _ ->
-                Components.AnnotatedText.view
-                    annotatedDocViewCtx
-                    model.working_doc
+                div [ class "annotated-doc-div" ]
+                    (Components.AnnotatedText.view
+                        annotatedDocViewCtx
+                        model.working_doc
+                    )
 
         -- selected text
         , div []
@@ -191,9 +209,17 @@ view route model =
         , div []
             [ span []
                 [ Html.text "selection, rich display: " ]
-            , Components.AnnotatedText.view
-                selectedConstViewCtx
-                model.working_doc
+            , span [ class "" ]
+                (Components.AnnotatedText.view
+                    selectedConstViewCtx
+                    model.working_doc
+                )
             ]
+        , Components.TermEditForm.view model.form_model
+            FormEvent
+            { dict = model.working_dict
+            }
+        , -- debug
+          Components.DbgDisplay.view "focus context" model.focus_ctx
         ]
     }

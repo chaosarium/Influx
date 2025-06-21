@@ -3,7 +3,7 @@ module Components.AnnotatedText exposing (view, viewSentenceConstituent)
 import Bindings exposing (..)
 import Datastore.DictContext
 import Datastore.DocContext
-import Datastore.FocusContext
+import Datastore.FocusContext as FocusContext
 import Dict
 import Html exposing (Html, div, span)
 import Html.Attributes exposing (class, style)
@@ -13,21 +13,20 @@ import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
 
 view :
     { dict : Datastore.DictContext.T
-    , mouse_handler : Datastore.FocusContext.Msg -> msg
+    , mouse_handler : FocusContext.Msg -> msg
     , focus_predicate : SentenceConstituent -> Bool
     , cst_display_predicate : SentenceConstituent -> Bool
     , doc_cst_display_predicate : DocumentConstituent -> Bool
     }
     -> Datastore.DocContext.T
-    -> Html msg
+    -> List (Html msg)
 view args doc =
-    div [ class "annotated-doc-div" ]
-        (List.map (viewDocumentConstituent args) doc.constituents)
+    List.map (viewDocumentConstituent args) doc.constituents
 
 
 viewDocumentConstituent :
     { dict : Datastore.DictContext.T
-    , mouse_handler : Datastore.FocusContext.Msg -> msg
+    , mouse_handler : FocusContext.Msg -> msg
     , focus_predicate : SentenceConstituent -> Bool
     , cst_display_predicate : SentenceConstituent -> Bool
     , doc_cst_display_predicate : DocumentConstituent -> Bool
@@ -134,7 +133,7 @@ viewUnregisteredTkn attrs text =
 
 viewRegisteredTkn :
     { dict : Datastore.DictContext.T
-    , mouse_handler : Datastore.FocusContext.Msg -> msg
+    , mouse_handler : FocusContext.Msg -> msg
     , focus_predicate : SentenceConstituent -> Bool
     , cst_display_predicate : SentenceConstituent -> Bool
     , doc_cst_display_predicate : DocumentConstituent -> Bool
@@ -150,9 +149,9 @@ viewRegisteredTkn args attrs text tkn cst =
             [ span
                 (attrs
                     ++ [ tokenStatusToClass tkn.status
-                       , onMouseEnter (args.mouse_handler (Datastore.FocusContext.SelectMouseEnter cst))
-                       , onMouseDown (args.mouse_handler (Datastore.FocusContext.SelectMouseDown cst))
-                       , onMouseUp (args.mouse_handler (Datastore.FocusContext.SelectMouseUp ()))
+                       , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter cst))
+                       , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown cst))
+                       , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
                        , class "clickable-tkn-span"
                        ]
                     |> Utils.classIf (class "tkn-focus") (args.focus_predicate cst)
@@ -168,7 +167,7 @@ viewRegisteredTkn args attrs text tkn cst =
 
 viewRegisteredPhrase :
     { dict : Datastore.DictContext.T
-    , mouse_handler : Datastore.FocusContext.Msg -> msg
+    , mouse_handler : FocusContext.Msg -> msg
     , focus_predicate : SentenceConstituent -> Bool
     , cst_display_predicate : SentenceConstituent -> Bool
     , doc_cst_display_predicate : DocumentConstituent -> Bool
@@ -183,9 +182,9 @@ viewRegisteredPhrase args attrs phrase cst shadows =
         [ rb []
             [ span
                 (attrs
-                    ++ [ onMouseEnter (args.mouse_handler (Datastore.FocusContext.SelectMouseEnter cst))
-                       , onMouseDown (args.mouse_handler (Datastore.FocusContext.SelectMouseDown cst))
-                       , onMouseUp (args.mouse_handler (Datastore.FocusContext.SelectMouseUp ()))
+                    ++ [ onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter cst))
+                       , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown cst))
+                       , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
                        , tokenStatusToClass phrase.status
                        ]
                     |> Utils.classIf (class "tkn-focus") (args.focus_predicate cst)
@@ -198,7 +197,7 @@ viewRegisteredPhrase args attrs phrase cst shadows =
 
 viewSentenceConstituent :
     { dict : Datastore.DictContext.T
-    , mouse_handler : Datastore.FocusContext.Msg -> msg
+    , mouse_handler : FocusContext.Msg -> msg
     , focus_predicate : SentenceConstituent -> Bool
     , cst_display_predicate : SentenceConstituent -> Bool
     , doc_cst_display_predicate : DocumentConstituent -> Bool
