@@ -1,0 +1,83 @@
+<style>
+.double-ruby {
+  display: inline-grid;
+  grid-template-rows: 1em auto 1em; /* Adjust 1em as needed for annotation size */
+  align-items: center;
+  vertical-align: middle;
+}
+.double-ruby .ruby-top,
+.double-ruby .ruby-bottom {
+  font-size: 0.6em;
+  user-select: none;
+  text-align: center;
+  height: 1em; /* Match grid row height */
+  line-height: 1em;
+  display: block;
+}
+.double-ruby .ruby-main {
+  user-select: text;
+  text-align: center;
+  white-space: pre;
+  font-size: 1em;
+  line-height: 1.2;
+}
+/* Allow annotation selection if selection starts inside */
+.double-ruby .ruby-top:active,
+.double-ruby .ruby-top:focus,
+.double-ruby .ruby-bottom:active,
+.double-ruby .ruby-bottom:focus {
+  user-select: text;
+}
+
+/* Fix whitespace outside spans try 1 */
+.test {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+/* Fix whitespace outside spans try 2 */
+.test {
+  font-size: 0;
+}
+.double-ruby {
+  font-size: 1rem; 
+}
+</style>
+
+<div class="test">
+  <span class="double-ruby">
+    <span class="ruby-top" tabindex="0">topthing</span>
+    <span class="ruby-main">mainword</span>
+    <span class="ruby-bottom" tabindex="0">bottomthing</span>
+  </span>
+  <span class="double-ruby whitespace">
+    <span class="ruby-top" tabindex="0"></span>
+    <span class="ruby-main"> </span>
+    <span class="ruby-bottom" tabindex="0"></span>
+  </span>
+  <span class="double-ruby">
+    <span class="ruby-top" tabindex="0">topthing</span>
+    <span class="ruby-main">mainword</span>
+    <span class="ruby-bottom" tabindex="0">bottomthing</span>
+  </span>
+  <span class="double-ruby whitespace">
+    <span class="ruby-top" tabindex="0"></span>
+    <span class="ruby-main"> </span>
+    <span class="ruby-bottom" tabindex="0"></span>
+  </span>
+  <span class="double-ruby">
+    <span class="ruby-top" tabindex="0">topthing</span>
+    <span class="ruby-main">mainword</span>
+    <span class="ruby-bottom" tabindex="0">bottomthing  😂 bottomthing long</span>
+  </span>
+  <span class="double-ruby whitespace">
+    <span class="ruby-top" tabindex="0"></span>
+    <span class="ruby-main"> </span>
+    <span class="ruby-bottom" tabindex="0"></span>
+  </span>
+  <span class="double-ruby">
+    <span class="ruby-top" tabindex="0">topthing</span>
+    <span class="ruby-main">✈️</span>
+    <span class="ruby-bottom" tabindex="0">bottomthing  😂 bottomthing long</span>
+  </span>
+</div>
