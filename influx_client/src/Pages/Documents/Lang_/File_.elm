@@ -2,11 +2,12 @@ module Pages.Documents.Lang_.File_ exposing (Model, Msg, page)
 
 import Api
 import Api.GetAnnotatedDoc
-import Bindings exposing (GetDocResponse, LanguageEntry)
+import Api.TermEdit
+import Bindings exposing (GetDocResponse, LanguageEntry, Phrase, Token)
 import Browser.Events exposing (onMouseUp)
-import Components.AnnotatedText
+import Components.AnnotatedText as AnnotatedText
 import Components.DbgDisplay
-import Components.TermEditForm
+import Components.TermEditForm as TermEditForm
 import Components.Topbar
 import Datastore.DictContext as DictContext
 import Datastore.DocContext as DocContext
@@ -46,7 +47,7 @@ type alias Model =
     , working_doc : DocContext.T
     , working_dict : DictContext.T
     , focus_ctx : FocusContext.T
-    , form_model : Components.TermEditForm.Model
+    , form_model : TermEditForm.Model
     }
 
 
@@ -61,7 +62,7 @@ init args () =
       , working_doc = DocContext.empty
       , working_dict = DictContext.empty
       , focus_ctx = FocusContext.new
-      , form_model = Components.TermEditForm.empty
+      , form_model = TermEditForm.empty
       }
       -- TODO combine working_doc and focus_ctx into some module?
     , Effect.sendCmd (Api.GetAnnotatedDoc.get args ApiResponded)
@@ -73,10 +74,13 @@ init args () =
 
 
 type Msg
-    = ApiResponded (Result Http.Error GetDocResponse)
+    = -- Initial load...
+      ApiResponded (Result Http.Error GetDocResponse)
+      -- Mouse selection...
     | SelectionMouseEvent FocusContext.Msg -- will update focus context
     | NoopMouseEvent FocusContext.Msg -- for mouse events that don't change the focus context
-    | FormEvent Components.TermEditForm.Msg
+      -- Term editor...
+    | TokenEditorEvent TermEditForm.Msg
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -100,17 +104,50 @@ update msg model =
             ( { model | get_doc_api_res = Api.Failure httpError }, Effect.none )
 
         SelectionMouseEvent m ->
+            let
+                focus_ctx =
+                    FocusContext.update model.working_doc.text m model.focus_ctx
+
+                ( form_model, _ ) =
+                    TermEditForm.update model.working_dict (TermEditForm.EditingConUpdated model.focus_ctx.constituent_selection) model.form_model
+            in
             ( { model
-                | focus_ctx = FocusContext.update model.working_doc.text m model.focus_ctx
-                , form_model = Components.TermEditForm.update model.working_dict (Components.TermEditForm.EditingConUpdated model.focus_ctx.constituent_selection) model.form_model
+                | focus_ctx = focus_ctx
+                , form_model = form_model
               }
             , Effect.none
             )
 
-        FormEvent m ->
-            ( { model | form_model = Components.TermEditForm.update model.working_dict m model.form_model }
-            , Effect.none
-            )
+        TokenEditorEvent formMsg ->
+            case formMsg of
+                TermEditForm.RequestCreateToken token ->
+                    ( model
+                    , Effect.sendCmd (Api.TermEdit.create token (TokenEditorEvent << TermEditForm.GotCreateTermResponse))
+                    )
+
+                TermEditForm.RequestUpdateToken token ->
+                    ( model
+                    , Effect.sendCmd (Api.TermEdit.update token (TokenEditorEvent << TermEditForm.GotUpdateTermResponse))
+                    )
+
+                TermEditForm.RequestDeleteToken token ->
+                    ( model
+                    , Effect.sendCmd (Api.TermEdit.delete token (TokenEditorEvent << TermEditForm.GotDeleteTermResponse))
+                    )
+
+                TermEditForm.OverwriteToken token ->
+                    ( { model | working_dict = DictContext.overwriteTerm model.working_dict token }
+                    , Effect.none
+                    )
+
+                _ ->
+                    let
+                        ( form_model, child_fx ) =
+                            TermEditForm.update model.working_dict formMsg model.form_model
+                    in
+                    ( { model | form_model = form_model }
+                    , Effect.map TokenEditorEvent child_fx
+                    )
 
         _ ->
             ( model, Effect.none )
@@ -183,7 +220,7 @@ view route model =
 
             Api.Success _ ->
                 div [ class "annotated-doc-div" ]
-                    (Components.AnnotatedText.view
+                    (AnnotatedText.view
                         annotatedDocViewCtx
                         model.working_doc
                     )
@@ -202,7 +239,7 @@ view route model =
                 [ Html.text "selected const: " ]
             , Maybe.withDefault
                 (Html.text "")
-                (Maybe.andThen (Components.AnnotatedText.viewSentenceConstituent selectedConstViewCtx) model.focus_ctx.constituent_selection)
+                (Maybe.andThen (AnnotatedText.viewSentenceConstituent selectedConstViewCtx) model.focus_ctx.constituent_selection)
             ]
 
         -- whole text but selected only
@@ -210,13 +247,13 @@ view route model =
             [ span []
                 [ Html.text "selection, rich display: " ]
             , span [ class "" ]
-                (Components.AnnotatedText.view
+                (AnnotatedText.view
                     selectedConstViewCtx
                     model.working_doc
                 )
             ]
-        , Components.TermEditForm.view model.form_model
-            FormEvent
+        , TermEditForm.view model.form_model
+            TokenEditorEvent
             { dict = model.working_dict
             }
         , -- debug

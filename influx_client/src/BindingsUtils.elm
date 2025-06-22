@@ -20,3 +20,28 @@ getSentenceConstituentOrthography sc =
 
         PhraseToken { normalisedOrthography } ->
             normalisedOrthography
+
+
+orthographySeqToNormalized : List String -> String
+orthographySeqToNormalized orthographySeq =
+    orthographySeq |> String.join " "
+
+
+termDefaultUnmarkedToL1 : Token -> Token
+termDefaultUnmarkedToL1 token =
+    case token.status of
+        Unmarked ->
+            { token | status = L1 }
+
+        _ ->
+            token
+
+
+phraseDefaultUnmarkedToL1 : Phrase -> Phrase
+phraseDefaultUnmarkedToL1 phrase =
+    case phrase.status of
+        Unmarked ->
+            { phrase | status = L1 }
+
+        _ ->
+            phrase

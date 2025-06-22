@@ -4,8 +4,9 @@ import Bindings exposing (..)
 import BindingsUtils exposing (getSentenceConstituentOrthography)
 import Components.Styles as Styles
 import Datastore.DictContext as DictContext
+import Effect exposing (Effect)
 import Html exposing (Html, div, span)
-import Html.Attributes exposing (class, style)
+import Html.Attributes exposing (class, disabled, style)
 import Html.Events exposing (onClick, onInput, onMouseDown, onMouseEnter, onMouseOver, onMouseUp, onSubmit)
 import Http
 import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
@@ -15,13 +16,15 @@ import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
 -- MODEL
 
 
+type WriteAction
+    = Create
+    | Update
+
+
 type alias TermFormModel =
-    { orthographyInput : String
-    , definitionInput : String
-    , phoneticInput : String
-    , statusInput : TokenStatus
-    , notesInput : String
-    , contextInput : String
+    { orig_term : Token
+    , working_term : Token
+    , write_action : WriteAction
     }
 
 
@@ -69,9 +72,16 @@ type FormMsg
 
 type Msg
     = InputChanged FormMsg
+      -- upward propagation
+    | RequestCreateToken Token
+    | RequestUpdateToken Token
+    | RequestDeleteToken Token
+    | OverwriteToken Token
+      -- downward propagation
     | EditingConUpdated (Maybe SentenceConstituent)
-    | Submit
-    | GotResponse (Result Http.Error String)
+    | GotCreateTermResponse (Result Http.Error Token)
+    | GotUpdateTermResponse (Result Http.Error Token)
+    | GotDeleteTermResponse (Result Http.Error Token)
 
 
 
@@ -80,24 +90,32 @@ type Msg
 
 updateTermForm : FormMsg -> TermFormModel -> TermFormModel
 updateTermForm msg form =
-    case msg of
-        UpdateOrthographyInput value ->
-            { form | orthographyInput = value }
+    let
+        working_term =
+            form.working_term
 
-        UpdateDefinitionInput value ->
-            { form | definitionInput = value }
+        working_term2 =
+            case msg of
+                UpdateOrthographyInput value ->
+                    { working_term | orthography = value }
 
-        UpdatePhoneticInput value ->
-            { form | phoneticInput = value }
+                UpdateDefinitionInput value ->
+                    { working_term | definition = value }
 
-        UpdateStatusInput status ->
-            { form | statusInput = status }
+                UpdatePhoneticInput value ->
+                    { working_term | phonetic = value }
 
-        UpdateNotesInput value ->
-            { form | notesInput = value }
+                UpdateStatusInput status ->
+                    { working_term | status = status }
 
-        UpdateContextInput value ->
-            { form | contextInput = value }
+                UpdateNotesInput value ->
+                    { working_term | notes = value }
+
+                UpdateContextInput value ->
+                    -- TODO modify the context
+                    working_term
+    in
+    { form | working_term = working_term2 }
 
 
 updatePhraseForm : FormMsg -> PhraseFormModel -> PhraseFormModel
@@ -139,17 +157,14 @@ switchToTermEdit : DictContext.T -> String -> FormModel
 switchToTermEdit dict_ctx orthography =
     let
         term_to_edit =
-            DictContext.lookupTerm dict_ctx orthography
+            Maybe.map BindingsUtils.termDefaultUnmarkedToL1 (DictContext.lookupTerm dict_ctx orthography)
     in
     case term_to_edit of
         Just term ->
             TermForm
-                { orthographyInput = term.orthography
-                , definitionInput = term.definition
-                , phoneticInput = term.phonetic
-                , statusInput = term.status
-                , notesInput = term.notes
-                , contextInput = ""
+                { orig_term = BindingsUtils.termDefaultUnmarkedToL1 term
+                , working_term = BindingsUtils.termDefaultUnmarkedToL1 term
+                , write_action = Utils.maybeSelect term.id Update Create
                 }
 
         Nothing ->
@@ -176,11 +191,47 @@ switchToPhraseEdit dict_ctx normalised_orthography =
             ErrorForm ("Phrase not found: " ++ normalised_orthography)
 
 
-update : DictContext.T -> Msg -> Model -> Model
+handleGotTermEditAck : Model -> String -> Result Http.Error Token -> ( Model, Effect Msg )
+handleGotTermEditAck model label res =
+    case res of
+        Ok token ->
+            let
+                _ =
+                    Debug.log (label ++ ": Success") token
+            in
+            ( { model
+                | form_model =
+                    case model.form_model of
+                        TermForm { orig_term, working_term } ->
+                            if token.orthography == working_term.orthography then
+                                TermForm
+                                    { orig_term = token
+                                    , write_action = Utils.maybeSelect token.id Update Create
+                                    , working_term = { working_term | id = token.id, langId = token.langId }
+                                    }
+
+                            else
+                                model.form_model
+
+                        _ ->
+                            model.form_model
+              }
+            , Effect.sendMsg <| OverwriteToken token
+            )
+
+        Err err ->
+            let
+                _ =
+                    Debug.log (label ++ ": Error") err
+            in
+            ( model, Effect.none )
+
+
+update : DictContext.T -> Msg -> Model -> ( Model, Effect Msg )
 update dict_ctx msg model =
     case msg of
         InputChanged formMsg ->
-            { model | form_model = updateForm formMsg model.form_model }
+            ( { model | form_model = updateForm formMsg model.form_model }, Effect.none )
 
         EditingConUpdated con_opt ->
             let
@@ -199,8 +250,8 @@ update dict_ctx msg model =
                         ( Just (PhraseToken { normalisedOrthography }), _ ) ->
                             switchToPhraseEdit dict_ctx normalisedOrthography
 
-                        ( Just non_phrase_tkn, TermForm { orthographyInput } ) ->
-                            if getSentenceConstituentOrthography non_phrase_tkn == orthographyInput then
+                        ( Just non_phrase_tkn, TermForm { working_term } ) ->
+                            if getSentenceConstituentOrthography non_phrase_tkn == working_term.orthography then
                                 model.form_model
 
                             else
@@ -209,13 +260,25 @@ update dict_ctx msg model =
                         ( Just non_phrase_tkn, _ ) ->
                             switchToTermEdit dict_ctx (getSentenceConstituentOrthography non_phrase_tkn)
             in
-            { model
+            ( { model
                 | con_to_edit = con_opt
                 , form_model = form2
-            }
+              }
+            , Effect.none
+            )
+
+        -- downward propagation
+        GotCreateTermResponse res ->
+            handleGotTermEditAck model "create" res
+
+        GotUpdateTermResponse res ->
+            handleGotTermEditAck model "update" res
+
+        GotDeleteTermResponse res ->
+            handleGotTermEditAck model "delete" res
 
         _ ->
-            model
+            ( model, Effect.none )
 
 
 
@@ -223,16 +286,18 @@ update dict_ctx msg model =
 -- start component lib
 
 
-inputC : String -> String -> (String -> msg) -> String -> Html msg
-inputC label id toMsg value =
+inputC : List (Html.Attribute msg) -> String -> String -> (String -> msg) -> String -> Html msg
+inputC attrs label id toMsg value =
     div []
         [ Html.label [ Html.Attributes.for id ] [ Html.text label ]
         , Html.input
-            [ Html.Attributes.type_ "text"
-            , Html.Attributes.id id
-            , Html.Events.onInput toMsg
-            , Html.Attributes.value value
-            ]
+            (attrs
+                ++ [ Html.Attributes.type_ "text"
+                   , Html.Attributes.id id
+                   , Html.Events.onInput toMsg
+                   , Html.Attributes.value value
+                   ]
+            )
             []
         ]
 
@@ -262,16 +327,24 @@ selectC label id toMsg options selectedValue =
             [ Html.Attributes.id id
             , Html.Attributes.value selectedValue
             , Html.Events.onInput toMsg
+            , Html.Attributes.required True
             ]
-            (List.map
-                (\opt ->
-                    Html.option
-                        [ Html.Attributes.value opt.value
-                        , Html.Attributes.selected (opt.value == selectedValue)
-                        ]
-                        [ Html.text opt.label ]
-                )
-                options
+            (Html.option
+                [ Html.Attributes.value ""
+                , Html.Attributes.disabled True
+                , Html.Attributes.selected (selectedValue == "")
+                , Html.Attributes.hidden True
+                ]
+                [ Html.text "Select a status... (or default to L1)" ]
+                :: List.map
+                    (\opt ->
+                        Html.option
+                            [ Html.Attributes.value opt.value
+                            , Html.Attributes.selected (opt.value == selectedValue)
+                            ]
+                            [ Html.text opt.label ]
+                    )
+                    options
             )
         ]
 
@@ -280,6 +353,7 @@ selectC label id toMsg options selectedValue =
 -- end component lib
 
 
+tokenStatusOptions : List SelectCOption
 tokenStatusOptions =
     [ { value = "L1", label = "L1" }
     , { value = "L2", label = "L2" }
@@ -288,7 +362,6 @@ tokenStatusOptions =
     , { value = "L5", label = "L5" }
     , { value = "KNOWN", label = "KNOWN" }
     , { value = "IGNORED", label = "IGNORED" }
-    , { value = "UNMARKED", label = "UNMARKED" }
     ]
 
 
@@ -363,30 +436,45 @@ viewTermForm form lift args =
         [ -- onSubmit (Debug.todo "handle submit (create or update token)")
           Styles.bgGrey
         ]
-        [ inputC "Orthography" "orthographyInput" (lift << InputChanged << UpdateOrthographyInput) form.orthographyInput
-        , inputC "Definition" "definitionInput" (lift << InputChanged << UpdateDefinitionInput) form.definitionInput
-        , inputC "Phonetic" "phoneticInput" (lift << InputChanged << UpdatePhoneticInput) form.phoneticInput
+        [ inputC [ disabled True ] "Orthography" "orthographyInput" (lift << InputChanged << UpdateOrthographyInput) form.working_term.orthography
+        , inputC [] "Definition" "definitionInput" (lift << InputChanged << UpdateDefinitionInput) form.working_term.definition
+        , inputC [] "Phonetic" "phoneticInput" (lift << InputChanged << UpdatePhoneticInput) form.working_term.phonetic
         , selectC
             "Status"
             "statusInput"
             (lift << InputChanged << UpdateStatusInput << tokenStatusOfStringExn)
             tokenStatusOptions
-            (tokenStatusToString form.statusInput)
-        , textboxC "Notes" "notesInput" (lift << InputChanged << UpdateNotesInput) form.notesInput
+            -- (tokenStatusToString form.working_term.status)
+            (case form.write_action of
+                Create ->
+                    ""
 
-        -- Buttons (placeholders for create/update/delete)
-        , Html.input
-            [ Html.Attributes.type_ "submit"
-            , Html.Attributes.value "Update Token"
-            ]
-            []
-        , Html.input
-            [ Html.Attributes.type_ "button"
-            , Html.Attributes.value "Delete Token"
+                Update ->
+                    tokenStatusToString form.working_term.status
+            )
+        , textboxC "Notes" "notesInput" (lift << InputChanged << UpdateNotesInput) form.working_term.notes
+        , case form.write_action of
+            Create ->
+                Html.input
+                    [ Html.Attributes.type_ "button"
+                    , Html.Attributes.value "Create"
+                    , Html.Events.onClick (lift (RequestCreateToken form.working_term))
+                    ]
+                    []
 
-            -- , Html.Events.onClick (Debug.todo "handle delete token")
-            ]
-            []
+            Update ->
+                Html.input
+                    [ Html.Attributes.type_ "button"
+                    , Html.Attributes.value "Update"
+                    , Html.Events.onClick (lift (RequestUpdateToken form.working_term))
+                    ]
+                    []
+        , if form.working_term /= form.orig_term then
+            div [ style "color" "orange", style "margin-top" "8px" ]
+                [ Html.text "You have unsaved changes." ]
+
+          else
+            Utils.htmlEmpty
         ]
 
 
@@ -403,7 +491,7 @@ view model lift { dict } =
             viewTermForm term_form lift { dict = dict }
 
         PhraseForm phrase_form ->
-            div [] [ Html.text "TODO edit the phrase." ]
+            Utils.todoHtml "Phrase editing not implemented yet"
 
         _ ->
             div [] [ Html.text "No constituent selected for editing." ]

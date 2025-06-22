@@ -24,9 +24,9 @@ pub enum TokenStatus {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
 pub struct Token {
-    #[serde(deserialize_with = "deserialize_surreal_thing_opt")]
+    // #[serde(deserialize_with = "deserialize_surreal_thing_opt")]
     pub id: Option<InfluxResourceId>,
-    #[serde(deserialize_with = "deserialize_surreal_thing")]
+    // #[serde(deserialize_with = "deserialize_surreal_thing")]
     pub lang_id: InfluxResourceId,
 
     pub orthography: String,

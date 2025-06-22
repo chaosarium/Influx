@@ -1,7 +1,12 @@
 module Datastore.DictContext exposing (..)
 
 import Bindings exposing (AnnotatedDocument, Phrase, Token)
+import BindingsUtils exposing (..)
 import Dict exposing (Dict)
+
+
+
+-- DATA
 
 
 type alias T =
@@ -48,3 +53,21 @@ lookupTerm dict_ctx term =
 lookupPhrase : T -> String -> Maybe Phrase
 lookupPhrase dict_ctx term =
     Dict.get term dict_ctx.phraseDict
+
+
+overwriteTerm : T -> Token -> T
+overwriteTerm dict_ctx token =
+    { dict_ctx | tokenDict = Dict.insert token.orthography token dict_ctx.tokenDict }
+
+
+overwritePhrase : T -> Phrase -> T
+overwritePhrase dict_ctx phrase =
+    { dict_ctx | phraseDict = Dict.insert (BindingsUtils.orthographySeqToNormalized phrase.orthographySeq) phrase dict_ctx.phraseDict }
+
+
+
+-- MESSAGES
+
+
+type Msg
+    = NoOp

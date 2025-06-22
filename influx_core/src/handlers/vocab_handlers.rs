@@ -1,17 +1,21 @@
+use std::f32::consts::E;
+
 use axum::extract::Path;
 use serde::Deserialize;
 use super::ServerError;
-use crate::db::models::vocab::Token;
+use crate::db::models::vocab::{Token, TokenStatus};
 use axum::Json;
 use crate::ServerState;
 use axum::extract::State;
 
 pub async fn create_token(
     State(ServerState { db, .. }): State<ServerState>, 
-    Json(payload): Json<Token>,
+    Json( payload): Json<Token>,
 ) -> Result<Json<Token>, ServerError> {
     println!("token create attempt payload: {:?}", payload);
-
+    if payload.status == TokenStatus::UNMARKED {
+        return Err(ServerError(anyhow::anyhow!("cannot create token with status UNMARKED")));
+    }
     let token = db.create_token(payload).await?;
 
    Ok(Json(token))
@@ -27,8 +31,10 @@ pub async fn delete_token(
             return Err(ServerError(anyhow::anyhow!("cannot delete if no id")));
         },
         Some(id) => {
-            let token = db.delete_token(id).await?;
-            Ok(Json(token))
+            let deleted_token = db.delete_token(id).await?;
+            println!("deleted token: {:?}", deleted_token);
+            let unmarked_token = Token::unmarked_token(payload.lang_id, &payload.orthography);
+            Ok(Json(unmarked_token))
         },
     }
 }

@@ -22,8 +22,14 @@ percentEncode s =
 
 unreachableHtml : String -> Html.Html msg
 unreachableHtml s =
-    Html.div [ Html.Attributes.class "err-unreachable" ]
+    Html.div [ Html.Attributes.class "dbg-unreachable" ]
         [ Html.text ("UNREACHABLE: " ++ s) ]
+
+
+todoHtml : String -> Html.Html msg
+todoHtml s =
+    Html.div [ Html.Attributes.class "dbg-todo" ]
+        [ Html.text ("TODO: " ++ s) ]
 
 
 ruby =
@@ -53,3 +59,23 @@ classIf attr cond attrs =
 
 htmlEmpty =
     Html.text ""
+
+
+maybeIsJust : Maybe a -> Bool
+maybeIsJust maybe =
+    case maybe of
+        Just _ ->
+            True
+
+        Nothing ->
+            False
+
+
+maybeSelect : Maybe a -> b -> b -> b
+maybeSelect maybe justRet nothingRet =
+    case maybe of
+        Just _ ->
+            justRet
+
+        Nothing ->
+            nothingRet
