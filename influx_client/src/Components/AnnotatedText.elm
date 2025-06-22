@@ -16,6 +16,7 @@ import Utils.ModifierState as ModifierState
 
 type alias Args msg =
     { dict : Datastore.DictContext.T
+    , bypass_shadowned : Bool
     , modifier_state : ModifierState.Model
     , mouse_handler : FocusContext.Msg -> msg
     , focus_predicate : SentenceConstituent -> Bool
@@ -204,7 +205,7 @@ viewSentenceConstituent :
     -> SentenceConstituent
     -> Maybe (Html msg)
 viewSentenceConstituent args cst =
-    if getShadowed cst || not (args.cst_display_predicate cst) then
+    if (getShadowed cst && args.bypass_shadowned) || not (args.cst_display_predicate cst) then
         Nothing
 
     else

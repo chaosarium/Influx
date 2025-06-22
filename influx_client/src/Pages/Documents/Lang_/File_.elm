@@ -181,6 +181,7 @@ view route model =
     let
         annotatedDocViewCtx =
             { dict = model.working_dict
+            , bypass_shadowned = True
             , modifier_state = model.modifier_state
             , mouse_handler = SelectionMouseEvent
             , focus_predicate =
@@ -197,6 +198,7 @@ view route model =
     let
         selectedConstViewCtx =
             { dict = model.working_dict
+            , bypass_shadowned = True
             , modifier_state = model.modifier_state
             , mouse_handler = NoopMouseEvent
             , focus_predicate = \_ -> False
@@ -249,7 +251,7 @@ view route model =
                 [ Html.text "selected const: " ]
             , Maybe.withDefault
                 (Html.text "")
-                (Maybe.andThen (AnnotatedText.viewSentenceConstituent selectedConstViewCtx) model.focus_ctx.constituent_selection)
+                (Maybe.andThen (AnnotatedText.viewSentenceConstituent { selectedConstViewCtx | bypass_shadowned = False }) model.focus_ctx.constituent_selection)
             ]
 
         -- whole text but selected only
@@ -266,5 +268,6 @@ view route model =
             TokenEditorEvent
             { dict = model.working_dict
             }
+        , Components.DbgDisplay.view "model.focus_ctx" model.focus_ctx
         ]
     }
