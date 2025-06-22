@@ -2,6 +2,7 @@ module Utils exposing (..)
 
 import Html
 import Html.Attributes
+import Html.Attributes.Extra
 import Url
 
 
@@ -48,17 +49,13 @@ rb =
     Html.node "rb"
 
 
-classIf : Html.Attribute msg -> Bool -> List (Html.Attribute msg) -> List (Html.Attribute msg)
-classIf attr cond attrs =
-    if cond then
-        attr :: attrs
-
-    else
-        attrs
-
-
 htmlEmpty =
     Html.text ""
+
+
+attributeEmpty : Html.Attribute msg
+attributeEmpty =
+    Html.Attributes.Extra.empty
 
 
 maybeIsJust : Maybe a -> Bool
@@ -79,3 +76,27 @@ maybeSelect maybe justRet nothingRet =
 
         Nothing ->
             nothingRet
+
+
+attributeIf : Bool -> Html.Attribute msg -> Html.Attribute msg
+attributeIf =
+    Html.Attributes.Extra.attributeIf
+
+
+attributeIfNot : Bool -> Html.Attribute msg -> Html.Attribute msg
+attributeIfNot cond attr =
+    attributeIf (not cond) attr
+
+
+classIf : Bool -> String -> Html.Attribute msg
+classIf cond class =
+    if cond then
+        Html.Attributes.class class
+
+    else
+        Html.Attributes.Extra.empty
+
+
+classIfNot : Bool -> String -> Html.Attribute msg
+classIfNot cond attr =
+    classIf (not cond) attr

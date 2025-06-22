@@ -21,6 +21,7 @@ import Page exposing (Page)
 import Route exposing (Route)
 import Shared
 import Utils
+import Utils.ModifierState as ModifierState
 import View exposing (View)
 
 
@@ -44,6 +45,7 @@ type alias ThisRoute =
 
 type alias Model =
     { get_doc_api_res : Api.Data GetDocResponse
+    , modifier_state : ModifierState.Model
     , working_doc : DocContext.T
     , working_dict : DictContext.T
     , focus_ctx : FocusContext.T
@@ -59,6 +61,7 @@ init :
     -> ( Model, Effect Msg )
 init args () =
     ( { get_doc_api_res = Api.Loading
+      , modifier_state = ModifierState.init
       , working_doc = DocContext.empty
       , working_dict = DictContext.empty
       , focus_ctx = FocusContext.new
@@ -81,6 +84,8 @@ type Msg
     | NoopMouseEvent FocusContext.Msg -- for mouse events that don't change the focus context
       -- Term editor...
     | TokenEditorEvent TermEditForm.Msg
+      -- Shared
+    | ModifierStateMsg ModifierState.Msg
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -99,6 +104,9 @@ update msg model =
               }
             , Effect.none
             )
+
+        ModifierStateMsg m ->
+            ( { model | modifier_state = ModifierState.update m model.modifier_state }, Effect.none )
 
         ApiResponded (Err httpError) ->
             ( { model | get_doc_api_res = Api.Failure httpError }, Effect.none )
@@ -160,7 +168,7 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     -- onMouseUp (Json.Decode.succeed (SelectionMouseEvent (FocusContext.SelectMouseUp ())))
-    Sub.none
+    ModifierState.subscriptions ModifierStateMsg
 
 
 
@@ -173,6 +181,7 @@ view route model =
     let
         annotatedDocViewCtx =
             { dict = model.working_dict
+            , modifier_state = model.modifier_state
             , mouse_handler = SelectionMouseEvent
             , focus_predicate =
                 case model.focus_ctx.slice_selection of
@@ -188,6 +197,7 @@ view route model =
     let
         selectedConstViewCtx =
             { dict = model.working_dict
+            , modifier_state = model.modifier_state
             , mouse_handler = NoopMouseEvent
             , focus_predicate = \_ -> False
             , cst_display_predicate =
@@ -256,7 +266,5 @@ view route model =
             TokenEditorEvent
             { dict = model.working_dict
             }
-        , -- debug
-          Components.DbgDisplay.view "focus context" model.focus_ctx
         ]
     }
