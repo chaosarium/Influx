@@ -96,7 +96,7 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
         )
         .route(
             "/vocab/delete_token",
-            delete(handlers::vocab_handlers::delete_token)
+            post(handlers::vocab_handlers::delete_token)
         )
         .route(
             "/vocab/update_token",
@@ -112,7 +112,7 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
         )
         .route(
             "/phrase/delete_phrase",
-            delete(handlers::phrase_handlers::delete_phrase)
+            post(handlers::phrase_handlers::delete_phrase)
         )
         // .route(
         //     "/settings",

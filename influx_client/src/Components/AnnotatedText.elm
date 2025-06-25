@@ -1,4 +1,4 @@
-module Components.AnnotatedText exposing (view, viewSentenceConstituent)
+module Components.AnnotatedText exposing (view, viewCompositTokenShadows, viewSentenceConstituent)
 
 import Bindings exposing (..)
 import Datastore.DictContext
@@ -80,6 +80,39 @@ phraseDictLookup dict_ctx orthography =
     Dict.get orthography dict_ctx.phraseDict
 
 
+viewCompositTokenShadow :
+    SentenceConstituent
+    -> Html msg
+viewCompositTokenShadow cst =
+    let
+        attrs =
+            []
+    in
+    case cst of
+        CompositToken { text } ->
+            Utils.unreachableHtml "CompositToken within CompositToken???"
+
+        SubwordToken { text } ->
+            span (attrs ++ [ class "subword-token-span" ]) [ Html.text text ]
+
+        SingleToken { text } ->
+            span (attrs ++ [ class "single-token-span" ]) [ Html.text text ]
+
+        PhraseToken _ ->
+            Utils.unreachableHtml "phrase within phrase???"
+
+        SentenceWhitespace { text } ->
+            span (attrs ++ [ class "sentence-whitespace-span" ]) [ Html.text text ]
+
+
+viewCompositTokenShadows :
+    List SentenceConstituent
+    -> Html msg
+viewCompositTokenShadows csts =
+    span [ class "composit-token-shadows-span" ]
+        (List.intersperse (span [ class "sentence-whitespace-span" ] [ Html.text " " ]) (List.map viewCompositTokenShadow csts))
+
+
 viewPhraseSubconstituent :
     Args msg
     -> SentenceConstituent
@@ -87,9 +120,9 @@ viewPhraseSubconstituent :
 viewPhraseSubconstituent args cst =
     let
         attrs =
-            [ onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter cst))
-            , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown cst))
-            , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+            [ Utils.attributeIf args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter cst))
+            , Utils.attributeIf args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown cst))
+            , Utils.attributeIf args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
             , Utils.classIf (args.focus_predicate cst) "tkn-focus"
             ]
     in

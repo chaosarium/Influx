@@ -453,22 +453,27 @@ viewTermForm form lift args =
                     tokenStatusToString form.working_term.status
             )
         , textboxC "Notes" "notesInput" (lift << InputChanged << UpdateNotesInput) form.working_term.notes
-        , case form.write_action of
-            Create ->
-                Html.input
-                    [ Html.Attributes.type_ "button"
-                    , Html.Attributes.value "Create"
-                    , Html.Events.onClick (lift (RequestCreateToken form.working_term))
-                    ]
-                    []
-
-            Update ->
-                Html.input
-                    [ Html.Attributes.type_ "button"
-                    , Html.Attributes.value "Update"
-                    , Html.Events.onClick (lift (RequestUpdateToken form.working_term))
-                    ]
-                    []
+        , Utils.htmlIf (form.write_action == Create) <|
+            Html.input
+                [ Html.Attributes.type_ "button"
+                , Html.Attributes.value "Create"
+                , Html.Events.onClick (lift (RequestCreateToken form.working_term))
+                ]
+                []
+        , Utils.htmlIf (form.write_action == Update) <|
+            Html.input
+                [ Html.Attributes.type_ "button"
+                , Html.Attributes.value "Update"
+                , Html.Events.onClick (lift (RequestUpdateToken form.working_term))
+                ]
+                []
+        , Utils.htmlIf (form.write_action == Update) <|
+            Html.input
+                [ Html.Attributes.type_ "button"
+                , Html.Attributes.value "Delete"
+                , Html.Events.onClick (lift (RequestDeleteToken form.working_term))
+                ]
+                []
         , if form.working_term /= form.orig_term then
             div [ style "color" "orange", style "margin-top" "8px" ]
                 [ Html.text "You have unsaved changes." ]

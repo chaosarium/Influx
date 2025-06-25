@@ -3,7 +3,7 @@ module Pages.Documents.Lang_.File_ exposing (Model, Msg, page)
 import Api
 import Api.GetAnnotatedDoc
 import Api.TermEdit
-import Bindings exposing (GetDocResponse, LanguageEntry, Phrase, Token)
+import Bindings exposing (GetDocResponse, LanguageEntry, Phrase, SentenceConstituent, Token)
 import Browser.Events exposing (onMouseUp)
 import Components.AnnotatedText as AnnotatedText
 import Components.DbgDisplay
@@ -15,6 +15,7 @@ import Datastore.FocusContext as FocusContext
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (alt, class, src)
+import Html.Extra
 import Http
 import Json.Decode
 import Page exposing (Page)
@@ -174,6 +175,30 @@ subscriptions model =
 
 -- Annotated Text view
 -- VIEW
+-- start TODO put in component
+
+
+viewConExtraInfo : SentenceConstituent -> Html msg
+viewConExtraInfo con =
+    case con of
+        Bindings.CompositToken { shadows } ->
+            Html.span [] [ Html.text "=  ", AnnotatedText.viewCompositTokenShadows shadows ]
+
+        Bindings.SubwordToken { orthography, lemma } ->
+            Utils.htmlIf (orthography /= lemma) <| Html.span [] [ Html.text (" (lemma is " ++ lemma ++ ")") ]
+
+        Bindings.SingleToken { orthography, lemma } ->
+            Utils.htmlIf (orthography /= lemma) <| Html.span [] [ Html.text (" (lemma is " ++ lemma ++ ")") ]
+
+        Bindings.SentenceWhitespace _ ->
+            Html.Extra.nothing
+
+        Bindings.PhraseToken _ ->
+            Html.Extra.nothing
+
+
+
+-- end
 
 
 view : ThisRoute -> Model -> View Msg
@@ -231,7 +256,7 @@ view route model =
                 Html.text ("Error: " ++ Api.stringOfHttpErrMsg err)
 
             Api.Success _ ->
-                div [ class "annotated-doc-div" ]
+                div [ class "annotated-doc-div dbg-off" ]
                     (AnnotatedText.view
                         annotatedDocViewCtx
                         model.working_doc
@@ -252,18 +277,19 @@ view route model =
             , Maybe.withDefault
                 (Html.text "")
                 (Maybe.andThen (AnnotatedText.viewSentenceConstituent { selectedConstViewCtx | bypass_shadowned = False }) model.focus_ctx.constituent_selection)
+            , Html.Extra.viewMaybe (\con -> viewConExtraInfo con) model.focus_ctx.constituent_selection
             ]
 
         -- whole text but selected only
-        , div []
-            [ span []
-                [ Html.text "selection, rich display: " ]
-            , span [ class "" ]
-                (AnnotatedText.view
-                    selectedConstViewCtx
-                    model.working_doc
-                )
-            ]
+        -- , div []
+        --     [ span []
+        --         [ Html.text "selection, rich display: " ]
+        --     , span [ class "" ]
+        --         (AnnotatedText.view
+        --             selectedConstViewCtx
+        --             model.working_doc
+        --         )
+        --     ]
         , TermEditForm.view model.form_model
             TokenEditorEvent
             { dict = model.working_dict

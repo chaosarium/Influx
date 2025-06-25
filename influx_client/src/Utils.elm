@@ -3,6 +3,7 @@ module Utils exposing (..)
 import Html
 import Html.Attributes
 import Html.Attributes.Extra
+import Html.Extra
 import Url
 
 
@@ -100,3 +101,8 @@ classIf cond class =
 classIfNot : Bool -> String -> Html.Attribute msg
 classIfNot cond attr =
     classIf (not cond) attr
+
+
+htmlIf : Bool -> Html.Html msg -> Html.Html msg
+htmlIf cond html =
+    Html.Extra.viewIf cond html

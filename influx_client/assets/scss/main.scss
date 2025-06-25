@@ -50,35 +50,37 @@ pre.dbg-json-pre {
     line-height: 1.8;
 }
 
-span.sentence-span {
-    border: 1px solid rgb(220, 172, 172);
-    padding-block: 2px;
-}
+.dbg-on {
+    span.sentence-span {
+        border: 1px solid rgb(220, 172, 172);
+        padding-block: 2px;
+    }i
 
-span.document-whitespace-span {
-    border: 1px dotted rgb(186, 166, 166);
-    white-space: pre-wrap;
-}
+    span.document-whitespace-span {
+        border: 1px dotted rgb(186, 166, 166);
+        white-space: pre-wrap;
+    }
 
-span.composit-token-span {
-    border: 2px solid #60a5fa;
-}
+    span.composit-token-span {
+        border: 2px solid #60a5fa;
+    }
 
-span.subword-token-span {
-    border: 1px solid #93c5fd;
-}
+    span.subword-token-span {
+        border: 1px solid #93c5fd;
+    }
 
-span.single-token-span {
-    border: 1px solid #bfdbfe;
-}
+    span.single-token-span {
+        border: 1px solid #bfdbfe;
+    }
 
-span.phrase-span {
-    border: 2px solid #05a239;
-    padding-block: 1px;
-}
+    span.phrase-span {
+        border: 2px solid #05a239;
+        padding-block: 1px;
+    }
 
-span.sentence-whitespace-span {
-    border: 1px dotted #38bdf8;
+    span.sentence-whitespace-span {
+        border: 1px dotted #38bdf8;
+    }
 }
 
 // tkn status
