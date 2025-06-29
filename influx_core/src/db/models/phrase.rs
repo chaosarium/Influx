@@ -2,9 +2,9 @@
 use super::*;
 use crate::db::{deserialize_surreal_thing, deserialize_surreal_thing_opt};
 use crate::{db::InfluxResourceId, prelude::*, utils::trie::Trie};
+use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use vocab::TokenStatus;
-use elm_rs::{Elm, ElmEncode, ElmDecode, ElmQuery, ElmQueryField};
 use DB::*;
 
 const TABLE: &str = "phrase";
@@ -328,13 +328,11 @@ impl DB {
 
     pub async fn delete_phrase(&self, id: InfluxResourceId) -> Result<Phrase> {
         match self {
-            Surreal { engine } => {
-                match engine.delete((TABLE, id)).await? {
-                    Some::<Phrase>(v) => Ok(v),
-                    None => Err(anyhow::anyhow!(
-                        "Error deleting phrase, was it even in the database?"
-                    )),
-                }
+            Surreal { engine } => match engine.delete((TABLE, id)).await? {
+                Some::<Phrase>(v) => Ok(v),
+                None => Err(anyhow::anyhow!(
+                    "Error deleting phrase, was it even in the database?"
+                )),
             },
             Postgres { pool } => {
                 let record = sqlx::query_as!(

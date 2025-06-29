@@ -1,27 +1,34 @@
 #![allow(unused_imports)]
 
-use std::{sync::Arc, path::PathBuf, fs};
-use elm_rs::{Elm, ElmDecode, ElmEncode};
-use serde::{Deserialize, Serialize};
-use sqlx::{PgPool, Pool, Postgres};
-use surrealdb::{
-    engine::{local::{
-        Db, Mem
-    }, remote::ws::Ws}, sql::{Object, Thing}, Response, Surreal
-};
 use anyhow::Result;
+use elm_rs::{Elm, ElmDecode, ElmEncode};
+use models::phrase::Phrase;
 use models::todos::TodoItem;
 use models::vocab::Token;
-use models::phrase::Phrase;
+use serde::{Deserialize, Serialize};
+use sqlx::{PgPool, Pool, Postgres};
 use std::env;
+use std::{fs, path::PathBuf, sync::Arc};
+use surrealdb::{
+    engine::{
+        local::{Db, Mem},
+        remote::ws::Ws,
+    },
+    sql::{Object, Thing},
+    Response, Surreal,
+};
 
 use crate::DBChoice;
 pub mod models;
 
 #[derive(Clone)]
 pub enum DB {
-    Surreal{engine: Arc<Surreal<surrealdb::engine::any::Any>>},
-    Postgres{pool: Arc<Pool<Postgres>>},
+    Surreal {
+        engine: Arc<Surreal<surrealdb::engine::any::Any>>,
+    },
+    Postgres {
+        pool: Arc<Pool<Postgres>>,
+    },
 }
 
 pub enum DBLocation {
@@ -36,34 +43,50 @@ impl DB {
             DBChoice::SurrealMemory => {
                 let client = surrealdb::engine::any::connect("memory").await?;
                 client.use_ns("influx_ns").use_db("influx_db").await?;
-                DB::Surreal{engine: Arc::new(client)}
-            },
+                DB::Surreal {
+                    engine: Arc::new(client),
+                }
+            }
             DBChoice::SurrealDisk => {
                 // let db_path_string: &str = abs_path.to_str()?;
                 // println!("db_path_string: {}", db_path_string);
                 // let client = Surreal::new::<File>(db_path_string).await?;
                 // client.use_ns("influx_ns").use_db("influx_db").await?;
                 panic!("not yet");
-            },
+            }
             DBChoice::SurrealServer => {
                 let client = surrealdb::engine::any::connect("ws://localhost:8000").await?;
-                client.signin(surrealdb::opt::auth::Root {
-                    username: "root",
-                    password: "root",
-                }).await?;
+                client
+                    .signin(surrealdb::opt::auth::Root {
+                        username: "root",
+                        password: "root",
+                    })
+                    .await?;
                 client.use_ns("influx_ns").use_db("influx_db").await?;
-                DB::Surreal{engine: Arc::new(client)}
-            },
+                DB::Surreal {
+                    engine: Arc::new(client),
+                }
+            }
             DBChoice::PostgresServer => {
                 let pool = PgPool::connect(&env::var("DATABASE_URL")?).await?;
-                DB::Postgres { pool: Arc::new(pool) }
-            },
+                DB::Postgres {
+                    pool: Arc::new(pool),
+                }
+            }
         })
     }
 
-
     #[deprecated]
-    pub async fn delete_thing<T: serde::Serialize + for<'a> serde::Deserialize<'a> + std::marker::Sync + std::marker::Send + std::fmt::Debug>(&self, thing: Thing) -> Result<T> {
+    pub async fn delete_thing<
+        T: serde::Serialize
+            + for<'a> serde::Deserialize<'a>
+            + std::marker::Sync
+            + std::marker::Send
+            + std::fmt::Debug,
+    >(
+        &self,
+        thing: Thing,
+    ) -> Result<T> {
         panic!("deprecated");
         // match self.db.delete((thing.tb, thing.id.to_raw())).await? {
         //     Some::<T>(v) => Ok(v),
@@ -72,7 +95,17 @@ impl DB {
     }
 
     #[deprecated]
-    pub async fn select_thing<T: serde::Serialize + for<'a> serde::Deserialize<'a> + std::marker::Sync + std::marker::Send + std::fmt::Debug + Clone>(&self, thing: Thing) -> Result<Option<T>> {
+    pub async fn select_thing<
+        T: serde::Serialize
+            + for<'a> serde::Deserialize<'a>
+            + std::marker::Sync
+            + std::marker::Send
+            + std::fmt::Debug
+            + Clone,
+    >(
+        &self,
+        thing: Thing,
+    ) -> Result<Option<T>> {
         panic!("deprecated");
         // match self.db.select((thing.tb, thing.id.to_raw())).await? {
         //     Some::<T>(v) => Ok(Some(v)),
@@ -81,17 +114,21 @@ impl DB {
     }
 
     #[deprecated]
-    pub async fn thing_exists<T: serde::Serialize + for<'a> serde::Deserialize<'a> + std::marker::Sync + std::marker::Send + std::fmt::Debug + Clone>(&self, thing: Thing) -> Result<bool> {
+    pub async fn thing_exists<
+        T: serde::Serialize
+            + for<'a> serde::Deserialize<'a>
+            + std::marker::Sync
+            + std::marker::Send
+            + std::fmt::Debug
+            + Clone,
+    >(
+        &self,
+        thing: Thing,
+    ) -> Result<bool> {
         panic!("deprecated");
         // Ok(self.select_thing::<T>(thing).await?.is_some())
     }
-
 }
-
-
-
-
-
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
 pub enum InfluxResourceId {
@@ -119,7 +156,9 @@ impl Into<surrealdb::value::RecordIdKey> for &InfluxResourceId {
     }
 }
 
-pub fn deserialize_surreal_thing_opt<'de, D>(deserializer: D) -> Result<Option<InfluxResourceId>, D::Error> 
+pub fn deserialize_surreal_thing_opt<'de, D>(
+    deserializer: D,
+) -> Result<Option<InfluxResourceId>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -131,7 +170,7 @@ where
     }
 }
 
-pub fn deserialize_surreal_thing<'de, D>(deserializer: D) -> Result<InfluxResourceId, D::Error> 
+pub fn deserialize_surreal_thing<'de, D>(deserializer: D) -> Result<InfluxResourceId, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -145,9 +184,9 @@ where
 
 // === postgres support ===
 
-use sqlx::{postgres::PgTypeInfo};
 use sqlx::decode::Decode;
 use sqlx::encode::Encode;
+use sqlx::postgres::PgTypeInfo;
 use sqlx::Type;
 
 impl Type<Postgres> for InfluxResourceId {
@@ -160,7 +199,9 @@ impl InfluxResourceId {
     pub fn as_i64(&self) -> Result<i64, anyhow::Error> {
         match self {
             InfluxResourceId::SerialId(id) => Ok(*id),
-            InfluxResourceId::StringId(_) => Err(anyhow::anyhow!("Expected SerialId but got StringId")),
+            InfluxResourceId::StringId(_) => {
+                Err(anyhow::anyhow!("Expected SerialId but got StringId"))
+            }
         }
     }
 }
@@ -182,13 +223,16 @@ impl<'r> Decode<'r, Postgres> for InfluxResourceId {
 }
 
 impl<'q> Encode<'q, Postgres> for InfluxResourceId {
-    fn encode_by_ref(&self, buf: &mut sqlx::postgres::PgArgumentBuffer) -> Result<sqlx::encode::IsNull, Box<dyn std::error::Error + Send + Sync>> {
+    fn encode_by_ref(
+        &self,
+        buf: &mut sqlx::postgres::PgArgumentBuffer,
+    ) -> Result<sqlx::encode::IsNull, Box<dyn std::error::Error + Send + Sync>> {
         match self {
             InfluxResourceId::SerialId(id) => <i64 as Encode<Postgres>>::encode_by_ref(id, buf),
             InfluxResourceId::StringId(s) => <String as Encode<Postgres>>::encode_by_ref(s, buf),
         }
     }
-    
+
     fn size_hint(&self) -> usize {
         match self {
             InfluxResourceId::SerialId(id) => <i64 as Encode<Postgres>>::size_hint(id),
@@ -197,12 +241,10 @@ impl<'q> Encode<'q, Postgres> for InfluxResourceId {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
-    use axum::extract::Path;
     use super::*;
+    use axum::extract::Path;
 
     // #[tokio::test]
     // async fn db_create_mem() {
@@ -210,10 +252,9 @@ mod tests {
     //     let todos = db.get_todos_sql().await.unwrap();
     //     assert_eq!(todos.len(), 0);
     // }
-    
+
     // #[tokio::test]
     // async fn db_create_disk() {
     //     let db = DB::create_db(DBLocation::Disk(PathBuf::from("./").canonicalize().unwrap().join("tmp_database.db"))).await;
     // }
-
 }

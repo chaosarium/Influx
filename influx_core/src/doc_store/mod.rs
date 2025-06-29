@@ -1,21 +1,21 @@
 //! provides functionality to work with content stored on disk
 #![allow(unused_imports)]
 
+use chrono::{DateTime, Local, Utc};
+use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
+use md5;
+use serde::{Deserialize, Serialize};
+use serde_yaml;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
 use std::fs::DirEntry;
 use std::io;
 use std::path::{Path, PathBuf};
-use elm_rs::{Elm, ElmEncode, ElmDecode, ElmQuery, ElmQueryField};
-use serde::{Deserialize, Serialize};
-use yaml_front_matter::YamlFrontMatter;
-use yaml_front_matter::Document;
-use chrono::{Local, DateTime, Utc};
 use toml::Table;
 use toml::Value;
-use md5;
-use serde_yaml;
+use yaml_front_matter::Document;
+use yaml_front_matter::YamlFrontMatter;
 
 #[derive(Deserialize, PartialEq, Debug, Serialize, Copy, Clone, Elm, ElmEncode, ElmDecode)]
 pub enum DocType {
@@ -29,8 +29,8 @@ pub struct DocMetadata {
     title: String,
     doc_type: DocType,
     tags: Vec<String>,
-    date_created: DateTime::<Utc>,
-    date_modified: DateTime::<Utc>,
+    date_created: DateTime<Utc>,
+    date_modified: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
@@ -39,7 +39,6 @@ pub struct DocEntry {
     filename: PathBuf,
     metadata: DocMetadata,
 }
-
 
 // #[derive(Serialize, Deserialize, Debug, Elm, ElmEncode, ElmDecode)]
 // pub struct LanguageSetting {
@@ -67,7 +66,6 @@ pub fn load_and_parse_toml_file<T: for<'a> Deserialize<'a>>(path: PathBuf) -> an
 //     settings
 // }
 
-
 fn get_md_files_list(dir: PathBuf) -> Result<Vec<fs::DirEntry>, io::Error> {
     let entries = fs::read_dir(dir)?;
 
@@ -92,7 +90,11 @@ pub fn read_md_file(path: PathBuf) -> Result<(DocMetadata, String), io::Error> {
     Ok((document.metadata, document.content))
 }
 
-pub fn write_md_file(filepath: PathBuf, metadata: DocMetadata, content: String) -> Result<(), io::Error> {
+pub fn write_md_file(
+    filepath: PathBuf,
+    metadata: DocMetadata,
+    content: String,
+) -> Result<(), io::Error> {
     let front_matter = serde_yaml::to_string(&metadata).unwrap();
     let file_content = format!("---\n{}\n---\n{}", front_matter, content);
     fs::write(filepath, file_content)?;
@@ -123,7 +125,6 @@ pub fn gt_md_file_list_w_metadata(dir: PathBuf) -> Result<Vec<DocEntry>, io::Err
     Ok(doc_entries)
 }
 
-
 const SAMPLE_MD_DOC: &str = r#"
 ---
 title: 'Livre premier--Un juste, Chapitre I'
@@ -145,8 +146,6 @@ de Digne depuis 1806.
 
 "#;
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -160,9 +159,8 @@ mod tests {
     //     let settings = load_and_parse_toml_file::<Settings>(path);
 
     //     dbg!(&settings);
-    
-    // }
 
+    // }
 
     #[test]
     fn test_list_md_files() {
@@ -172,35 +170,57 @@ mod tests {
 
     #[test]
     fn test_frontmatter_extract() {
-        
-        let document: Document<DocMetadata> = YamlFrontMatter::parse::<DocMetadata>(&SAMPLE_MD_DOC).unwrap();
+        let document: Document<DocMetadata> =
+            YamlFrontMatter::parse::<DocMetadata>(&SAMPLE_MD_DOC).unwrap();
 
-        assert_eq!(document.metadata.title, "Livre premier--Un juste, Chapitre I");
+        assert_eq!(
+            document.metadata.title,
+            "Livre premier--Un juste, Chapitre I"
+        );
         assert_eq!(document.metadata.doc_type, DocType::Text);
         assert_eq!(document.metadata.tags, vec!["tag1", "tag2"]);
-        assert_eq!(document.metadata.date_created, "2014-11-28T12:45:59.324310806Z".parse::<DateTime<Utc>>().unwrap());
-        assert_eq!(document.metadata.date_modified, "2015-11-28T12:45:59.324310806Z".parse::<DateTime<Utc>>().unwrap());
+        assert_eq!(
+            document.metadata.date_created,
+            "2014-11-28T12:45:59.324310806Z"
+                .parse::<DateTime<Utc>>()
+                .unwrap()
+        );
+        assert_eq!(
+            document.metadata.date_modified,
+            "2015-11-28T12:45:59.324310806Z"
+                .parse::<DateTime<Utc>>()
+                .unwrap()
+        );
 
         println!("{}", document.content)
     }
-        
+
     #[test]
     fn test_get_md_file_metadata() {
         let path = "../toy_content/fr_demo/Les misérables 1.md";
         let result = get_md_file_metadata(path.into());
-        
+
         assert!(result.is_ok());
         let metadata = result.unwrap();
-        
+
         // Add assertions for the expected metadata values
         assert_eq!(metadata.title, "Livre premier--Un juste, Chapitre I");
         assert_eq!(metadata.doc_type, DocType::Text);
         assert_eq!(metadata.tags, vec!["tag1", "tag2"]);
-        assert_eq!(metadata.date_created, "2014-11-28T12:45:59.324310806Z".parse::<DateTime<Utc>>().unwrap());
-        assert_eq!(metadata.date_modified, "2015-11-28T12:45:59.324310806Z".parse::<DateTime<Utc>>().unwrap());
+        assert_eq!(
+            metadata.date_created,
+            "2014-11-28T12:45:59.324310806Z"
+                .parse::<DateTime<Utc>>()
+                .unwrap()
+        );
+        assert_eq!(
+            metadata.date_modified,
+            "2015-11-28T12:45:59.324310806Z"
+                .parse::<DateTime<Utc>>()
+                .unwrap()
+        );
     }
 
-        
     #[test]
     fn test_list_md_files_metadata() {
         let directory = "../toy_content/fr_demo";
@@ -218,12 +238,7 @@ mod tests {
             "Livre premier--Un juste, Chapitre III",
             "Toy Example",
         ];
-        let expected_doc_types = vec![
-            DocType::Text,
-            DocType::Text,
-            DocType::Text,
-            DocType::Text,
-        ];
+        let expected_doc_types = vec![DocType::Text, DocType::Text, DocType::Text, DocType::Text];
         let expected_tags = vec![
             vec!["tag1", "tag2"],
             vec!["tag2", "tag3"],
@@ -231,13 +246,18 @@ mod tests {
             vec!["tag1", "tag2"],
         ];
 
-        for (i, DocEntry {path, filename, metadata}) in metadata_list.iter().enumerate() {
+        for (
+            i,
+            DocEntry {
+                path,
+                filename,
+                metadata,
+            },
+        ) in metadata_list.iter().enumerate()
+        {
             assert_eq!(metadata.title, expected_titles[i]);
             assert_eq!(metadata.doc_type, expected_doc_types[i]);
             assert_eq!(metadata.tags, expected_tags[i]);
         }
-
     }
-
-
 }

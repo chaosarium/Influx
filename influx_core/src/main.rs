@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::Builder::new()
         .filter_level(log::LevelFilter::Info)
         .format_timestamp(None)
-        .init(); 
+        .init();
 
     let args = influx_core::InfluxCoreArgs::parse();
 

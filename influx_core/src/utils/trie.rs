@@ -17,7 +17,9 @@ impl<T: Eq + Hash + Clone, S> Trie<T, S> {
         }
     }
 
-    pub fn insert<I>(&mut self, seq: I) where I: IntoIterator<Item = T>,
+    pub fn insert<I>(&mut self, seq: I)
+    where
+        I: IntoIterator<Item = T>,
     {
         let mut curr = self;
         for x in seq {
@@ -26,7 +28,9 @@ impl<T: Eq + Hash + Clone, S> Trie<T, S> {
         curr.is_terminal = true;
     }
 
-    pub fn insert_with_payload<I>(&mut self, seq: I, payload: S) where I: IntoIterator<Item = T>,
+    pub fn insert_with_payload<I>(&mut self, seq: I, payload: S)
+    where
+        I: IntoIterator<Item = T>,
     {
         let mut curr = self;
         for x in seq {
@@ -36,7 +40,9 @@ impl<T: Eq + Hash + Clone, S> Trie<T, S> {
         curr.payload = Some(payload);
     }
 
-    pub fn search<I>(&self, seq: I) -> bool where I: IntoIterator<Item = T>,
+    pub fn search<I>(&self, seq: I) -> bool
+    where
+        I: IntoIterator<Item = T>,
     {
         let mut curr = self;
         for x in seq {
@@ -48,7 +54,9 @@ impl<T: Eq + Hash + Clone, S> Trie<T, S> {
         curr.is_terminal
     }
 
-    pub fn search_for_payload<I>(&self, seq: I) -> (bool, Option<&S>) where I: IntoIterator<Item = T>,
+    pub fn search_for_payload<I>(&self, seq: I) -> (bool, Option<&S>)
+    where
+        I: IntoIterator<Item = T>,
     {
         let mut curr = self;
         for x in seq {
@@ -59,8 +67,10 @@ impl<T: Eq + Hash + Clone, S> Trie<T, S> {
         }
         (curr.is_terminal, curr.payload.as_ref())
     }
-    
-    pub fn search_prefixes<I>(&self, seq: I, is_root_valid: bool) -> Vec<Vec<T>> where I: IntoIterator<Item = T>,
+
+    pub fn search_prefixes<I>(&self, seq: I, is_root_valid: bool) -> Vec<Vec<T>>
+    where
+        I: IntoIterator<Item = T>,
     {
         let mut prefixes = vec![];
         let mut curr = self;
@@ -73,23 +83,23 @@ impl<T: Eq + Hash + Clone, S> Trie<T, S> {
                     if curr.is_terminal || (i == 0 && is_root_valid) {
                         prefixes.push(prefix.clone());
                     }
-                },
+                }
                 None => {
                     if i == 0 && is_root_valid {
                         prefixes.push(vec![x]);
                     }
                     return prefixes;
-                },
+                }
             }
         }
         prefixes
     }
-    
+
     /// given a vector, return all prefixes of the vector that are in the trie
     /// ensures result is sorted by ascending length
     /// if root_valid, seq[0] is considered a valid prefix if seq.len() > 0
-    pub fn search_prefixes_by_ref<'a, I>(&'a self, seq: I, is_root_valid: bool) -> Vec<Vec<T>> 
-    where 
+    pub fn search_prefixes_by_ref<'a, I>(&'a self, seq: I, is_root_valid: bool) -> Vec<Vec<T>>
+    where
         I: IntoIterator<Item = &'a T>,
         T: 'a,
         T: Clone,
@@ -105,18 +115,18 @@ impl<T: Eq + Hash + Clone, S> Trie<T, S> {
                     if curr.is_terminal || (i == 0 && is_root_valid) {
                         prefixes.push(prefix.clone());
                     }
-                },
+                }
                 None => {
                     if i == 0 && is_root_valid {
                         prefixes.push(vec![x.clone()]);
                     }
                     return prefixes;
-                },
+                }
             }
         }
         prefixes
     }
-    
+
     pub fn new_with_entries(entries: Vec<Vec<T>>) -> Self {
         let mut trie = Trie::new();
         for x in entries {
@@ -154,18 +164,35 @@ mod tests {
         trie.insert(vec![1, 2, 3, 4]);
         trie.insert(vec![1, 2]);
         trie.insert(vec![2, 4]);
-        
-        assert_eq!(trie.search_prefixes(vec![1, 2, 3, 4], false), vec![vec![1, 2], vec![1, 2, 3, 4]]);
-        assert_eq!(trie.search_prefixes(vec![1, 2, 3, 4, 5], false), vec![vec![1, 2], vec![1, 2, 3, 4]]);
+
+        assert_eq!(
+            trie.search_prefixes(vec![1, 2, 3, 4], false),
+            vec![vec![1, 2], vec![1, 2, 3, 4]]
+        );
+        assert_eq!(
+            trie.search_prefixes(vec![1, 2, 3, 4, 5], false),
+            vec![vec![1, 2], vec![1, 2, 3, 4]]
+        );
         assert_eq!(trie.search_prefixes(vec![2, 4], false), vec![vec![2, 4]]);
         assert_eq!(trie.search_prefixes(vec![2, 4, 5], false), vec![vec![2, 4]]);
         assert_eq!(trie.search_prefixes(vec![1, 2, 3], false), vec![vec![1, 2]]);
         assert_eq!(trie.search_prefixes(vec![3, 4], false).is_empty(), true);
-        
-        assert_eq!(trie.search_prefixes_by_ref(&vec![3, 4], false).is_empty(), true);
-        assert_eq!(trie.search_prefixes_by_ref(&vec![3, 4], true), vec![vec![3]]);
-        assert_eq!(trie.search_prefixes_by_ref(&vec![1, 2, 3, 4], false), vec![vec![1, 2], vec![1, 2, 3, 4]]);
-        assert_eq!(trie.search_prefixes_by_ref(&vec![1, 2, 3, 4], true), vec![vec![1], vec![1, 2], vec![1, 2, 3, 4]]);
-        
+
+        assert_eq!(
+            trie.search_prefixes_by_ref(&vec![3, 4], false).is_empty(),
+            true
+        );
+        assert_eq!(
+            trie.search_prefixes_by_ref(&vec![3, 4], true),
+            vec![vec![3]]
+        );
+        assert_eq!(
+            trie.search_prefixes_by_ref(&vec![1, 2, 3, 4], false),
+            vec![vec![1, 2], vec![1, 2, 3, 4]]
+        );
+        assert_eq!(
+            trie.search_prefixes_by_ref(&vec![1, 2, 3, 4], true),
+            vec![vec![1], vec![1, 2], vec![1, 2, 3, 4]]
+        );
     }
 }

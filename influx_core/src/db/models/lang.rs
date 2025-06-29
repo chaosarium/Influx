@@ -172,8 +172,8 @@ impl DB {
 }
 
 mod tests {
-    use crate::db::DBLocation;
     use super::*;
+    use crate::db::DBLocation;
 
     fn simple_language(identifier: &str, code: &str, name: &str) -> LanguageEntry {
         LanguageEntry {
@@ -193,13 +193,19 @@ mod tests {
             crate::DBChoice::PostgresServer,
         ] {
             let db = DB::create_db(db_choice).await.unwrap();
-            assert!(!db.language_identifier_exists("en_demo".to_string()).await.unwrap());
+            assert!(!db
+                .language_identifier_exists("en_demo".to_string())
+                .await
+                .unwrap());
 
             let language = simple_language("en_demo", "en", "English");
 
             let created = db.create_language(language.clone()).await.unwrap();
             assert_eq!(created, language);
-            assert!(db.language_identifier_exists("en_demo".to_string()).await.unwrap());
+            assert!(db
+                .language_identifier_exists("en_demo".to_string())
+                .await
+                .unwrap());
         }
     }
 
@@ -228,14 +234,19 @@ mod tests {
             assert_eq!(languages.len(), 3);
             dbg!(languages);
 
-            let language = db.get_language_by_identifier("en_1".to_string()).await.unwrap().unwrap();
+            let language = db
+                .get_language_by_identifier("en_1".to_string())
+                .await
+                .unwrap()
+                .unwrap();
             assert_eq!(language, simple_language("en_1", "en", "English 1"));
 
             let code = db
                 .get_language_by_identifier("en_1".to_string())
                 .await
                 .unwrap()
-                .unwrap().code;
+                .unwrap()
+                .code;
             assert_eq!(code, "en");
         }
     }

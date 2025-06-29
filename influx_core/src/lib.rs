@@ -1,26 +1,27 @@
 #![allow(warnings)]
 
 use axum::{
+    http::Method,
+    routing::{delete, get, post},
     Router,
-    routing::{get, post, delete}, http::Method,
 };
 use clap::{Parser, ValueEnum};
-use tokio::net::TcpListener;
-use tower_http::cors::{Any, CorsLayer};
-use std::path::{Path, PathBuf};
 use log::{info, trace, warn};
 use std::fs::write;
+use std::path::{Path, PathBuf};
+use tokio::net::TcpListener;
+use tower_http::cors::{Any, CorsLayer};
 
 pub mod db;
 pub(crate) mod doc_store;
-mod utils;
 mod handlers;
-mod prelude;
-mod nlp;
 mod integration;
+mod nlp;
+mod prelude;
+mod utils;
 
-use db::DB;
 use db::DBLocation;
+use db::DB;
 use std::env;
 
 #[derive(Debug, ValueEnum, Clone, Copy)]
@@ -38,7 +39,7 @@ pub struct InfluxCoreArgs {
     /// what database backend to use
     #[arg(short, long, default_value = "surreal-server")]
     pub db_choice: DBChoice,
-    
+
     /// Whether to seed database
     #[arg(short, long, default_value_t = false)]
     pub seed: bool,
@@ -64,14 +65,8 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
     }
 
     let app = Router::new()
-        .route(
-            "/",
-            get(handlers::hello_world)
-        )
-        .route(
-            "/test",
-            get(handlers::connection_test)
-        )
+        .route("/", get(handlers::hello_world))
+        .route("/test", get(handlers::connection_test))
         // toy examples below
         // .route(
         //     "/todos",
@@ -82,72 +77,63 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
         //     "/todos/:id",
         //     delete(handlers::todos_delete)
         // )
-        .route(
-            "/docs/{language_identifier}",
-            get(handlers::get_docs_list)
-        )
-        .route(
-            "/docs/{language_identifier}/{file}",
-            get(handlers::get_doc)
-        )
+        .route("/docs/{language_identifier}", get(handlers::get_docs_list))
+        .route("/docs/{language_identifier}/{file}", get(handlers::get_doc))
         .route(
             "/vocab/token/{language_identifier}/{orthography}",
-            get(handlers::vocab_handlers::lookup_token)
+            get(handlers::vocab_handlers::lookup_token),
         )
         .route(
             "/vocab/delete_token",
-            post(handlers::vocab_handlers::delete_token)
+            post(handlers::vocab_handlers::delete_token),
         )
         .route(
             "/vocab/update_token",
-            post(handlers::vocab_handlers::update_token)
+            post(handlers::vocab_handlers::update_token),
         )
         .route(
             "/vocab/create_token",
-            post(handlers::vocab_handlers::create_token)
+            post(handlers::vocab_handlers::create_token),
         )
         .route(
             "/phrase/update_phrase",
-            post(handlers::phrase_handlers::update_phrase)
+            post(handlers::phrase_handlers::update_phrase),
         )
         .route(
             "/phrase/delete_phrase",
-            post(handlers::phrase_handlers::delete_phrase)
+            post(handlers::phrase_handlers::delete_phrase),
         )
         // .route(
         //     "/settings",
         //     get(handlers::get_settings)
         // )
-        .route(
-            "/lang",
-            get(handlers::lang_handlers::get_language_list)
-        )
+        .route("/lang", get(handlers::lang_handlers::get_language_list))
         .route(
             "/lang/{id}",
-            get(handlers::lang_handlers::get_language_by_identifier)
+            get(handlers::lang_handlers::get_language_by_identifier),
         )
         .route(
             "/extern/macos_dict/{language_identifier}/{orthography}",
-            get(handlers::integration_handlers::lookup_in_macos_dict)
+            get(handlers::integration_handlers::lookup_in_macos_dict),
         )
         .route(
             "/extern/translate",
-            post(handlers::integration_handlers::extern_translate)
+            post(handlers::integration_handlers::extern_translate),
         )
         .layer(CorsLayer::permissive())
-        .with_state(
-            ServerState {
-                db,
-                influx_path: args.influx_path.into(),
-            }
-        );
+        .with_state(ServerState {
+            db,
+            influx_path: args.influx_path.into(),
+        });
 
     let listener = TcpListener::bind("127.0.0.1:3000").await?;
-    info!("Starting Influx server at http://{:?}", listener.local_addr()?);
+    info!(
+        "Starting Influx server at http://{:?}",
+        listener.local_addr()?
+    );
     axum::serve(listener, app).await?;
     Ok(())
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -159,12 +145,12 @@ mod tests {
     fn generate_elm_bindings() {
         use crate::db::models::lang;
         use crate::doc_store;
-        
+
         let mut out_buf = vec![];
         elm_rs::export!("Bindings", &mut out_buf, {
             encoders: [
                 db::InfluxResourceId,
-                lang::LanguageEntry, 
+                lang::LanguageEntry,
                 doc_store::DocType,
                 doc_store::DocMetadata,
                 doc_store::DocEntry,
@@ -178,7 +164,7 @@ mod tests {
             ],
             decoders: [
                 db::InfluxResourceId,
-                lang::LanguageEntry, 
+                lang::LanguageEntry,
                 doc_store::DocType,
                 doc_store::DocMetadata,
                 doc_store::DocEntry,

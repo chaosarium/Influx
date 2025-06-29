@@ -1,16 +1,16 @@
-use axum::extract::Path;
-use serde::Deserialize;
 use super::ServerError;
-use axum::Json;
-use crate::ServerState;
-use axum::extract::State;
 use crate::integration;
 use crate::integration::ExternalDict;
 use crate::integration::ExternalTranslator;
+use crate::ServerState;
+use axum::extract::Path;
+use axum::extract::State;
+use axum::Json;
+use serde::Deserialize;
 
-pub async fn lookup_in_macos_dict (
-    State(ServerState { db, .. }): State<ServerState>, 
-    Path((lang_id, orthography)): Path<(String, String)>
+pub async fn lookup_in_macos_dict(
+    State(ServerState { db, .. }): State<ServerState>,
+    Path((lang_id, orthography)): Path<(String, String)>,
 ) -> Result<(), ServerError> {
     let dict = integration::MacOSDict;
     println!("lookup_in_macos_dict: {:?}", orthography);
@@ -31,7 +31,7 @@ pub struct ExternTranslateResponse {
     pub translated_text: String,
 }
 
-pub async fn extern_translate (
+pub async fn extern_translate(
     State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<ExternTranslatePayload>,
 ) -> Result<Json<ExternTranslateResponse>, ServerError> {

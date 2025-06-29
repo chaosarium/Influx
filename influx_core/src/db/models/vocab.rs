@@ -2,10 +2,10 @@ use super::*;
 use crate::db::{deserialize_surreal_thing, deserialize_surreal_thing_opt};
 use crate::{db::InfluxResourceId, prelude::*};
 use anyhow::Result;
+use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
 use log::warn;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use DB::*;
-use elm_rs::{Elm, ElmEncode, ElmDecode, ElmQuery, ElmQueryField};
 
 #[derive(
     Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode, sqlx::Type,
@@ -229,7 +229,6 @@ impl DB {
         }
     }
 
-    
     pub async fn query_token_by_lang_identifier_and_orthography(
         &self,
         lang_identifier: String,
@@ -237,11 +236,14 @@ impl DB {
     ) -> Result<Option<Token>> {
         let lang_id = self.get_language_by_identifier(lang_identifier).await?;
         match lang_id {
-            Some(lang_id) => self.query_token_by_orthography(lang_id.id.unwrap(), orthography).await,
+            Some(lang_id) => {
+                self.query_token_by_orthography(lang_id.id.unwrap(), orthography)
+                    .await
+            }
             None => Ok(None),
         }
     }
-    
+
     pub async fn query_token_by_id(&self, id: InfluxResourceId) -> Result<Option<Token>> {
         match self {
             Surreal { engine } => {

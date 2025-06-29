@@ -1,11 +1,11 @@
-use clap::builder::Str;
-use reqwest::Client;
-use open::that;
-use async_trait::async_trait;
-use std::process::Command;
-use serde_json::{json, Value};
-use google_translator;
 use anyhow::Result;
+use async_trait::async_trait;
+use clap::builder::Str;
+use google_translator;
+use open::that;
+use reqwest::Client;
+use serde_json::{json, Value};
+use std::process::Command;
 
 #[async_trait]
 pub trait ExternalDict {
@@ -14,10 +14,14 @@ pub trait ExternalDict {
 pub struct MacOSDict;
 #[async_trait]
 pub trait ExternalTranslator {
-    async fn translate_sequence(&self, input: String, from_lang_id: String, to_lang_id: String) -> Result<String>;
+    async fn translate_sequence(
+        &self,
+        input: String,
+        from_lang_id: String,
+        to_lang_id: String,
+    ) -> Result<String>;
 }
 pub struct GoogleTranslate;
-
 
 #[async_trait]
 impl ExternalDict for MacOSDict {
@@ -34,10 +38,14 @@ impl ExternalDict for MacOSDict {
     }
 }
 
-
 #[async_trait]
 impl ExternalTranslator for GoogleTranslate {
-    async fn translate_sequence(&self, input: String, from_lang_id: String, to_lang_id: String) -> Result<String> {
+    async fn translate_sequence(
+        &self,
+        input: String,
+        from_lang_id: String,
+        to_lang_id: String,
+    ) -> Result<String> {
         let client = Client::new();
         let url = format!("http://127.0.0.1:3001/extern_translate");
         let payload = json!({
@@ -46,10 +54,7 @@ impl ExternalTranslator for GoogleTranslate {
             "to_lang_id": to_lang_id,
             "provider": "google",
         });
-        let response = client.post(url)
-            .json(&payload)
-            .send()
-            .await?;
+        let response = client.post(url).json(&payload).send().await?;
         let response_body: Value = response.json().await?;
         let translated_text = response_body["translated_text"].as_str().unwrap();
         Ok(translated_text.to_string())

@@ -10,7 +10,7 @@ use crate::ServerState;
 use axum::extract::State;
 
 pub async fn update_phrase(
-    State(ServerState { db, .. }): State<ServerState>, 
+    State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<Phrase>,
 ) -> Result<Json<Phrase>, ServerError> {
     println!("phrase update attempt payload: {:?}", payload);
@@ -19,17 +19,17 @@ pub async fn update_phrase(
 }
 
 pub async fn delete_phrase(
-    State(ServerState { db, .. }): State<ServerState>, 
+    State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<Phrase>,
 ) -> Result<Json<Phrase>, ServerError> {
     println!("phrase delete attempt payload: {:?}", payload);
     match payload.id {
         None => {
             return Err(ServerError(anyhow::anyhow!("cannot delete if no id")));
-        },
+        }
         Some(id) => {
             let phrase = db.delete_phrase(id).await?;
             Ok(Json(phrase))
-        },
+        }
     }
 }
