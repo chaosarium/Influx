@@ -1,3 +1,4 @@
+#![allow(unused_variables, dead_code)]
 use axum::{
     routing::{get, post},
     Router,

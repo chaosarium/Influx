@@ -1,3 +1,4 @@
+#![allow(unused_variables, dead_code)]
 use clap::Parser;
 use log::info;
 use std::env;
