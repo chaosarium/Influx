@@ -1,3 +1,4 @@
+use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
 use crate::doc_store;
 use crate::nlp;
@@ -27,19 +28,27 @@ where
 
 // TERMS
 
-pub type TokenEditRequest = Token;
-pub type TokenEditResponse = Token;
-pub type PhraseEditRequest = Token;
-pub type PhraseEditResponse = Token;
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
-pub enum TermEditRequest {
-    EditToken(TokenEditRequest),
-    EditPhrase(PhraseEditRequest),
+pub enum Term {
+    TokenTerm(Token),
+    PhraseTerm(Phrase),
 }
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
-pub enum TermEditResponse {
-    TokenBecomes(TokenEditResponse),
-    PhraseBecomes(PhraseEditResponse),
+pub enum TermEditAction {
+    CreateTerm,
+    UpdateTerm,
+    DeleteTerm,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
+pub struct TermEditRequest {
+    pub requested_action: TermEditAction,
+    pub term: Term,
+}
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
+pub struct TermEditResponse {
+    pub performed_action: TermEditAction,
+    pub term: Term,
 }
 
 // DOCUMENT

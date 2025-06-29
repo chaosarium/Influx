@@ -177,7 +177,7 @@ type alias Phrase =
     , definition : String
     , notes : String
     , originalContext : String
-    , status : TokenStatus 
+    , status : TokenStatus
     }
 
 
@@ -244,6 +244,32 @@ getDocResponseEncoder struct =
         , ( "annotated_doc", (annotatedDocumentEncoder) struct.annotatedDoc )
         ]
 
+
+type TermEditRequest
+    = EditToken (Token)
+    | EditPhrase (Phrase)
+
+
+termEditRequestEncoder : TermEditRequest -> Json.Encode.Value
+termEditRequestEncoder enum =
+    case enum of
+        EditToken inner ->
+            Json.Encode.object [ ( "EditToken", tokenEncoder inner ) ]
+        EditPhrase inner ->
+            Json.Encode.object [ ( "EditPhrase", phraseEncoder inner ) ]
+
+type TermEditResponse
+    = TokenBecomes (Token)
+    | PhraseBecomes (Phrase)
+
+
+termEditResponseEncoder : TermEditResponse -> Json.Encode.Value
+termEditResponseEncoder enum =
+    case enum of
+        TokenBecomes inner ->
+            Json.Encode.object [ ( "TokenBecomes", tokenEncoder inner ) ]
+        PhraseBecomes inner ->
+            Json.Encode.object [ ( "PhraseBecomes", phraseEncoder inner ) ]
 
 type alias AnnotatedDocument =
     { text : String
@@ -482,6 +508,20 @@ getDocResponseDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "annotated_doc" (annotatedDocumentDecoder)))
 
+
+termEditRequestDecoder : Json.Decode.Decoder TermEditRequest
+termEditRequestDecoder = 
+    Json.Decode.oneOf
+        [ Json.Decode.map EditToken (Json.Decode.field "EditToken" (tokenDecoder))
+        , Json.Decode.map EditPhrase (Json.Decode.field "EditPhrase" (phraseDecoder))
+        ]
+
+termEditResponseDecoder : Json.Decode.Decoder TermEditResponse
+termEditResponseDecoder = 
+    Json.Decode.oneOf
+        [ Json.Decode.map TokenBecomes (Json.Decode.field "TokenBecomes" (tokenDecoder))
+        , Json.Decode.map PhraseBecomes (Json.Decode.field "PhraseBecomes" (phraseDecoder))
+        ]
 
 annotatedDocumentDecoder : Json.Decode.Decoder AnnotatedDocument
 annotatedDocumentDecoder =

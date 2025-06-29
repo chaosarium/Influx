@@ -1,5 +1,6 @@
 use super::*;
 use crate::db::{deserialize_surreal_thing, deserialize_surreal_thing_opt};
+use crate::handlers::term_handlers::delete_token;
 use crate::{db::InfluxResourceId, prelude::*};
 use anyhow::Result;
 use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
@@ -136,6 +137,10 @@ impl DB {
                 .await?
                 == false
         );
+
+        if token.status == TokenStatus::UNMARKED {
+            return Err(anyhow::anyhow!("cannot create token with status UNMARKED"));
+        };
 
         match self {
             Surreal { engine } => {
@@ -317,7 +322,9 @@ impl DB {
         }
     }
 
-    pub async fn delete_token(&self, id: InfluxResourceId) -> Result<Token> {
+    pub async fn delete_token_and_return_deleted(&self, token: Token) -> Result<Token> {
+        let id = token.id.ok_or(anyhow::anyhow!("cannot delete if no id"))?;
+
         match self {
             Surreal { engine } => {
                 let res = engine.delete(("vocabulary", id)).await;
@@ -345,6 +352,12 @@ impl DB {
                 Ok(record)
             }
         }
+    }
+
+    pub async fn delete_token_and_return_unmarked(&self, token: Token) -> Result<Token> {
+        let unmarked_token = Token::unmarked_token(token.lang_id.clone(), &token.orthography);
+        let _ = Self::delete_token_and_return_deleted(self, token).await?;
+        Ok(unmarked_token)
     }
 
     /// - query tokens, return set with unmarked tokens for missing orthographies

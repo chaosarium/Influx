@@ -326,7 +326,9 @@ impl DB {
         }
     }
 
-    pub async fn delete_phrase(&self, id: InfluxResourceId) -> Result<Phrase> {
+    pub async fn delete_phrase_and_return_deleted(&self, phrase: Phrase) -> Result<Phrase> {
+        let id = phrase.id.ok_or(anyhow::anyhow!("cannot delete if no id"))?;
+
         match self {
             Surreal { engine } => match engine.delete((TABLE, id)).await? {
                 Some::<Phrase>(v) => Ok(v),

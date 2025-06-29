@@ -63,10 +63,10 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
         .route("/test", get(handlers::connection_test))
         .route("/docs/{language_identifier}", get(handlers::get_docs_list))
         .route("/docs/{language_identifier}/{file}", get(handlers::get_doc))
-        .route(
-            "/vocab/token/{language_identifier}/{orthography}",
-            get(handlers::term_handlers::lookup_token),
-        )
+        // .route(
+        //     "/vocab/token/{language_identifier}/{orthography}",
+        //     get(handlers::term_handlers::lookup_token),
+        // )
         .route(
             "/vocab/delete_token",
             post(handlers::term_handlers::delete_token),
