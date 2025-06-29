@@ -1,4 +1,4 @@
-module Api.TermEdit exposing (..)
+module Api.TokenEdit exposing (..)
 
 import Bindings
 import Http

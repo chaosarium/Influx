@@ -45,9 +45,9 @@ fromAnnotatedDocument annotated_doc =
     }
 
 
-lookupTerm : T -> String -> Maybe Token
-lookupTerm dict_ctx term =
-    Dict.get term dict_ctx.tokenDict
+lookupToken : T -> String -> Maybe Token
+lookupToken dict_ctx token =
+    Dict.get token dict_ctx.tokenDict
 
 
 lookupPhrase : T -> String -> Maybe Phrase
@@ -55,8 +55,8 @@ lookupPhrase dict_ctx term =
     Dict.get term dict_ctx.phraseDict
 
 
-overwriteTerm : T -> Token -> T
-overwriteTerm dict_ctx token =
+overwriteToken : T -> Token -> T
+overwriteToken dict_ctx token =
     { dict_ctx | tokenDict = Dict.insert token.orthography token dict_ctx.tokenDict }
 
 

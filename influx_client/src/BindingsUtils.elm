@@ -27,8 +27,8 @@ orthographySeqToNormalized orthographySeq =
     orthographySeq |> String.join " "
 
 
-termDefaultUnmarkedToL1 : Token -> Token
-termDefaultUnmarkedToL1 token =
+tokenDefaultUnmarkedToL1 : Token -> Token
+tokenDefaultUnmarkedToL1 token =
     case token.status of
         Unmarked ->
             { token | status = L1 }
