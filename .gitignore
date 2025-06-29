@@ -3,7 +3,7 @@ temp.db
 .idea
 .vscode
 bindings
-experiments
+research/scratch
 .VSCodeCounter
 toy_content/_stanza_resources
 toy_content/database.db
