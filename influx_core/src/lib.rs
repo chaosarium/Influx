@@ -1,5 +1,3 @@
-// #![allow(warnings)]
-
 use axum::{
     routing::{get, post},
     Router,
@@ -122,9 +120,9 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    
 
     use super::*;
+    use std::fs;
 
     #[test]
     fn generate_elm_bindings() {
@@ -168,6 +166,6 @@ mod tests {
         let out_str = String::from_utf8(out_buf).unwrap();
 
         let out_path = "../influx_client/src/Bindings.elm";
-        write(out_path, out_str).expect("Unable to write file");
+        fs::write(out_path, out_str).expect("Unable to write file");
     }
 }

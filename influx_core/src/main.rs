@@ -1,4 +1,3 @@
-// #![allow(warnings)]
 use clap::Parser;
 use log::info;
 use std::env;
