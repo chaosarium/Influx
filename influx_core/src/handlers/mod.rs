@@ -39,10 +39,8 @@ use ts_rs::TS;
 pub mod api_interfaces;
 pub use api_interfaces::*;
 pub mod integration_handlers;
-pub mod phrase_handlers;
-pub mod vocab_handlers;
 pub mod lang_handlers;
-
+pub mod term_handlers;
 
 pub async fn connection_test() -> impl IntoResponse {
     StatusCode::OK
@@ -78,7 +76,6 @@ pub async fn get_docs_list(
             .into_response(),
     }
 }
-
 
 fn text_checksum(text: String) -> String {
     let digest = md5::compute(text);

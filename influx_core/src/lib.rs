@@ -65,27 +65,27 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
         .route("/docs/{language_identifier}/{file}", get(handlers::get_doc))
         .route(
             "/vocab/token/{language_identifier}/{orthography}",
-            get(handlers::vocab_handlers::lookup_token),
+            get(handlers::term_handlers::lookup_token),
         )
         .route(
             "/vocab/delete_token",
-            post(handlers::vocab_handlers::delete_token),
+            post(handlers::term_handlers::delete_token),
         )
         .route(
             "/vocab/update_token",
-            post(handlers::vocab_handlers::update_token),
+            post(handlers::term_handlers::update_token),
         )
         .route(
             "/vocab/create_token",
-            post(handlers::vocab_handlers::create_token),
+            post(handlers::term_handlers::create_token),
         )
         .route(
             "/phrase/update_phrase",
-            post(handlers::phrase_handlers::update_phrase),
+            post(handlers::term_handlers::update_phrase),
         )
         .route(
             "/phrase/delete_phrase",
-            post(handlers::phrase_handlers::delete_phrase),
+            post(handlers::term_handlers::delete_phrase),
         )
         // .route(
         //     "/settings",
@@ -144,6 +144,8 @@ mod tests {
                 nlp::DocumentConstituent,
                 nlp::SentenceConstituent,
                 handlers::GetDocResponse,
+                handlers::TermEditRequest,
+                handlers::TermEditResponse,
                 nlp::AnnotatedDocument,
             ],
             decoders: [
@@ -158,6 +160,8 @@ mod tests {
                 nlp::DocumentConstituent,
                 nlp::SentenceConstituent,
                 handlers::GetDocResponse,
+                handlers::TermEditRequest,
+                handlers::TermEditResponse,
                 nlp::AnnotatedDocument,
             ],
             queries: [],

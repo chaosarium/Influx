@@ -31,13 +31,15 @@ pub type TokenEditRequest = Token;
 pub type TokenEditResponse = Token;
 pub type PhraseEditRequest = Token;
 pub type PhraseEditResponse = Token;
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
 pub enum TermEditRequest {
-    TokenEdit(TokenEditRequest),
-    PhraseEdit(PhraseEditRequest),
+    EditToken(TokenEditRequest),
+    EditPhrase(PhraseEditRequest),
 }
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
 pub enum TermEditResponse {
-    TokenEdit(TokenEditResponse),
-    PhraseEdit(PhraseEditResponse),
+    TokenBecomes(TokenEditResponse),
+    PhraseBecomes(PhraseEditResponse),
 }
 
 // DOCUMENT

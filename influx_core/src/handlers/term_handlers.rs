@@ -1,4 +1,5 @@
 use super::ServerError;
+use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::{Token, TokenStatus};
 use crate::handlers::{TokenEditRequest, TokenEditResponse};
 use crate::ServerState;
@@ -47,6 +48,31 @@ pub async fn update_token(
     println!("token update attempt payload: {:?}", payload);
     let token = db.update_token(payload).await?;
     Ok(Json(token))
+}
+
+pub async fn update_phrase(
+    State(ServerState { db, .. }): State<ServerState>,
+    Json(payload): Json<Phrase>,
+) -> Result<Json<Phrase>, ServerError> {
+    println!("phrase update attempt payload: {:?}", payload);
+    let phrase = db.update_phrase(payload).await?;
+    Ok(Json(phrase))
+}
+
+pub async fn delete_phrase(
+    State(ServerState { db, .. }): State<ServerState>,
+    Json(payload): Json<Phrase>,
+) -> Result<Json<Phrase>, ServerError> {
+    println!("phrase delete attempt payload: {:?}", payload);
+    match payload.id {
+        None => {
+            return Err(ServerError(anyhow::anyhow!("cannot delete if no id")));
+        }
+        Some(id) => {
+            let phrase = db.delete_phrase(id).await?;
+            Ok(Json(phrase))
+        }
+    }
 }
 
 // TODO this api is not type safe
