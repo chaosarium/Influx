@@ -24,9 +24,7 @@ use axum::{
     response::Response,
     Json,
 };
-use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
 use md5;
-use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_json::json;
 use std::fs;
@@ -38,51 +36,17 @@ use surrealdb::sql;
 use tracing::info;
 use ts_rs::TS;
 
-// https://github.com/tokio-rs/axum/blob/main/examples/anyhow-error-response/src/main.rs
-pub struct ServerError(anyhow::Error);
-impl IntoResponse for ServerError {
-    fn into_response(self) -> Response {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Something went wrong: {}", self.0),
-        )
-            .into_response()
-    }
-}
-impl<E> From<E> for ServerError
-where
-    E: Into<anyhow::Error>,
-{
-    fn from(err: E) -> Self {
-        Self(err.into())
-    }
-}
+pub mod api_interfaces;
+pub use api_interfaces::*;
+pub mod integration_handlers;
+pub mod phrase_handlers;
+pub mod vocab_handlers;
+pub mod lang_handlers;
 
-pub async fn hello_world() -> &'static str {
-    "hello world from the influx server :p root route might not be the most useful"
-}
 
 pub async fn connection_test() -> impl IntoResponse {
     StatusCode::OK
 }
-
-#[deprecated]
-pub async fn todos_delete(
-    State(ServerState { db, .. }): State<ServerState>,
-    Path(id): Path<String>,
-) -> impl IntoResponse {
-    // db.delete_todo_sql(
-    //     surrealdb::sql::thing(&id).unwrap()
-    // ).await.unwrap();
-    (StatusCode::NO_CONTENT, Json(()))
-}
-
-#[derive(Debug, Deserialize)]
-pub struct GetDocsList {
-    lang: String,
-}
-
-pub mod lang_handlers;
 
 pub async fn get_docs_list(
     State(ServerState { influx_path, db }): State<ServerState>,
@@ -115,25 +79,10 @@ pub async fn get_docs_list(
     }
 }
 
-// #[deprecated]
-// pub fn get_language_code(settings: &doc_store::Settings, lang_id: String) -> Option<String> {
-//     settings
-//         .lang
-//         .iter()
-//         .find(|l| l.identifier == lang_id)
-//         .map(|l| l.code.clone())
-// }
 
 fn text_checksum(text: String) -> String {
     let digest = md5::compute(text);
     format!("{:x}", digest)
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, Elm, ElmEncode, ElmDecode)]
-pub struct GetDocResponse {
-    metadata: doc_store::DocMetadata,
-    text: String,
-    annotated_doc: nlp::AnnotatedDocument,
 }
 
 // TODO do error handling like above
@@ -228,7 +177,3 @@ pub async fn get_doc(
     };
     (StatusCode::OK, Json(result)).into_response()
 }
-
-pub mod integration_handlers;
-pub mod phrase_handlers;
-pub mod vocab_handlers;

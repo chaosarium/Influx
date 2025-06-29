@@ -1,4 +1,4 @@
-#![allow(warnings)]
+// #![allow(warnings)]
 use clap::{Parser, ValueEnum};
 use log::{info, trace, warn};
 use std::env;

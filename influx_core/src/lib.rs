@@ -1,4 +1,4 @@
-#![allow(warnings)]
+// #![allow(warnings)]
 
 use axum::{
     http::Method,
@@ -65,18 +65,7 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
     }
 
     let app = Router::new()
-        .route("/", get(handlers::hello_world))
         .route("/test", get(handlers::connection_test))
-        // toy examples below
-        // .route(
-        //     "/todos",
-        //     get(handlers::todos_index)
-        //     .post(handlers::todos_create)
-        // )
-        // .route(
-        //     "/todos/:id",
-        //     delete(handlers::todos_delete)
-        // )
         .route("/docs/{language_identifier}", get(handlers::get_docs_list))
         .route("/docs/{language_identifier}/{file}", get(handlers::get_doc))
         .route(

@@ -1,5 +1,3 @@
-use std::f32::consts::E;
-
 use super::ServerError;
 use crate::db::models::vocab::{Token, TokenStatus};
 use crate::ServerState;
