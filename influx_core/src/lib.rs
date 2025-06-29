@@ -87,6 +87,10 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
             "/phrase/delete_phrase",
             post(handlers::term_handlers::delete_phrase),
         )
+        .route(
+            "/term/edit",
+            post(handlers::term_handlers::edit_term),
+        )
         // .route(
         //     "/settings",
         //     get(handlers::get_settings)
