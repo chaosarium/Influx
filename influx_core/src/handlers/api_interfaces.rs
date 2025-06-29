@@ -1,8 +1,9 @@
-use axum::response::{IntoResponse, Response};
-use axum::http::StatusCode;
-use crate::prelude::*;
+use crate::db::models::vocab::Token;
 use crate::doc_store;
 use crate::nlp;
+use crate::prelude::*;
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
 
 // https://github.com/tokio-rs/axum/blob/main/examples/anyhow-error-response/src/main.rs
 pub struct ServerError(pub anyhow::Error);
@@ -23,6 +24,23 @@ where
         Self(err.into())
     }
 }
+
+// TERMS
+
+pub type TokenEditRequest = Token;
+pub type TokenEditResponse = Token;
+pub type PhraseEditRequest = Token;
+pub type PhraseEditResponse = Token;
+pub enum TermEditRequest {
+    TokenEdit(TokenEditRequest),
+    PhraseEdit(PhraseEditRequest),
+}
+pub enum TermEditResponse {
+    TokenEdit(TokenEditResponse),
+    PhraseEdit(PhraseEditResponse),
+}
+
+// DOCUMENT
 
 #[derive(Serialize, Deserialize, Debug, Clone, Elm, ElmEncode, ElmDecode)]
 pub struct GetDocResponse {

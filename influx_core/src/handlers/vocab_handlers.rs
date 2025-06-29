@@ -1,5 +1,6 @@
 use super::ServerError;
 use crate::db::models::vocab::{Token, TokenStatus};
+use crate::handlers::{TokenEditRequest, TokenEditResponse};
 use crate::ServerState;
 use axum::extract::Path;
 use axum::extract::State;
@@ -8,8 +9,8 @@ use serde::Deserialize;
 
 pub async fn create_token(
     State(ServerState { db, .. }): State<ServerState>,
-    Json(payload): Json<Token>,
-) -> Result<Json<Token>, ServerError> {
+    Json(payload): Json<TokenEditRequest>,
+) -> Result<Json<TokenEditResponse>, ServerError> {
     println!("token create attempt payload: {:?}", payload);
     if payload.status == TokenStatus::UNMARKED {
         return Err(ServerError(anyhow::anyhow!(
@@ -23,8 +24,8 @@ pub async fn create_token(
 
 pub async fn delete_token(
     State(ServerState { db, .. }): State<ServerState>,
-    Json(payload): Json<Token>,
-) -> Result<Json<Token>, ServerError> {
+    Json(payload): Json<TokenEditRequest>,
+) -> Result<Json<TokenEditResponse>, ServerError> {
     println!("token delete attempt payload: {:?}", payload);
     match payload.id {
         None => {
@@ -39,6 +40,16 @@ pub async fn delete_token(
     }
 }
 
+pub async fn update_token(
+    State(ServerState { db, .. }): State<ServerState>,
+    Json(payload): Json<TokenEditRequest>,
+) -> Result<Json<TokenEditResponse>, ServerError> {
+    println!("token update attempt payload: {:?}", payload);
+    let token = db.update_token(payload).await?;
+    Ok(Json(token))
+}
+
+// TODO this api is not type safe
 pub async fn lookup_token(
     State(ServerState { db, .. }): State<ServerState>,
     Path((lang_id, orthography)): Path<(String, String)>,
@@ -46,14 +57,5 @@ pub async fn lookup_token(
     let token = db
         .query_token_by_lang_identifier_and_orthography(lang_id, orthography)
         .await?;
-    Ok(Json(token))
-}
-
-pub async fn update_token(
-    State(ServerState { db, .. }): State<ServerState>,
-    Json(payload): Json<Token>,
-) -> Result<Json<Token>, ServerError> {
-    println!("token update attempt payload: {:?}", payload);
-    let token = db.update_token(payload).await?;
     Ok(Json(token))
 }
