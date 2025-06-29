@@ -1,6 +1,6 @@
 // #![allow(warnings)]
-use clap::{Parser, ValueEnum};
-use log::{info, trace, warn};
+use clap::Parser;
+use log::info;
 use std::env;
 
 #[tokio::main]

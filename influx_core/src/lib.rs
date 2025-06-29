@@ -1,16 +1,14 @@
 // #![allow(warnings)]
 
 use axum::{
-    http::Method,
-    routing::{delete, get, post},
+    routing::{get, post},
     Router,
 };
 use clap::{Parser, ValueEnum};
-use log::{info, trace, warn};
-use std::fs::write;
-use std::path::{Path, PathBuf};
+use log::info;
+use std::path::PathBuf;
 use tokio::net::TcpListener;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 
 pub mod db;
 pub(crate) mod doc_store;
@@ -20,9 +18,7 @@ mod nlp;
 mod prelude;
 mod utils;
 
-use db::DBLocation;
 use db::DB;
-use std::env;
 
 #[derive(Debug, ValueEnum, Clone, Copy)]
 pub enum DBChoice {
@@ -126,7 +122,7 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use crate::db::models;
+    
 
     use super::*;
 

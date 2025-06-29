@@ -1,8 +1,5 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use clap::builder::Str;
-use google_translator;
-use open::that;
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::process::Command;
