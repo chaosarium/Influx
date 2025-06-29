@@ -96,7 +96,7 @@ impl DB {
         debug_assert!(orthography.to_lowercase() == orthography);
         match self {
             Surreal { engine } => {
-                let sql = format!("SELECT * FROM vocabulary WHERE orthography = $orthography AND lang_id = $lang_id");
+                let sql = format!("SELECT * FROM token WHERE orthography = $orthography AND lang_id = $lang_id");
                 let mut res: Response = engine
                     .query(sql)
                     .bind(("orthography", orthography))
@@ -114,7 +114,7 @@ impl DB {
             Postgres { pool } => {
                 let record = sqlx::query!(
                     r#"
-                        SELECT id FROM vocabulary WHERE orthography = LOWER($1) AND lang_id = $2;
+                        SELECT id FROM token WHERE orthography = LOWER($1) AND lang_id = $2;
                     "#,
                     orthography,
                     lang_id.as_i64()?
@@ -158,7 +158,7 @@ impl DB {
                 let record = sqlx::query_as!(
                     Token,
                     r#"
-                        INSERT INTO vocabulary (orthography, phonetic, definition, notes, original_context, status, lang_id)
+                        INSERT INTO token (orthography, phonetic, definition, notes, original_context, status, lang_id)
                         VALUES ($1, $2, $3, $4, $5, $6, $7)
                         RETURNING id as "id: Option<InfluxResourceId>", orthography, phonetic, definition, notes, original_context, status as "status: TokenStatus", lang_id
                     "#,
@@ -220,7 +220,7 @@ impl DB {
                     Token,
                     r#"
                         SELECT id as "id: Option<InfluxResourceId>", orthography, phonetic, definition, notes, original_context, status as "status: TokenStatus", lang_id
-                        FROM vocabulary
+                        FROM token
                         WHERE orthography = LOWER($1) AND lang_id = $2;
                     "#,
                     orthography,
@@ -252,7 +252,7 @@ impl DB {
     pub async fn query_token_by_id(&self, id: InfluxResourceId) -> Result<Option<Token>> {
         match self {
             Surreal { engine } => {
-                let res = engine.select(("vocabulary", id)).await;
+                let res = engine.select(("token", id)).await;
                 match res {
                     Ok(Some::<Token>(v)) => Ok(Some(v)),
                     Ok(None) => Ok(None),
@@ -264,7 +264,7 @@ impl DB {
                     Token,
                     r#"
                         SELECT id as "id: Option<InfluxResourceId>", orthography, phonetic, definition, notes, original_context, status as "status: TokenStatus", lang_id
-                        FROM vocabulary
+                        FROM token
                         WHERE id = $1;
                     "#,
                     id.as_i64()?
@@ -309,7 +309,7 @@ impl DB {
                     Token,
                     r#"
                         SELECT id as "id: Option<InfluxResourceId>", orthography, phonetic, definition, notes, original_context, status as "status: TokenStatus", lang_id
-                        FROM vocabulary
+                        FROM token
                         WHERE lang_id = $1 AND orthography = ANY($2);
                     "#,
                     lang_id.as_i64()?,
@@ -327,7 +327,7 @@ impl DB {
 
         match self {
             Surreal { engine } => {
-                let res = engine.delete(("vocabulary", id)).await;
+                let res = engine.delete(("token", id)).await;
                 match res {
                     Ok(Some::<Token>(v)) => Ok(v),
                     Ok(None) => Err(anyhow::anyhow!(
@@ -340,7 +340,7 @@ impl DB {
                 let record = sqlx::query_as!(
                     Token,
                     r#"
-                        DELETE FROM vocabulary
+                        DELETE FROM token
                         WHERE id = $1
                         RETURNING id as "id: Option<InfluxResourceId>", orthography, phonetic, definition, notes, original_context, status as "status: TokenStatus", lang_id
                     "#,
@@ -456,7 +456,7 @@ impl DB {
         match self {
             Surreal { engine } => {
                 let updated: Option<Token> =
-                    engine.update(("vocabulary", id)).content(token).await?;
+                    engine.update(("token", id)).content(token).await?;
 
                 match updated {
                     Some(v) => Ok(v),
@@ -467,7 +467,7 @@ impl DB {
                 let record = sqlx::query_as!(
                     Token,
                     r#"
-                        UPDATE vocabulary
+                        UPDATE token
                         SET orthography = $1, phonetic = $2, definition = $3, notes = $4, original_context = $5, status = $6
                         WHERE id = $7
                         RETURNING id as "id: Option<InfluxResourceId>", orthography, phonetic, definition, notes, original_context, status as "status: TokenStatus", lang_id

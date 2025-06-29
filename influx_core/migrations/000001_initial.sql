@@ -20,7 +20,7 @@ CREATE TYPE token_status AS ENUM (
     'IGNORED'
 );
 
-CREATE TABLE IF NOT EXISTS vocabulary (
+CREATE TABLE IF NOT EXISTS token (
     id BIGSERIAL PRIMARY KEY,
     lang_id BIGINT NOT NULL REFERENCES language (id) ON DELETE CASCADE,
     
