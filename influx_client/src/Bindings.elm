@@ -229,6 +229,35 @@ sentenceConstituentEncoder enum =
         PhraseToken { sentenceId, text, normalisedOrthography, startChar, endChar, shadowed, shadows } ->
             Json.Encode.object [ ( "PhraseToken", Json.Encode.object [ ( "sentence_id", (Json.Encode.int) sentenceId ), ( "text", (Json.Encode.string) text ), ( "normalised_orthography", (Json.Encode.string) normalisedOrthography ), ( "start_char", (Json.Encode.int) startChar ), ( "end_char", (Json.Encode.int) endChar ), ( "shadowed", (Json.Encode.bool) shadowed ), ( "shadows", (Json.Encode.list (sentenceConstituentEncoder)) shadows ) ] ) ]
 
+type Term
+    = TokenTerm (Token)
+    | PhraseTerm (Phrase)
+
+
+termEncoder : Term -> Json.Encode.Value
+termEncoder enum =
+    case enum of
+        TokenTerm inner ->
+            Json.Encode.object [ ( "TokenTerm", tokenEncoder inner ) ]
+        PhraseTerm inner ->
+            Json.Encode.object [ ( "PhraseTerm", phraseEncoder inner ) ]
+
+type TermEditAction
+    = CreateTerm
+    | UpdateTerm
+    | DeleteTerm
+
+
+termEditActionEncoder : TermEditAction -> Json.Encode.Value
+termEditActionEncoder enum =
+    case enum of
+        CreateTerm ->
+            Json.Encode.string "CreateTerm"
+        UpdateTerm ->
+            Json.Encode.string "UpdateTerm"
+        DeleteTerm ->
+            Json.Encode.string "DeleteTerm"
+
 type alias GetDocResponse =
     { metadata : DocMetadata
     , text : String
@@ -245,31 +274,33 @@ getDocResponseEncoder struct =
         ]
 
 
-type TermEditRequest
-    = EditToken (Token)
-    | EditPhrase (Phrase)
+type alias TermEditRequest =
+    { requestedAction : TermEditAction
+    , term : Term
+    }
 
 
 termEditRequestEncoder : TermEditRequest -> Json.Encode.Value
-termEditRequestEncoder enum =
-    case enum of
-        EditToken inner ->
-            Json.Encode.object [ ( "EditToken", tokenEncoder inner ) ]
-        EditPhrase inner ->
-            Json.Encode.object [ ( "EditPhrase", phraseEncoder inner ) ]
+termEditRequestEncoder struct =
+    Json.Encode.object
+        [ ( "requested_action", (termEditActionEncoder) struct.requestedAction )
+        , ( "term", (termEncoder) struct.term )
+        ]
 
-type TermEditResponse
-    = TokenBecomes (Token)
-    | PhraseBecomes (Phrase)
+
+type alias TermEditResponse =
+    { performedAction : TermEditAction
+    , term : Term
+    }
 
 
 termEditResponseEncoder : TermEditResponse -> Json.Encode.Value
-termEditResponseEncoder enum =
-    case enum of
-        TokenBecomes inner ->
-            Json.Encode.object [ ( "TokenBecomes", tokenEncoder inner ) ]
-        PhraseBecomes inner ->
-            Json.Encode.object [ ( "PhraseBecomes", phraseEncoder inner ) ]
+termEditResponseEncoder struct =
+    Json.Encode.object
+        [ ( "performed_action", (termEditActionEncoder) struct.performedAction )
+        , ( "term", (termEncoder) struct.term )
+        ]
+
 
 type alias AnnotatedDocument =
     { text : String
@@ -501,6 +532,45 @@ sentenceConstituentDecoder =
         , Json.Decode.field "PhraseToken" (Json.Decode.succeed elmRsConstructPhraseToken |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "sentence_id" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "normalised_orthography" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "start_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "end_char" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "shadowed" (Json.Decode.bool))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "shadows" (Json.Decode.list (sentenceConstituentDecoder)))))
         ]
 
+termDecoder : Json.Decode.Decoder Term
+termDecoder = 
+    Json.Decode.oneOf
+        [ Json.Decode.map TokenTerm (Json.Decode.field "TokenTerm" (tokenDecoder))
+        , Json.Decode.map PhraseTerm (Json.Decode.field "PhraseTerm" (phraseDecoder))
+        ]
+
+termEditActionDecoder : Json.Decode.Decoder TermEditAction
+termEditActionDecoder = 
+    Json.Decode.oneOf
+        [ Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "CreateTerm" ->
+                            Json.Decode.succeed CreateTerm
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "UpdateTerm" ->
+                            Json.Decode.succeed UpdateTerm
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "DeleteTerm" ->
+                            Json.Decode.succeed DeleteTerm
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        ]
+
 getDocResponseDecoder : Json.Decode.Decoder GetDocResponse
 getDocResponseDecoder =
     Json.Decode.succeed GetDocResponse
@@ -510,18 +580,18 @@ getDocResponseDecoder =
 
 
 termEditRequestDecoder : Json.Decode.Decoder TermEditRequest
-termEditRequestDecoder = 
-    Json.Decode.oneOf
-        [ Json.Decode.map EditToken (Json.Decode.field "EditToken" (tokenDecoder))
-        , Json.Decode.map EditPhrase (Json.Decode.field "EditPhrase" (phraseDecoder))
-        ]
+termEditRequestDecoder =
+    Json.Decode.succeed TermEditRequest
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "requested_action" (termEditActionDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "term" (termDecoder)))
+
 
 termEditResponseDecoder : Json.Decode.Decoder TermEditResponse
-termEditResponseDecoder = 
-    Json.Decode.oneOf
-        [ Json.Decode.map TokenBecomes (Json.Decode.field "TokenBecomes" (tokenDecoder))
-        , Json.Decode.map PhraseBecomes (Json.Decode.field "PhraseBecomes" (phraseDecoder))
-        ]
+termEditResponseDecoder =
+    Json.Decode.succeed TermEditResponse
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "performed_action" (termEditActionDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "term" (termDecoder)))
+
 
 annotatedDocumentDecoder : Json.Decode.Decoder AnnotatedDocument
 annotatedDocumentDecoder =
