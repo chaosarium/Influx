@@ -1,5 +1,5 @@
 serve:
-	cd influx_core && cargo run
+	cd influx_core && just
 
 web:
 	cd influx_ui && npm run dev

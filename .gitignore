@@ -21,3 +21,5 @@ toy_content/_influx_nlp_cache
 surrealtemp.db
 influx_core/.env
 **/elm-stuff
+influx_client/assets/scss/radix-colors
+influx_client/src/Pages/Sandbox
