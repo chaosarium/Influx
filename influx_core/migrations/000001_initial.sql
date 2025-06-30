@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS token (
     notes TEXT NOT NULL DEFAULT '',
     original_context TEXT NOT NULL DEFAULT '',
     
-    status token_status NOT NULL DEFAULT 'UNMARKED',
+    status token_status NOT NULL DEFAULT 'L1',
+    CONSTRAINT token_status_not_unmarked CHECK (status <> 'UNMARKED'),
     
     UNIQUE(lang_id, orthography)
 );
