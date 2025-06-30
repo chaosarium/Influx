@@ -1,4 +1,3 @@
-#![allow(unused_imports)]
 use crate::doc_store::DocEntry;
 use crate::doc_store::{gt_md_file_list_w_metadata, read_md_file};
 use crate::nlp;
@@ -32,145 +31,16 @@ use std::{
     collections::{HashMap, HashSet},
     path::PathBuf,
 };
-use surrealdb::sql;
 use tracing::info;
-use ts_rs::TS;
 
 pub mod api_interfaces;
 pub use api_interfaces::*;
 pub mod integration_handlers;
 pub mod lang_handlers;
 pub mod term_handlers;
+pub mod doc_handlers;
 
 pub async fn connection_test() -> impl IntoResponse {
     StatusCode::OK
 }
 
-pub async fn get_docs_list(
-    State(ServerState { influx_path, db }): State<ServerState>,
-    Path(lang_id): Path<String>,
-) -> Response {
-    // check if lang_id exists, if not return 404
-    if !db
-        .language_identifier_exists(lang_id.clone())
-        .await
-        .unwrap()
-    {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(json!({
-                "error": format!("lang_id {} not found", lang_id),
-            })),
-        )
-            .into_response();
-    }
-
-    match gt_md_file_list_w_metadata(influx_path.join(PathBuf::from(lang_id))) {
-        Ok(list) => (StatusCode::OK, Json(list)).into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({
-                "error": format!("failed to access lang_id content folder on disk: {}", e),
-            })),
-        )
-            .into_response(),
-    }
-}
-
-fn text_checksum(text: String) -> String {
-    let digest = md5::compute(text);
-    format!("{:x}", digest)
-}
-
-// TODO do error handling like above
-pub async fn get_doc(
-    State(ServerState { db, influx_path }): State<ServerState>,
-    Path((lang_identifier, file)): Path<(String, String)>,
-) -> impl IntoResponse {
-    info!(
-        "getting doc: lang_identifier = {}, file = {}",
-        lang_identifier, file
-    );
-
-    // check if lang_id exists, if not return 404
-    if !db
-        .language_identifier_exists(lang_identifier.clone())
-        .await
-        .unwrap()
-    {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(json!({
-                "error": format!("lang_id {} not found", lang_identifier),
-            })),
-        )
-            .into_response();
-    }
-
-    let lang_entry = db
-        .get_language_by_identifier(lang_identifier.clone())
-        .await
-        .unwrap()
-        .unwrap();
-    let lang_id = lang_entry.id.clone().unwrap();
-    let lang_code = lang_entry.code.clone();
-
-    let filepath = influx_path
-        .join(PathBuf::from(&lang_identifier))
-        .join(PathBuf::from(&file));
-    println!("trying to access {}", &filepath.display());
-
-    let (metadata, text) = read_md_file(filepath.clone()).unwrap();
-    let text_checksum: String = text_checksum(text.clone());
-
-    let nlp_filepath = influx_path
-        .join(PathBuf::from("_influx_nlp_cache"))
-        .join(PathBuf::from(format!("{}.nlp", &text_checksum)));
-
-    let mut tokenised_doc: nlp::AnnotatedDocument = if nlp_filepath.exists() {
-        let nlp_file_content = fs::read_to_string(nlp_filepath).unwrap();
-        let it: nlp::AnnotatedDocument = serde_json::from_str(&nlp_file_content).unwrap();
-        assert_eq!(it.text, text); // if this fails... md5 checksum collision?
-        it
-    } else {
-        // run tokenisation pipeline and cache it
-        let it = nlp::tokenise_pipeline(text.as_str(), lang_code.clone())
-            .await
-            .unwrap();
-        let serialized_doc = serde_json::to_string(&it).unwrap();
-        if !nlp_filepath.exists() {
-            fs::create_dir_all(nlp_filepath.parent().unwrap()).unwrap();
-        }
-        fs::write(nlp_filepath.clone(), serialized_doc).unwrap();
-        info!("wrote nlp cache file to {}", nlp_filepath.display());
-        it
-    };
-
-    let tokens_dict: HashMap<String, Token> = db
-        .get_dict_from_orthography_set(
-            lang_id.clone(),
-            tokenised_doc
-                .orthography_set
-                .union(&tokenised_doc.lemma_set)
-                .cloned()
-                .collect::<HashSet<String>>(),
-        )
-        .await
-        .unwrap();
-    tokenised_doc.set_token_dict(tokens_dict);
-
-    // phrase annotation
-    let potential_phrases: Vec<Phrase> = db
-        .query_phrase_by_onset_orthographies(lang_id.clone(), tokenised_doc.orthography_set.clone())
-        .await
-        .unwrap();
-    let phrase_trie: Trie<String, Phrase> = mk_phrase_trie(potential_phrases);
-    let tokenised_phrased_annotated_doc = nlp::phrase_fit_pipeline(tokenised_doc, phrase_trie);
-
-    let result = GetDocResponse {
-        metadata,
-        text,
-        annotated_doc: tokenised_phrased_annotated_doc,
-    };
-    (StatusCode::OK, Json(result)).into_response()
-}
