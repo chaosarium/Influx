@@ -1,13 +1,10 @@
 use super::ServerError;
 use crate::db::models::phrase::Phrase;
-use crate::db::models::vocab::{Token, TokenStatus};
-use crate::db::DB;
+use crate::db::models::vocab::Token;
 use crate::handlers::api_interfaces::*;
 use crate::ServerState;
-use axum::extract::Path;
 use axum::extract::State;
 use axum::Json;
-use serde::Deserialize;
 
 pub async fn create_token(
     State(ServerState { db, .. }): State<ServerState>,

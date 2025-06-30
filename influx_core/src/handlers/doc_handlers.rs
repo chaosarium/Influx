@@ -1,21 +1,13 @@
 use crate::doc_store::{gt_md_file_list_w_metadata, read_md_file};
 use crate::nlp;
 use crate::{
-    db::models::{
-        lang::LanguageEntry,
-        phrase::{mk_phrase_trie, Phrase},
-        vocab::{self, TokenStatus},
-    },
-    doc_store::write_md_file,
+    db::models::phrase::{mk_phrase_trie, Phrase},
     utils::trie::Trie,
     ServerState,
 };
-use crate::{
-    db::{models::vocab::Token, DB},
-    doc_store,
-};
+use crate::db::models::vocab::Token;
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     response::Response,
