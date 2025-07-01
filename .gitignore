@@ -24,3 +24,16 @@ influx_core/.env
 influx_client/assets/scss/radix-colors
 influx_client/src/Pages/Sandbox
 GEMINI.md
+
+influx_client/dist
+influx_client/.elm-land
+influx_client/.env
+influx_client/elm-stuff
+influx_client/node_modules
+influx_client.DS_Store
+influx_client*.pem
+influx_clientstatic/dist
+
+influx_nlp/main.build/**
+influx_nlp/main.onefile-build/**
+influx_nlp/main.dist/**
