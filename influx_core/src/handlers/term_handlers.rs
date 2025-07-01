@@ -74,14 +74,3 @@ pub async fn edit_term(
         performed_action: request.requested_action,
     }))
 }
-
-// TODO this api is not type safe
-// pub async fn lookup_token(
-//     State(ServerState { db, .. }): State<ServerState>,
-//     Path((lang_id, orthography)): Path<(String, String)>,
-// ) -> Result<Json<Option<Token>>, ServerError> {
-//     let token = db
-//         .query_token_by_lang_identifier_and_orthography(lang_id, orthography)
-//         .await?;
-//     Ok(Json(token))
-// }
