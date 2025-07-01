@@ -1,4 +1,4 @@
-module Effect exposing
+port module Effect exposing
     ( Effect
     , none, batch
     , sendCmd, sendMsg
@@ -6,6 +6,7 @@ module Effect exposing
     , pushRoutePath, replaceRoutePath
     , loadExternalUrl, back
     , map, toCmd
+    , openWindowDialog
     )
 
 {-|
@@ -25,6 +26,7 @@ module Effect exposing
 
 import Browser.Navigation
 import Dict exposing (Dict)
+import Json.Encode
 import Route exposing (Route)
 import Route.Path
 import Shared.Model
@@ -45,6 +47,11 @@ type Effect msg
     | Back
       -- SHARED
     | SendSharedMsg Shared.Msg.Msg
+      -- INTEROP
+    | SendMessageToJavaScript
+        { tag : String
+        , data : Json.Encode.Value
+        }
 
 
 
@@ -139,6 +146,21 @@ back =
 
 
 
+-- INTEROP
+
+
+port outgoing : { tag : String, data : Json.Encode.Value } -> Cmd msg
+
+
+openWindowDialog : String -> Effect msg
+openWindowDialog question =
+    SendMessageToJavaScript
+        { tag = "OPEN_WINDOW_DIALOG"
+        , data = Json.Encode.string question
+        }
+
+
+
 -- INTERNALS
 
 
@@ -171,6 +193,9 @@ map fn effect =
 
         SendSharedMsg sharedMsg ->
             SendSharedMsg sharedMsg
+
+        SendMessageToJavaScript message ->
+            SendMessageToJavaScript message
 
 
 {-| Elm Land depends on this function to perform your effects.
@@ -211,3 +236,6 @@ toCmd options effect =
         SendSharedMsg sharedMsg ->
             Task.succeed sharedMsg
                 |> Task.perform options.fromSharedMsg
+
+        SendMessageToJavaScript message ->
+            outgoing message

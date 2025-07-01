@@ -12,4 +12,17 @@ export const flags = ({ env }) => {
 // Here you can work with `app.ports` to send messages
 // to your Elm application, or subscribe to incoming
 // messages from Elm
-export const onReady = ({ app, env }) => {};
+export const onReady = ({ app, env }) => {
+    if (app.ports && app.ports.outgoing) {
+        app.ports.outgoing.subscribe(({ tag, data }) => {
+            switch (tag) {
+                case "OPEN_WINDOW_DIALOG":
+                    window.alert(data);
+                    return;
+                default:
+                    console.warn(`Unhandled outgoing port: "${tag}"`);
+                    return;
+            }
+        });
+    }
+};
