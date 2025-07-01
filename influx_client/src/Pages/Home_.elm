@@ -52,7 +52,13 @@ view model =
             , Html.button
                 [ Html.Events.onClick UserClickedButton
                 ]
-                [ Html.text "Say hello!" ]
+                [ Html.text "invoke javascript" ]
+            , Html.button
+                []
+                [ Html.text "TODO say hello world using tts" ]
+            , Html.button
+                []
+                [ Html.text "TODO run javascript, get back a list of available tts voices on the current system, and print them to the console" ]
             ]
         ]
     }
