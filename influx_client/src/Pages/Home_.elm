@@ -22,16 +22,14 @@ init () =
 
 
 type Msg
-    = UserClickedButton
+    = Noop
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
-        UserClickedButton ->
-            ( model
-            , Effect.openWindowDialog "Hello, from Elm!"
-            )
+        Noop ->
+            ( model, Effect.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -49,16 +47,6 @@ view model =
             , Html.p []
                 [ Html.text "This is the home page. There's nothing here yet"
                 ]
-            , Html.button
-                [ Html.Events.onClick UserClickedButton
-                ]
-                [ Html.text "invoke javascript" ]
-            , Html.button
-                []
-                [ Html.text "TODO say hello world using tts" ]
-            , Html.button
-                []
-                [ Html.text "TODO run javascript, get back a list of available tts voices on the current system, and print them to the console" ]
             ]
         ]
     }

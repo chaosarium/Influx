@@ -11,6 +11,7 @@ view props =
             [ ul []
                 [ li [] [ a [ href "/" ] [ text "Home" ] ]
                 , li [] [ a [ href "/languages" ] [ text "Languages" ] ]
+                , li [] [ a [ href "/ttstest" ] [ text "TTSTest" ] ]
                 ]
             ]
         ]
