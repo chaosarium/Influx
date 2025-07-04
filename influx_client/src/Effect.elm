@@ -6,7 +6,7 @@ port module Effect exposing
     , pushRoutePath, replaceRoutePath
     , loadExternalUrl, back
     , map, toCmd
-    , openWindowDialog
+    , jsIncoming, openWindowDialog, ttsCancel, ttsGetVoices, ttsSpeak
     )
 
 {-|
@@ -26,6 +26,7 @@ port module Effect exposing
 
 import Browser.Navigation
 import Dict exposing (Dict)
+import Json.Decode
 import Json.Encode
 import Route exposing (Route)
 import Route.Path
@@ -152,11 +153,44 @@ back =
 port outgoing : { tag : String, data : Json.Encode.Value } -> Cmd msg
 
 
+port jsIncoming : (Json.Decode.Value -> msg) -> Sub msg
+
+
 openWindowDialog : String -> Effect msg
 openWindowDialog question =
     SendMessageToJavaScript
         { tag = "OPEN_WINDOW_DIALOG"
         , data = Json.Encode.string question
+        }
+
+
+ttsGetVoices : Effect msg
+ttsGetVoices =
+    SendMessageToJavaScript
+        { tag = "GET_VOICES"
+        , data = Json.Encode.null
+        }
+
+
+ttsSpeak : { text : String, voice : Maybe String, rate : Maybe Float, pitch : Maybe Float } -> Effect msg
+ttsSpeak options =
+    SendMessageToJavaScript
+        { tag = "SPEAK"
+        , data =
+            Json.Encode.object
+                [ ( "text", Json.Encode.string options.text )
+                , ( "voice", Maybe.withDefault Json.Encode.null (Maybe.map Json.Encode.string options.voice) )
+                , ( "rate", Maybe.withDefault Json.Encode.null (Maybe.map Json.Encode.float options.rate) )
+                , ( "pitch", Maybe.withDefault Json.Encode.null (Maybe.map Json.Encode.float options.pitch) )
+                ]
+        }
+
+
+ttsCancel : Effect msg
+ttsCancel =
+    SendMessageToJavaScript
+        { tag = "CANCEL"
+        , data = Json.Encode.null
         }
 
 

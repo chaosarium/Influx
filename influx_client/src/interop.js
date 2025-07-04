@@ -19,6 +19,26 @@ export const onReady = ({ app, env }) => {
                 case "OPEN_WINDOW_DIALOG":
                     window.alert(data);
                     return;
+                case "GET_VOICES":
+                    let voices = speechSynthesis.getVoices();
+                    let voiceData = voices.map(v => ({ name: v.name, lang: v.lang, default: v.default }));
+                    app.ports.incoming.send({ tag: "VOICES_LIST", data: voiceData });
+                    return;
+                case "SPEAK":
+                    let utterance = new SpeechSynthesisUtterance(data.text);
+                    if (data.voice) {
+                        let voice = speechSynthesis.getVoices().find(v => v.name === data.voice);
+                        if (voice) {
+                            utterance.voice = voice;
+                        }
+                    }
+                    utterance.rate = data.rate || 1;
+                    utterance.pitch = data.pitch || 1;
+                    speechSynthesis.speak(utterance);
+                    return;
+                case "CANCEL":
+                    speechSynthesis.cancel();
+                    return;
                 default:
                     console.warn(`Unhandled outgoing port: "${tag}"`);
                     return;
