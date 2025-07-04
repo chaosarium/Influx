@@ -3,7 +3,6 @@
 pub mod lang;
 pub mod phrase;
 pub mod seed;
-pub mod todos;
 pub mod vocab;
 
 pub(crate) use crate::DB;

@@ -6,7 +6,10 @@ CREATE TABLE IF NOT EXISTS language (
 
     code TEXT NOT NULL,
     dicts TEXT[] NOT NULL,
-    name TEXT NOT NULL
+    name TEXT NOT NULL, 
+    
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp
 );
 
 CREATE TYPE token_status AS ENUM (
@@ -33,7 +36,9 @@ CREATE TABLE IF NOT EXISTS token (
     status token_status NOT NULL DEFAULT 'L1',
     CONSTRAINT token_status_not_unmarked CHECK (status <> 'UNMARKED'),
     
-    UNIQUE(lang_id, orthography)
+    UNIQUE(lang_id, orthography),
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp
 );
 
 CREATE TABLE IF NOT EXISTS phrase (
@@ -47,13 +52,33 @@ CREATE TABLE IF NOT EXISTS phrase (
     
     status token_status NOT NULL DEFAULT 'UNMARKED',
     
-    UNIQUE(lang_id, orthography_seq)
+    UNIQUE(lang_id, orthography_seq),
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp
 );
 
--- this is a dummy db for testing
-CREATE TABLE IF NOT EXISTS todos
-(
-    id          BIGSERIAL PRIMARY KEY,
-    text        TEXT    NOT NULL,
-    completed   BOOLEAN NOT NULL DEFAULT FALSE
-);
+-- Trigger function for updating updated_ts
+CREATE OR REPLACE FUNCTION set_updated_ts()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_ts = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Triggers for each table
+CREATE TRIGGER set_updated_ts_language
+BEFORE UPDATE ON language
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_ts();
+
+CREATE TRIGGER set_updated_ts_token
+BEFORE UPDATE ON token
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_ts();
+
+CREATE TRIGGER set_updated_ts_phrase
+BEFORE UPDATE ON phrase
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_ts();
+

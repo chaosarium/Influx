@@ -2,15 +2,11 @@ use super::phrase::Phrase;
 use super::vocab::{Token, TokenStatus};
 use super::DB;
 use crate::db::models::lang::LanguageEntry;
-use crate::db::models::todos::TodoItem;
+
 use anyhow::Result;
 
 impl DB {
-    pub async fn seed_todo_table(&self) -> Result<()> {
-        self.add_todo("todo1".into()).await.unwrap();
-        self.add_todo("todo2".into()).await.unwrap();
-        Ok(())
-    }
+    
 
     pub async fn seed_lang_table(&self) -> Result<()> {
         let languages = vec![
@@ -226,7 +222,6 @@ impl DB {
     }
 
     pub async fn seed_all_tables(&self) -> Result<()> {
-        self.seed_todo_table().await?;
         self.seed_lang_table().await?;
         self.seed_vocab_table().await?;
         self.seed_phrase_table().await?;

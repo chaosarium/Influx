@@ -1,2 +1,5 @@
 runpg:
     cargo run -- --db-choice postgres-server
+
+runpg-with-seed:
+    cargo run -- --db-choice postgres-server --seed

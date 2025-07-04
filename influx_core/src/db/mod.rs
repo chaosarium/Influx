@@ -3,7 +3,6 @@
 use anyhow::Result;
 use elm_rs::{Elm, ElmDecode, ElmEncode};
 use models::phrase::Phrase;
-use models::todos::TodoItem;
 use models::vocab::Token;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Pool, Postgres};
