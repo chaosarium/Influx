@@ -2,12 +2,12 @@ module Pages.Documents.Lang_.File_ exposing (Model, Msg, page)
 
 import Api
 import Api.GetAnnotatedDoc
-import Api.TokenEdit
-import Bindings exposing (GetDocResponse, LanguageEntry, Phrase, SentenceConstituent, Token)
+import Api.TermEdit
+import Bindings exposing (..)
 import Browser.Events exposing (onMouseUp)
 import Components.AnnotatedText as AnnotatedText
 import Components.DbgDisplay
-import Components.TokenEditForm as TokenEditForm
+import Components.TermEditForm as TermEditForm
 import Components.Topbar
 import Datastore.DictContext as DictContext
 import Datastore.DocContext as DocContext
@@ -50,7 +50,7 @@ type alias Model =
     , working_doc : DocContext.T
     , working_dict : DictContext.T
     , focus_ctx : FocusContext.T
-    , form_model : TokenEditForm.Model
+    , form_model : TermEditForm.Model
     }
 
 
@@ -66,9 +66,8 @@ init args () =
       , working_doc = DocContext.empty
       , working_dict = DictContext.empty
       , focus_ctx = FocusContext.new
-      , form_model = TokenEditForm.empty
+      , form_model = TermEditForm.empty
       }
-      -- TODO combine working_doc and focus_ctx into some module?
     , Effect.sendCmd (Api.GetAnnotatedDoc.get args ApiResponded)
     )
 
@@ -83,8 +82,8 @@ type Msg
       -- Mouse selection...
     | SelectionMouseEvent FocusContext.Msg -- will update focus context
     | NoopMouseEvent FocusContext.Msg -- for mouse events that don't change the focus context
-      -- Token editor...
-    | TokenEditorEvent TokenEditForm.Msg
+      -- Term editor...
+    | TermEditorEvent TermEditForm.Msg
       -- Shared
     | ModifierStateMsg ModifierState.Msg
 
@@ -118,7 +117,7 @@ update msg model =
                     FocusContext.update model.working_doc.text m model.focus_ctx
 
                 ( form_model, _ ) =
-                    TokenEditForm.update model.working_dict (TokenEditForm.EditingConUpdated model.focus_ctx.constituent_selection) model.form_model
+                    TermEditForm.update model.working_dict (TermEditForm.EditingConUpdated model.focus_ctx.constituent_selection) model.form_model
             in
             ( { model
                 | focus_ctx = focus_ctx
@@ -127,35 +126,25 @@ update msg model =
             , Effect.none
             )
 
-        TokenEditorEvent formMsg ->
+        TermEditorEvent formMsg ->
             case formMsg of
-                TokenEditForm.RequestCreateToken token ->
+                TermEditForm.RequestEditTerm action term ->
                     ( model
-                    , Effect.sendCmd (Api.TokenEdit.create token (TokenEditorEvent << TokenEditForm.GotCreateTokenResponse))
+                    , Effect.sendCmd (Api.TermEdit.edit { requestedAction = action, term = term } (TermEditorEvent << TermEditForm.GotTermEditResponse))
                     )
 
-                TokenEditForm.RequestUpdateToken token ->
-                    ( model
-                    , Effect.sendCmd (Api.TokenEdit.update token (TokenEditorEvent << TokenEditForm.GotUpdateTokenResponse))
-                    )
-
-                TokenEditForm.RequestDeleteToken token ->
-                    ( model
-                    , Effect.sendCmd (Api.TokenEdit.delete token (TokenEditorEvent << TokenEditForm.GotDeleteTokenResponse))
-                    )
-
-                TokenEditForm.OverwriteToken token ->
-                    ( { model | working_dict = DictContext.overwriteToken model.working_dict token }
+                TermEditForm.OverwriteTerm term ->
+                    ( { model | working_dict = DictContext.overwriteTerm model.working_dict term }
                     , Effect.none
                     )
 
                 _ ->
                     let
                         ( form_model, child_fx ) =
-                            TokenEditForm.update model.working_dict formMsg model.form_model
+                            TermEditForm.update model.working_dict formMsg model.form_model
                     in
                     ( { model | form_model = form_model }
-                    , Effect.map TokenEditorEvent child_fx
+                    , Effect.map TermEditorEvent child_fx
                     )
 
         _ ->
@@ -168,7 +157,6 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    -- onMouseUp (Json.Decode.succeed (SelectionMouseEvent (FocusContext.SelectMouseUp ())))
     ModifierState.subscriptions ModifierStateMsg
 
 
@@ -280,18 +268,8 @@ view route model =
             , Html.Extra.viewMaybe (\con -> viewConExtraInfo con) model.focus_ctx.constituent_selection
             ]
 
-        -- whole text but selected only
-        -- , div []
-        --     [ span []
-        --         [ Html.text "selection, rich display: " ]
-        --     , span [ class "" ]
-        --         (AnnotatedText.view
-        --             selectedConstViewCtx
-        --             model.working_doc
-        --         )
-        --     ]
-        , TokenEditForm.view model.form_model
-            TokenEditorEvent
+        , TermEditForm.view model.form_model
+            TermEditorEvent
             { dict = model.working_dict
             }
         , Components.DbgDisplay.view "model.focus_ctx" model.focus_ctx

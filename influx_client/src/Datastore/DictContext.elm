@@ -1,6 +1,6 @@
 module Datastore.DictContext exposing (..)
 
-import Bindings exposing (AnnotatedDocument, Phrase, Token)
+import Bindings exposing (..)
 import BindingsUtils exposing (..)
 import Dict exposing (Dict)
 
@@ -55,14 +55,14 @@ lookupPhrase dict_ctx term =
     Dict.get term dict_ctx.phraseDict
 
 
-overwriteToken : T -> Token -> T
-overwriteToken dict_ctx token =
-    { dict_ctx | tokenDict = Dict.insert token.orthography token dict_ctx.tokenDict }
+overwriteTerm : T -> Term -> T
+overwriteTerm dict_ctx term =
+    case term of
+        TokenTerm token ->
+            { dict_ctx | tokenDict = Dict.insert token.orthography token dict_ctx.tokenDict }
 
-
-overwritePhrase : T -> Phrase -> T
-overwritePhrase dict_ctx phrase =
-    { dict_ctx | phraseDict = Dict.insert (BindingsUtils.orthographySeqToNormalized phrase.orthographySeq) phrase dict_ctx.phraseDict }
+        PhraseTerm phrase ->
+            { dict_ctx | phraseDict = Dict.insert (BindingsUtils.orthographySeqToNormalized phrase.orthographySeq) phrase dict_ctx.phraseDict }
 
 
 
