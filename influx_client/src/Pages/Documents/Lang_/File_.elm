@@ -114,10 +114,10 @@ update msg model =
         SelectionMouseEvent m ->
             let
                 focus_ctx =
-                    FocusContext.update model.working_doc.text m model.focus_ctx
+                    FocusContext.update model.working_doc m model.focus_ctx
 
                 ( form_model, _ ) =
-                    TermEditForm.update model.working_dict (TermEditForm.EditingConUpdated model.focus_ctx.constituent_selection) model.form_model
+                    TermEditForm.update model.working_dict (TermEditForm.EditingConUpdated focus_ctx.constituent_slice focus_ctx.constituent_selection) model.form_model
             in
             ( { model
                 | focus_ctx = focus_ctx

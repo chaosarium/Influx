@@ -2,7 +2,7 @@ module Datastore.FocusContext exposing (..)
 
 import Api.GetAnnotatedDoc exposing (get)
 import Bindings exposing (AnnotatedDocument, DocumentConstituent(..), SentenceConstituent)
-import Browser exposing (Document)
+import Datastore.DocContext as DocContext
 
 
 type alias SliceSelection =
@@ -29,6 +29,7 @@ type alias T =
     , slice_selection : Maybe SliceSelection
     , selected_text : Maybe String
     , constituent_selection : Maybe SentenceConstituent
+    , constituent_slice : Maybe (List SentenceConstituent)
     }
 
 
@@ -40,6 +41,7 @@ new =
     , last_mouse_down_at = Nothing
     , selected_text = Nothing
     , constituent_selection = Nothing
+    , constituent_slice = Nothing
     }
 
 
@@ -193,19 +195,38 @@ mouseEventUpdate msg t =
                     }
 
 
-update : String -> Msg -> T -> T
-update doc_text msg t =
+update : DocContext.T -> Msg -> T -> T
+update doc_ctx msg t =
     let
         tt =
             mouseEventUpdate msg t
+
+        constituent_slice =
+            Maybe.map
+                (\slice ->
+                    doc_ctx.constituents
+                        |> List.filter (isDocCstInSlice slice)
+                        |> List.concatMap
+                            (\doc_cst ->
+                                case doc_cst of
+                                    Sentence { constituents } ->
+                                        constituents
+
+                                    _ ->
+                                        []
+                            )
+                        |> List.filter (isCstInSlice slice)
+                )
+                tt.slice_selection
     in
     { tt
         | selected_text =
             Maybe.map
                 (\{ sc, ec } ->
-                    String.slice sc ec doc_text
+                    String.slice sc ec doc_ctx.text
                 )
                 tt.slice_selection
+        , constituent_slice = constituent_slice
     }
 
 

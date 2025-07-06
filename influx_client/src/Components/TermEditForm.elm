@@ -67,7 +67,7 @@ type Msg
     | RequestEditTerm TermEditAction Term
     | OverwriteTerm Term
       -- downward propagation
-    | EditingConUpdated (Maybe SentenceConstituent)
+    | EditingConUpdated (Maybe (List SentenceConstituent)) (Maybe SentenceConstituent)
     | GotTermEditResponse (Result Http.Error TermEditResponse)
 
 
@@ -230,38 +230,69 @@ getTermOrthography term =
             Just (BindingsUtils.orthographySeqToNormalized phrase.orthographySeq)
 
 
+getPhraseFromConstituentSlice : List SentenceConstituent -> Maybe Phrase
+getPhraseFromConstituentSlice constituents =
+    let
+        orthography_seq =
+            constituents
+                |> List.filterMap
+                    (\cst ->
+                        case cst of
+                            SingleToken { orthography } ->
+                                Just orthography
+
+                            CompositToken { orthography } ->
+                                Just orthography
+
+                            _ ->
+                                Nothing
+                    )
+    in
+    if List.length orthography_seq > 1 then
+        Just
+            { id = Nothing
+            , langId = SerialId -1 -- Placeholder, should be replaced with actual langId
+            , orthographySeq = orthography_seq
+            , definition = ""
+            , notes = ""
+            , originalContext = ""
+            , status = Unmarked
+            }
+
+    else
+        Nothing
+
+
 update : DictContext.T -> Msg -> Model -> ( Model, Effect Msg )
 update dict_ctx msg model =
     case msg of
         InputChanged formMsg ->
             ( { model | form_model = updateForm formMsg model.form_model }, Effect.none )
 
-        EditingConUpdated con_opt ->
+        EditingConUpdated con_slice_opt con_opt ->
             let
                 form2 =
-                    case ( con_opt, model.form_model ) of
-                        ( Nothing, _ ) ->
-                            NothingForm
-
-                        ( Just (PhraseToken { normalisedOrthography }), TermForm { working_term } ) ->
-                            if Just normalisedOrthography == getTermOrthography working_term then
-                                model.form_model
-
-                            else
-                                switchToPhraseEdit dict_ctx normalisedOrthography
-
-                        ( Just (PhraseToken { normalisedOrthography }), _ ) ->
+                    case ( con_slice_opt, con_opt, model.form_model ) of
+                        ( _, Just (PhraseToken { normalisedOrthography }), _ ) ->
                             switchToPhraseEdit dict_ctx normalisedOrthography
 
-                        ( Just non_phrase_tkn, TermForm { working_term } ) ->
-                            if Just (getSentenceConstituentOrthography non_phrase_tkn) == getTermOrthography working_term then
-                                model.form_model
-
-                            else
-                                switchToTokenEdit dict_ctx (getSentenceConstituentOrthography non_phrase_tkn)
-
-                        ( Just non_phrase_tkn, _ ) ->
+                        ( _, Just non_phrase_tkn, _ ) ->
                             switchToTokenEdit dict_ctx (getSentenceConstituentOrthography non_phrase_tkn)
+
+                        ( Just con_slice, Nothing, _ ) ->
+                            case getPhraseFromConstituentSlice con_slice of
+                                Just phrase ->
+                                    TermForm
+                                        { orig_term = PhraseTerm phrase
+                                        , working_term = PhraseTerm phrase
+                                        , write_action = Create
+                                        }
+
+                                Nothing ->
+                                    NothingForm
+
+                        _ ->
+                            NothingForm
             in
             ( { model
                 | con_to_edit = con_opt
