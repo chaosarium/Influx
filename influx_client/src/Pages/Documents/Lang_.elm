@@ -7,6 +7,7 @@ import Components.DbgDisplay
 import Components.Topbar
 import Effect exposing (Effect)
 import Html exposing (..)
+import Html.Attributes
 import Http
 import Page exposing (Page)
 import Route exposing (Route)

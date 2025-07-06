@@ -9,7 +9,6 @@ import Html exposing (Html, div, span)
 import Html.Attributes exposing (class, style)
 import Html.Attributes.Extra
 import Html.Events exposing (onMouseDown, onMouseEnter, onMouseUp)
-import Html.Events.Extra.Mouse as Mouse
 import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
 import Utils.ModifierState as ModifierState
 

@@ -1,10 +1,10 @@
 module Components.TermEditForm exposing (..)
 
-import Api.TermEdit
 import Bindings exposing (..)
 import BindingsUtils exposing (getSentenceConstituentOrthography)
 import Components.Styles as Styles
 import Datastore.DictContext as DictContext
+import Datastore.FocusContext as FocusContext
 import Effect exposing (Effect)
 import Html exposing (Html, div, span)
 import Html.Attributes exposing (class, disabled, style)
@@ -230,39 +230,6 @@ getTermOrthography term =
             Just (BindingsUtils.orthographySeqToNormalized phrase.orthographySeq)
 
 
-getPhraseFromConstituentSlice : InfluxResourceId -> List SentenceConstituent -> Maybe Phrase
-getPhraseFromConstituentSlice langId constituents =
-    let
-        orthography_seq =
-            constituents
-                |> List.filterMap
-                    (\cst ->
-                        case cst of
-                            SingleToken { orthography } ->
-                                Just orthography
-
-                            CompositToken { orthography } ->
-                                Just orthography
-
-                            _ ->
-                                Nothing
-                    )
-    in
-    if List.length orthography_seq > 1 then
-        Just
-            { id = Nothing
-            , langId = langId
-            , orthographySeq = orthography_seq
-            , definition = ""
-            , notes = ""
-            , originalContext = ""
-            , status = Unmarked
-            }
-
-    else
-        Nothing
-
-
 update : DictContext.T -> Msg -> Model -> ( Model, Effect Msg )
 update dict_ctx msg model =
     case msg of
@@ -280,7 +247,7 @@ update dict_ctx msg model =
                             switchToTokenEdit dict_ctx (getSentenceConstituentOrthography non_phrase_tkn)
 
                         ( Just con_slice, Nothing, _ ) ->
-                            case getPhraseFromConstituentSlice dict_ctx.lang_id con_slice of
+                            case FocusContext.getPhraseFromConstituentSlice dict_ctx.lang_id con_slice of
                                 Just phrase ->
                                     TermForm
                                         { orig_term = PhraseTerm phrase

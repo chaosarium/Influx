@@ -1,7 +1,7 @@
 module Datastore.FocusContext exposing (..)
 
 import Api.GetAnnotatedDoc exposing (get)
-import Bindings exposing (AnnotatedDocument, DocumentConstituent(..), SentenceConstituent)
+import Bindings exposing (..)
 import Datastore.DocContext as DocContext
 
 
@@ -259,3 +259,36 @@ isDocCstInSlice slice con =
 
         Bindings.DocumentWhitespace { startChar, endChar } ->
             startChar >= slice.sc && endChar <= slice.ec
+
+
+getPhraseFromConstituentSlice : InfluxResourceId -> List SentenceConstituent -> Maybe Phrase
+getPhraseFromConstituentSlice langId constituents =
+    let
+        orthography_seq =
+            constituents
+                |> List.filterMap
+                    (\cst ->
+                        case cst of
+                            SingleToken { orthography } ->
+                                Just orthography
+
+                            CompositToken { orthography } ->
+                                Just orthography
+
+                            _ ->
+                                Nothing
+                    )
+    in
+    if List.length orthography_seq > 1 then
+        Just
+            { id = Nothing
+            , langId = langId
+            , orthographySeq = orthography_seq
+            , definition = ""
+            , notes = ""
+            , originalContext = ""
+            , status = Unmarked
+            }
+
+    else
+        Nothing
