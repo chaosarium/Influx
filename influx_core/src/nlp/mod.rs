@@ -65,7 +65,7 @@ pub enum DocumentConstituent {
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 // #[serde(tag = "type")]
 pub enum SentenceConstituent {
-    CompositToken {
+    MultiwordToken {
         sentence_id: usize,
         ids: Vec<usize>,
         text: String,
@@ -118,7 +118,7 @@ pub enum SentenceConstituent {
 impl SentenceConstituent {
     fn mark_shadowed(&mut self) {
         match self {
-            SentenceConstituent::CompositToken { shadowed, .. } => *shadowed = true,
+            SentenceConstituent::MultiwordToken { shadowed, .. } => *shadowed = true,
             SentenceConstituent::SubwordToken { shadowed, .. } => *shadowed = true,
             SentenceConstituent::SingleToken { shadowed, .. } => *shadowed = true,
             SentenceConstituent::SentenceWhitespace { shadowed, .. } => *shadowed = true,
@@ -128,7 +128,7 @@ impl SentenceConstituent {
 
     fn push_shadow(&mut self, shadow: SentenceConstituent) {
         match self {
-            SentenceConstituent::CompositToken { shadows, .. } => shadows.push(shadow),
+            SentenceConstituent::MultiwordToken { shadows, .. } => shadows.push(shadow),
             SentenceConstituent::SubwordToken { shadows, .. } => shadows.push(shadow),
             SentenceConstituent::SingleToken { shadows, .. } => shadows.push(shadow),
             SentenceConstituent::SentenceWhitespace { shadows, .. } => shadows.push(shadow),
@@ -138,7 +138,7 @@ impl SentenceConstituent {
 
     fn get_text(&self) -> String {
         match self {
-            SentenceConstituent::CompositToken { text, .. } => text.clone(),
+            SentenceConstituent::MultiwordToken { text, .. } => text.clone(),
             SentenceConstituent::SubwordToken { text, .. } => text.clone(),
             SentenceConstituent::SingleToken { text, .. } => text.clone(),
             SentenceConstituent::SentenceWhitespace { text, .. } => text.clone(),
@@ -147,7 +147,7 @@ impl SentenceConstituent {
     }
     fn has_start_and_end(&self) -> bool {
         match self {
-            SentenceConstituent::CompositToken { .. } => true,
+            SentenceConstituent::MultiwordToken { .. } => true,
             SentenceConstituent::SubwordToken { .. } => false,
             SentenceConstituent::SingleToken { .. } => true,
             SentenceConstituent::SentenceWhitespace { .. } => true,
@@ -156,7 +156,7 @@ impl SentenceConstituent {
     }
     fn get_start_char(&self) -> usize {
         match self {
-            SentenceConstituent::CompositToken { start_char, .. } => *start_char,
+            SentenceConstituent::MultiwordToken { start_char, .. } => *start_char,
             SentenceConstituent::SubwordToken { .. } => panic!("SubwordToken has no start_char"),
             SentenceConstituent::SingleToken { start_char, .. } => *start_char,
             SentenceConstituent::SentenceWhitespace { start_char, .. } => *start_char,
@@ -165,7 +165,7 @@ impl SentenceConstituent {
     }
     fn get_end_char(&self) -> usize {
         match self {
-            SentenceConstituent::CompositToken { end_char, .. } => *end_char,
+            SentenceConstituent::MultiwordToken { end_char, .. } => *end_char,
             SentenceConstituent::SubwordToken { .. } => panic!("SubwordToken has no end_char"),
             SentenceConstituent::SingleToken { end_char, .. } => *end_char,
             SentenceConstituent::SentenceWhitespace { end_char, .. } => *end_char,
@@ -228,7 +228,7 @@ fn stanza2document(stanzares: NLPServerReturn) -> anyhow::Result<AnnotatedDocume
         for token_group in sentence.iter() {
             let mut children2parent: HashMap<usize, usize> = HashMap::new();
 
-            // first pass, collect `CompositToken`s with their shadows temporiarily blank
+            // first pass, collect `MultiwordToken`s with their shadows temporiarily blank
             // point childrens to their parents via `children2parent` map
             for stanzatoken in token_group {
                 match stanzatoken.get("id") {
@@ -237,7 +237,7 @@ fn stanza2document(stanzares: NLPServerReturn) -> anyhow::Result<AnnotatedDocume
                             .iter()
                             .map(|x| x.as_u64().unwrap() as usize)
                             .collect::<Vec<usize>>();
-                        intermediate_tokens.push_back(SentenceConstituent::CompositToken {
+                        intermediate_tokens.push_back(SentenceConstituent::MultiwordToken {
                             sentence_id: sentence_id,
                             ids: subtokenids.clone(),
                             text: stanzatoken_get_text(stanzatoken),
@@ -259,7 +259,7 @@ fn stanza2document(stanzares: NLPServerReturn) -> anyhow::Result<AnnotatedDocume
                 }
             }
 
-            // second pass, collect non composit tokens, fill in `CompositToken` shadows or add to `intermediate_tokens` depending on whether they are shadowed
+            // second pass, collect non multiword tokens, fill in `MultiwordToken` shadows or add to `intermediate_tokens` depending on whether they are shadowed
             for stanzatoken in token_group {
                 match stanzatoken.get("id") {
                     Some(Value::Array(subtokenids)) => (),
@@ -328,7 +328,7 @@ fn stanza2document(stanzares: NLPServerReturn) -> anyhow::Result<AnnotatedDocume
 
             match token {
                 SentenceConstituent::SubwordToken { .. } => tokens.push(token),
-                SentenceConstituent::CompositToken {
+                SentenceConstituent::MultiwordToken {
                     start_char,
                     end_char,
                     ..
@@ -502,7 +502,7 @@ pub fn phrase_fit_pipeline(
                             SentenceConstituent::SingleToken { orthography, .. } => {
                                 Some((i, orthography.clone()))
                             }
-                            SentenceConstituent::CompositToken { orthography, .. } => {
+                            SentenceConstituent::MultiwordToken { orthography, .. } => {
                                 Some((i, orthography.clone()))
                             }
                             _ => None,
@@ -805,7 +805,7 @@ mod tests {
                     start_char: 0,
                     end_char: 10,
                     constituents: vec![
-                        SentenceConstituent::CompositToken {
+                        SentenceConstituent::MultiwordToken {
                             sentence_id: 0,
                             ids: vec![1, 2,],
                             text: "Let's".to_string(),

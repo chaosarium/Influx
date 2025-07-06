@@ -106,7 +106,7 @@ getStartEndIdxs cst =
                 _ ->
                     Debug.todo "unreachable, first or last token of shadows should have id"
 
-        Bindings.CompositToken { sentenceId, shadows, startChar, endChar } ->
+        Bindings.MultiwordToken { sentenceId, shadows, startChar, endChar } ->
             case getFirstLastIds shadows of
                 ( Just firstId, Just lastId ) ->
                     ( { s = sentenceId, t = firstId, c = startChar }, { s = sentenceId, t = lastId, c = endChar } )
@@ -244,7 +244,7 @@ isCstInSlice slice con =
         Bindings.PhraseToken { startChar, endChar } ->
             startChar >= slice.sc && endChar <= slice.ec
 
-        Bindings.CompositToken { startChar, endChar } ->
+        Bindings.MultiwordToken { startChar, endChar } ->
             startChar >= slice.sc && endChar <= slice.ec
 
         Bindings.SentenceWhitespace { startChar, endChar } ->
@@ -272,7 +272,7 @@ getPhraseFromConstituentSlice langId constituents =
                             SingleToken { orthography } ->
                                 Just orthography
 
-                            CompositToken { orthography } ->
+                            MultiwordToken { orthography } ->
                                 Just orthography
 
                             _ ->

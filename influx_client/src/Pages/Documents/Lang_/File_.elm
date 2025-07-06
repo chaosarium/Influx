@@ -166,8 +166,8 @@ subscriptions model =
 viewConExtraInfo : SentenceConstituent -> Html msg
 viewConExtraInfo con =
     case con of
-        Bindings.CompositToken { shadows } ->
-            Html.span [] [ Html.text "=  ", AnnotatedText.viewCompositTokenShadows shadows ]
+        Bindings.MultiwordToken { shadows } ->
+            Html.span [] [ Html.text "=  ", AnnotatedText.viewMultiwordTokenShadows shadows ]
 
         Bindings.SubwordToken { orthography, lemma } ->
             Utils.htmlIf (orthography /= lemma) <| Html.span [] [ Html.text (" (lemma is " ++ lemma ++ ")") ]

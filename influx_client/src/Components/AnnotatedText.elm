@@ -1,4 +1,4 @@
-module Components.AnnotatedText exposing (view, viewCompositTokenShadows, viewSentenceConstituent)
+module Components.AnnotatedText exposing (view, viewMultiwordTokenShadows, viewSentenceConstituent)
 
 import Bindings exposing (..)
 import Datastore.DictContext
@@ -53,7 +53,7 @@ viewDocumentConstituent args constituent =
 getShadowed : SentenceConstituent -> Bool
 getShadowed cst =
     case cst of
-        CompositToken { shadowed } ->
+        MultiwordToken { shadowed } ->
             shadowed
 
         SubwordToken { shadowed } ->
@@ -79,17 +79,17 @@ phraseDictLookup dict_ctx orthography =
     Dict.get orthography dict_ctx.phraseDict
 
 
-viewCompositTokenShadow :
+viewMultiwordTokenShadow :
     SentenceConstituent
     -> Html msg
-viewCompositTokenShadow cst =
+viewMultiwordTokenShadow cst =
     let
         attrs =
             []
     in
     case cst of
-        CompositToken { text } ->
-            Utils.unreachableHtml "CompositToken within CompositToken???"
+        MultiwordToken { text } ->
+            Utils.unreachableHtml "MultiwordToken within MultiwordToken???"
 
         SubwordToken { text } ->
             span (attrs ++ [ class "subword-token-span" ]) [ Html.text text ]
@@ -104,12 +104,12 @@ viewCompositTokenShadow cst =
             span (attrs ++ [ class "sentence-whitespace-span" ]) [ Html.text text ]
 
 
-viewCompositTokenShadows :
+viewMultiwordTokenShadows :
     List SentenceConstituent
     -> Html msg
-viewCompositTokenShadows csts =
-    span [ class "composit-token-shadows-span" ]
-        (List.intersperse (span [ class "sentence-whitespace-span" ] [ Html.text " " ]) (List.map viewCompositTokenShadow csts))
+viewMultiwordTokenShadows csts =
+    span [ class "multiword-token-shadows-span" ]
+        (List.intersperse (span [ class "sentence-whitespace-span" ] [ Html.text " " ]) (List.map viewMultiwordTokenShadow csts))
 
 
 viewPhraseSubconstituent :
@@ -126,8 +126,8 @@ viewPhraseSubconstituent args cst =
             ]
     in
     case cst of
-        CompositToken { text } ->
-            span (attrs ++ [ class "composit-token-span" ]) [ Html.text text ]
+        MultiwordToken { text } ->
+            span (attrs ++ [ class "multiword-token-span" ]) [ Html.text text ]
 
         SubwordToken { text } ->
             span (attrs ++ [ class "subword-token-span" ]) [ Html.text text ]
@@ -243,13 +243,13 @@ viewSentenceConstituent args cst =
     else
         Just
             (case cst of
-                CompositToken { text } ->
+                MultiwordToken { text } ->
                     case tokenDictLookup args.dict text of
                         Nothing ->
-                            viewUnregisteredTkn [ class "composit-token-span" ] text
+                            viewUnregisteredTkn [ class "multiword-token-span" ] text
 
                         Just tkn ->
-                            viewRegisteredTkn args [ class "composit-token-span" ] text tkn cst
+                            viewRegisteredTkn args [ class "multiword-token-span" ] text tkn cst
 
                 SubwordToken { text, orthography } ->
                     case tokenDictLookup args.dict orthography of

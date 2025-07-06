@@ -6,7 +6,7 @@ import Bindings exposing (..)
 getSentenceConstituentOrthography : SentenceConstituent -> String
 getSentenceConstituentOrthography sc =
     case sc of
-        CompositToken { orthography } ->
+        MultiwordToken { orthography } ->
             orthography
 
         SubwordToken { orthography } ->
