@@ -16,41 +16,15 @@ use ts_rs::TS;
 
 use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
+use crate::db::InfluxResourceId;
 use crate::utils::trie::Trie;
 pub mod phrase_fitting;
 use reqwest::Client;
 use serde_json::json;
 use serde_json::value::Value;
 
-// from https://pyo3.rs/v0.20.0/
-// #[deprecated]
-// pub fn run_some_python() -> PyResult<()> {
-//     Python::with_gil(|py| {
-//         let sys = py.import("sys")?;
-//         let version: String = sys.getattr("version")?.extract()?;
-
-//         let code = "os.getenv('USER') or os.getenv('USERNAME') or 'Unknown'";
-//         let locals = [("os", py.import("os")?)].into_py_dict(py);
-//         let user: String = py.eval(code, None, Some(&locals))?.extract()?;
-//         println!("Hello {}, I'm Python {}", user, version);
-
-//         // println!("listing available python modules...");
-//         // py.eval("help('modules')", None, None)?;
-
-//         println!("python's sys.path...");
-//         let pythonsyspath: Vec<String> = sys.getattr("path")?.extract()?;
-//         println!("{:?}", pythonsyspath);
-
-//         println!("trying to import stanza");
-//         let stanza = PyModule::import(py, "stanza")?;
-
-//         Ok(())
-//     })
-// }
-
-// type StanzaResult = (String, usize, usize, Vec<Vec<Vec<BTreeMap<String, RustyEnum>>>>);
-
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default, Elm, ElmEncode, ElmDecode)]
+// TODO pull token_dict and phrase_dict out of AnnotatedDocument
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 pub struct AnnotatedDocument {
     pub text: String,
     pub constituents: Vec<DocumentConstituent>,
@@ -468,36 +442,6 @@ pub async fn tokenise_pipeline(
     text: &str,
     language_code: String,
 ) -> anyhow::Result<AnnotatedDocument> {
-    // let current_dir = env::current_dir()?;
-    // let pylib_path = current_dir.join("./src/nlp/pylib").canonicalize()?;
-
-    // Python::with_gil(|py| {
-    //     let stanza = PyModule::import(py, "stanza")?;
-
-    //     let pylib_path_str = pylib_path.to_str().unwrap();
-    //     let code = indoc!(
-    //         r#"
-    //         import sys, os
-    //         sys.path.insert(0, os.path.abspath("{path}"))
-    //         from stanza_integration import fun
-    //         "#
-    //     );
-    //     let code = code.replace("{path}", pylib_path_str);
-
-    //     let fun: Py<PyAny> = PyModule::from_code(
-    //         py, &code, "", "",
-    //     )?.getattr("fun")?.into();
-
-    //     let callret = fun
-    //         .call1(py, (text, language))?
-    //         .extract::<StanzaResult>(py);
-
-    //     // dbg!(&callret);
-
-    //     let converteddoc = stanza2document(callret?)?;
-
-    //     Ok(converteddoc)
-    // })
 
     let client = Client::new();
     let url = format!("http://127.0.0.1:3001/tokeniser/{}", language_code);

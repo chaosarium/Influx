@@ -147,6 +147,7 @@ pub async fn get_doc(
 
     let result = GetDocResponse {
         metadata,
+        lang_id,
         text,
         annotated_doc: tokenised_phrased_annotated_doc,
     };

@@ -196,7 +196,7 @@ handleGotTermEditAck model label res =
                                 model.form_model
 
                         ( TermForm { orig_term, working_term }, PhraseTerm phrase ) ->
-                            if (BindingsUtils.orthographySeqToNormalized phrase.orthographySeq) == (getTermOrthography working_term |> Maybe.withDefault "") then
+                            if BindingsUtils.orthographySeqToNormalized phrase.orthographySeq == (getTermOrthography working_term |> Maybe.withDefault "") then
                                 TermForm
                                     { orig_term = PhraseTerm phrase
                                     , write_action = Utils.maybeSelect phrase.id Update Create
@@ -230,8 +230,8 @@ getTermOrthography term =
             Just (BindingsUtils.orthographySeqToNormalized phrase.orthographySeq)
 
 
-getPhraseFromConstituentSlice : List SentenceConstituent -> Maybe Phrase
-getPhraseFromConstituentSlice constituents =
+getPhraseFromConstituentSlice : InfluxResourceId -> List SentenceConstituent -> Maybe Phrase
+getPhraseFromConstituentSlice langId constituents =
     let
         orthography_seq =
             constituents
@@ -251,7 +251,7 @@ getPhraseFromConstituentSlice constituents =
     if List.length orthography_seq > 1 then
         Just
             { id = Nothing
-            , langId = SerialId -1 -- Placeholder, should be replaced with actual langId
+            , langId = langId
             , orthographySeq = orthography_seq
             , definition = ""
             , notes = ""
@@ -280,7 +280,7 @@ update dict_ctx msg model =
                             switchToTokenEdit dict_ctx (getSentenceConstituentOrthography non_phrase_tkn)
 
                         ( Just con_slice, Nothing, _ ) ->
-                            case getPhraseFromConstituentSlice con_slice of
+                            case getPhraseFromConstituentSlice dict_ctx.lang_id con_slice of
                                 Just phrase ->
                                     TermForm
                                         { orig_term = PhraseTerm phrase

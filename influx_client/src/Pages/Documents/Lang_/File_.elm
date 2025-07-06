@@ -90,7 +90,6 @@ type Msg
 
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
-    -- base event handling
     case msg of
         ApiResponded (Ok res) ->
             let
@@ -99,8 +98,8 @@ update msg model =
             in
             ( { model
                 | get_doc_api_res = Api.Success res
-                , working_doc = DocContext.fromAnnotatedDocument res.annotatedDoc
-                , working_dict = DictContext.fromAnnotatedDocument res.annotatedDoc
+                , working_doc = DocContext.fromAnnotatedDocument res.langId res.annotatedDoc
+                , working_dict = DictContext.fromAnnotatedDocument res.langId res.annotatedDoc
               }
             , Effect.none
             )
@@ -267,7 +266,6 @@ view route model =
                 (Maybe.andThen (AnnotatedText.viewSentenceConstituent { selectedConstViewCtx | bypass_shadowned = False }) model.focus_ctx.constituent_selection)
             , Html.Extra.viewMaybe (\con -> viewConExtraInfo con) model.focus_ctx.constituent_selection
             ]
-
         , TermEditForm.view model.form_model
             TermEditorEvent
             { dict = model.working_dict

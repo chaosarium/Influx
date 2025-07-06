@@ -12,6 +12,7 @@ import Dict exposing (Dict)
 type alias T =
     { tokenDict : Dict String Token
     , phraseDict : Dict String Phrase
+    , lang_id : InfluxResourceId
     }
 
 
@@ -23,11 +24,12 @@ empty : T
 empty =
     { tokenDict = Dict.empty
     , phraseDict = Dict.empty
+    , lang_id = SerialId -1 -- placeholder
     }
 
 
-fromAnnotatedDocument : Bindings.AnnotatedDocument -> T
-fromAnnotatedDocument annotated_doc =
+fromAnnotatedDocument : InfluxResourceId -> Bindings.AnnotatedDocument -> T
+fromAnnotatedDocument lang_id annotated_doc =
     { tokenDict =
         case annotated_doc.tokenDict of
             Nothing ->
@@ -42,6 +44,7 @@ fromAnnotatedDocument annotated_doc =
 
             Just phraseDict ->
                 phraseDict
+    , lang_id = lang_id
     }
 
 

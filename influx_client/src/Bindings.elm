@@ -260,6 +260,7 @@ termEditActionEncoder enum =
 
 type alias GetDocResponse =
     { metadata : DocMetadata
+    , langId : InfluxResourceId
     , text : String
     , annotatedDoc : AnnotatedDocument
     }
@@ -269,6 +270,7 @@ getDocResponseEncoder : GetDocResponse -> Json.Encode.Value
 getDocResponseEncoder struct =
     Json.Encode.object
         [ ( "metadata", (docMetadataEncoder) struct.metadata )
+        , ( "lang_id", (influxResourceIdEncoder) struct.langId )
         , ( "text", (Json.Encode.string) struct.text )
         , ( "annotated_doc", (annotatedDocumentEncoder) struct.annotatedDoc )
         ]
@@ -575,6 +577,7 @@ getDocResponseDecoder : Json.Decode.Decoder GetDocResponse
 getDocResponseDecoder =
     Json.Decode.succeed GetDocResponse
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "metadata" (docMetadataDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lang_id" (influxResourceIdDecoder)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "annotated_doc" (annotatedDocumentDecoder)))
 

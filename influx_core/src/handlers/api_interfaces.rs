@@ -1,5 +1,6 @@
 use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
+use crate::db::InfluxResourceId;
 use crate::doc_store;
 use crate::nlp;
 use crate::prelude::*;
@@ -56,6 +57,7 @@ pub struct TermEditResponse {
 #[derive(Serialize, Deserialize, Debug, Clone, Elm, ElmEncode, ElmDecode)]
 pub struct GetDocResponse {
     pub metadata: doc_store::DocMetadata,
+    pub lang_id: InfluxResourceId,
     pub text: String,
     pub annotated_doc: nlp::AnnotatedDocument,
 }
