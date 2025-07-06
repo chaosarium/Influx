@@ -4,7 +4,6 @@ import Api
 import Api.GetAnnotatedDoc
 import Api.TermEdit
 import Bindings exposing (..)
-import Browser.Events exposing (onMouseUp)
 import Components.AnnotatedText as AnnotatedText
 import Components.DbgDisplay
 import Components.TermEditForm as TermEditForm
@@ -14,10 +13,9 @@ import Datastore.DocContext as DocContext
 import Datastore.FocusContext as FocusContext
 import Effect exposing (Effect)
 import Html exposing (..)
-import Html.Attributes exposing (alt, class, src)
+import Html.Attributes exposing (class)
 import Html.Extra
 import Http
-import Json.Decode
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
