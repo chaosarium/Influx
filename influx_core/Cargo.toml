@@ -1,0 +1,55 @@
+[package]
+name = "influx_core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Lómenoirë Mortecc."]
+rust-version = "1.80"
+readme = "../README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = "0.8.1"
+tokio = { version = "1.42.0", features = ["full"] }
+tower = { version = "0.5.2", features = ["util", "timeout"] }
+tower-http = { version = "0.6.2", features = ["add-extension", "trace", "cors"] }
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+
+serde = { version = "1.0.217", features = ["derive"] }
+uuid = { version = "1.11.0", features = ["serde", "v4"] }
+tracing = "0.1.41"
+
+thiserror = "2.0.9"
+anyhow = "1.0.95"
+clap = { version = "4.5.23", features = ["derive"] }
+ts-rs = { version = "10.1.0", features = ["format"] }
+yaml-front-matter = "0.1.0"
+chrono = { version="0.4.39", features = ["serde"] }
+maplit = "1.0.2"
+serde_json = "1.0.134"
+reqwest = { version="0.12.12", features=["json"] }
+surrealdb = {version = "2.1.4", features = [
+    'kv-mem', 
+    # 'kv-rocksdb'
+] }
+# pyo3 = { version="0.20.0", features = ['auto-initialize'] }
+indoc = "2.0.5"
+toml = "0.8.19"
+open = "5.3.1"
+async-trait = "0.1.84"
+google_translator = "0.2.3"
+md5 = "0.7.0"
+serde_yaml = "0.9.34"
+elm_rs = {version="0.2.2", features=['chrono']}
+log = "0.4.22"
+env_logger = "0.11.6"
+sqlx = {version = "0.8.3", features = [ "postgres", "runtime-tokio", "tls-native-tls", "time" ]}
+dotenvy = "0.15.7"
+
+
+# [profile.dev]
+# opt-level = 0
+
+# [target.aarch64-apple-darwin]
+# rustflags = ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
+

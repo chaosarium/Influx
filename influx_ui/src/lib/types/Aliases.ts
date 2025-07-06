@@ -1,1 +1,0 @@
-export type DocumentSlice = [[number, number, number], [number, number, number]];

@@ -1,0 +1,11 @@
+server:
+    elm-land server
+
+build:
+    elm-land build
+
+sass:
+    npm run dev:sass
+
+dev:
+    just sass & just server

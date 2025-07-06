@@ -1,0 +1,142 @@
+@use "./_theme.scss" as theme;
+@use "./radix-colors/gray.scss" as *;
+@use "./radix-colors/violet.scss" as *;
+@use "./radix-colors/red.scss" as *;
+@use "./radix-colors/orange.scss" as *;
+@use "./radix-colors/amber.scss" as *;
+@use "./radix-colors/lime.scss" as *;
+@use "./radix-colors/green.scss" as *;
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
+
+$uiFont: "Space Grotesk";
+
+body {
+    font-family: $uiFont, sans-serif;
+    color: theme.$foreground;
+    // background: theme.$background;
+}
+
+nav.navbar {
+    ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+    ul li {
+        display: inline;
+        margin-right: 10px;
+    }
+}
+
+// for debug stuff only
+
+div.dbg-container-div {
+    border: 1px rgb(219, 219, 219) solid;
+    background: repeating-linear-gradient(-45deg, #fff7e680, #fff7e680 10px, #fff7e6f0 10px, #fff7e6f0 20px);
+}
+
+pre.dbg-json-pre {
+    text-wrap: auto;
+    margin: 10px;
+}
+
+// text viewer
+
+.annotated-doc-div {
+    border-top: 1px solid rgb(233, 233, 233);
+    border-bottom: 1px solid rgb(233, 233, 233);
+    padding-top: 10px;
+    padding-bottom: 10px;
+    line-height: 1.8;
+}
+
+.dbg-on {
+    span.sentence-span {
+        border: 1px solid rgb(220, 172, 172);
+        padding-block: 2px;
+    }i
+
+    span.document-whitespace-span {
+        border: 1px dotted rgb(186, 166, 166);
+        white-space: pre-wrap;
+    }
+
+    span.composit-token-span {
+        border: 2px solid #60a5fa;
+    }
+
+    span.subword-token-span {
+        border: 1px solid #93c5fd;
+    }
+
+    span.single-token-span {
+        border: 1px solid #bfdbfe;
+    }
+
+    span.phrase-span {
+        border: 2px solid #05a239;
+        padding-block: 1px;
+    }
+
+    span.sentence-whitespace-span {
+        border: 1px dotted #38bdf8;
+    }
+}
+
+// tkn status
+span.tkn-unmarked {
+    background: $gray4;
+}
+span.tkn-ignored {
+    background: $violet4;
+}
+span.tkn-l1 {
+    background: $red4;
+}
+span.tkn-l2 {
+    background: $orange4;
+}
+span.tkn-l3 {
+    background: $amber4;
+}
+span.tkn-l4 {
+    background: $lime4;
+}
+span.tkn-l5 {
+    background: $green4;
+}
+span.tkn-known {
+    background: none;
+}
+span.tkn-nostatus {
+    background: red;
+}
+
+ruby {
+    ruby-position: under;
+}
+
+rtc {
+    ruby-position: over;
+}
+
+span.tkn-focus {
+    text-decoration: underline double;
+}
+
+span.clickable-tkn-span {
+    user-select: none;
+
+    &:hover {
+        cursor: pointer;
+        background-color: $gray7;
+    }
+}
+
+.dbg-unreachable {
+    background-color: $red9;
+}
+
+.dbg-todo {
+    background-color: $amber9;
+}

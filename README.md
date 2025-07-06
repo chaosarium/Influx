@@ -1,12 +1,10 @@
 # Influx
 
-Prototype for an integrated content-based language learning environment.
-
-[![wakatime](https://wakatime.com/badge/github/chaosarium/Influx.svg?style=for-the-badge)](https://wakatime.com/badge/github/chaosarium/Influx)
+Prototype for an integrated content-based language learning environment. This doc may be out of date.
 
 **Is this usable at its current state?**
 
-No. Not yet. It technically has a functioning database and text reader, but there is not yet any dictionary integration nor translation integration. The UI needs a lot of work. I have yet to figure out a way to package a binary built from rust with an embedding python interpreter.
+No. Not yet. It technically has a functioning database and text reader, but the dictionary and translation integrations are quite primitive. The UI needs a lot of work. I have yet to figure out a way to package a binary built from rust with an embedding python interpreter.
 
 **Its current state**
 
@@ -30,15 +28,14 @@ Also now with phrase support!
 
 ### Architecture
 
-- SurrealDB + Axum + Disk as backend service exposing an API
-- Python + Stanza via PyO3 for NLP
-- Svelte + Tailwind frontend that interacts with the API 
+- Axum + (SurrealDB or Postgres) + Disk as backend service exposing an API
+- Python + Stanza via another HTTP server (sad) for NLP
+- Elm frontend that interacts with the API 
 - Tauri as a desktop client
 - fsrs-rs for SRS algorithm
 
 ### Key issues to decide / address
 
-- language table in database + tokens relate to language vs. single database file for each language
 - how to handle lemmatization? should Stanza's lemma be used as default? how does user manually assign lemma? should lemma and reflexes be separate entries? how to relate them in the database?
 - how to integrate user-provided dictionaries?
 - how to allow extensions? should there be support for custom nlp scripts?
@@ -117,9 +114,8 @@ Also now with phrase support!
 
 - Current implementation is for rapid development. Change all unwrap to proper error handling. 
 - File on disk could lead to race condition, but probabily won't encounter in single user situation
-- Language settings could be on disk
+- Language settings could be on disk?
 - security? account? whatever for now as it's localhost
-- influx_api should be renamed influx_server
 
 ## Running development server
 
@@ -175,6 +171,8 @@ npm run dev
 ## Building
 
 ### Running Tauri development server
+
+Currently only supports Apple Silicon
 
 ```sh
 cargo tauri dev
