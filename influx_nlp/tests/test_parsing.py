@@ -581,21 +581,27 @@ def _print_segmentation_boundaries(segments):
             output.append(" / ".join(sentence_tokens))
     return "\n".join(output)
 
+
 def test_spacy_parser_segmentation_simple_en():
     parser = SpacyParser()
     text = "Hello world. This is a test."
     result = parser.parse(text, "en")
-    assert _print_segmentation_boundaries(result["segments"]) == snapshot("""\
+    assert _print_segmentation_boundaries(result["segments"]) == snapshot(
+        """\
 Hello / world / .
 This / is / a / test / .\
-""")
+"""
+    )
+
 
 def test_spacy_parser_segmentation_multiple_sentences_with_whitespace_en():
     parser = SpacyParser()
     text = "First sentence.  Second sentence.   Third sentence."
     result = parser.parse(text, "en")
-    assert _print_segmentation_boundaries(result["segments"]) == snapshot("""\
+    assert _print_segmentation_boundaries(result["segments"]) == snapshot(
+        """\
 First / sentence / .
 Second / sentence / .
 Third / sentence / .\
-""")
+"""
+    )
