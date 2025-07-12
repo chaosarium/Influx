@@ -25,7 +25,7 @@ def test_spacy_parser_en():
                                     "text": "This",
                                     "start_char": 0,
                                     "end_char": 4,
-                                    "inner": {"TokenCst": {"idx": 0, "orthography": "this"}},
+                                    "inner": {"TokenSeg": {"idx": 0, "orthography": "this"}},
                                     "attributes": {
                                         "lemma": "this",
                                         "is_punctuation": False,
@@ -48,7 +48,7 @@ def test_spacy_parser_en():
                                     "text": "is",
                                     "start_char": 5,
                                     "end_char": 7,
-                                    "inner": {"TokenCst": {"idx": 1, "orthography": "is"}},
+                                    "inner": {"TokenSeg": {"idx": 1, "orthography": "is"}},
                                     "attributes": {
                                         "lemma": "be",
                                         "is_punctuation": False,
@@ -77,7 +77,7 @@ def test_spacy_parser_en():
                                     "text": "a",
                                     "start_char": 8,
                                     "end_char": 9,
-                                    "inner": {"TokenCst": {"idx": 2, "orthography": "a"}},
+                                    "inner": {"TokenSeg": {"idx": 2, "orthography": "a"}},
                                     "attributes": {
                                         "lemma": "a",
                                         "is_punctuation": False,
@@ -100,7 +100,7 @@ def test_spacy_parser_en():
                                     "text": "test",
                                     "start_char": 10,
                                     "end_char": 14,
-                                    "inner": {"TokenCst": {"idx": 3, "orthography": "test"}},
+                                    "inner": {"TokenSeg": {"idx": 3, "orthography": "test"}},
                                     "attributes": {
                                         "lemma": "test",
                                         "is_punctuation": False,
@@ -115,7 +115,7 @@ def test_spacy_parser_en():
                                     "text": ".",
                                     "start_char": 14,
                                     "end_char": 15,
-                                    "inner": {"TokenCst": {"idx": 4, "orthography": "."}},
+                                    "inner": {"TokenSeg": {"idx": 4, "orthography": "."}},
                                     "attributes": {
                                         "lemma": ".",
                                         "is_punctuation": True,
@@ -158,7 +158,7 @@ def test_spacy_parser_ja():
                                     "text": "これ",
                                     "start_char": 0,
                                     "end_char": 2,
-                                    "inner": {"TokenCst": {"idx": 0, "orthography": "これ"}},
+                                    "inner": {"TokenSeg": {"idx": 0, "orthography": "これ"}},
                                     "attributes": {
                                         "lemma": "これ",
                                         "is_punctuation": False,
@@ -173,7 +173,7 @@ def test_spacy_parser_ja():
                                     "text": "は",
                                     "start_char": 2,
                                     "end_char": 3,
-                                    "inner": {"TokenCst": {"idx": 1, "orthography": "は"}},
+                                    "inner": {"TokenSeg": {"idx": 1, "orthography": "は"}},
                                     "attributes": {
                                         "lemma": "は",
                                         "is_punctuation": False,
@@ -188,7 +188,7 @@ def test_spacy_parser_ja():
                                     "text": "テスト",
                                     "start_char": 3,
                                     "end_char": 6,
-                                    "inner": {"TokenCst": {"idx": 2, "orthography": "テスト"}},
+                                    "inner": {"TokenSeg": {"idx": 2, "orthography": "テスト"}},
                                     "attributes": {
                                         "lemma": "テスト",
                                         "is_punctuation": False,
@@ -203,7 +203,7 @@ def test_spacy_parser_ja():
                                     "text": "です",
                                     "start_char": 6,
                                     "end_char": 8,
-                                    "inner": {"TokenCst": {"idx": 3, "orthography": "です"}},
+                                    "inner": {"TokenSeg": {"idx": 3, "orthography": "です"}},
                                     "attributes": {
                                         "lemma": "です",
                                         "is_punctuation": False,
@@ -218,7 +218,7 @@ def test_spacy_parser_ja():
                                     "text": "。",
                                     "start_char": 8,
                                     "end_char": 9,
-                                    "inner": {"TokenCst": {"idx": 4, "orthography": "。"}},
+                                    "inner": {"TokenSeg": {"idx": 4, "orthography": "。"}},
                                     "attributes": {
                                         "lemma": "。",
                                         "is_punctuation": True,

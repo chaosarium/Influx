@@ -7,7 +7,7 @@ from .annotation import (
     DocSegSentence,
     DocSegDocumentWhitespace,
     SentSegV2,
-    SentSegTokenCst,
+    SentSegTokenSeg,
     SentSegWhitespaceSeg,
     SegAttribute,
 )
@@ -151,7 +151,7 @@ class SpacyParser(BaseParser):
                     misc=token.morph.to_dict(),
                 )
 
-                token_cst: SentSegTokenCst = SentSegTokenCst(
+                token_seg: SentSegTokenSeg = SentSegTokenSeg(
                     idx=token.i, orthography=orthography
                 )
 
@@ -161,7 +161,7 @@ class SpacyParser(BaseParser):
                         text=token.text,
                         start_char=token.idx,
                         end_char=token.idx + len(token.text),
-                        inner=token_cst,
+                        inner=token_seg,
                         attributes=attributes,
                     )
                 )

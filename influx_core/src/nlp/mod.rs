@@ -58,11 +58,11 @@ pub struct DocSegV2 {
 /// Sentence segment variants
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 pub enum SentSegVariants {
-    TokenCst {
+    TokenSeg {
         idx : usize,
         orthography: String,
     }, 
-    PhraseCst {
+    PhraseSeg {
         /// lowercase, with each token orthography separated by a space, to make JavaScript type work out.
         normalised_orthography: String,
         components: Vec<SentSegV2>,
@@ -135,7 +135,7 @@ pub fn phrase_fit_pipeline(
     dbg!(&potential_phrases);
 
     let mut phrase_dict: HashMap<String, Phrase> = HashMap::new();
-    let fitted_doc_cst: Vec<DocSegV2> = document
+    let fitted_doc_seg: Vec<DocSegV2> = document
         .segments
         .into_iter()
         .map(|document_segment| {
@@ -149,22 +149,22 @@ pub fn phrase_fit_pipeline(
                 DocSegVariants::Sentence { segments } => {
                     let original_segments = segments.clone();
 
-                    let lex_constituents = segments
+                    let lex_segments = segments
                         .iter()
                         .enumerate()
                         .filter_map(|(i, x)| match &x.inner {
-                            SentSegVariants::TokenCst { orthography, .. } => {
+                            SentSegVariants::TokenSeg { orthography, .. } => {
                                 Some((i, orthography.clone()))
                             }
                             _ => None,
                         })
                         .collect::<Vec<(usize, String)>>();
-                    let lex_constituents_orthographies = lex_constituents
+                    let lex_segment_orthographies = lex_segments
                         .iter()
                         .map(|(_, orthography)| orthography.clone())
                         .collect::<Vec<String>>();
                     let lex_phrase_slices_indices = phrase_fitting::dp_best_fit(
-                        lex_constituents_orthographies.clone(),
+                        lex_segment_orthographies.clone(),
                         &potential_phrases,
                     );
                     let lex_phrase_slices_indices = lex_phrase_slices_indices
@@ -189,11 +189,11 @@ pub fn phrase_fit_pipeline(
                     let phrase_slices = lex_phrase_slices_indices
                         .iter()
                         .map(|(lex_start, lex_end)| {
-                            let start = lex_constituents[*lex_start].0;
+                            let start = lex_segments[*lex_start].0;
                             let end = {
                                 match lex_end {
                                     0 => 0,
-                                    _ => lex_constituents[*lex_end - 1].0 + 1,
+                                    _ => lex_segments[*lex_end - 1].0 + 1,
                                 }
                             };
                             ((start, end), (*lex_start, *lex_end))
@@ -216,12 +216,12 @@ pub fn phrase_fit_pipeline(
                             // Add the phrase token
                             let phrase = potential_phrases
                                 .search_for_payload(
-                                    lex_constituents_orthographies[*lex_start..*lex_end].to_vec(),
+                                    lex_segment_orthographies[*lex_start..*lex_end].to_vec(),
                                 )
                                 .1
                                 .unwrap();
                             phrase_dict.insert(
-                                lex_constituents_orthographies[*lex_start..*lex_end].join(" "),
+                                lex_segment_orthographies[*lex_start..*lex_end].join(" "),
                                 phrase.clone(),
                             );
                             let phrase_start_char = original_segments[*start].start_char;
@@ -237,8 +237,8 @@ pub fn phrase_fit_pipeline(
                                 text: phrase_text,
                                 start_char: phrase_start_char,
                                 end_char: phrase_end_char,
-                                inner: SentSegVariants::PhraseCst {
-                                    normalised_orthography: lex_constituents_orthographies
+                                inner: SentSegVariants::PhraseSeg {
+                                    normalised_orthography: lex_segment_orthographies
                                         [*lex_start..*lex_end]
                                         .join(" "),
                                     components: original_segments[*start..*end].to_vec(),
@@ -274,7 +274,7 @@ pub fn phrase_fit_pipeline(
 
     AnnotatedDocV2 {
         text: document.text,
-        segments: fitted_doc_cst,
+        segments: fitted_doc_seg,
         orthography_set: document.orthography_set,
         lemma_set: document.lemma_set,
         token_dict: document.token_dict,
@@ -309,8 +309,8 @@ mod tests {
                                     text: "Hello",
                                     start_char: 0,
                                     end_char: 5,
-                                    inner: TokenCst {
-                                        idx: 1,
+                                    inner: TokenSeg {
+                                        idx: 0,
                                         orthography: "hello",
                                     },
                                     attributes: SegAttribute {
@@ -326,8 +326,13 @@ mod tests {
                                         xpos: Some(
                                             "UH",
                                         ),
-                                        dependency: None,
-                                        misc: HashMap::new(),
+                                        dependency: Some(
+                                            (
+                                                0,
+                                                "ROOT",
+                                            ),
+                                        ),
+                                        misc: {},
                                     },
                                 },
                                 SentSegV2 {
@@ -342,7 +347,7 @@ mod tests {
                                         upos: None,
                                         xpos: None,
                                         dependency: None,
-                                        misc: HashMap::new(),
+                                        misc: {},
                                     },
                                 },
                                 SentSegV2 {
@@ -350,8 +355,8 @@ mod tests {
                                     text: "world",
                                     start_char: 6,
                                     end_char: 11,
-                                    inner: TokenCst {
-                                        idx: 2,
+                                    inner: TokenSeg {
+                                        idx: 1,
                                         orthography: "world",
                                     },
                                     attributes: SegAttribute {
@@ -369,11 +374,13 @@ mod tests {
                                         ),
                                         dependency: Some(
                                             (
-                                                1,
-                                                "obj",
+                                                0,
+                                                "npadvmod",
                                             ),
                                         ),
-                                        misc: HashMap::new(),
+                                        misc: {
+                                            "Number": "Sing",
+                                        },
                                     },
                                 },
                                 SentSegV2 {
@@ -381,8 +388,8 @@ mod tests {
                                     text: "!",
                                     start_char: 11,
                                     end_char: 12,
-                                    inner: TokenCst {
-                                        idx: 3,
+                                    inner: TokenSeg {
+                                        idx: 2,
                                         orthography: "!",
                                     },
                                     attributes: SegAttribute {
@@ -400,11 +407,13 @@ mod tests {
                                         ),
                                         dependency: Some(
                                             (
-                                                1,
+                                                0,
                                                 "punct",
                                             ),
                                         ),
-                                        misc: HashMap::new(),
+                                        misc: {
+                                            "PunctType": "Peri",
+                                        },
                                     },
                                 },
                             ],
@@ -427,8 +436,8 @@ mod tests {
                                     text: "Hi",
                                     start_char: 13,
                                     end_char: 15,
-                                    inner: TokenCst {
-                                        idx: 1,
+                                    inner: TokenSeg {
+                                        idx: 3,
                                         orthography: "hi",
                                     },
                                     attributes: SegAttribute {
@@ -444,8 +453,13 @@ mod tests {
                                         xpos: Some(
                                             "UH",
                                         ),
-                                        dependency: None,
-                                        misc: HashMap::new(),
+                                        dependency: Some(
+                                            (
+                                                3,
+                                                "ROOT",
+                                            ),
+                                        ),
+                                        misc: {},
                                     },
                                 },
                                 SentSegV2 {
@@ -453,8 +467,8 @@ mod tests {
                                     text: "!",
                                     start_char: 15,
                                     end_char: 16,
-                                    inner: TokenCst {
-                                        idx: 2,
+                                    inner: TokenSeg {
+                                        idx: 4,
                                         orthography: "!",
                                     },
                                     attributes: SegAttribute {
@@ -472,11 +486,13 @@ mod tests {
                                         ),
                                         dependency: Some(
                                             (
-                                                1,
+                                                3,
                                                 "punct",
                                             ),
                                         ),
-                                        misc: HashMap::new(),
+                                        misc: {
+                                            "PunctType": "Peri",
+                                        },
                                     },
                                 },
                             ],
@@ -484,16 +500,16 @@ mod tests {
                     },
                 ],
                 orthography_set: {
-                    "!",
                     "hello",
                     "hi",
                     "world",
+                    "!",
                 },
                 lemma_set: {
-                    "!",
                     "hello",
-                    "hi",
                     "world",
+                    "hi",
+                    "!",
                 },
                 token_dict: None,
                 phrase_dict: None,
@@ -521,12 +537,12 @@ mod tests {
                             segments: [
                                 SentSegV2 {
                                     sentence_idx: 0,
-                                    text: "Let's",
+                                    text: "Let",
                                     start_char: 0,
-                                    end_char: 5,
-                                    inner: TokenCst {
-                                        idx: 1,
-                                        orthography: "let's",
+                                    end_char: 3,
+                                    inner: TokenSeg {
+                                        idx: 0,
+                                        orthography: "let",
                                     },
                                     attributes: SegAttribute {
                                         lemma: Some(
@@ -539,17 +555,57 @@ mod tests {
                                             "VERB",
                                         ),
                                         xpos: Some(
-                                            "VBZ",
+                                            "VB",
                                         ),
-                                        dependency: None,
-                                        misc: HashMap::new(),
+                                        dependency: Some(
+                                            (
+                                                0,
+                                                "ROOT",
+                                            ),
+                                        ),
+                                        misc: {
+                                            "VerbForm": "Inf",
+                                        },
                                     },
                                 },
                                 SentSegV2 {
                                     sentence_idx: 0,
-                                    text: "  ",
+                                    text: "'s",
+                                    start_char: 3,
+                                    end_char: 5,
+                                    inner: TokenSeg {
+                                        idx: 1,
+                                        orthography: "'s",
+                                    },
+                                    attributes: SegAttribute {
+                                        lemma: Some(
+                                            "us",
+                                        ),
+                                        is_punctuation: Some(
+                                            false,
+                                        ),
+                                        upos: Some(
+                                            "PRON",
+                                        ),
+                                        xpos: Some(
+                                            "PRP",
+                                        ),
+                                        dependency: Some(
+                                            (
+                                                3,
+                                                "nsubj",
+                                            ),
+                                        ),
+                                        misc: {
+                                            "PronType": "Prs",
+                                        },
+                                    },
+                                },
+                                SentSegV2 {
+                                    sentence_idx: 0,
+                                    text: " ",
                                     start_char: 5,
-                                    end_char: 7,
+                                    end_char: 6,
                                     inner: WhitespaceSeg,
                                     attributes: SegAttribute {
                                         lemma: None,
@@ -557,7 +613,38 @@ mod tests {
                                         upos: None,
                                         xpos: None,
                                         dependency: None,
-                                        misc: HashMap::new(),
+                                        misc: {},
+                                    },
+                                },
+                                SentSegV2 {
+                                    sentence_idx: 0,
+                                    text: " ",
+                                    start_char: 6,
+                                    end_char: 7,
+                                    inner: TokenSeg {
+                                        idx: 2,
+                                        orthography: " ",
+                                    },
+                                    attributes: SegAttribute {
+                                        lemma: Some(
+                                            " ",
+                                        ),
+                                        is_punctuation: Some(
+                                            false,
+                                        ),
+                                        upos: Some(
+                                            "SPACE",
+                                        ),
+                                        xpos: Some(
+                                            "_SP",
+                                        ),
+                                        dependency: Some(
+                                            (
+                                                1,
+                                                "dep",
+                                            ),
+                                        ),
+                                        misc: {},
                                     },
                                 },
                                 SentSegV2 {
@@ -565,7 +652,7 @@ mod tests {
                                     text: "go",
                                     start_char: 7,
                                     end_char: 9,
-                                    inner: TokenCst {
+                                    inner: TokenSeg {
                                         idx: 3,
                                         orthography: "go",
                                     },
@@ -584,11 +671,13 @@ mod tests {
                                         ),
                                         dependency: Some(
                                             (
-                                                1,
-                                                "advcl",
+                                                0,
+                                                "ccomp",
                                             ),
                                         ),
-                                        misc: HashMap::new(),
+                                        misc: {
+                                            "VerbForm": "Inf",
+                                        },
                                     },
                                 },
                                 SentSegV2 {
@@ -596,7 +685,7 @@ mod tests {
                                     text: ".",
                                     start_char: 9,
                                     end_char: 10,
-                                    inner: TokenCst {
+                                    inner: TokenSeg {
                                         idx: 4,
                                         orthography: ".",
                                     },
@@ -615,11 +704,13 @@ mod tests {
                                         ),
                                         dependency: Some(
                                             (
-                                                3,
+                                                0,
                                                 "punct",
                                             ),
                                         ),
-                                        misc: HashMap::new(),
+                                        misc: {
+                                            "PunctType": "Peri",
+                                        },
                                     },
                                 },
                             ],
@@ -627,14 +718,18 @@ mod tests {
                     },
                 ],
                 orthography_set: {
+                    "let",
+                    " ",
                     ".",
+                    "'s",
                     "go",
-                    "let's",
                 },
                 lemma_set: {
-                    ".",
                     "go",
                     "let",
+                    " ",
+                    ".",
+                    "us",
                 },
                 token_dict: None,
                 phrase_dict: None,
@@ -645,5 +740,4 @@ mod tests {
 
     // TODO phrase fitting tests
 
-    
 }

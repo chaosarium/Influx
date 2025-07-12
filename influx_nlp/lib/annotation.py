@@ -27,22 +27,22 @@ class SegAttribute:
 
 # Corresponds to Rust's `SentSegVariants`
 @dataclass
-class SentSegTokenCst:
+class SentSegTokenSeg:
     idx: int
     orthography: str
 
     def to_dict(self):
-        return {"TokenCst": {"idx": self.idx, "orthography": self.orthography}}
+        return {"TokenSeg": {"idx": self.idx, "orthography": self.orthography}}
 
 
 @dataclass
-class SentSegPhraseCst:
+class SentSegPhraseSeg:
     normalised_orthography: str
     components: List[SentSegV2]
 
     def to_dict(self):
         return {
-            "PhraseCst": {
+            "PhraseSeg": {
                 "normalised_orthography": self.normalised_orthography,
                 "components": [c.to_dict() for c in self.components],
             }
@@ -55,7 +55,7 @@ class SentSegWhitespaceSeg:
         return "WhitespaceSeg"
 
 
-SentSegVariants = Union[SentSegTokenCst, SentSegPhraseCst, SentSegWhitespaceSeg]
+SentSegVariants = Union[SentSegTokenSeg, SentSegPhraseSeg, SentSegWhitespaceSeg]
 
 
 # Corresponds to Rust's `SentSegV2`

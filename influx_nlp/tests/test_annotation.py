@@ -5,7 +5,7 @@ from lib.annotation import (
     DocSegV2,
     DocSegSentence,
     SentSegV2,
-    SentSegTokenCst,
+    SentSegTokenSeg,
     SentSegWhitespaceSeg,
     SegAttribute,
 )
@@ -27,7 +27,7 @@ def test_serialization_small():
                             text="Hello",
                             start_char=0,
                             end_char=5,
-                            inner=SentSegTokenCst(idx=0, orthography="hello"),
+                            inner=SentSegTokenSeg(idx=0, orthography="hello"),
                             attributes=SegAttribute(lemma="hello", upos="INTJ"),
                         ),
                         SentSegV2(
@@ -43,7 +43,7 @@ def test_serialization_small():
                             text="world",
                             start_char=6,
                             end_char=11,
-                            inner=SentSegTokenCst(idx=1, orthography="world"),
+                            inner=SentSegTokenSeg(idx=1, orthography="world"),
                             attributes=SegAttribute(lemma="world", upos="NOUN"),
                         ),
                         SentSegV2(
@@ -51,7 +51,7 @@ def test_serialization_small():
                             text="!",
                             start_char=11,
                             end_char=12,
-                            inner=SentSegTokenCst(idx=2, orthography="!"),
+                            inner=SentSegTokenSeg(idx=2, orthography="!"),
                             attributes=SegAttribute(lemma="!", upos="PUNCT", is_punctuation=True),
                         ),
                     ]
@@ -82,7 +82,7 @@ def test_serialization_small():
                                     "text": "Hello",
                                     "start_char": 0,
                                     "end_char": 5,
-                                    "inner": {"TokenCst": {"idx": 0, "orthography": "hello"}},
+                                    "inner": {"TokenSeg": {"idx": 0, "orthography": "hello"}},
                                     "attributes": {"lemma": "hello", "upos": "INTJ", "misc": {}},
                                 },
                                 {
@@ -98,7 +98,7 @@ def test_serialization_small():
                                     "text": "world",
                                     "start_char": 6,
                                     "end_char": 11,
-                                    "inner": {"TokenCst": {"idx": 1, "orthography": "world"}},
+                                    "inner": {"TokenSeg": {"idx": 1, "orthography": "world"}},
                                     "attributes": {"lemma": "world", "upos": "NOUN", "misc": {}},
                                 },
                                 {
@@ -106,7 +106,7 @@ def test_serialization_small():
                                     "text": "!",
                                     "start_char": 11,
                                     "end_char": 12,
-                                    "inner": {"TokenCst": {"idx": 2, "orthography": "!"}},
+                                    "inner": {"TokenSeg": {"idx": 2, "orthography": "!"}},
                                     "attributes": {"lemma": "!", "is_punctuation": True, "upos": "PUNCT", "misc": {}},
                                 },
                             ]
