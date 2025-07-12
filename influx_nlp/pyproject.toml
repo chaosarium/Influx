@@ -7,7 +7,10 @@ requires-python = ">=3.12"
 dependencies = [
     "deep-translator>=1.11.4",
     "flask>=3.1.0",
+    "ginza>=5.2.0",
     "ipykernel>=6.29.5",
+    "ja-ginza>=5.2.0",
+    "spacy>=3.8.7",
     "stanza>=1.10.1",
 ]
 

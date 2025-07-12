@@ -370,6 +370,21 @@ unidic = [
 ]
 
 [[package]]
+name = "ginza"
+version = "5.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "plac" },
+    { name = "spacy" },
+    { name = "sudachidict-core" },
+    { name = "sudachipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/66/8a/53db545ae22545c572cf40829c760ade5036a537f1eeacd925e9104ae7ce/ginza-5.2.0.tar.gz", hash = "sha256:a05e21b020637310c6763a670a70d6fdb0cc0ac2a996d54c7d9fa08f3fec640f", size = 27048 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7e/6f/beaaeac69a027d88064a450466d2f88d329d360dfbc54c78d0af4796a62d/ginza-5.2.0-py3-none-any.whl", hash = "sha256:0c81e69fc34070cdba583f6c35b701b0aa60ef486d73a052fe32917c47e55125", size = 21203 },
+]
+
+[[package]]
 name = "idna"
 version = "3.10"
 source = { registry = "https://pypi.org/simple" }
@@ -385,7 +400,10 @@ source = { virtual = "." }
 dependencies = [
     { name = "deep-translator" },
     { name = "flask" },
+    { name = "ginza" },
     { name = "ipykernel" },
+    { name = "ja-ginza" },
+    { name = "spacy" },
     { name = "stanza" },
 ]
 
@@ -407,7 +425,10 @@ dev = [
 requires-dist = [
     { name = "deep-translator", specifier = ">=1.11.4" },
     { name = "flask", specifier = ">=3.1.0" },
+    { name = "ginza", specifier = ">=5.2.0" },
     { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "ja-ginza", specifier = ">=5.2.0" },
+    { name = "spacy", specifier = ">=3.8.7" },
     { name = "stanza", specifier = ">=1.10.1" },
 ]
 
@@ -489,6 +510,21 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/9c/cb/8ac0172223afbccb63986cc25049b154ecfb5e85932587206f42317be31d/itsdangerous-2.2.0.tar.gz", hash = "sha256:e0050c0b7da1eea53ffaf149c0cfbb5c6e2e2b69c4bef22c81fa6eb73e5f6173", size = 54410 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/04/96/92447566d16df59b2a776c0fb82dbc4d9e07cd95062562af01e408583fc4/itsdangerous-2.2.0-py3-none-any.whl", hash = "sha256:c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef", size = 16234 },
+]
+
+[[package]]
+name = "ja-ginza"
+version = "5.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "ginza" },
+    { name = "spacy" },
+    { name = "sudachidict-core" },
+    { name = "sudachipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c5/9d/4b17a5b0e00f67fe69602af59d0779ac079076f0d82a84ffa8da0b18274f/ja_ginza-5.2.0.tar.gz", hash = "sha256:c12e875fbf30144acd05ca0e17dd211372777e9b762a2167862456e1894c605d", size = 58981719 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f0/f8/d1bbc8bd545e61cacb7c0f0fedcfc041e2853e573ec4825136a8bd85e586/ja_ginza-5.2.0-py3-none-any.whl", hash = "sha256:c31a2ac57a7c2a1440f7e58111e37306c20dfaf08fd5a3f6f065948ff126cb30", size = 59112919 },
 ]
 
 [[package]]
@@ -1468,6 +1504,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ee/d3/1e849c2fd5c31250534407205dcf10265defce35795c7fc9846d3b689848/stanza-1.10.1.tar.gz", hash = "sha256:f1b283021323ef9273fb1a751a194c0d568e373a2a11b933e2f4b600322406b2", size = 901628 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ac/f6/c50d0ee85e40687a81a95d90d426938d0d83ac0683efa2b87fa4110b665c/stanza-1.10.1-py3-none-any.whl", hash = "sha256:d0ebc22c7e7a201077e0ed88d2450e654acadb4ea0d8584d5a5eb2ae1e65c060", size = 1112060 },
+]
+
+[[package]]
+name = "sudachidict-core"
+version = "20250515"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sudachipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f7/84/647417933bff5de7d6fd9fd11a2d9005e68868b9ef6dd8c7ff32e7fcfc79/sudachidict_core-20250515.tar.gz", hash = "sha256:63be5499104f5cb5464c819739d9901bd886cb3c4b6ab59ae3f39e97a23f5603", size = 9050 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/39/df/83d0cf0d94e812519c8b556b6ad0b430d074e163eb917e161f90cce2d716/sudachidict_core-20250515-py3-none-any.whl", hash = "sha256:bcf0056eecfa360a92cea1251a04eeb19a5d16938559ecf52b67d4fbfa1c249f", size = 72127576 },
 ]
 
 [[package]]
