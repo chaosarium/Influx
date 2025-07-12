@@ -15,6 +15,7 @@ import Dict
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (class)
+import Html.Events
 import Html.Extra
 import Http
 import Page exposing (Page)
@@ -51,6 +52,7 @@ type alias Model =
     , working_dict : DictContext.T
     , focus_ctx : FocusContext.T
     , form_model : TermEditForm.Model
+    , toast_tray : Toast.Tray String
     }
 
 
@@ -67,6 +69,7 @@ init args () =
       , working_dict = DictContext.empty
       , focus_ctx = FocusContext.new
       , form_model = TermEditForm.empty
+      , toast_tray = Toast.tray
       }
     , Effect.sendCmd (Api.GetAnnotatedDoc.get args ApiResponded)
     )
@@ -86,15 +89,26 @@ type Msg
     | TermEditorEvent TermEditForm.Msg
       -- Shared
     | ModifierStateMsg ModifierState.Msg
+    | ToastMsg Toast.Msg
+    | AddToast String
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
+        ToastMsg tmsg ->
+            let
+                ( toast_tray, toast_cmd ) =
+                    Toast.update tmsg model.toast_tray
+            in
+            ( { model | toast_tray = toast_tray }
+            , Effect.sendCmd (Cmd.map ToastMsg toast_cmd)
+            )
+
         ApiResponded (Ok res) ->
             let
                 _ =
-                    Debug.log "ApiResponded" res
+                    Effect.none
             in
             ( { model
                 | get_doc_api_res = Api.Success res
@@ -137,6 +151,15 @@ update msg model =
                     , Effect.none
                     )
 
+                TermEditForm.AddToast message ->
+                    let
+                        ( toast_tray, toast_cmd ) =
+                            Toast.add model.toast_tray (Toast.expireIn 5000 message)
+                    in
+                    ( { model | toast_tray = toast_tray }
+                    , Effect.sendCmd (Cmd.map ToastMsg toast_cmd)
+                    )
+
                 _ ->
                     let
                         ( form_model, child_fx ) =
@@ -145,6 +168,15 @@ update msg model =
                     ( { model | form_model = form_model }
                     , Effect.map TermEditorEvent child_fx
                     )
+
+        AddToast message ->
+            let
+                ( toast_tray, toast_cmd ) =
+                    Toast.add model.toast_tray (Toast.expireIn 1000 message)
+            in
+            ( { model | toast_tray = toast_tray }
+            , Effect.sendCmd (Cmd.map ToastMsg toast_cmd)
+            )
 
         _ ->
             ( model, Effect.none )
@@ -233,7 +265,7 @@ view route model =
     { title = "File view"
     , body =
         [ Components.Topbar.view {}
-        , Components.DbgDisplay.view "route" route
+        , Html.div [ class "toast-tray" ] [ Toast.render viewToast model.toast_tray (Toast.config ToastMsg) ]
         , Html.h1 [] [ Html.text ("lang: " ++ route.params.lang ++ ", file: " ++ Utils.unwrappedPercentDecode route.params.file) ]
         , case model.get_doc_api_res of
             Api.Loading ->
@@ -243,7 +275,7 @@ view route model =
                 Html.text ("Error: " ++ Api.stringOfHttpErrMsg err)
 
             Api.Success _ ->
-                div [ class "annotated-doc-div dbg-on" ]
+                div [ class "annotated-doc-div" ]
                     (AnnotatedText.view
                         annotatedDocViewCtx
                         model.working_doc
@@ -270,6 +302,16 @@ view route model =
             TermEditorEvent
             { dict = model.working_dict
             }
-        , Components.DbgDisplay.view "model.focus_ctx" model.focus_ctx
+
+        -- for debugging. click to toast a message
+        , Html.button
+            [ Html.Events.onClick (AddToast "Test toast")
+            ]
+            [ Html.text "Test toast" ]
         ]
     }
+
+
+viewToast : List (Html.Attribute msg) -> Toast.Info String -> Html msg
+viewToast attributes toast =
+    Html.div (class "toast toast--spaced" :: attributes) [ Html.text toast.content ]

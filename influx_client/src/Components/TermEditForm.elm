@@ -66,6 +66,7 @@ type Msg
       -- upward propagation
     | RequestEditTerm TermEditAction Term
     | OverwriteTerm Term
+    | AddToast String
       -- downward propagation
     | EditingSegUpdated (Maybe (List SentSegV2)) (Maybe SentSegV2)
     | GotTermEditResponse (Result Http.Error TermEditResponse)
@@ -175,9 +176,6 @@ handleGotTermEditAck model label res =
     case res of
         Ok response ->
             let
-                _ =
-                    Debug.log (label ++ ": Success") response
-
                 updated_term =
                     response.term
             in
@@ -209,13 +207,13 @@ handleGotTermEditAck model label res =
                         _ ->
                             model.form_model
               }
-            , Effect.sendMsg <| OverwriteTerm updated_term
+            , Effect.batch [ Effect.sendMsg <| OverwriteTerm updated_term, Effect.sendMsg <| AddToast (label ++ ": Success") ]
             )
 
         Err err ->
             let
                 _ =
-                    Debug.log (label ++ ": Error") err
+                    Effect.sendMsg <| AddToast (label ++ ": Error: " ++ "Term edit failed.")
             in
             ( model, Effect.none )
 
