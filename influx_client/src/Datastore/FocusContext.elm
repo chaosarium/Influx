@@ -214,16 +214,7 @@ update doc_ctx msg t =
 
 isSentSegInSlice : SliceSelection -> SentSegV2 -> Bool
 isSentSegInSlice slice seg =
-    case seg.inner of
-        TokenSeg { idx } ->
-            ((seg.sentenceIdx == slice.ss && idx >= slice.st) || seg.sentenceIdx > slice.ss)
-                && ((seg.sentenceIdx == slice.es && idx <= slice.et) || seg.sentenceIdx < slice.es)
-
-        PhraseSeg _ ->
-            seg.startChar >= slice.sc && seg.endChar <= slice.ec
-
-        WhitespaceSeg ->
-            seg.startChar >= slice.sc && seg.endChar <= slice.ec
+    seg.startChar >= slice.sc && seg.endChar <= slice.ec
 
 
 isDocSegInSlice : SliceSelection -> DocSegV2 -> Bool

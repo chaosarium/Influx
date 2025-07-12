@@ -13,9 +13,7 @@ from .annotation import (
 )
 
 
-def recover_sentence_whitespace(
-    text: str, segments: List[SentSegV2], sentence_start_char: int
-) -> List[SentSegV2]:
+def recover_sentence_whitespace(text: str, segments: List[SentSegV2], sentence_start_char: int) -> List[SentSegV2]:
     result: List[SentSegV2] = []
     fill_line: int = sentence_start_char
     for seg in segments:
@@ -108,7 +106,6 @@ class BaseParser:
         return annotated_doc.to_dict()
 
 
-
 class SpacyParser(BaseParser):
     def __init__(self):
         super().__init__()
@@ -137,6 +134,9 @@ class SpacyParser(BaseParser):
         for sent_idx, sent in enumerate(doc.sents):
             sent_segments: List[SentSegV2] = []
             for token in sent:
+                if token.is_space:
+                    continue
+
                 orthography: str = token.text.lower()
                 lemma: str = token.lemma_.lower()
                 orthography_set.add(orthography)
@@ -151,9 +151,7 @@ class SpacyParser(BaseParser):
                     misc=token.morph.to_dict(),
                 )
 
-                token_seg: SentSegTokenSeg = SentSegTokenSeg(
-                    idx=token.i, orthography=orthography
-                )
+                token_seg: SentSegTokenSeg = SentSegTokenSeg(idx=token.i, orthography=orthography)
 
                 sent_segments.append(
                     SentSegV2(
@@ -167,21 +165,21 @@ class SpacyParser(BaseParser):
                 )
 
             if sent_segments != [] and not sent.text.isspace():
+                sentence_start_char: int = min([s.start_char for s in sent_segments])
+                sentence_end_char: int = max([s.end_char for s in sent_segments])
                 recovered_sent_segments: List[SentSegV2] = recover_sentence_whitespace(
-                    text, sent_segments, sent.start_char
+                    text, sent_segments, sentence_start_char
                 )
                 doc_sentence_segments.append(
                     DocSegV2(
-                        text=sent.text,
-                        start_char=sent.start_char,
-                        end_char=sent.end_char,
+                        text=text[sentence_start_char:sentence_end_char],
+                        start_char=sentence_start_char,
+                        end_char=sentence_end_char,
                         inner=DocSegSentence(segments=recovered_sent_segments),
                     )
                 )
 
-        doc_segments: List[DocSegV2] = recover_document_whitespace(
-            text, doc_sentence_segments
-        )
+        doc_segments: List[DocSegV2] = recover_document_whitespace(text, doc_sentence_segments)
 
         return AnnotatedDocV2(
             text=text,
@@ -189,7 +187,6 @@ class SpacyParser(BaseParser):
             orthography_set=list(orthography_set),
             lemma_set=list(lemma_set),
         )
-
 
 
 # ignore this for now. focus on spacy.

@@ -22,6 +22,7 @@ nav.navbar {
         padding: 0;
         margin: 0;
     }
+
     ul li {
         display: inline;
         margin-right: 10px;
@@ -50,15 +51,20 @@ pre.dbg-json-pre {
     line-height: 1.8;
 }
 
+span.document-whitespace-span {
+    white-space: pre-wrap;
+
+}
+
+
 .dbg-on {
     span.sentence-span {
         border: 1px solid rgb(220, 172, 172);
         padding-block: 2px;
-    }i
+    }
 
     span.document-whitespace-span {
         border: 1px dotted rgb(186, 166, 166);
-        white-space: pre-wrap;
     }
 
     span.multiword-token-span {
@@ -87,27 +93,35 @@ pre.dbg-json-pre {
 span.tkn-unmarked {
     background: $gray4;
 }
+
 span.tkn-ignored {
     background: $violet4;
 }
+
 span.tkn-l1 {
     background: $red4;
 }
+
 span.tkn-l2 {
     background: $orange4;
 }
+
 span.tkn-l3 {
     background: $amber4;
 }
+
 span.tkn-l4 {
     background: $lime4;
 }
+
 span.tkn-l5 {
     background: $green4;
 }
+
 span.tkn-known {
     background: none;
 }
+
 span.tkn-nostatus {
     background: red;
 }
