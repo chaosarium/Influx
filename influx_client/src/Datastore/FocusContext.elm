@@ -1,7 +1,6 @@
 module Datastore.FocusContext exposing (..)
 
-import Api.GetAnnotatedDoc exposing (get)
-import Bindings exposing (..)
+import Bindings exposing (DocSegV2, DocSegVariants(..), InfluxResourceId(..), Phrase, SentSegV2, SentSegVariants(..), TokenStatus(..))
 import Datastore.DocContext as DocContext
 
 
@@ -23,13 +22,13 @@ type alias SliceSelecting =
 
 
 type alias T =
-    { last_hovered_at : Maybe SentenceConstituent
-    , mouse_down_at : Maybe SentenceConstituent
-    , last_mouse_down_at : Maybe SentenceConstituent
+    { last_hovered_at : Maybe SentSegV2
+    , mouse_down_at : Maybe SentSegV2
+    , last_mouse_down_at : Maybe SentSegV2
     , slice_selection : Maybe SliceSelection
     , selected_text : Maybe String
-    , constituent_selection : Maybe SentenceConstituent
-    , constituent_slice : Maybe (List SentenceConstituent)
+    , segment_selection : Maybe SentSegV2
+    , segment_slice : Maybe (List SentSegV2)
     }
 
 
@@ -40,15 +39,15 @@ new =
     , mouse_down_at = Nothing
     , last_mouse_down_at = Nothing
     , selected_text = Nothing
-    , constituent_selection = Nothing
-    , constituent_slice = Nothing
+    , segment_selection = Nothing
+    , segment_slice = Nothing
     }
 
 
 type Msg
-    = SelectMouseDown SentenceConstituent
-    | SelectMouseEnter SentenceConstituent
-      -- | SelectMouseOut SentenceConstituent
+    = SelectMouseDown SentSegV2
+    | SelectMouseEnter SentSegV2
+      -- | SelectMouseOut SentSegV2
     | SelectMouseUp ()
 
 
@@ -56,29 +55,23 @@ listLast list =
     List.head (List.reverse list)
 
 
-getFirstLastIds : List SentenceConstituent -> ( Maybe Int, Maybe Int )
+getFirstLastIds : List SentSegV2 -> ( Maybe Int, Maybe Int )
 getFirstLastIds list =
     case ( List.head list, listLast list ) of
         ( Just first, Just last ) ->
             let
                 firstId =
-                    case first of
-                        Bindings.SingleToken { id } ->
-                            Just id
-
-                        Bindings.SubwordToken { id } ->
-                            Just id
+                    case first.inner of
+                        TokenSeg { idx } ->
+                            Just idx
 
                         _ ->
                             Nothing
 
                 lastId =
-                    case last of
-                        Bindings.SingleToken { id } ->
-                            Just id
-
-                        Bindings.SubwordToken { id } ->
-                            Just id
+                    case last.inner of
+                        TokenSeg { idx } ->
+                            Just idx
 
                         _ ->
                             Nothing
@@ -89,36 +82,25 @@ getFirstLastIds list =
             ( Nothing, Nothing )
 
 
-getStartEndIdxs : SentenceConstituent -> ( SliceSelecting, SliceSelecting )
+getStartEndIdxs : SentSegV2 -> ( SliceSelecting, SliceSelecting )
 getStartEndIdxs cst =
-    case cst of
-        Bindings.SingleToken { sentenceId, id, startChar, endChar } ->
-            ( { s = sentenceId, t = id, c = startChar }, { s = sentenceId, t = id, c = endChar } )
+    case cst.inner of
+        TokenSeg { idx } ->
+            ( { s = cst.sentenceIdx, t = idx, c = cst.startChar }, { s = cst.sentenceIdx, t = idx, c = cst.endChar } )
 
-        Bindings.SubwordToken _ ->
-            Debug.todo "unreachable, subword should never be selectable"
-
-        Bindings.PhraseToken { sentenceId, shadows, startChar, endChar } ->
-            case getFirstLastIds shadows of
+        PhraseSeg { components } ->
+            case getFirstLastIds components of
                 ( Just firstId, Just lastId ) ->
-                    ( { s = sentenceId, t = firstId, c = startChar }, { s = sentenceId, t = lastId, c = endChar } )
+                    ( { s = cst.sentenceIdx, t = firstId, c = cst.startChar }, { s = cst.sentenceIdx, t = lastId, c = cst.endChar } )
 
                 _ ->
-                    Debug.todo "unreachable, first or last token of shadows should have id"
+                    Debug.todo "unreachable, first or last token of components should have id"
 
-        Bindings.MultiwordToken { sentenceId, shadows, startChar, endChar } ->
-            case getFirstLastIds shadows of
-                ( Just firstId, Just lastId ) ->
-                    ( { s = sentenceId, t = firstId, c = startChar }, { s = sentenceId, t = lastId, c = endChar } )
-
-                _ ->
-                    Debug.todo "unreachable, first or last token of shadows should have id"
-
-        Bindings.SentenceWhitespace _ ->
+        WhitespaceSeg ->
             Debug.todo "unreachable, should not have listened to mouse events on whitespace"
 
 
-sliceBetween : SentenceConstituent -> SentenceConstituent -> SliceSelection
+sliceBetween : SentSegV2 -> SentSegV2 -> SliceSelection
 sliceBetween cst1 cst2 =
     let
         ( ( start1, end1 ), ( start2, end2 ) ) =
@@ -159,7 +141,7 @@ mouseEventUpdate msg t =
                 | mouse_down_at = Just down_at
                 , last_mouse_down_at = Just down_at
                 , slice_selection = Just (sliceBetween down_at down_at)
-                , constituent_selection = Just down_at
+                , segment_selection = Just down_at
             }
 
         SelectMouseEnter cst ->
@@ -181,7 +163,7 @@ mouseEventUpdate msg t =
                     { t
                         | mouse_down_at = Nothing
                         , slice_selection = Just (sliceBetween down_at last_hovered_at)
-                        , constituent_selection =
+                        , segment_selection =
                             if down_at == last_hovered_at then
                                 Just down_at
 
@@ -201,21 +183,21 @@ update doc_ctx msg t =
         tt =
             mouseEventUpdate msg t
 
-        constituent_slice =
+        segment_slice =
             Maybe.map
                 (\slice ->
-                    doc_ctx.constituents
-                        |> List.filter (isDocCstInSlice slice)
+                    doc_ctx.segments
+                        |> List.filter (isDocSegInSlice slice)
                         |> List.concatMap
-                            (\doc_cst ->
-                                case doc_cst of
-                                    Sentence { constituents } ->
-                                        constituents
+                            (\doc_seg ->
+                                case doc_seg.inner of
+                                    Sentence { segments } ->
+                                        segments
 
                                     _ ->
                                         []
                             )
-                        |> List.filter (isCstInSlice slice)
+                        |> List.filter (isSentSegInSlice slice)
                 )
                 tt.slice_selection
     in
@@ -226,53 +208,51 @@ update doc_ctx msg t =
                     String.slice sc ec doc_ctx.text
                 )
                 tt.slice_selection
-        , constituent_slice = constituent_slice
+        , segment_slice = segment_slice
     }
 
 
-isCstInSlice : SliceSelection -> SentenceConstituent -> Bool
-isCstInSlice slice con =
-    case con of
-        Bindings.SingleToken { sentenceId, id } ->
-            ((sentenceId == slice.ss && id >= slice.st) || sentenceId > slice.ss)
-                && ((sentenceId == slice.es && id <= slice.et) || sentenceId < slice.es)
+isSentSegInSlice : SliceSelection -> SentSegV2 -> Bool
+isSentSegInSlice slice con =
+    case con.inner of
+        TokenSeg { idx } ->
+            ((con.sentenceIdx == slice.ss && idx >= slice.st) || con.sentenceIdx > slice.ss)
+                && ((con.sentenceIdx == slice.es && idx <= slice.et) || con.sentenceIdx < slice.es)
 
-        Bindings.SubwordToken { sentenceId, id } ->
-            ((sentenceId == slice.ss && id >= slice.st) || sentenceId > slice.ss)
-                && ((sentenceId == slice.es && id <= slice.et) || sentenceId < slice.es)
+        PhraseSeg _ ->
+            con.startChar >= slice.sc && con.endChar <= slice.ec
 
-        Bindings.PhraseToken { startChar, endChar } ->
-            startChar >= slice.sc && endChar <= slice.ec
-
-        Bindings.MultiwordToken { startChar, endChar } ->
-            startChar >= slice.sc && endChar <= slice.ec
-
-        Bindings.SentenceWhitespace { startChar, endChar } ->
-            startChar >= slice.sc && endChar <= slice.ec
+        WhitespaceSeg ->
+            con.startChar >= slice.sc && con.endChar <= slice.ec
 
 
-isDocCstInSlice : SliceSelection -> DocumentConstituent -> Bool
-isDocCstInSlice slice con =
-    case con of
-        Bindings.Sentence { id } ->
-            id >= slice.ss && id <= slice.es
+isDocSegInSlice : SliceSelection -> DocSegV2 -> Bool
+isDocSegInSlice slice con =
+    case con.inner of
+        Sentence { segments } ->
+            case List.head segments of
+                Just first_seg ->
+                    first_seg.sentenceIdx
+                        >= slice.ss
+                        && first_seg.sentenceIdx
+                        <= slice.es
 
-        Bindings.DocumentWhitespace { startChar, endChar } ->
-            startChar >= slice.sc && endChar <= slice.ec
+                Nothing ->
+                    False
+
+        DocumentWhitespace ->
+            con.startChar >= slice.sc && con.endChar <= slice.ec
 
 
-getPhraseFromConstituentSlice : InfluxResourceId -> List SentenceConstituent -> Maybe Phrase
-getPhraseFromConstituentSlice langId constituents =
+getPhraseFromSegmentSlice : InfluxResourceId -> List SentSegV2 -> Maybe Phrase
+getPhraseFromSegmentSlice langId segments =
     let
         orthography_seq =
-            constituents
+            segments
                 |> List.filterMap
                     (\cst ->
-                        case cst of
-                            SingleToken { orthography } ->
-                                Just orthography
-
-                            MultiwordToken { orthography } ->
+                        case cst.inner of
+                            TokenSeg { orthography } ->
                                 Just orthography
 
                             _ ->

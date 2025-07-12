@@ -1,6 +1,6 @@
-module Components.AnnotatedText exposing (view, viewMultiwordTokenShadows, viewSentenceConstituent)
+module Components.AnnotatedText exposing (view, viewRegisteredPhrase, viewSentenceSegment)
 
-import Bindings exposing (..)
+import Bindings exposing (DocSegV2, DocSegVariants(..), Phrase, SentSegV2, SentSegVariants(..), Token, TokenStatus(..))
 import Datastore.DictContext
 import Datastore.DocContext
 import Datastore.FocusContext as FocusContext
@@ -18,9 +18,9 @@ type alias Args msg =
     , bypass_shadowned : Bool
     , modifier_state : ModifierState.Model
     , mouse_handler : FocusContext.Msg -> msg
-    , focus_predicate : SentenceConstituent -> Bool
-    , cst_display_predicate : SentenceConstituent -> Bool
-    , doc_cst_display_predicate : DocumentConstituent -> Bool
+    , focus_predicate : SentSegV2 -> Bool
+    , cst_display_predicate : SentSegV2 -> Bool
+    , doc_cst_display_predicate : DocSegV2 -> Bool
     }
 
 
@@ -29,44 +29,25 @@ view :
     -> Datastore.DocContext.T
     -> List (Html msg)
 view args doc =
-    List.map (viewDocumentConstituent args) doc.constituents
+    List.map (viewDocumentSegment args) doc.segments
 
 
-viewDocumentConstituent :
+viewDocumentSegment :
     Args msg
-    -> DocumentConstituent
+    -> DocSegV2
     -> Html msg
-viewDocumentConstituent args constituent =
-    if not (args.doc_cst_display_predicate constituent) then
+viewDocumentSegment args segment =
+    if not (args.doc_cst_display_predicate segment) then
         Utils.htmlEmpty
 
     else
-        case constituent of
-            Sentence { constituents } ->
+        case segment.inner of
+            Sentence { segments } ->
                 span [ class "sentence-span" ]
-                    (List.filterMap (viewSentenceConstituent args) constituents)
+                    (List.filterMap (viewSentenceSegment args) segments)
 
-            DocumentWhitespace { text } ->
-                span [ class "document-whitespace-span" ] [ Html.text text ]
-
-
-getShadowed : SentenceConstituent -> Bool
-getShadowed cst =
-    case cst of
-        MultiwordToken { shadowed } ->
-            shadowed
-
-        SubwordToken { shadowed } ->
-            shadowed
-
-        SingleToken { shadowed } ->
-            shadowed
-
-        PhraseToken { shadowed } ->
-            shadowed
-
-        SentenceWhitespace { shadowed } ->
-            shadowed
+            DocumentWhitespace ->
+                span [ class "document-whitespace-span" ] [ Html.text segment.text ]
 
 
 tokenDictLookup : Datastore.DictContext.T -> String -> Maybe Token
@@ -79,44 +60,11 @@ phraseDictLookup dict_ctx orthography =
     Dict.get orthography dict_ctx.phraseDict
 
 
-viewMultiwordTokenShadow :
-    SentenceConstituent
-    -> Html msg
-viewMultiwordTokenShadow cst =
-    let
-        attrs =
-            []
-    in
-    case cst of
-        MultiwordToken { text } ->
-            Utils.unreachableHtml "MultiwordToken within MultiwordToken???"
-
-        SubwordToken { text } ->
-            span (attrs ++ [ class "subword-token-span" ]) [ Html.text text ]
-
-        SingleToken { text } ->
-            span (attrs ++ [ class "single-token-span" ]) [ Html.text text ]
-
-        PhraseToken _ ->
-            Utils.unreachableHtml "phrase within phrase???"
-
-        SentenceWhitespace { text } ->
-            span (attrs ++ [ class "sentence-whitespace-span" ]) [ Html.text text ]
-
-
-viewMultiwordTokenShadows :
-    List SentenceConstituent
-    -> Html msg
-viewMultiwordTokenShadows csts =
-    span [ class "multiword-token-shadows-span" ]
-        (List.intersperse (span [ class "sentence-whitespace-span" ] [ Html.text " " ]) (List.map viewMultiwordTokenShadow csts))
-
-
-viewPhraseSubconstituent :
+viewPhraseSubsegment :
     Args msg
-    -> SentenceConstituent
+    -> SentSegV2
     -> Html msg
-viewPhraseSubconstituent args cst =
+viewPhraseSubsegment args cst =
     let
         attrs =
             [ Utils.attributeIf args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter cst))
@@ -125,21 +73,15 @@ viewPhraseSubconstituent args cst =
             , Utils.classIf (args.focus_predicate cst) "tkn-focus"
             ]
     in
-    case cst of
-        MultiwordToken { text } ->
-            span (attrs ++ [ class "multiword-token-span" ]) [ Html.text text ]
+    case cst.inner of
+        TokenSeg { orthography } ->
+            span (attrs ++ [ class "single-token-span" ]) [ Html.text cst.text ]
 
-        SubwordToken { text } ->
-            span (attrs ++ [ class "subword-token-span" ]) [ Html.text text ]
+        WhitespaceSeg ->
+            span (attrs ++ [ class "sentence-whitespace-span" ]) [ Html.text cst.text ]
 
-        SingleToken { text } ->
-            span (attrs ++ [ class "single-token-span" ]) [ Html.text text ]
-
-        PhraseToken _ ->
+        PhraseSeg _ ->
             Utils.unreachableHtml "phrase within phrase???"
-
-        SentenceWhitespace { text } ->
-            span (attrs ++ [ class "sentence-whitespace-span" ]) [ Html.text text ]
 
 
 tokenStatusToClass : TokenStatus -> Html.Attribute msg
@@ -183,7 +125,7 @@ viewRegisteredTkn :
     -> List (Html.Attribute msg)
     -> String
     -> Token
-    -> SentenceConstituent
+    -> SentSegV2
     -> Html msg
 viewRegisteredTkn args attrs text tkn cst =
     ruby []
@@ -211,10 +153,10 @@ viewRegisteredPhrase :
     Args msg
     -> List (Html.Attribute msg)
     -> Phrase
-    -> SentenceConstituent
-    -> List SentenceConstituent
+    -> SentSegV2
+    -> List SentSegV2
     -> Html msg
-viewRegisteredPhrase args attrs phrase cst shadows =
+viewRegisteredPhrase args attrs phrase cst components =
     ruby []
         [ rb []
             [ span
@@ -226,55 +168,39 @@ viewRegisteredPhrase args attrs phrase cst shadows =
                        , Utils.classIf (args.focus_predicate cst) "tkn-focus"
                        ]
                 )
-                (List.map (viewPhraseSubconstituent args) shadows)
+                (List.map (viewPhraseSubsegment args) components)
             ]
         , rt [] [ Html.text phrase.definition ]
         ]
 
 
-viewSentenceConstituent :
+viewSentenceSegment :
     Args msg
-    -> SentenceConstituent
+    -> SentSegV2
     -> Maybe (Html msg)
-viewSentenceConstituent args cst =
-    if (getShadowed cst && args.bypass_shadowned) || not (args.cst_display_predicate cst) then
+viewSentenceSegment args cst =
+    if not (args.cst_display_predicate cst) then
         Nothing
 
     else
         Just
-            (case cst of
-                MultiwordToken { text } ->
-                    case tokenDictLookup args.dict text of
-                        Nothing ->
-                            viewUnregisteredTkn [ class "multiword-token-span" ] text
-
-                        Just tkn ->
-                            viewRegisteredTkn args [ class "multiword-token-span" ] text tkn cst
-
-                SubwordToken { text, orthography } ->
+            (case cst.inner of
+                TokenSeg { orthography } ->
                     case tokenDictLookup args.dict orthography of
                         Nothing ->
-                            viewUnregisteredTkn [ class "subword-token-span" ] text
+                            viewUnregisteredTkn [ class "single-token-span", class "tkn-nostatus" ] cst.text
 
                         Just tkn ->
-                            viewRegisteredTkn args [ class "subword-token-span" ] text tkn cst
+                            viewRegisteredTkn args [ class "single-token-span" ] cst.text tkn cst
 
-                SingleToken { text, orthography } ->
-                    case tokenDictLookup args.dict orthography of
-                        Nothing ->
-                            viewUnregisteredTkn [ class "single-token-span", class "tkn-nostatus" ] text
-
-                        Just tkn ->
-                            viewRegisteredTkn args [ class "single-token-span" ] text tkn cst
-
-                PhraseToken { normalisedOrthography, shadows } ->
+                PhraseSeg { normalisedOrthography, components } ->
                     case phraseDictLookup args.dict normalisedOrthography of
                         Nothing ->
                             unreachableHtml "Phrase not found in dict"
 
                         Just phrase ->
-                            viewRegisteredPhrase args [ class "phrase-span" ] phrase cst shadows
+                            viewRegisteredPhrase args [ class "phrase-span" ] phrase cst components
 
-                SentenceWhitespace { text } ->
-                    span [ class "sentence-whitespace-span" ] [ Html.text text ]
+                WhitespaceSeg ->
+                    span [ class "sentence-whitespace-span" ] [ Html.text cst.text ]
             )

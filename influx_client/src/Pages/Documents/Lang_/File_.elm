@@ -11,6 +11,7 @@ import Components.Topbar
 import Datastore.DictContext as DictContext
 import Datastore.DocContext as DocContext
 import Datastore.FocusContext as FocusContext
+import Dict
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (class)
@@ -114,7 +115,7 @@ update msg model =
                     FocusContext.update model.working_doc m model.focus_ctx
 
                 ( form_model, _ ) =
-                    TermEditForm.update model.working_dict (TermEditForm.EditingConUpdated focus_ctx.constituent_slice focus_ctx.constituent_selection) model.form_model
+                    TermEditForm.update model.working_dict (TermEditForm.EditingConUpdated focus_ctx.segment_slice focus_ctx.segment_selection) model.form_model
             in
             ( { model
                 | focus_ctx = focus_ctx
@@ -163,22 +164,24 @@ subscriptions model =
 -- start TODO put in component
 
 
-viewConExtraInfo : SentenceConstituent -> Html msg
-viewConExtraInfo con =
-    case con of
-        Bindings.MultiwordToken { shadows } ->
-            Html.span [] [ Html.text "=  ", AnnotatedText.viewMultiwordTokenShadows shadows ]
+viewConExtraInfo : DictContext.T -> SentSegV2 -> Html Msg
+viewConExtraInfo dict con =
+    case con.inner of
+        TokenSeg { orthography } ->
+            Utils.htmlIf (Maybe.withDefault "" con.attributes.lemma /= orthography) <| Html.span [] [ Html.text (" (lemma is " ++ Maybe.withDefault "" con.attributes.lemma ++ ")") ]
 
-        Bindings.SubwordToken { orthography, lemma } ->
-            Utils.htmlIf (orthography /= lemma) <| Html.span [] [ Html.text (" (lemma is " ++ lemma ++ ")") ]
+        PhraseSeg { normalisedOrthography, components } ->
+            Html.span []
+                [ Html.text "=  "
+                , AnnotatedText.viewRegisteredPhrase
+                    { dict = dict, bypass_shadowned = True, modifier_state = ModifierState.init, mouse_handler = NoopMouseEvent, focus_predicate = \_ -> False, cst_display_predicate = \_ -> True, doc_cst_display_predicate = \_ -> True }
+                    []
+                    (Maybe.withDefault { id = Nothing, langId = Bindings.SerialId -1, orthographySeq = [], definition = "", notes = "", originalContext = "", status = Bindings.Unmarked } (Dict.get normalisedOrthography dict.phraseDict))
+                    con
+                    components
+                ]
 
-        Bindings.SingleToken { orthography, lemma } ->
-            Utils.htmlIf (orthography /= lemma) <| Html.span [] [ Html.text (" (lemma is " ++ lemma ++ ")") ]
-
-        Bindings.SentenceWhitespace _ ->
-            Html.Extra.nothing
-
-        Bindings.PhraseToken _ ->
+        WhitespaceSeg ->
             Html.Extra.nothing
 
 
@@ -200,7 +203,7 @@ view route model =
                         \_ -> False
 
                     Just slice ->
-                        FocusContext.isCstInSlice slice
+                        FocusContext.isSentSegInSlice slice
             , cst_display_predicate = \_ -> True
             , doc_cst_display_predicate = \_ -> True
             }
@@ -218,14 +221,14 @@ view route model =
                         \_ -> False
 
                     Just slice ->
-                        FocusContext.isCstInSlice slice
+                        FocusContext.isSentSegInSlice slice
             , doc_cst_display_predicate =
                 case model.focus_ctx.slice_selection of
                     Nothing ->
                         \_ -> False
 
                     Just slice ->
-                        FocusContext.isDocCstInSlice slice
+                        FocusContext.isDocSegInSlice slice
             }
     in
     { title = "File view"
@@ -255,14 +258,14 @@ view route model =
                 )
             ]
 
-        -- selected constituent
+        -- selected segment
         , div []
             [ span []
-                [ Html.text "selected const: " ]
+                [ Html.text "selected seg: " ]
             , Maybe.withDefault
                 (Html.text "")
-                (Maybe.andThen (AnnotatedText.viewSentenceConstituent { selectedConstViewCtx | bypass_shadowned = False }) model.focus_ctx.constituent_selection)
-            , Html.Extra.viewMaybe (\con -> viewConExtraInfo con) model.focus_ctx.constituent_selection
+                (Maybe.andThen (AnnotatedText.viewSentenceSegment { selectedConstViewCtx | bypass_shadowned = False }) model.focus_ctx.segment_selection)
+            , Html.Extra.viewMaybe (\con -> viewConExtraInfo model.working_dict con) model.focus_ctx.segment_selection
             ]
         , TermEditForm.view model.form_model
             TermEditorEvent

@@ -3,22 +3,16 @@ module BindingsUtils exposing (..)
 import Bindings exposing (..)
 
 
-getSentenceConstituentOrthography : SentenceConstituent -> String
-getSentenceConstituentOrthography sc =
-    case sc of
-        MultiwordToken { orthography } ->
+getSentenceSegmentOrthography : SentSegV2 -> String
+getSentenceSegmentOrthography sc =
+    case sc.inner of
+        TokenSeg { orthography } ->
             orthography
 
-        SubwordToken { orthography } ->
-            orthography
+        WhitespaceSeg ->
+            sc.text
 
-        SingleToken { orthography } ->
-            orthography
-
-        SentenceWhitespace { orthography } ->
-            orthography
-
-        PhraseToken { normalisedOrthography } ->
+        PhraseSeg { normalisedOrthography } ->
             normalisedOrthography
 
 

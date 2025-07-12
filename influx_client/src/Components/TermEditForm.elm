@@ -1,7 +1,7 @@
 module Components.TermEditForm exposing (..)
 
 import Bindings exposing (..)
-import BindingsUtils exposing (getSentenceConstituentOrthography)
+import BindingsUtils exposing (getSentenceSegmentOrthography)
 import Components.Styles as Styles
 import Datastore.DictContext as DictContext
 import Datastore.FocusContext as FocusContext
@@ -37,7 +37,7 @@ type FormModel
 
 type alias Model =
     { form_model : FormModel
-    , con_to_edit : Maybe SentenceConstituent
+    , con_to_edit : Maybe SentSegV2
     }
 
 
@@ -67,7 +67,7 @@ type Msg
     | RequestEditTerm TermEditAction Term
     | OverwriteTerm Term
       -- downward propagation
-    | EditingConUpdated (Maybe (List SentenceConstituent)) (Maybe SentenceConstituent)
+    | EditingConUpdated (Maybe (List SentSegV2)) (Maybe SentSegV2)
     | GotTermEditResponse (Result Http.Error TermEditResponse)
 
 
@@ -240,14 +240,19 @@ update dict_ctx msg model =
             let
                 form2 =
                     case ( con_slice_opt, con_opt, model.form_model ) of
-                        ( _, Just (PhraseToken { normalisedOrthography }), _ ) ->
-                            switchToPhraseEdit dict_ctx normalisedOrthography
+                        ( _, Just con, _ ) ->
+                            case con.inner of
+                                PhraseSeg { normalisedOrthography } ->
+                                    switchToPhraseEdit dict_ctx normalisedOrthography
 
-                        ( _, Just non_phrase_tkn, _ ) ->
-                            switchToTokenEdit dict_ctx (getSentenceConstituentOrthography non_phrase_tkn)
+                                TokenSeg { orthography } ->
+                                    switchToTokenEdit dict_ctx orthography
+
+                                WhitespaceSeg ->
+                                    NothingForm
 
                         ( Just con_slice, Nothing, _ ) ->
-                            case FocusContext.getPhraseFromConstituentSlice dict_ctx.lang_id con_slice of
+                            case FocusContext.getPhraseFromSegmentSlice dict_ctx.lang_id con_slice of
                                 Just phrase ->
                                     TermForm
                                         { orig_term = PhraseTerm phrase

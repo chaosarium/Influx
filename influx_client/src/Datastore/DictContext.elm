@@ -28,7 +28,7 @@ empty =
     }
 
 
-fromAnnotatedDocument : InfluxResourceId -> Bindings.AnnotatedDocument -> T
+fromAnnotatedDocument : InfluxResourceId -> Bindings.AnnotatedDocV2 -> T
 fromAnnotatedDocument lang_id annotated_doc =
     { tokenDict =
         case annotated_doc.tokenDict of
