@@ -148,7 +148,6 @@ pub enum SentSegVariants {
     TokenCst {
         idx : usize,
         orthography: String,
-        attributes: String, // TODO change to actual type
     }, 
     PhraseCst {
         /// lowercase, with each token orthography separated by a space, to make JavaScript type work out.
@@ -168,6 +167,21 @@ pub struct SentSegV2 {
     inner: SentSegVariants, 
     attributes: SegAttribute,
 }
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+pub struct AnnotatedDocV2 {
+    pub text: String,
+    pub segments: Vec<DocSegV2>,
+
+    pub orthography_set: HashSet<String>,
+    pub lemma_set: HashSet<String>,
+
+    pub token_dict: Option<HashMap<String, Token>>,
+    // pub phrase_dict: Option<HashMap<Vec<String>, Phrase>>,
+    // JavaScript doesn't support HashMaps with non-string keys, sad. We'll concat the keys into a string for now.
+    pub phrase_dict: Option<HashMap<String, Phrase>>,
+}
+
 
 
 
