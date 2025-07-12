@@ -37,14 +37,14 @@ type FormModel
 
 type alias Model =
     { form_model : FormModel
-    , con_to_edit : Maybe SentSegV2
+    , seg_to_edit : Maybe SentSegV2
     }
 
 
 empty : Model
 empty =
     { form_model = NothingForm
-    , con_to_edit = Nothing
+    , seg_to_edit = Nothing
     }
 
 
@@ -67,7 +67,7 @@ type Msg
     | RequestEditTerm TermEditAction Term
     | OverwriteTerm Term
       -- downward propagation
-    | EditingConUpdated (Maybe (List SentSegV2)) (Maybe SentSegV2)
+    | EditingSegUpdated (Maybe (List SentSegV2)) (Maybe SentSegV2)
     | GotTermEditResponse (Result Http.Error TermEditResponse)
 
 
@@ -236,12 +236,12 @@ update dict_ctx msg model =
         InputChanged formMsg ->
             ( { model | form_model = updateForm formMsg model.form_model }, Effect.none )
 
-        EditingConUpdated con_slice_opt con_opt ->
+        EditingSegUpdated seg_slice_opt seg_opt ->
             let
                 form2 =
-                    case ( con_slice_opt, con_opt, model.form_model ) of
-                        ( _, Just con, _ ) ->
-                            case con.inner of
+                    case ( seg_slice_opt, seg_opt, model.form_model ) of
+                        ( _, Just seg, _ ) ->
+                            case seg.inner of
                                 PhraseSeg { normalisedOrthography } ->
                                     switchToPhraseEdit dict_ctx normalisedOrthography
 
@@ -251,8 +251,8 @@ update dict_ctx msg model =
                                 WhitespaceSeg ->
                                     NothingForm
 
-                        ( Just con_slice, Nothing, _ ) ->
-                            case FocusContext.getPhraseFromSegmentSlice dict_ctx.lang_id con_slice of
+                        ( Just seg_slice, Nothing, _ ) ->
+                            case FocusContext.getPhraseFromSegmentSlice dict_ctx.lang_id seg_slice of
                                 Just phrase ->
                                     TermForm
                                         { orig_term = PhraseTerm phrase
@@ -267,7 +267,7 @@ update dict_ctx msg model =
                             NothingForm
             in
             ( { model
-                | con_to_edit = con_opt
+                | seg_to_edit = seg_opt
                 , form_model = form2
               }
             , Effect.none
@@ -518,4 +518,4 @@ view model lift { dict } =
             viewTermForm term_form lift { dict = dict }
 
         _ ->
-            div [] [ Html.text "No constituent selected for editing." ]
+            div [] [ Html.text "No segment selected for editing." ]

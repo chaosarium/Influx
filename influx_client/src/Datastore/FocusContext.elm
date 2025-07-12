@@ -213,22 +213,22 @@ update doc_ctx msg t =
 
 
 isSentSegInSlice : SliceSelection -> SentSegV2 -> Bool
-isSentSegInSlice slice con =
-    case con.inner of
+isSentSegInSlice slice seg =
+    case seg.inner of
         TokenSeg { idx } ->
-            ((con.sentenceIdx == slice.ss && idx >= slice.st) || con.sentenceIdx > slice.ss)
-                && ((con.sentenceIdx == slice.es && idx <= slice.et) || con.sentenceIdx < slice.es)
+            ((seg.sentenceIdx == slice.ss && idx >= slice.st) || seg.sentenceIdx > slice.ss)
+                && ((seg.sentenceIdx == slice.es && idx <= slice.et) || seg.sentenceIdx < slice.es)
 
         PhraseSeg _ ->
-            con.startChar >= slice.sc && con.endChar <= slice.ec
+            seg.startChar >= slice.sc && seg.endChar <= slice.ec
 
         WhitespaceSeg ->
-            con.startChar >= slice.sc && con.endChar <= slice.ec
+            seg.startChar >= slice.sc && seg.endChar <= slice.ec
 
 
 isDocSegInSlice : SliceSelection -> DocSegV2 -> Bool
-isDocSegInSlice slice con =
-    case con.inner of
+isDocSegInSlice slice seg =
+    case seg.inner of
         Sentence { segments } ->
             case List.head segments of
                 Just first_seg ->
@@ -241,7 +241,7 @@ isDocSegInSlice slice con =
                     False
 
         DocumentWhitespace ->
-            con.startChar >= slice.sc && con.endChar <= slice.ec
+            seg.startChar >= slice.sc && seg.endChar <= slice.ec
 
 
 getPhraseFromSegmentSlice : InfluxResourceId -> List SentSegV2 -> Maybe Phrase

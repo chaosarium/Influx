@@ -115,7 +115,7 @@ update msg model =
                     FocusContext.update model.working_doc m model.focus_ctx
 
                 ( form_model, _ ) =
-                    TermEditForm.update model.working_dict (TermEditForm.EditingConUpdated focus_ctx.segment_slice focus_ctx.segment_selection) model.form_model
+                    TermEditForm.update model.working_dict (TermEditForm.EditingSegUpdated focus_ctx.segment_slice focus_ctx.segment_selection) model.form_model
             in
             ( { model
                 | focus_ctx = focus_ctx
@@ -164,20 +164,20 @@ subscriptions model =
 -- start TODO put in component
 
 
-viewConExtraInfo : DictContext.T -> SentSegV2 -> Html Msg
-viewConExtraInfo dict con =
-    case con.inner of
+viewSegExtraInfo : DictContext.T -> SentSegV2 -> Html Msg
+viewSegExtraInfo dict seg =
+    case seg.inner of
         TokenSeg { orthography } ->
-            Utils.htmlIf (Maybe.withDefault "" con.attributes.lemma /= orthography) <| Html.span [] [ Html.text (" (lemma is " ++ Maybe.withDefault "" con.attributes.lemma ++ ")") ]
+            Utils.htmlIf (Maybe.withDefault "" seg.attributes.lemma /= orthography) <| Html.span [] [ Html.text (" (lemma is " ++ Maybe.withDefault "" seg.attributes.lemma ++ ")") ]
 
         PhraseSeg { normalisedOrthography, components } ->
             Html.span []
                 [ Html.text "=  "
                 , AnnotatedText.viewRegisteredPhrase
-                    { dict = dict, bypass_shadowned = True, modifier_state = ModifierState.init, mouse_handler = NoopMouseEvent, focus_predicate = \_ -> False, cst_display_predicate = \_ -> True, doc_cst_display_predicate = \_ -> True }
+                    { dict = dict, bypass_shadowned = True, modifier_state = ModifierState.init, mouse_handler = NoopMouseEvent, focus_predicate = \_ -> False, seg_display_predicate = \_ -> True, doc_seg_display_predicate = \_ -> True }
                     []
                     (Maybe.withDefault { id = Nothing, langId = Bindings.SerialId -1, orthographySeq = [], definition = "", notes = "", originalContext = "", status = Bindings.Unmarked } (Dict.get normalisedOrthography dict.phraseDict))
-                    con
+                    seg
                     components
                 ]
 
@@ -204,25 +204,25 @@ view route model =
 
                     Just slice ->
                         FocusContext.isSentSegInSlice slice
-            , cst_display_predicate = \_ -> True
-            , doc_cst_display_predicate = \_ -> True
+            , seg_display_predicate = \_ -> True
+            , doc_seg_display_predicate = \_ -> True
             }
     in
     let
-        selectedConstViewCtx =
+        selectedSegViewCtx =
             { dict = model.working_dict
             , bypass_shadowned = True
             , modifier_state = model.modifier_state
             , mouse_handler = NoopMouseEvent
             , focus_predicate = \_ -> False
-            , cst_display_predicate =
+            , seg_display_predicate =
                 case model.focus_ctx.slice_selection of
                     Nothing ->
                         \_ -> False
 
                     Just slice ->
                         FocusContext.isSentSegInSlice slice
-            , doc_cst_display_predicate =
+            , doc_seg_display_predicate =
                 case model.focus_ctx.slice_selection of
                     Nothing ->
                         \_ -> False
@@ -264,8 +264,8 @@ view route model =
                 [ Html.text "selected seg: " ]
             , Maybe.withDefault
                 (Html.text "")
-                (Maybe.andThen (AnnotatedText.viewSentenceSegment { selectedConstViewCtx | bypass_shadowned = False }) model.focus_ctx.segment_selection)
-            , Html.Extra.viewMaybe (\con -> viewConExtraInfo model.working_dict con) model.focus_ctx.segment_selection
+                (Maybe.andThen (AnnotatedText.viewSentenceSegment { selectedSegViewCtx | bypass_shadowned = False }) model.focus_ctx.segment_selection)
+            , Html.Extra.viewMaybe (\seg -> viewSegExtraInfo model.working_dict seg) model.focus_ctx.segment_selection
             ]
         , TermEditForm.view model.form_model
             TermEditorEvent
