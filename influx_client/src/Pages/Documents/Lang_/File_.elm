@@ -275,7 +275,7 @@ view route model =
                 Html.text ("Error: " ++ Api.stringOfHttpErrMsg err)
 
             Api.Success _ ->
-                div [ class "annotated-doc-div" ]
+                div [ class "annotated-doc-div", class "dbg-on" ]
                     (AnnotatedText.view
                         annotatedDocViewCtx
                         model.working_doc
