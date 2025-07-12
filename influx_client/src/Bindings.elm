@@ -330,6 +330,119 @@ annotatedDocumentEncoder struct =
         ]
 
 
+type alias AnnotatedDocV2 =
+    { text : String
+    , segments : List (DocSegV2)
+    , orthographySet : List (String)
+    , lemmaSet : List (String)
+    , tokenDict : Maybe (Dict String (Token))
+    , phraseDict : Maybe (Dict String (Phrase))
+    }
+
+
+annotatedDocV2Encoder : AnnotatedDocV2 -> Json.Encode.Value
+annotatedDocV2Encoder struct =
+    Json.Encode.object
+        [ ( "text", (Json.Encode.string) struct.text )
+        , ( "segments", (Json.Encode.list (docSegV2Encoder)) struct.segments )
+        , ( "orthography_set", (Json.Encode.list (Json.Encode.string)) struct.orthographySet )
+        , ( "lemma_set", (Json.Encode.list (Json.Encode.string)) struct.lemmaSet )
+        , ( "token_dict", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.dict identity (tokenEncoder))) struct.tokenDict )
+        , ( "phrase_dict", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.dict identity (phraseEncoder))) struct.phraseDict )
+        ]
+
+
+type alias DocSegV2 =
+    { text : String
+    , startChar : Int
+    , endChar : Int
+    , inner : DocSegVariants
+    }
+
+
+docSegV2Encoder : DocSegV2 -> Json.Encode.Value
+docSegV2Encoder struct =
+    Json.Encode.object
+        [ ( "text", (Json.Encode.string) struct.text )
+        , ( "start_char", (Json.Encode.int) struct.startChar )
+        , ( "end_char", (Json.Encode.int) struct.endChar )
+        , ( "inner", (docSegVariantsEncoder) struct.inner )
+        ]
+
+
+type DocSegVariants
+    = Sentence { segments : List (SentSegV2) }
+    | DocumentWhitespace
+
+
+docSegVariantsEncoder : DocSegVariants -> Json.Encode.Value
+docSegVariantsEncoder enum =
+    case enum of
+        Sentence { segments } ->
+            Json.Encode.object [ ( "Sentence", Json.Encode.object [ ( "segments", (Json.Encode.list (sentSegV2Encoder)) segments ) ] ) ]
+        DocumentWhitespace ->
+            Json.Encode.string "DocumentWhitespace"
+
+type alias SentSegV2 =
+    { sentenceIdx : Int
+    , text : String
+    , startChar : Int
+    , endChar : Int
+    , inner : SentSegVariants
+    , attributes : SegAttribute
+    }
+
+
+sentSegV2Encoder : SentSegV2 -> Json.Encode.Value
+sentSegV2Encoder struct =
+    Json.Encode.object
+        [ ( "sentence_idx", (Json.Encode.int) struct.sentenceIdx )
+        , ( "text", (Json.Encode.string) struct.text )
+        , ( "start_char", (Json.Encode.int) struct.startChar )
+        , ( "end_char", (Json.Encode.int) struct.endChar )
+        , ( "inner", (sentSegVariantsEncoder) struct.inner )
+        , ( "attributes", (segAttributeEncoder) struct.attributes )
+        ]
+
+
+type SentSegVariants
+    = TokenCst { idx : Int, orthography : String }
+    | PhraseCst { normalisedOrthography : String, components : List (SentSegV2) }
+    | WhitespaceSeg
+
+
+sentSegVariantsEncoder : SentSegVariants -> Json.Encode.Value
+sentSegVariantsEncoder enum =
+    case enum of
+        TokenCst { idx, orthography } ->
+            Json.Encode.object [ ( "TokenCst", Json.Encode.object [ ( "idx", (Json.Encode.int) idx ), ( "orthography", (Json.Encode.string) orthography ) ] ) ]
+        PhraseCst { normalisedOrthography, components } ->
+            Json.Encode.object [ ( "PhraseCst", Json.Encode.object [ ( "normalised_orthography", (Json.Encode.string) normalisedOrthography ), ( "components", (Json.Encode.list (sentSegV2Encoder)) components ) ] ) ]
+        WhitespaceSeg ->
+            Json.Encode.string "WhitespaceSeg"
+
+type alias SegAttribute =
+    { lemma : Maybe (String)
+    , isPunctuation : Maybe (Bool)
+    , upos : Maybe (String)
+    , xpos : Maybe (String)
+    , dependency : Maybe (( Int, String ))
+    , misc : Dict String (String)
+    }
+
+
+segAttributeEncoder : SegAttribute -> Json.Encode.Value
+segAttributeEncoder struct =
+    Json.Encode.object
+        [ ( "lemma", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.string)) struct.lemma )
+        , ( "is_punctuation", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.bool)) struct.isPunctuation )
+        , ( "upos", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.string)) struct.upos )
+        , ( "xpos", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.string)) struct.xpos )
+        , ( "dependency", (Maybe.withDefault Json.Encode.null << Maybe.map (\( a, b) -> Json.Encode.list identity [ Json.Encode.int a, Json.Encode.string b ])) struct.dependency )
+        , ( "misc", (Json.Encode.dict identity (Json.Encode.string)) struct.misc )
+        ]
+
+
 influxResourceIdDecoder : Json.Decode.Decoder InfluxResourceId
 influxResourceIdDecoder = 
     Json.Decode.oneOf
@@ -607,5 +720,88 @@ annotatedDocumentDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lemma_set" (Json.Decode.list (Json.Decode.string))))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "token_dict" (Json.Decode.nullable (Json.Decode.dict (tokenDecoder)))))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "phrase_dict" (Json.Decode.nullable (Json.Decode.dict (phraseDecoder)))))
+
+
+annotatedDocV2Decoder : Json.Decode.Decoder AnnotatedDocV2
+annotatedDocV2Decoder =
+    Json.Decode.succeed AnnotatedDocV2
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "segments" (Json.Decode.list (docSegV2Decoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "orthography_set" (Json.Decode.list (Json.Decode.string))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lemma_set" (Json.Decode.list (Json.Decode.string))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "token_dict" (Json.Decode.nullable (Json.Decode.dict (tokenDecoder)))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "phrase_dict" (Json.Decode.nullable (Json.Decode.dict (phraseDecoder)))))
+
+
+docSegV2Decoder : Json.Decode.Decoder DocSegV2
+docSegV2Decoder =
+    Json.Decode.succeed DocSegV2
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "start_char" (Json.Decode.int)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "end_char" (Json.Decode.int)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "inner" (docSegVariantsDecoder)))
+
+
+docSegVariantsDecoder : Json.Decode.Decoder DocSegVariants
+docSegVariantsDecoder = 
+        let
+            elmRsConstructSentence segments =
+                        Sentence { segments = segments }
+        in
+    Json.Decode.oneOf
+        [ Json.Decode.field "Sentence" (Json.Decode.succeed elmRsConstructSentence |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "segments" (Json.Decode.list (sentSegV2Decoder)))))
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "DocumentWhitespace" ->
+                            Json.Decode.succeed DocumentWhitespace
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        ]
+
+sentSegV2Decoder : Json.Decode.Decoder SentSegV2
+sentSegV2Decoder =
+    Json.Decode.succeed SentSegV2
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "sentence_idx" (Json.Decode.int)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "start_char" (Json.Decode.int)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "end_char" (Json.Decode.int)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "inner" (sentSegVariantsDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "attributes" (segAttributeDecoder)))
+
+
+sentSegVariantsDecoder : Json.Decode.Decoder SentSegVariants
+sentSegVariantsDecoder = 
+        let
+            elmRsConstructTokenCst idx orthography =
+                        TokenCst { idx = idx, orthography = orthography }
+            elmRsConstructPhraseCst normalisedOrthography components =
+                        PhraseCst { normalisedOrthography = normalisedOrthography, components = components }
+        in
+    Json.Decode.oneOf
+        [ Json.Decode.field "TokenCst" (Json.Decode.succeed elmRsConstructTokenCst |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "idx" (Json.Decode.int))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "orthography" (Json.Decode.string))))
+        , Json.Decode.field "PhraseCst" (Json.Decode.succeed elmRsConstructPhraseCst |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "normalised_orthography" (Json.Decode.string))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "components" (Json.Decode.list (sentSegV2Decoder)))))
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "WhitespaceSeg" ->
+                            Json.Decode.succeed WhitespaceSeg
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        ]
+
+segAttributeDecoder : Json.Decode.Decoder SegAttribute
+segAttributeDecoder =
+    Json.Decode.succeed SegAttribute
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lemma" (Json.Decode.nullable (Json.Decode.string))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "is_punctuation" (Json.Decode.nullable (Json.Decode.bool))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "upos" (Json.Decode.nullable (Json.Decode.string))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "xpos" (Json.Decode.nullable (Json.Decode.string))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "dependency" (Json.Decode.nullable (Json.Decode.map2 (\a b -> ( a, b )) (Json.Decode.index 0 (Json.Decode.int)) (Json.Decode.index 1 (Json.Decode.string))))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "misc" (Json.Decode.dict (Json.Decode.string))))
 
 
