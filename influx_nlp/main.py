@@ -1,5 +1,6 @@
 from flask import Flask, request
 import argparse
+from typing import TypedDict, Optional
 from lib.parsing import SpacyParser
 from deep_translator import (
     GoogleTranslator,
@@ -14,35 +15,55 @@ from deep_translator import (
     QcriTranslator,
 )
 
+
+class TokeniserRequest(TypedDict):
+    text: str
+
+
+class TranslateRequest(TypedDict):
+    text: str
+    from_lang_id: str
+    to_lang_id: str
+    provider: str
+
+
+class TranslateResponse(TypedDict):
+    translated_text: str
+
+
+class AppContext(TypedDict):
+    port: Optional[int]
+    parser: Optional[SpacyParser]
+
+
 app = Flask(__name__)
-context = {
-    "port": None,
-    "parser": None
-}
+context: AppContext = {"port": None, "parser": None}
 
 
 @app.route("/")
-def root_handler():
-    port = context["port"]
+def root_handler() -> str:
+    port: Optional[int] = context["port"]
     return f"Hello, World! Running on port {port}"
 
 
 # post is a workaroudn for large incoming data
 @app.route("/tokeniser/<lang_code>", methods=["POST"])
-def tokeniser_handler(lang_code):
-    data = request.get_json()
-    text = data.get("text", "")
+def tokeniser_handler(lang_code: str) -> dict:
+    data: TokeniserRequest = request.get_json()
+    text: str = data.get("text", "")
     print(f"Received text: {text}, lang_code: {lang_code}")
+    # The parser returns a dictionary representation of AnnotatedDocV2
     return context["parser"].parse(text, lang_code)
 
 
 @app.route("/extern_translate", methods=["POST"])
-def google_translate_handler():
-    data = request.get_json()
-    text = data.get("text")
-    from_lang_id = data.get("from_lang_id")
-    to_lang_id = data.get("to_lang_id")
-    provider = data.get("provider")
+def google_translate_handler() -> TranslateResponse:
+    data: TranslateRequest = request.get_json()
+    text: str = data.get("text")
+    from_lang_id: str = data.get("from_lang_id")
+    to_lang_id: str = data.get("to_lang_id")
+    provider: str = data.get("provider")
+    translated_text: str
     try:
         match provider:
             case "google":
@@ -66,12 +87,14 @@ def google_translate_handler():
             case "qcri":
                 translator = QcriTranslator(source=from_lang_id, target=to_lang_id)
             case _:
-                return "Invalid provider"
+                translated_text = "Invalid provider"
+                # In a real application, you might want to return a proper error response with a status code
+                return TranslateResponse(translated_text=translated_text)
         translated_text = translator.translate(text)
     except Exception as e:
         translated_text = str(e)
     print(translated_text)
-    return {"translated_text": translated_text}
+    return TranslateResponse(translated_text=translated_text)
 
 
 if __name__ == "__main__":
