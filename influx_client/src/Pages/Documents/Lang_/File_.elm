@@ -20,6 +20,7 @@ import Http
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
+import Toast
 import Utils
 import Utils.ModifierState as ModifierState
 import View exposing (View)
