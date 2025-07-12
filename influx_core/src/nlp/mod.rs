@@ -3,10 +3,7 @@ use core::panic;
 use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-// use anyhow::Ok;
 use anyhow;
-// use pyo3::prelude::*;
-// use pyo3::types::{IntoPyDict, PyTuple};
 use indoc::indoc;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
@@ -46,6 +43,7 @@ impl AnnotatedDocument {
     }
 }
 
+#[deprecated]
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 pub enum DocumentConstituent {
     Sentence {
@@ -62,8 +60,8 @@ pub enum DocumentConstituent {
     },
 }
 
+#[deprecated]
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
-// #[serde(tag = "type")]
 pub enum SentenceConstituent {
     MultiwordToken {
         sentence_id: usize,
@@ -114,6 +112,64 @@ pub enum SentenceConstituent {
         shadows: Vec<SentenceConstituent>,
     },
 }
+
+/// Segment attribute
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+pub struct SegAttribute {
+    lemma: Option<String>,
+    is_punctuation: Option<bool>,
+    upos: Option<String>,
+    xpos: Option<String>,
+    dependency: Option<(usize, String)>, // (parent idx, relation)
+    misc: HashMap<String, String>
+}
+
+/// Document segment variants.
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+pub enum DocSegVariants {
+    Sentence {
+        segments: Vec<SentSegV2>,
+    },
+    DocumentWhitespace,
+}
+
+/// Document segment
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+pub struct DocSegV2 {
+    text: String,
+    start_char: usize,
+    end_char: usize,
+    inner: DocSegVariants, 
+}
+
+/// Sentence segment variants
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+pub enum SentSegVariants {
+    TokenCst {
+        idx : usize,
+        orthography: String,
+        attributes: String, // TODO change to actual type
+    }, 
+    PhraseCst {
+        /// lowercase, with each token orthography separated by a space, to make JavaScript type work out.
+        normalised_orthography: String,
+        components: Vec<SentSegV2>,
+    }, 
+    WhitespaceSeg
+}
+
+/// Sentence segment
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+pub struct SentSegV2 {
+    sentence_idx: usize, 
+    text: String,
+    start_char: usize,
+    end_char: usize,
+    inner: SentSegVariants, 
+    attributes: SegAttribute,
+}
+
+
 
 impl SentenceConstituent {
     fn mark_shadowed(&mut self) {
@@ -368,8 +424,6 @@ fn stanza2document(stanzares: NLPServerReturn) -> anyhow::Result<AnnotatedDocume
             }
         }
 
-        // dbg!(&tokens);
-
         intermediate_sentences.push_back(DocumentConstituent::Sentence {
             id: sentence_id,
             text: char_slice(&text_chars, sentence_start, sentence_end).to_string(),
@@ -403,8 +457,6 @@ fn stanza2document(stanzares: NLPServerReturn) -> anyhow::Result<AnnotatedDocume
             }
         }
     }
-
-    // dbg!(&sentences);
 
     anyhow::Ok(AnnotatedDocument {
         text: text,
@@ -911,22 +963,5 @@ mod tests {
         let res = tokenise_pipeline(TEXT, "en".to_string()).await;
         dbg!(&res);
         assert!(res.is_ok());
-    }
-
-    // #[test]
-    // fn test_run_some_python() {
-    //     assert!(run_some_python().is_ok());
-    // }
-
-    #[test]
-    fn test_bytes() {
-        let text = "🚀, 🚀, 🚀".to_string();
-        let text2 = "a".to_string();
-
-        println!("{:?}", text.as_bytes());
-        println!("{:?}", text.chars());
-        println!("{:?}", text2.as_bytes());
-        // println!("{}", text[0..1].to_string());
-        // println!("{}", text[1..2].to_string());
     }
 }
