@@ -174,7 +174,7 @@ viewSegExtraInfo dict seg =
             Html.span []
                 [ Html.text "=  "
                 , AnnotatedText.viewRegisteredPhrase
-                    { dict = dict, bypass_shadowned = True, modifier_state = ModifierState.init, mouse_handler = NoopMouseEvent, focus_predicate = \_ -> False, seg_display_predicate = \_ -> True, doc_seg_display_predicate = \_ -> True }
+                    { dict = dict, modifier_state = ModifierState.init, mouse_handler = NoopMouseEvent, focus_predicate = \_ -> False, seg_display_predicate = \_ -> True, doc_seg_display_predicate = \_ -> True }
                     []
                     (Maybe.withDefault { id = Nothing, langId = Bindings.SerialId -1, orthographySeq = [], definition = "", notes = "", originalContext = "", status = Bindings.Unmarked } (Dict.get normalisedOrthography dict.phraseDict))
                     seg
@@ -194,7 +194,6 @@ view route model =
     let
         annotatedDocViewCtx =
             { dict = model.working_dict
-            , bypass_shadowned = True
             , modifier_state = model.modifier_state
             , mouse_handler = SelectionMouseEvent
             , focus_predicate =
@@ -211,7 +210,6 @@ view route model =
     let
         selectedSegViewCtx =
             { dict = model.working_dict
-            , bypass_shadowned = True
             , modifier_state = model.modifier_state
             , mouse_handler = NoopMouseEvent
             , focus_predicate = \_ -> False
@@ -264,7 +262,7 @@ view route model =
                 [ Html.text "selected seg: " ]
             , Maybe.withDefault
                 (Html.text "")
-                (Maybe.andThen (AnnotatedText.viewSentenceSegment { selectedSegViewCtx | bypass_shadowned = False }) model.focus_ctx.segment_selection)
+                (Maybe.andThen (AnnotatedText.viewSentenceSegment selectedSegViewCtx) model.focus_ctx.segment_selection)
             , Html.Extra.viewMaybe (\seg -> viewSegExtraInfo model.working_dict seg) model.focus_ctx.segment_selection
             ]
         , TermEditForm.view model.form_model

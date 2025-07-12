@@ -15,7 +15,6 @@ import Utils.ModifierState as ModifierState
 
 type alias Args msg =
     { dict : Datastore.DictContext.T
-    , bypass_shadowned : Bool
     , modifier_state : ModifierState.Model
     , mouse_handler : FocusContext.Msg -> msg
     , focus_predicate : SentSegV2 -> Bool
