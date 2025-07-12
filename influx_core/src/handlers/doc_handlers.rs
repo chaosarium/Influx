@@ -1,3 +1,6 @@
+use super::api_interfaces::*;
+use super::ServerError;
+use crate::db::models::vocab::Token;
 use crate::doc_store::{gt_md_file_list_w_metadata, read_md_file};
 use crate::nlp;
 use crate::{
@@ -5,7 +8,6 @@ use crate::{
     utils::trie::Trie,
     ServerState,
 };
-use crate::db::models::vocab::Token;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -22,7 +24,6 @@ use std::{
     path::PathBuf,
 };
 use tracing::info;
-use super::api_interfaces::*;
 
 pub async fn get_docs_list(
     State(ServerState { influx_path, db }): State<ServerState>,
@@ -60,11 +61,33 @@ fn text_checksum(text: String) -> String {
     format!("{:x}", digest)
 }
 
+fn load_cached_nlp_data(
+    nlp_filepath: &PathBuf,
+    text: &str,
+) -> Result<nlp::AnnotatedDocV2, anyhow::Error> {
+    if nlp_filepath.exists() {
+        let nlp_file_content = fs::read_to_string(nlp_filepath)?;
+        let cached_doc: nlp::AnnotatedDocV2 = serde_json::from_str(&nlp_file_content)?;
+        if cached_doc.text == text {
+            Ok(cached_doc)
+        } else {
+            Err(anyhow::anyhow!(
+                "Cached NLP data does not match the provided text"
+            ))
+        }
+    } else {
+        Err(anyhow::anyhow!(
+            "NLP cache file does not exist at path: {}",
+            nlp_filepath.display()
+        ))
+    }
+}
+
 // TODO do error handling like above
 pub async fn get_doc(
     State(ServerState { db, influx_path }): State<ServerState>,
     Path((lang_identifier, file)): Path<(String, String)>,
-) -> impl IntoResponse {
+) -> Result<Json<GetDocResponse>, ServerError> {
     info!(
         "getting doc: lang_identifier = {}, file = {}",
         lang_identifier, file
@@ -76,20 +99,16 @@ pub async fn get_doc(
         .await
         .unwrap()
     {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(json!({
-                "error": format!("lang_id {} not found", lang_identifier),
-            })),
-        )
-            .into_response();
+        return Err(ServerError(anyhow::anyhow!(
+            "lang_id {} not found",
+            lang_identifier
+        )));
     }
 
     let lang_entry = db
         .get_language_by_identifier(lang_identifier.clone())
-        .await
-        .unwrap()
-        .unwrap();
+        .await?
+        .ok_or_else(|| ServerError(anyhow::anyhow!("Language not found")))?;
     let lang_id = lang_entry.id.clone().unwrap();
     let lang_code = lang_entry.code.clone();
 
@@ -98,30 +117,27 @@ pub async fn get_doc(
         .join(PathBuf::from(&file));
     println!("trying to access {}", &filepath.display());
 
-    let (metadata, text) = read_md_file(filepath.clone()).unwrap();
+    let (metadata, text) = read_md_file(filepath.clone())?;
     let text_checksum: String = text_checksum(text.clone());
 
     let nlp_filepath = influx_path
         .join(PathBuf::from("_influx_nlp_cache"))
         .join(PathBuf::from(format!("{}.nlp", &text_checksum)));
 
-    let mut tokenised_doc: nlp::AnnotatedDocument = if nlp_filepath.exists() {
-        let nlp_file_content = fs::read_to_string(nlp_filepath).unwrap();
-        let it: nlp::AnnotatedDocument = serde_json::from_str(&nlp_file_content).unwrap();
-        assert_eq!(it.text, text); // if this fails... md5 checksum collision?
-        it
-    } else {
-        // run tokenisation pipeline and cache it
-        let it = nlp::tokenise_pipeline(text.as_str(), lang_code.clone())
-            .await
-            .unwrap();
-        let serialized_doc = serde_json::to_string(&it).unwrap();
-        if !nlp_filepath.exists() {
-            fs::create_dir_all(nlp_filepath.parent().unwrap()).unwrap();
+    let mut tokenised_doc: nlp::AnnotatedDocV2 = match load_cached_nlp_data(&nlp_filepath, &text) {
+        Ok(cached_doc) => cached_doc,
+        Err(_) => {
+            // run tokenisation pipeline and cache it
+            let it = nlp::tokenise_pipeline(text.as_str(), lang_code.clone())
+                .await?;
+            let serialized_doc = serde_json::to_string(&it)?;
+            if !nlp_filepath.exists() {
+                fs::create_dir_all(nlp_filepath.parent().unwrap())?;
+            }
+            fs::write(nlp_filepath.clone(), serialized_doc)?;
+            info!("wrote nlp cache file to {}", nlp_filepath.display());
+            it
         }
-        fs::write(nlp_filepath.clone(), serialized_doc).unwrap();
-        info!("wrote nlp cache file to {}", nlp_filepath.display());
-        it
     };
 
     let tokens_dict: HashMap<String, Token> = db
@@ -133,15 +149,13 @@ pub async fn get_doc(
                 .cloned()
                 .collect::<HashSet<String>>(),
         )
-        .await
-        .unwrap();
-    tokenised_doc.set_token_dict(tokens_dict);
+        .await?;
+    tokenised_doc.token_dict = Some(tokens_dict);
 
     // phrase annotation
     let potential_phrases: Vec<Phrase> = db
         .query_phrase_by_onset_orthographies(lang_id.clone(), tokenised_doc.orthography_set.clone())
-        .await
-        .unwrap();
+        .await?;
     let phrase_trie: Trie<String, Phrase> = mk_phrase_trie(potential_phrases);
     let tokenised_phrased_annotated_doc = nlp::phrase_fit_pipeline(tokenised_doc, phrase_trie);
 
@@ -151,5 +165,5 @@ pub async fn get_doc(
         text,
         annotated_doc: tokenised_phrased_annotated_doc,
     };
-    (StatusCode::OK, Json(result)).into_response()
+    Ok(Json(result))
 }

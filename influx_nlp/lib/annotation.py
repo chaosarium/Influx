@@ -20,7 +20,7 @@ class SegAttribute:
             "upos": self.upos,
             "xpos": self.xpos,
             "dependency": self.dependency,
-            "misc": self.misc or None,
+            "misc": self.misc,
         }
         return {k: v for k, v in data.items() if v is not None}
 

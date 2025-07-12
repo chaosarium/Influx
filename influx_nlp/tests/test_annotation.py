@@ -83,7 +83,7 @@ def test_serialization_small():
                                     "start_char": 0,
                                     "end_char": 5,
                                     "inner": {"TokenCst": {"idx": 0, "orthography": "hello"}},
-                                    "attributes": {"lemma": "hello", "upos": "INTJ"},
+                                    "attributes": {"lemma": "hello", "upos": "INTJ", "misc": {}},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -91,7 +91,7 @@ def test_serialization_small():
                                     "start_char": 5,
                                     "end_char": 6,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {},
+                                    "attributes": {"misc": {}},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -99,7 +99,7 @@ def test_serialization_small():
                                     "start_char": 6,
                                     "end_char": 11,
                                     "inner": {"TokenCst": {"idx": 1, "orthography": "world"}},
-                                    "attributes": {"lemma": "world", "upos": "NOUN"},
+                                    "attributes": {"lemma": "world", "upos": "NOUN", "misc": {}},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -107,11 +107,7 @@ def test_serialization_small():
                                     "start_char": 11,
                                     "end_char": 12,
                                     "inner": {"TokenCst": {"idx": 2, "orthography": "!"}},
-                                    "attributes": {
-                                        "lemma": "!",
-                                        "is_punctuation": True,
-                                        "upos": "PUNCT",
-                                    },
+                                    "attributes": {"lemma": "!", "is_punctuation": True, "upos": "PUNCT", "misc": {}},
                                 },
                             ]
                         }

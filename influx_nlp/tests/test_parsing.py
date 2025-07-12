@@ -41,7 +41,7 @@ def test_spacy_parser_en():
                                     "start_char": 4,
                                     "end_char": 5,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {},
+                                    "attributes": {"misc": {}},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -70,7 +70,7 @@ def test_spacy_parser_en():
                                     "start_char": 7,
                                     "end_char": 8,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {},
+                                    "attributes": {"misc": {}},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -93,7 +93,7 @@ def test_spacy_parser_en():
                                     "start_char": 9,
                                     "end_char": 10,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {},
+                                    "attributes": {"misc": {}},
                                 },
                                 {
                                     "sentence_idx": 0,

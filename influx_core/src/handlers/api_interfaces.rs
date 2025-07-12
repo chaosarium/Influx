@@ -59,5 +59,5 @@ pub struct GetDocResponse {
     pub metadata: doc_store::DocMetadata,
     pub lang_id: InfluxResourceId,
     pub text: String,
-    pub annotated_doc: nlp::AnnotatedDocument,
+    pub annotated_doc: nlp::AnnotatedDocV2,
 }

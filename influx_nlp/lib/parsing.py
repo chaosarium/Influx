@@ -120,6 +120,8 @@ class SpacyParser(BaseParser):
                 spacy_model = "ja_ginza"
             case "en":
                 spacy_model = "en_core_web_sm"
+            case "fr":
+                spacy_model = "fr_core_news_sm"
             case _:
                 raise ValueError("haven't figured out what model to use yet...")
         nlp: spacy.Language = spacy.load(spacy_model)
