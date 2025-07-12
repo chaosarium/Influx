@@ -25,6 +25,8 @@ use std::{
 };
 use tracing::info;
 
+const USE_CACHE: bool = false;
+
 pub async fn get_docs_list(
     State(ServerState { influx_path, db }): State<ServerState>,
     Path(lang_id): Path<String>,
@@ -125,8 +127,8 @@ pub async fn get_doc(
         .join(PathBuf::from(format!("{}.nlp", &text_checksum)));
 
     let mut tokenised_doc: nlp::AnnotatedDocV2 = match load_cached_nlp_data(&nlp_filepath, &text) {
-        Ok(cached_doc) => cached_doc,
-        Err(_) => {
+        Ok(cached_doc) if USE_CACHE => cached_doc,
+        _ => {
             // run tokenisation pipeline and cache it
             let it = nlp::tokenise_pipeline(text.as_str(), lang_code.clone())
                 .await?;

@@ -166,7 +166,7 @@ class SpacyParser(BaseParser):
                     )
                 )
 
-            if sent_segments != []:
+            if sent_segments != [] and not sent.text.isspace():
                 recovered_sent_segments: List[SentSegV2] = recover_sentence_whitespace(
                     text, sent_segments, sent.start_char
                 )
