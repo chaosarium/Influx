@@ -91,7 +91,6 @@ type Msg
     | ModifierStateMsg ModifierState.Msg
     | ToastMsg Toast.Msg
     | AddToast String
-    | GotUpdatedAnnotatedDoc AnnotatedDocV2
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
