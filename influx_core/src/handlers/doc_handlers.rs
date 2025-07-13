@@ -1,11 +1,11 @@
 use super::api_interfaces::*;
 use super::ServerError;
 use crate::db::models::phrase::mk_phrase_trie;
+use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
 use crate::doc_store::{gt_md_file_list_w_metadata, read_md_file};
 use crate::nlp;
 use crate::ServerState;
-use crate::db::models::phrase::Phrase;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -80,7 +80,6 @@ fn load_cached_nlp_data(
     }
 }
 
-
 pub(crate) async fn get_annotated_doc_logic(
     state: &ServerState,
     lang_identifier: String,
@@ -91,7 +90,8 @@ pub(crate) async fn get_annotated_doc_logic(
         lang_identifier, file
     );
 
-    if !state.db
+    if !state
+        .db
         .language_identifier_exists(lang_identifier.clone())
         .await
         .unwrap()
@@ -102,14 +102,16 @@ pub(crate) async fn get_annotated_doc_logic(
         )));
     }
 
-    let lang_entry = state.db
+    let lang_entry = state
+        .db
         .get_language_by_identifier(lang_identifier.clone())
         .await?
         .ok_or_else(|| ServerError(anyhow::anyhow!("Language not found")))?;
     let lang_id = lang_entry.id.clone().unwrap();
     let lang_code = lang_entry.code.clone();
 
-    let filepath = state.influx_path
+    let filepath = state
+        .influx_path
         .join(PathBuf::from(&lang_identifier))
         .join(PathBuf::from(&file));
     println!("trying to access {}", &filepath.display());
@@ -117,7 +119,8 @@ pub(crate) async fn get_annotated_doc_logic(
     let (metadata, text) = read_md_file(filepath.clone())?;
     let text_checksum: String = text_checksum(text.clone());
 
-    let nlp_filepath = state.influx_path
+    let nlp_filepath = state
+        .influx_path
         .join(PathBuf::from("_influx_nlp_cache"))
         .join(PathBuf::from(format!("{}.nlp", &text_checksum)));
 
@@ -136,7 +139,8 @@ pub(crate) async fn get_annotated_doc_logic(
         }
     };
 
-    let tokens_dict: BTreeMap<String, Token> = state.db
+    let tokens_dict: BTreeMap<String, Token> = state
+        .db
         .get_dict_from_orthography_set(
             lang_id.clone(),
             tokenised_doc
@@ -149,19 +153,29 @@ pub(crate) async fn get_annotated_doc_logic(
         .into_iter()
         .collect();
 
-    let potential_phrases: Vec<Phrase> = state.db
+    let potential_phrases: Vec<Phrase> = state
+        .db
         .query_phrase_by_onset_orthographies(lang_id.clone(), tokenised_doc.orthography_set.clone())
         .await?;
+    let phrase_dict: BTreeMap<String, Phrase> = potential_phrases
+        .iter()
+        .map(|phrase| {
+            let key = phrase.orthography_seq.join(" ");
+            (key, phrase.clone())
+        })
+        .collect();
     let phrase_trie = mk_phrase_trie(potential_phrases);
-    let (annotated_doc, mut term_dict) = nlp::phrase_fit_pipeline(tokenised_doc, phrase_trie);
-    term_dict.token_dict = tokens_dict;
+    let annotated_doc = nlp::phrase_fit_pipeline(tokenised_doc, phrase_trie);
 
     let result = GetDocResponse {
         metadata,
         lang_id,
         text,
         annotated_doc,
-        term_dict,
+        term_dict: nlp::TermDictionary {
+            token_dict: tokens_dict,
+            phrase_dict,
+        },
     };
     Ok(result)
 }

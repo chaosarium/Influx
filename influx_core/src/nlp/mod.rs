@@ -90,7 +90,6 @@ pub struct TermDictionary {
     pub phrase_dict: BTreeMap<String, Phrase>,
 }
 
-
 /// given text and language, return a tokenised document before phrase fitting
 pub async fn tokenise_pipeline(
     text: &str,
@@ -119,15 +118,7 @@ pub async fn tokenise_pipeline(
 pub fn phrase_fit_pipeline(
     document: AnnotatedDocV2,
     potential_phrases: Trie<String, Phrase>,
-) -> (AnnotatedDocV2, TermDictionary) {
-    dbg!(&potential_phrases);
-
-    let phrase_dict: BTreeMap<String, Phrase> = potential_phrases
-        .get_all_entries()
-        .into_iter()
-        .map(|(k, v)| (k.join(" "), v.clone()))
-        .collect();
-
+) -> AnnotatedDocV2 {
     let fitted_doc_seg: Vec<DocSegV2> = document
         .segments
         .into_iter()
@@ -269,20 +260,13 @@ pub fn phrase_fit_pipeline(
         })
         .collect();
 
-    (
-        AnnotatedDocV2 {
-            text: document.text,
-            segments: fitted_doc_seg,
-            orthography_set: document.orthography_set,
-            lemma_set: document.lemma_set,
-        },
-        TermDictionary {
-            token_dict: BTreeMap::new(),
-            phrase_dict: phrase_dict,
-        }
-    )
+    AnnotatedDocV2 {
+        text: document.text,
+        segments: fitted_doc_seg,
+        orthography_set: document.orthography_set,
+        lemma_set: document.lemma_set,
+    }
 }
-
 
 #[cfg(test)]
 mod tests {
