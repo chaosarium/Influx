@@ -268,6 +268,9 @@ update dict_ctx msg model =
                                 WhitespaceSeg ->
                                     NothingForm
 
+                                PunctuationSeg ->
+                                    NothingForm
+
                         ( Just seg_slice, Nothing, _ ) ->
                             case FocusContext.getPhraseFromSegmentSlice dict_ctx.lang_id seg_slice of
                                 Just phrase ->

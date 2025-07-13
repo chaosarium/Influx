@@ -7,6 +7,7 @@ from lib.annotation import (
     SentSegV2,
     SentSegTokenSeg,
     SentSegWhitespaceSeg,
+    SentSegPunctuationSeg,
     SegAttribute,
 )
 
@@ -51,8 +52,8 @@ def test_serialization_small():
                             text="!",
                             start_char=11,
                             end_char=12,
-                            inner=SentSegTokenSeg(idx=2, orthography="!"),
-                            attributes=SegAttribute(lemma="!", upos="PUNCT", is_punctuation=True),
+                            inner=SentSegPunctuationSeg(),
+                            attributes=SegAttribute(lemma="!", upos="PUNCT"),
                         ),
                     ]
                 ),
@@ -106,8 +107,8 @@ def test_serialization_small():
                                     "text": "!",
                                     "start_char": 11,
                                     "end_char": 12,
-                                    "inner": {"TokenSeg": {"idx": 2, "orthography": "!"}},
-                                    "attributes": {"lemma": "!", "is_punctuation": True, "upos": "PUNCT", "misc": {}},
+                                    "inner": "PunctuationSeg",
+                                    "attributes": {"lemma": "!", "upos": "PUNCT", "misc": {}},
                                 },
                             ]
                         }

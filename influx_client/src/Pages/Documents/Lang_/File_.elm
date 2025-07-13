@@ -217,6 +217,9 @@ viewSegExtraInfo dict seg =
         WhitespaceSeg ->
             Html.Extra.nothing
 
+        PunctuationSeg ->
+            Html.Extra.nothing
+
 
 
 -- end

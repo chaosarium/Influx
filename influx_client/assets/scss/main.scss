@@ -85,7 +85,11 @@ span.document-whitespace-span {
     }
 
     span.sentence-whitespace-span {
-        border: 1px dotted #38bdf8;
+    border: 1px dotted #38bdf8;
+}
+
+    span.sentence-punctuation-span {
+        border: 1px solid #ff0000; /* Example style for punctuation */
     }
 }
 

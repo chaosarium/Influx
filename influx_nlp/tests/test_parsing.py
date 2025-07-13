@@ -28,7 +28,6 @@ def test_spacy_parser_en():
                                     "inner": {"TokenSeg": {"idx": 0, "orthography": "this"}},
                                     "attributes": {
                                         "lemma": "this",
-                                        "is_punctuation": False,
                                         "upos": "PRON",
                                         "xpos": "DT",
                                         "dependency": (1, "nsubj"),
@@ -51,7 +50,6 @@ def test_spacy_parser_en():
                                     "inner": {"TokenSeg": {"idx": 1, "orthography": "is"}},
                                     "attributes": {
                                         "lemma": "be",
-                                        "is_punctuation": False,
                                         "upos": "AUX",
                                         "xpos": "VBZ",
                                         "dependency": (1, "ROOT"),
@@ -80,7 +78,6 @@ def test_spacy_parser_en():
                                     "inner": {"TokenSeg": {"idx": 2, "orthography": "a"}},
                                     "attributes": {
                                         "lemma": "a",
-                                        "is_punctuation": False,
                                         "upos": "DET",
                                         "xpos": "DT",
                                         "dependency": (3, "det"),
@@ -103,7 +100,6 @@ def test_spacy_parser_en():
                                     "inner": {"TokenSeg": {"idx": 3, "orthography": "test"}},
                                     "attributes": {
                                         "lemma": "test",
-                                        "is_punctuation": False,
                                         "upos": "NOUN",
                                         "xpos": "NN",
                                         "dependency": (1, "attr"),
@@ -115,10 +111,9 @@ def test_spacy_parser_en():
                                     "text": ".",
                                     "start_char": 14,
                                     "end_char": 15,
-                                    "inner": {"TokenSeg": {"idx": 4, "orthography": "."}},
+                                    "inner": "PunctuationSeg",
                                     "attributes": {
                                         "lemma": ".",
-                                        "is_punctuation": True,
                                         "upos": "PUNCT",
                                         "xpos": ".",
                                         "dependency": (1, "punct"),
@@ -174,7 +169,6 @@ def test_spacy_parser_weird_whitespaces():
                                     "inner": {"TokenSeg": {"idx": 1, "orthography": "je"}},
                                     "attributes": {
                                         "lemma": "je",
-                                        "is_punctuation": False,
                                         "upos": "PRON",
                                         "xpos": "PRON",
                                         "dependency": (2, "nsubj"),
@@ -197,7 +191,6 @@ def test_spacy_parser_weird_whitespaces():
                                     "inner": {"TokenSeg": {"idx": 2, "orthography": "connais"}},
                                     "attributes": {
                                         "lemma": "connaître",
-                                        "is_punctuation": False,
                                         "upos": "VERB",
                                         "xpos": "VERB",
                                         "dependency": (2, "ROOT"),
@@ -226,7 +219,6 @@ def test_spacy_parser_weird_whitespaces():
                                     "inner": {"TokenSeg": {"idx": 3, "orthography": "un"}},
                                     "attributes": {
                                         "lemma": "un",
-                                        "is_punctuation": False,
                                         "upos": "DET",
                                         "xpos": "DET",
                                         "dependency": (4, "det"),
@@ -254,7 +246,6 @@ def test_spacy_parser_weird_whitespaces():
                                     "inner": {"TokenSeg": {"idx": 4, "orthography": "vampire"}},
                                     "attributes": {
                                         "lemma": "vampire",
-                                        "is_punctuation": False,
                                         "upos": "NOUN",
                                         "xpos": "NOUN",
                                         "dependency": (2, "obj"),
@@ -284,7 +275,6 @@ végétarien…   \n\
                                     "inner": {"TokenSeg": {"idx": 6, "orthography": "végétarien"}},
                                     "attributes": {
                                         "lemma": "végétarien",
-                                        "is_punctuation": False,
                                         "upos": "ADV",
                                         "xpos": "ADV",
                                         "dependency": (7, "punct"),
@@ -296,10 +286,9 @@ végétarien…   \n\
                                     "text": "…",
                                     "start_char": 37,
                                     "end_char": 38,
-                                    "inner": {"TokenSeg": {"idx": 7, "orthography": "…"}},
+                                    "inner": "PunctuationSeg",
                                     "attributes": {
                                         "lemma": "…",
-                                        "is_punctuation": True,
                                         "upos": "PUNCT",
                                         "xpos": "PUNCT",
                                         "dependency": (7, "ROOT"),
@@ -325,7 +314,6 @@ végétarien…   \n\
                                     "inner": {"TokenSeg": {"idx": 9, "orthography": "il"}},
                                     "attributes": {
                                         "lemma": "il",
-                                        "is_punctuation": False,
                                         "upos": "PRON",
                                         "xpos": "PRON",
                                         "dependency": (10, "nsubj"),
@@ -348,7 +336,6 @@ végétarien…   \n\
                                     "inner": {"TokenSeg": {"idx": 10, "orthography": "suce"}},
                                     "attributes": {
                                         "lemma": "sucer",
-                                        "is_punctuation": False,
                                         "upos": "VERB",
                                         "xpos": "VERB",
                                         "dependency": (7, "advcl"),
@@ -377,7 +364,6 @@ végétarien…   \n\
                                     "inner": {"TokenSeg": {"idx": 11, "orthography": "des"}},
                                     "attributes": {
                                         "lemma": "un",
-                                        "is_punctuation": False,
                                         "upos": "DET",
                                         "xpos": "DET",
                                         "dependency": (12, "det"),
@@ -400,7 +386,6 @@ végétarien…   \n\
                                     "inner": {"TokenSeg": {"idx": 12, "orthography": "betteraves"}},
                                     "attributes": {
                                         "lemma": "betterave",
-                                        "is_punctuation": False,
                                         "upos": "NOUN",
                                         "xpos": "NOUN",
                                         "dependency": (10, "obj"),
@@ -420,10 +405,9 @@ végétarien…   \n\
                                     "text": "!",
                                     "start_char": 66,
                                     "end_char": 67,
-                                    "inner": {"TokenSeg": {"idx": 13, "orthography": "!"}},
+                                    "inner": "PunctuationSeg",
                                     "attributes": {
                                         "lemma": "!",
-                                        "is_punctuation": True,
                                         "upos": "PUNCT",
                                         "xpos": "PUNCT",
                                         "dependency": (7, "punct"),
@@ -490,7 +474,6 @@ def test_spacy_parser_ja():
                                     "inner": {"TokenSeg": {"idx": 0, "orthography": "これ"}},
                                     "attributes": {
                                         "lemma": "これ",
-                                        "is_punctuation": False,
                                         "upos": "PRON",
                                         "xpos": "代名詞",
                                         "dependency": (2, "nsubj"),
@@ -505,7 +488,6 @@ def test_spacy_parser_ja():
                                     "inner": {"TokenSeg": {"idx": 1, "orthography": "は"}},
                                     "attributes": {
                                         "lemma": "は",
-                                        "is_punctuation": False,
                                         "upos": "ADP",
                                         "xpos": "助詞-係助詞",
                                         "dependency": (0, "case"),
@@ -520,7 +502,6 @@ def test_spacy_parser_ja():
                                     "inner": {"TokenSeg": {"idx": 2, "orthography": "テスト"}},
                                     "attributes": {
                                         "lemma": "テスト",
-                                        "is_punctuation": False,
                                         "upos": "NOUN",
                                         "xpos": "名詞-普通名詞-サ変可能",
                                         "dependency": (2, "ROOT"),
@@ -535,7 +516,6 @@ def test_spacy_parser_ja():
                                     "inner": {"TokenSeg": {"idx": 3, "orthography": "です"}},
                                     "attributes": {
                                         "lemma": "です",
-                                        "is_punctuation": False,
                                         "upos": "AUX",
                                         "xpos": "助動詞",
                                         "dependency": (2, "cop"),
@@ -547,10 +527,9 @@ def test_spacy_parser_ja():
                                     "text": "。",
                                     "start_char": 8,
                                     "end_char": 9,
-                                    "inner": {"TokenSeg": {"idx": 4, "orthography": "。"}},
+                                    "inner": "PunctuationSeg",
                                     "attributes": {
                                         "lemma": "。",
-                                        "is_punctuation": True,
                                         "upos": "PUNCT",
                                         "xpos": "補助記号-句点",
                                         "dependency": (2, "punct"),
@@ -588,8 +567,8 @@ def test_spacy_parser_segmentation_simple_en():
     result = parser.parse(text, "en")
     assert _print_segmentation_boundaries(result["segments"]) == snapshot(
         """\
-Hello / world / .
-This / is / a / test / .\
+Hello / world
+This / is / a / test\
 """
     )
 
@@ -600,8 +579,8 @@ def test_spacy_parser_segmentation_multiple_sentences_with_whitespace_en():
     result = parser.parse(text, "en")
     assert _print_segmentation_boundaries(result["segments"]) == snapshot(
         """\
-First / sentence / .
-Second / sentence / .
-Third / sentence / .\
+First / sentence
+Second / sentence
+Third / sentence\
 """
     )

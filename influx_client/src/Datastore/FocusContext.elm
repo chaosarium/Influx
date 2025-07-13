@@ -194,22 +194,28 @@ getPhraseFromSegmentSlice langId segments =
     let
         orthography_seq =
             List.concatMap
-                (\cst ->
-                    case cst.inner of
+                (\seg ->
+                    case seg.inner of
                         TokenSeg { orthography } ->
                             [ orthography ]
 
                         PhraseSeg { components } ->
                             List.concatMap
-                                (\c ->
-                                    case c.inner of
+                                (\s ->
+                                    case s.inner of
                                         TokenSeg { orthography } ->
                                             [ orthography ]
+
+                                        PunctuationSeg ->
+                                            [ s.text ]
 
                                         _ ->
                                             []
                                 )
                                 components
+
+                        PunctuationSeg ->
+                            [ seg.text ]
 
                         _ ->
                             []

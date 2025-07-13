@@ -9,11 +9,14 @@ getSentenceSegmentOrthography sc =
         TokenSeg { orthography } ->
             orthography
 
+        PhraseSeg { normalisedOrthography } ->
+            normalisedOrthography
+
         WhitespaceSeg ->
             sc.text
 
-        PhraseSeg { normalisedOrthography } ->
-            normalisedOrthography
+        PunctuationSeg ->
+            sc.text
 
 
 orthographySeqToNormalized : List String -> String

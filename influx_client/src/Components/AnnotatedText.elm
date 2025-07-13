@@ -79,6 +79,9 @@ viewPhraseSubsegment args seg =
         WhitespaceSeg ->
             span (attrs ++ [ class "sentence-whitespace-span" ]) [ Html.text seg.text ]
 
+        PunctuationSeg ->
+            span (attrs ++ [ class "sentence-punctuation-span" ]) [ Html.text seg.text ]
+
         PhraseSeg _ ->
             Utils.unreachableHtml "phrase within phrase???"
 
@@ -202,4 +205,7 @@ viewSentenceSegment args seg =
 
                 WhitespaceSeg ->
                     span [ class "sentence-whitespace-span" ] [ Html.text seg.text ]
+
+                PunctuationSeg ->
+                    span [ class "sentence-punctuation-span" ] [ Html.text seg.text ]
             )

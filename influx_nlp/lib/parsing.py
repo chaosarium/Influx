@@ -9,6 +9,7 @@ from .annotation import (
     SentSegV2,
     SentSegTokenSeg,
     SentSegWhitespaceSeg,
+    SentSegPunctuationSeg,
     SegAttribute,
 )
 
@@ -136,7 +137,7 @@ class SpacyParser(BaseParser):
             for token in sent:
                 if token.is_space:
                     continue
-
+                
                 orthography: str = token.text.lower()
                 lemma: str = token.lemma_.lower()
                 orthography_set.add(orthography)
@@ -144,14 +145,16 @@ class SpacyParser(BaseParser):
 
                 attributes: SegAttribute = SegAttribute(
                     lemma=lemma,
-                    is_punctuation=token.is_punct,
                     upos=token.pos_,
                     xpos=token.tag_,
                     dependency=(token.head.i, token.dep_),
                     misc=token.morph.to_dict(),
                 )
 
-                token_seg: SentSegTokenSeg = SentSegTokenSeg(idx=token.i, orthography=orthography)
+                if token.is_punct:
+                    inner_seg = SentSegPunctuationSeg()
+                else:
+                    inner_seg = SentSegTokenSeg(idx=token.i, orthography=orthography)
 
                 sent_segments.append(
                     SentSegV2(
@@ -159,7 +162,7 @@ class SpacyParser(BaseParser):
                         text=token.text,
                         start_char=token.idx,
                         end_char=token.idx + len(token.text),
-                        inner=token_seg,
+                        inner=inner_seg,
                         attributes=attributes,
                     )
                 )

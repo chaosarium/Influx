@@ -368,6 +368,7 @@ type SentSegVariants
     = TokenSeg { idx : Int, orthography : String }
     | PhraseSeg { normalisedOrthography : String, components : List SentSegV2 }
     | WhitespaceSeg
+    | PunctuationSeg
 
 
 sentSegVariantsEncoder : SentSegVariants -> Json.Encode.Value
@@ -382,10 +383,12 @@ sentSegVariantsEncoder enum =
         WhitespaceSeg ->
             Json.Encode.string "WhitespaceSeg"
 
+        PunctuationSeg ->
+            Json.Encode.string "PunctuationSeg"
+
 
 type alias SegAttribute =
     { lemma : Maybe String
-    , isPunctuation : Maybe Bool
     , upos : Maybe String
     , xpos : Maybe String
     , dependency : Maybe ( Int, String )
@@ -397,7 +400,6 @@ segAttributeEncoder : SegAttribute -> Json.Encode.Value
 segAttributeEncoder struct =
     Json.Encode.object
         [ ( "lemma", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.string) struct.lemma )
-        , ( "is_punctuation", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.bool) struct.isPunctuation )
         , ( "upos", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.string) struct.upos )
         , ( "xpos", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.string) struct.xpos )
         , ( "dependency", (Maybe.withDefault Json.Encode.null << Maybe.map (\( a, b ) -> Json.Encode.list identity [ Json.Encode.int a, Json.Encode.string b ])) struct.dependency )
@@ -729,6 +731,16 @@ sentSegVariantsDecoder =
                         unexpected ->
                             Json.Decode.fail <| "Unexpected variant " ++ unexpected
                 )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "PunctuationSeg" ->
+                            Json.Decode.succeed PunctuationSeg
+
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
         ]
 
 
@@ -736,7 +748,6 @@ segAttributeDecoder : Json.Decode.Decoder SegAttribute
 segAttributeDecoder =
     Json.Decode.succeed SegAttribute
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lemma" (Json.Decode.nullable Json.Decode.string)))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "is_punctuation" (Json.Decode.nullable Json.Decode.bool)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "upos" (Json.Decode.nullable Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "xpos" (Json.Decode.nullable Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "dependency" (Json.Decode.nullable (Json.Decode.map2 (\a b -> ( a, b )) (Json.Decode.index 0 Json.Decode.int) (Json.Decode.index 1 Json.Decode.string)))))

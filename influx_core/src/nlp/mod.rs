@@ -30,7 +30,7 @@ use serde_json::value::Value;
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 pub struct SegAttribute {
     lemma: Option<String>,
-    is_punctuation: Option<bool>,
+    
     upos: Option<String>,
     xpos: Option<String>,
     dependency: Option<(usize, String)>, // (parent idx, relation)
@@ -67,7 +67,8 @@ pub enum SentSegVariants {
         normalised_orthography: String,
         components: Vec<SentSegV2>,
     }, 
-    WhitespaceSeg
+    WhitespaceSeg,
+    PunctuationSeg
 }
 
 /// Sentence segment
@@ -156,6 +157,9 @@ pub fn phrase_fit_pipeline(
                         .filter_map(|(i, x)| match &x.inner {
                             SentSegVariants::TokenSeg { orthography, .. } => {
                                 Some((i, orthography.clone()))
+                            }
+                            SentSegVariants::PunctuationSeg => {
+                                Some((i, x.text.clone()))
                             }
                             _ => None,
                         })
@@ -246,7 +250,6 @@ pub fn phrase_fit_pipeline(
                                 },
                                 attributes: SegAttribute {
                                     lemma: None,
-                                    is_punctuation: None,
                                     upos: None,
                                     xpos: None,
                                     dependency: None,
@@ -318,7 +321,6 @@ mod tests {
                                         lemma: Some(
                                             "hello",
                                         ),
-                                        is_punctuation: Some(
                                             false,
                                         ),
                                         upos: Some(
@@ -344,7 +346,6 @@ mod tests {
                                     inner: WhitespaceSeg,
                                     attributes: SegAttribute {
                                         lemma: None,
-                                        is_punctuation: None,
                                         upos: None,
                                         xpos: None,
                                         dependency: None,
@@ -364,7 +365,6 @@ mod tests {
                                         lemma: Some(
                                             "world",
                                         ),
-                                        is_punctuation: Some(
                                             false,
                                         ),
                                         upos: Some(
@@ -397,7 +397,6 @@ mod tests {
                                         lemma: Some(
                                             "!",
                                         ),
-                                        is_punctuation: Some(
                                             true,
                                         ),
                                         upos: Some(
@@ -445,7 +444,6 @@ mod tests {
                                         lemma: Some(
                                             "hi",
                                         ),
-                                        is_punctuation: Some(
                                             false,
                                         ),
                                         upos: Some(
@@ -476,7 +474,6 @@ mod tests {
                                         lemma: Some(
                                             "!",
                                         ),
-                                        is_punctuation: Some(
                                             true,
                                         ),
                                         upos: Some(
@@ -549,7 +546,6 @@ mod tests {
                                         lemma: Some(
                                             "let",
                                         ),
-                                        is_punctuation: Some(
                                             false,
                                         ),
                                         upos: Some(
@@ -582,7 +578,6 @@ mod tests {
                                         lemma: Some(
                                             "us",
                                         ),
-                                        is_punctuation: Some(
                                             false,
                                         ),
                                         upos: Some(
@@ -610,7 +605,6 @@ mod tests {
                                     inner: WhitespaceSeg,
                                     attributes: SegAttribute {
                                         lemma: None,
-                                        is_punctuation: None,
                                         upos: None,
                                         xpos: None,
                                         dependency: None,
@@ -630,7 +624,6 @@ mod tests {
                                         lemma: Some(
                                             " ",
                                         ),
-                                        is_punctuation: Some(
                                             false,
                                         ),
                                         upos: Some(
@@ -661,7 +654,6 @@ mod tests {
                                         lemma: Some(
                                             "go",
                                         ),
-                                        is_punctuation: Some(
                                             false,
                                         ),
                                         upos: Some(
@@ -694,7 +686,6 @@ mod tests {
                                         lemma: Some(
                                             ".",
                                         ),
-                                        is_punctuation: Some(
                                             true,
                                         ),
                                         upos: Some(

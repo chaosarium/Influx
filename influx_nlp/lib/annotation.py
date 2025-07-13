@@ -7,7 +7,6 @@ from typing import List, Dict, Optional, Tuple, Union
 @dataclass
 class SegAttribute:
     lemma: Optional[str] = None
-    is_punctuation: Optional[bool] = None
     upos: Optional[str] = None
     xpos: Optional[str] = None
     dependency: Optional[Tuple[int, str]] = None
@@ -16,7 +15,6 @@ class SegAttribute:
     def to_dict(self):
         data = {
             "lemma": self.lemma,
-            "is_punctuation": self.is_punctuation,
             "upos": self.upos,
             "xpos": self.xpos,
             "dependency": self.dependency,
@@ -55,7 +53,13 @@ class SentSegWhitespaceSeg:
         return "WhitespaceSeg"
 
 
-SentSegVariants = Union[SentSegTokenSeg, SentSegPhraseSeg, SentSegWhitespaceSeg]
+@dataclass
+class SentSegPunctuationSeg:
+    def to_dict(self):
+        return "PunctuationSeg"
+
+
+SentSegVariants = Union[SentSegTokenSeg, SentSegPhraseSeg, SentSegWhitespaceSeg, SentSegPunctuationSeg]
 
 
 # Corresponds to Rust's `SentSegV2`
