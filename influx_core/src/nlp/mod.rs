@@ -119,8 +119,12 @@ pub fn phrase_fit_pipeline(
 ) -> AnnotatedDocV2 {
     dbg!(&potential_phrases);
 
-    let mut phrase_dict: HashMap<String, Phrase> = HashMap::new();
-    // TODO have phrase dict include all potential phrases in case client recreate them without realising
+    let phrase_dict: HashMap<String, Phrase> = potential_phrases
+        .get_all_entries()
+        .into_iter()
+        .map(|(k, v)| (k.join(" "), v.clone()))
+        .collect();
+
     let fitted_doc_seg: Vec<DocSegV2> = document
         .segments
         .into_iter()
@@ -211,10 +215,6 @@ pub fn phrase_fit_pipeline(
                                 )
                                 .1
                                 .unwrap();
-                            phrase_dict.insert(
-                                lex_segment_orthographies[*lex_start..*lex_end].join(" "),
-                                phrase.clone(),
-                            );
                             let phrase_start_char = original_segments[*start].start_char;
                             let phrase_end_char = original_segments[*end - 1].end_char;
                             let phrase_text = original_segments[*start..*end]

@@ -142,6 +142,26 @@ impl<T: Eq + Hash + Clone, S> Trie<T, S> {
         }
         trie
     }
+
+    pub fn get_all_entries(&self) -> Vec<(Vec<T>, &S)> {
+        let mut entries = Vec::new();
+        self.get_all_entries_recursive(Vec::new(), &mut entries);
+        entries
+    }
+
+    fn get_all_entries_recursive<'a>(&'a self, prefix: Vec<T>, entries: &mut Vec<(Vec<T>, &'a S)>) {
+        if self.is_terminal {
+            if let Some(payload) = self.payload.as_ref() {
+                entries.push((prefix.clone(), payload));
+            }
+        }
+
+        for (key, child) in &self.children {
+            let mut new_prefix = prefix.clone();
+            new_prefix.push(key.clone());
+            child.get_all_entries_recursive(new_prefix, entries);
+        }
+    }
 }
 
 #[cfg(test)]
