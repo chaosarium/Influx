@@ -85,10 +85,9 @@ pub struct AnnotatedDocV2 {
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 pub struct TermDictionary {
-    pub token_dict: Option<BTreeMap<String, Token>>,
-    // pub phrase_dict: Option<HashMap<Vec<String>, Phrase>>,
+    pub token_dict: BTreeMap<String, Token>,
     // JavaScript doesn't support HashMaps with non-string keys, sad. We'll concat the keys into a string for now.
-    pub phrase_dict: Option<BTreeMap<String, Phrase>>,
+    pub phrase_dict: BTreeMap<String, Phrase>,
 }
 
 
@@ -278,8 +277,8 @@ pub fn phrase_fit_pipeline(
             lemma_set: document.lemma_set,
         },
         TermDictionary {
-            token_dict: None,
-            phrase_dict: Some(phrase_dict),
+            token_dict: BTreeMap::new(),
+            phrase_dict: phrase_dict,
         }
     )
 }

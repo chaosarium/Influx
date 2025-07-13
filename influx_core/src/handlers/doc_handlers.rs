@@ -154,7 +154,7 @@ pub(crate) async fn get_annotated_doc_logic(
         .await?;
     let phrase_trie = mk_phrase_trie(potential_phrases);
     let (annotated_doc, mut term_dict) = nlp::phrase_fit_pipeline(tokenised_doc, phrase_trie);
-    term_dict.token_dict = Some(tokens_dict);
+    term_dict.token_dict = tokens_dict;
 
     let result = GetDocResponse {
         metadata,

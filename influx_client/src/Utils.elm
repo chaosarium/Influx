@@ -114,11 +114,19 @@ htmlIf cond html =
 
 dbgLog : String -> a -> a
 dbgLog msg value =
+    let
+        _ =
+            msg
+    in
     -- Debug.log msg value
     value
 
 
 dbgToString : a -> String
 dbgToString value =
+    let
+        _ =
+            value
+    in
     -- Debug.toString value
     "debug not enabled"

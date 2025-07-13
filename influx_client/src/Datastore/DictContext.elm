@@ -30,20 +30,8 @@ empty =
 
 fromTermDictionary : InfluxResourceId -> TermDictionary -> T
 fromTermDictionary lang_id term_dict =
-    { tokenDict =
-        case term_dict.tokenDict of
-            Nothing ->
-                Dict.empty
-
-            Just tokenDict ->
-                tokenDict
-    , phraseDict =
-        case term_dict.phraseDict of
-            Nothing ->
-                Dict.empty
-
-            Just phraseDict ->
-                phraseDict
+    { tokenDict = term_dict.tokenDict
+    , phraseDict = term_dict.phraseDict
     , lang_id = lang_id
     }
 
