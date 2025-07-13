@@ -51,10 +51,6 @@ update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
         ApiResponded (Ok res) ->
-            let
-                _ =
-                    Debug.log "ApiResponded" res
-            in
             ( { model | langData = Api.Success res }, Effect.none )
 
         ApiResponded (Err httpError) ->
