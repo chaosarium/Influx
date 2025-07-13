@@ -130,8 +130,7 @@ pub async fn get_doc(
         Ok(cached_doc) if USE_CACHE => cached_doc,
         _ => {
             // run tokenisation pipeline and cache it
-            let it = nlp::tokenise_pipeline(text.as_str(), lang_code.clone())
-                .await?;
+            let it = nlp::tokenise_pipeline(text.as_str(), lang_code.clone()).await?;
             let serialized_doc = serde_json::to_string(&it)?;
             if !nlp_filepath.exists() {
                 fs::create_dir_all(nlp_filepath.parent().unwrap())?;

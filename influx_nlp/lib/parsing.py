@@ -137,7 +137,7 @@ class SpacyParser(BaseParser):
             for token in sent:
                 if token.is_space:
                     continue
-                
+
                 orthography: str = token.text.lower()
                 lemma: str = token.lemma_.lower()
                 orthography_set.add(orthography)

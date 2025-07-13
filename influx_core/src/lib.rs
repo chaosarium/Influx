@@ -61,8 +61,14 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/connection_test", get(handlers::connection_test))
-        .route("/docs/{language_identifier}", get(handlers::doc_handlers::get_docs_list))
-        .route("/docs/{language_identifier}/{file}", get(handlers::doc_handlers::get_doc))
+        .route(
+            "/docs/{language_identifier}",
+            get(handlers::doc_handlers::get_docs_list),
+        )
+        .route(
+            "/docs/{language_identifier}/{file}",
+            get(handlers::doc_handlers::get_doc),
+        )
         .route(
             "/vocab/delete_token",
             post(handlers::term_handlers::delete_token),
@@ -83,10 +89,7 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
             "/phrase/delete_phrase",
             post(handlers::term_handlers::delete_phrase),
         )
-        .route(
-            "/term/edit",
-            post(handlers::term_handlers::edit_term),
-        )
+        .route("/term/edit", post(handlers::term_handlers::edit_term))
         .route("/lang", get(handlers::lang_handlers::get_language_list))
         .route(
             "/lang/{id}",

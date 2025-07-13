@@ -20,29 +20,21 @@ use reqwest::Client;
 use serde_json::json;
 use serde_json::value::Value;
 
-
-
-
-
-
-
 /// Segment attribute
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 pub struct SegAttribute {
     lemma: Option<String>,
-    
+
     upos: Option<String>,
     xpos: Option<String>,
     dependency: Option<(usize, String)>, // (parent idx, relation)
-    misc: HashMap<String, String>
+    misc: HashMap<String, String>,
 }
 
 /// Document segment variants.
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 pub enum DocSegVariants {
-    Sentence {
-        segments: Vec<SentSegV2>,
-    },
+    Sentence { segments: Vec<SentSegV2> },
     DocumentWhitespace,
 }
 
@@ -52,33 +44,33 @@ pub struct DocSegV2 {
     text: String,
     start_char: usize,
     end_char: usize,
-    inner: DocSegVariants, 
+    inner: DocSegVariants,
 }
 
 /// Sentence segment variants
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 pub enum SentSegVariants {
     TokenSeg {
-        idx : usize,
+        idx: usize,
         orthography: String,
-    }, 
+    },
     PhraseSeg {
         /// lowercase, with each token orthography separated by a space, to make JavaScript type work out.
         normalised_orthography: String,
         components: Vec<SentSegV2>,
-    }, 
+    },
     WhitespaceSeg,
-    PunctuationSeg
+    PunctuationSeg,
 }
 
 /// Sentence segment
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 pub struct SentSegV2 {
-    sentence_idx: usize, 
+    sentence_idx: usize,
     text: String,
     start_char: usize,
     end_char: usize,
-    inner: SentSegVariants, 
+    inner: SentSegVariants,
     attributes: SegAttribute,
 }
 
@@ -96,19 +88,11 @@ pub struct AnnotatedDocV2 {
     pub phrase_dict: Option<HashMap<String, Phrase>>,
 }
 
-
-
-
-
-
-
-
 /// given text and language, return a tokenised document before phrase fitting
 pub async fn tokenise_pipeline(
     text: &str,
     language_code: String,
 ) -> anyhow::Result<AnnotatedDocV2> {
-
     let client = Client::new();
     let url = format!("http://127.0.0.1:3001/tokeniser/{}", language_code);
     let payload = json!({
@@ -158,9 +142,7 @@ pub fn phrase_fit_pipeline(
                             SentSegVariants::TokenSeg { orthography, .. } => {
                                 Some((i, orthography.clone()))
                             }
-                            SentSegVariants::PunctuationSeg => {
-                                Some((i, x.text.clone()))
-                            }
+                            SentSegVariants::PunctuationSeg => Some((i, x.text.clone())),
                             _ => None,
                         })
                         .collect::<Vec<(usize, String)>>();
@@ -188,7 +170,9 @@ pub fn phrase_fit_pipeline(
                             text: document_segment.text,
                             start_char: document_segment.start_char,
                             end_char: document_segment.end_char,
-                            inner: DocSegVariants::Sentence { segments: original_segments },
+                            inner: DocSegVariants::Sentence {
+                                segments: original_segments,
+                            },
                         };
                     }
                     let phrase_slices = lex_phrase_slices_indices
@@ -215,7 +199,9 @@ pub fn phrase_fit_pipeline(
                             if i == 0 && *start > 0 {
                                 segments_to_add.extend_from_slice(&original_segments[0..*start]);
                             } else if i > 0 && *start > phrase_slices[i - 1].0 .1 {
-                                segments_to_add.extend_from_slice(&original_segments[phrase_slices[i - 1].0 .1..*start]);
+                                segments_to_add.extend_from_slice(
+                                    &original_segments[phrase_slices[i - 1].0 .1..*start],
+                                );
                             }
 
                             // Add the phrase token
@@ -259,7 +245,9 @@ pub fn phrase_fit_pipeline(
 
                             // Add non-phrase tokens after the last phrase
                             if i == phrase_slices.len() - 1 && *end < original_segments.len() {
-                                segments_to_add.extend_from_slice(&original_segments[*end..original_segments.len()]);
+                                segments_to_add.extend_from_slice(
+                                    &original_segments[*end..original_segments.len()],
+                                );
                             }
                             segments_to_add
                         })
@@ -269,7 +257,9 @@ pub fn phrase_fit_pipeline(
                         text: document_segment.text,
                         start_char: document_segment.start_char,
                         end_char: document_segment.end_char,
-                        inner: DocSegVariants::Sentence { segments: phrase_non_phrase_sentence },
+                        inner: DocSegVariants::Sentence {
+                            segments: phrase_non_phrase_sentence,
+                        },
                     }
                 }
             }
@@ -288,8 +278,8 @@ pub fn phrase_fit_pipeline(
 
 #[cfg(test)]
 mod tests {
-    use expect_test::{expect, Expect};
     use super::*;
+    use expect_test::{expect, Expect};
 
     #[tokio::test]
     async fn test_tokenise_pipeline_small1() {
@@ -731,5 +721,4 @@ mod tests {
     }
 
     // TODO phrase fitting tests
-
 }

@@ -66,8 +66,12 @@ pub async fn edit_term(
         (CreateTerm, PhraseTerm(phrase)) => PhraseTerm(db.create_phrase(phrase).await?),
         (UpdateTerm, TokenTerm(token)) => TokenTerm(db.update_token(token).await?),
         (UpdateTerm, PhraseTerm(phrase)) => PhraseTerm(db.update_phrase(phrase).await?),
-        (DeleteTerm, TokenTerm(token)) => TokenTerm(db.delete_token_and_return_unmarked(token).await?),
-        (DeleteTerm, PhraseTerm(phrase)) => PhraseTerm(db.delete_phrase_and_return_deleted(phrase).await?), // TODO unmarked phrase isn't really a thing?
+        (DeleteTerm, TokenTerm(token)) => {
+            TokenTerm(db.delete_token_and_return_unmarked(token).await?)
+        }
+        (DeleteTerm, PhraseTerm(phrase)) => {
+            PhraseTerm(db.delete_phrase_and_return_deleted(phrase).await?)
+        } // TODO unmarked phrase isn't really a thing?
     };
     Ok(Json(TermEditResponse {
         term: term_becomes,
