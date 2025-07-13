@@ -96,7 +96,9 @@ impl DB {
         debug_assert!(orthography.to_lowercase() == orthography);
         match self {
             Surreal { engine } => {
-                let sql = format!("SELECT * FROM token WHERE orthography = $orthography AND lang_id = $lang_id");
+                let sql = format!(
+                    "SELECT * FROM token WHERE orthography = $orthography AND lang_id = $lang_id"
+                );
                 let mut res: Response = engine
                     .query(sql)
                     .bind(("orthography", orthography))
@@ -455,8 +457,7 @@ impl DB {
 
         match self {
             Surreal { engine } => {
-                let updated: Option<Token> =
-                    engine.update(("token", id)).content(token).await?;
+                let updated: Option<Token> = engine.update(("token", id)).content(token).await?;
 
                 match updated {
                     Some(v) => Ok(v),

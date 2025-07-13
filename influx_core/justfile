@@ -3,3 +3,9 @@ runpg:
 
 runpg-with-seed:
     cargo run -- --db-choice postgres-server --seed
+
+elm-bindings:
+    cargo test generate_elm_bindings
+
+fmt:
+    cargo fmt

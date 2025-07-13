@@ -6,8 +6,6 @@ use crate::db::models::lang::LanguageEntry;
 use anyhow::Result;
 
 impl DB {
-    
-
     pub async fn seed_lang_table(&self) -> Result<()> {
         let languages = vec![
             LanguageEntry {

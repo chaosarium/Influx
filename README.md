@@ -198,9 +198,9 @@ cargo tauri build --target aarch64-apple-darwin
 - Text refers to the token's orthography in the original text so it could be partially uppercased
 - A witespace token goes between lexemes within a sentence
 - A whitespace document constituent goes between sentences in a document
-- A composit token are things like `Let's` which contains subword tokens `Let` and `us`
+- A multiword token are things like `Let's` which contains subword tokens `Let` and `us`
 - A single token are single words like `let` which can't be broken down further
-- A phrase token is a phras pretending to be a token, for exampl `hello word` is a phrase but can also be treated like a grand composit token
+- A phrase token is a phras pretending to be a token, for exampl `hello word` is a phrase but can also be treated like a grand multiword token
 - A token is shadowed if it's part of a bigger token or phrase, e.g. `let` and `us` are shadowed by `Let's`; `hello` and `world` are shadowed by `hello world`
 - Lemma always refers to the orthography of the lemma
 

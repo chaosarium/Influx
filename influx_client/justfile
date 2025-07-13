@@ -9,3 +9,6 @@ sass:
 
 dev:
     just sass & just server
+
+fmt:
+    elm-format src --yes

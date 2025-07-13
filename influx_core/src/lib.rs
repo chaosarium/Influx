@@ -61,8 +61,14 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/connection_test", get(handlers::connection_test))
-        .route("/docs/{language_identifier}", get(handlers::doc_handlers::get_docs_list))
-        .route("/docs/{language_identifier}/{file}", get(handlers::doc_handlers::get_doc))
+        .route(
+            "/docs/{language_identifier}",
+            get(handlers::doc_handlers::get_docs_list),
+        )
+        .route(
+            "/docs/{language_identifier}/{file}",
+            get(handlers::doc_handlers::get_doc),
+        )
         .route(
             "/vocab/delete_token",
             post(handlers::term_handlers::delete_token),
@@ -83,10 +89,7 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
             "/phrase/delete_phrase",
             post(handlers::term_handlers::delete_phrase),
         )
-        .route(
-            "/term/edit",
-            post(handlers::term_handlers::edit_term),
-        )
+        .route("/term/edit", post(handlers::term_handlers::edit_term))
         .route("/lang", get(handlers::lang_handlers::get_language_list))
         .route(
             "/lang/{id}",
@@ -137,14 +140,17 @@ mod tests {
                 db::models::vocab::Token,
                 db::models::vocab::TokenStatus,
                 db::models::phrase::Phrase,
-                nlp::DocumentConstituent,
-                nlp::SentenceConstituent,
                 handlers::Term,
                 handlers::TermEditAction,
                 handlers::GetDocResponse,
                 handlers::TermEditRequest,
                 handlers::TermEditResponse,
-                nlp::AnnotatedDocument,
+                nlp::AnnotatedDocV2,
+                nlp::DocSegV2,
+                nlp::DocSegVariants,
+                nlp::SentSegV2,
+                nlp::SentSegVariants,
+                nlp::SegAttribute,
             ],
             decoders: [
                 db::InfluxResourceId,
@@ -155,14 +161,17 @@ mod tests {
                 db::models::vocab::Token,
                 db::models::vocab::TokenStatus,
                 db::models::phrase::Phrase,
-                nlp::DocumentConstituent,
-                nlp::SentenceConstituent,
                 handlers::Term,
                 handlers::TermEditAction,
                 handlers::GetDocResponse,
                 handlers::TermEditRequest,
                 handlers::TermEditResponse,
-                nlp::AnnotatedDocument,
+                nlp::AnnotatedDocV2,
+                nlp::DocSegV2,
+                nlp::DocSegVariants,
+                nlp::SentSegV2,
+                nlp::SentSegVariants,
+                nlp::SegAttribute,
             ],
             queries: [],
             query_fields: [],

@@ -1,29 +1,26 @@
 module Datastore.DocContext exposing (..)
 
-import Bindings exposing (AnnotatedDocument, DocumentConstituent)
+import Bindings exposing (AnnotatedDocV2, DocSegV2, InfluxResourceId(..))
 
 
 type alias T =
     { text : String
-    , constituents : List DocumentConstituent
-    , numSentences : Int
-    , numTokens : Int
+    , lang_id : InfluxResourceId
+    , segments : List DocSegV2
     }
 
 
 empty : T
 empty =
     { text = ""
-    , constituents = []
-    , numSentences = 0
-    , numTokens = 0
+    , lang_id = SerialId -1 -- placeholder
+    , segments = []
     }
 
 
-fromAnnotatedDocument : AnnotatedDocument -> T
-fromAnnotatedDocument annotated_doc =
+fromAnnotatedDocument : InfluxResourceId -> AnnotatedDocV2 -> T
+fromAnnotatedDocument lang_id annotated_doc =
     { text = annotated_doc.text
-    , constituents = annotated_doc.constituents
-    , numSentences = annotated_doc.numSentences
-    , numTokens = annotated_doc.numTokens
+    , lang_id = lang_id
+    , segments = annotated_doc.segments
     }

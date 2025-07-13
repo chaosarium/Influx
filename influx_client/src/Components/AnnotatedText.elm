@@ -1,6 +1,6 @@
-module Components.AnnotatedText exposing (view, viewCompositTokenShadows, viewSentenceConstituent)
+module Components.AnnotatedText exposing (view, viewRegisteredPhrase, viewSentenceSegment)
 
-import Bindings exposing (..)
+import Bindings exposing (DocSegV2, DocSegVariants(..), Phrase, SentSegV2, SentSegVariants(..), Token, TokenStatus(..))
 import Datastore.DictContext
 import Datastore.DocContext
 import Datastore.FocusContext as FocusContext
@@ -9,19 +9,17 @@ import Html exposing (Html, div, span)
 import Html.Attributes exposing (class, style)
 import Html.Attributes.Extra
 import Html.Events exposing (onMouseDown, onMouseEnter, onMouseUp)
-import Html.Events.Extra.Mouse as Mouse
 import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
 import Utils.ModifierState as ModifierState
 
 
 type alias Args msg =
     { dict : Datastore.DictContext.T
-    , bypass_shadowned : Bool
     , modifier_state : ModifierState.Model
     , mouse_handler : FocusContext.Msg -> msg
-    , focus_predicate : SentenceConstituent -> Bool
-    , cst_display_predicate : SentenceConstituent -> Bool
-    , doc_cst_display_predicate : DocumentConstituent -> Bool
+    , focus_predicate : SentSegV2 -> Bool
+    , seg_display_predicate : SentSegV2 -> Bool
+    , doc_seg_display_predicate : DocSegV2 -> Bool
     }
 
 
@@ -30,44 +28,25 @@ view :
     -> Datastore.DocContext.T
     -> List (Html msg)
 view args doc =
-    List.map (viewDocumentConstituent args) doc.constituents
+    List.map (viewDocumentSegment args) doc.segments
 
 
-viewDocumentConstituent :
+viewDocumentSegment :
     Args msg
-    -> DocumentConstituent
+    -> DocSegV2
     -> Html msg
-viewDocumentConstituent args constituent =
-    if not (args.doc_cst_display_predicate constituent) then
+viewDocumentSegment args segment =
+    if not (args.doc_seg_display_predicate segment) then
         Utils.htmlEmpty
 
     else
-        case constituent of
-            Sentence { constituents } ->
+        case segment.inner of
+            Sentence { segments } ->
                 span [ class "sentence-span" ]
-                    (List.filterMap (viewSentenceConstituent args) constituents)
+                    (List.filterMap (viewSentenceSegment args) segments)
 
-            DocumentWhitespace { text } ->
-                span [ class "document-whitespace-span" ] [ Html.text text ]
-
-
-getShadowed : SentenceConstituent -> Bool
-getShadowed cst =
-    case cst of
-        CompositToken { shadowed } ->
-            shadowed
-
-        SubwordToken { shadowed } ->
-            shadowed
-
-        SingleToken { shadowed } ->
-            shadowed
-
-        PhraseToken { shadowed } ->
-            shadowed
-
-        SentenceWhitespace { shadowed } ->
-            shadowed
+            DocumentWhitespace ->
+                span [ class "document-whitespace-span" ] [ Html.text segment.text ]
 
 
 tokenDictLookup : Datastore.DictContext.T -> String -> Maybe Token
@@ -80,67 +59,31 @@ phraseDictLookup dict_ctx orthography =
     Dict.get orthography dict_ctx.phraseDict
 
 
-viewCompositTokenShadow :
-    SentenceConstituent
-    -> Html msg
-viewCompositTokenShadow cst =
-    let
-        attrs =
-            []
-    in
-    case cst of
-        CompositToken { text } ->
-            Utils.unreachableHtml "CompositToken within CompositToken???"
-
-        SubwordToken { text } ->
-            span (attrs ++ [ class "subword-token-span" ]) [ Html.text text ]
-
-        SingleToken { text } ->
-            span (attrs ++ [ class "single-token-span" ]) [ Html.text text ]
-
-        PhraseToken _ ->
-            Utils.unreachableHtml "phrase within phrase???"
-
-        SentenceWhitespace { text } ->
-            span (attrs ++ [ class "sentence-whitespace-span" ]) [ Html.text text ]
-
-
-viewCompositTokenShadows :
-    List SentenceConstituent
-    -> Html msg
-viewCompositTokenShadows csts =
-    span [ class "composit-token-shadows-span" ]
-        (List.intersperse (span [ class "sentence-whitespace-span" ] [ Html.text " " ]) (List.map viewCompositTokenShadow csts))
-
-
-viewPhraseSubconstituent :
+viewPhraseSubsegment :
     Args msg
-    -> SentenceConstituent
+    -> SentSegV2
     -> Html msg
-viewPhraseSubconstituent args cst =
+viewPhraseSubsegment args seg =
     let
         attrs =
-            [ Utils.attributeIf args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter cst))
-            , Utils.attributeIf args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown cst))
+            [ Utils.attributeIf args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
+            , Utils.attributeIf args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
             , Utils.attributeIf args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
-            , Utils.classIf (args.focus_predicate cst) "tkn-focus"
+            , Utils.classIf (args.focus_predicate seg) "tkn-focus"
             ]
     in
-    case cst of
-        CompositToken { text } ->
-            span (attrs ++ [ class "composit-token-span" ]) [ Html.text text ]
+    case seg.inner of
+        TokenSeg { orthography } ->
+            span (attrs ++ [ class "single-token-span" ]) [ Html.text seg.text ]
 
-        SubwordToken { text } ->
-            span (attrs ++ [ class "subword-token-span" ]) [ Html.text text ]
+        WhitespaceSeg ->
+            span (attrs ++ [ class "sentence-whitespace-span" ]) [ Html.text seg.text ]
 
-        SingleToken { text } ->
-            span (attrs ++ [ class "single-token-span" ]) [ Html.text text ]
+        PunctuationSeg ->
+            span (attrs ++ [ class "sentence-punctuation-span" ]) [ Html.text seg.text ]
 
-        PhraseToken _ ->
+        PhraseSeg _ ->
             Utils.unreachableHtml "phrase within phrase???"
-
-        SentenceWhitespace { text } ->
-            span (attrs ++ [ class "sentence-whitespace-span" ]) [ Html.text text ]
 
 
 tokenStatusToClass : TokenStatus -> Html.Attribute msg
@@ -184,19 +127,19 @@ viewRegisteredTkn :
     -> List (Html.Attribute msg)
     -> String
     -> Token
-    -> SentenceConstituent
+    -> SentSegV2
     -> Html msg
-viewRegisteredTkn args attrs text tkn cst =
+viewRegisteredTkn args attrs text tkn seg =
     ruby []
         [ rb []
             [ span
                 (attrs
                     ++ [ tokenStatusToClass tkn.status
-                       , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter cst))
-                       , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown cst))
+                       , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
+                       , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
                        , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
                        , class "clickable-tkn-span"
-                       , Utils.classIf (args.focus_predicate cst) "tkn-focus"
+                       , Utils.classIf (args.focus_predicate seg) "tkn-focus"
                        ]
                 )
                 [ Html.text text ]
@@ -212,70 +155,57 @@ viewRegisteredPhrase :
     Args msg
     -> List (Html.Attribute msg)
     -> Phrase
-    -> SentenceConstituent
-    -> List SentenceConstituent
+    -> SentSegV2
+    -> List SentSegV2
     -> Html msg
-viewRegisteredPhrase args attrs phrase cst shadows =
+viewRegisteredPhrase args attrs phrase seg components =
     ruby []
         [ rb []
             [ span
                 (attrs
-                    ++ [ Utils.attributeIfNot args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter cst))
-                       , Utils.attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown cst))
+                    ++ [ Utils.attributeIfNot args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
+                       , Utils.attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
                        , Utils.attributeIfNot args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
                        , tokenStatusToClass phrase.status
-                       , Utils.classIf (args.focus_predicate cst) "tkn-focus"
+                       , Utils.classIf (args.focus_predicate seg) "tkn-focus"
                        ]
                 )
-                (List.map (viewPhraseSubconstituent args) shadows)
+                (List.map (viewPhraseSubsegment args) components)
             ]
         , rt [] [ Html.text phrase.definition ]
         ]
 
 
-viewSentenceConstituent :
+viewSentenceSegment :
     Args msg
-    -> SentenceConstituent
+    -> SentSegV2
     -> Maybe (Html msg)
-viewSentenceConstituent args cst =
-    if (getShadowed cst && args.bypass_shadowned) || not (args.cst_display_predicate cst) then
+viewSentenceSegment args seg =
+    if not (args.seg_display_predicate seg) then
         Nothing
 
     else
         Just
-            (case cst of
-                CompositToken { text } ->
-                    case tokenDictLookup args.dict text of
-                        Nothing ->
-                            viewUnregisteredTkn [ class "composit-token-span" ] text
-
-                        Just tkn ->
-                            viewRegisteredTkn args [ class "composit-token-span" ] text tkn cst
-
-                SubwordToken { text, orthography } ->
+            (case seg.inner of
+                TokenSeg { orthography } ->
                     case tokenDictLookup args.dict orthography of
                         Nothing ->
-                            viewUnregisteredTkn [ class "subword-token-span" ] text
+                            viewUnregisteredTkn [ class "single-token-span", class "tkn-nostatus" ] seg.text
 
                         Just tkn ->
-                            viewRegisteredTkn args [ class "subword-token-span" ] text tkn cst
+                            viewRegisteredTkn args [ class "single-token-span" ] seg.text tkn seg
 
-                SingleToken { text, orthography } ->
-                    case tokenDictLookup args.dict orthography of
-                        Nothing ->
-                            viewUnregisteredTkn [ class "single-token-span", class "tkn-nostatus" ] text
-
-                        Just tkn ->
-                            viewRegisteredTkn args [ class "single-token-span" ] text tkn cst
-
-                PhraseToken { normalisedOrthography, shadows } ->
+                PhraseSeg { normalisedOrthography, components } ->
                     case phraseDictLookup args.dict normalisedOrthography of
                         Nothing ->
                             unreachableHtml "Phrase not found in dict"
 
                         Just phrase ->
-                            viewRegisteredPhrase args [ class "phrase-span" ] phrase cst shadows
+                            viewRegisteredPhrase args [ class "phrase-span" ] phrase seg components
 
-                SentenceWhitespace { text } ->
-                    span [ class "sentence-whitespace-span" ] [ Html.text text ]
+                WhitespaceSeg ->
+                    span [ class "sentence-whitespace-span" ] [ Html.text seg.text ]
+
+                PunctuationSeg ->
+                    span [ class "sentence-punctuation-span" ] [ Html.text seg.text ]
             )

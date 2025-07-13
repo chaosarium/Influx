@@ -1,97 +1,107 @@
 from flask import Flask, request
 import argparse
-import stanza
-from deep_translator import (GoogleTranslator, ChatGptTranslator, MicrosoftTranslator, PonsTranslator, LingueeTranslator, MyMemoryTranslator, YandexTranslator, PapagoTranslator, DeeplTranslator, QcriTranslator)
+from typing import TypedDict, Optional
+from lib.parsing import SpacyParser
+from deep_translator import (
+    GoogleTranslator,
+    ChatGptTranslator,
+    MicrosoftTranslator,
+    PonsTranslator,
+    LingueeTranslator,
+    MyMemoryTranslator,
+    YandexTranslator,
+    PapagoTranslator,
+    DeeplTranslator,
+    QcriTranslator,
+)
+
+
+class TokeniserRequest(TypedDict):
+    text: str
+
+
+class TranslateRequest(TypedDict):
+    text: str
+    from_lang_id: str
+    to_lang_id: str
+    provider: str
+
+
+class TranslateResponse(TypedDict):
+    translated_text: str
+
+
+class AppContext(TypedDict):
+    port: Optional[int]
+    parser: Optional[SpacyParser]
+
 
 app = Flask(__name__)
-context = {
-    'loaded_pipelines': {},
-}
-
-
-
-def tokenise_text(text: str, language: str) -> tuple[str, int, int, list[list[list[dict[str, str|int]]]]]:
-    if not language in context['loaded_pipelines']:
-        nlp = stanza.Pipeline(lang=language, processors='tokenize, lemma', model_dir=f"{context['influx_path']}/_stanza_resources/", logging_level='WARN')
-        context['loaded_pipelines'][language] = nlp
-    else:
-        nlp = context['loaded_pipelines'][language]
-        
-    doc = nlp(text)
-
-    constituents = []
-    for sentence in doc.sentences:
-        constituents.append([token.to_dict() for token in sentence.tokens])
-    
-    # print(constituents)
-        
-    return {
-        'text': doc.text,
-        'num_tokens': doc.num_tokens,
-        'num_sentences': len(doc.sentences),
-        'constituents': constituents,
-    }
-
+context: AppContext = {"port": None, "parser": None}
 
 
 @app.route("/")
-def root_handler():
-    port = context['port']
-    return f"Hello, World! Running on port {port}" 
+def root_handler() -> str:
+    port: Optional[int] = context["port"]
+    return f"Hello, World! Running on port {port}"
+
 
 # post is a workaroudn for large incoming data
-@app.route('/tokeniser/<lang_code>', methods=["POST"])
-def tokeniser_handler(lang_code):
-    data = request.get_json()
-    text = data.get('text', '')
-    print(f'Received text: {text}, lang_code: {lang_code}')
-    return tokenise_text(text, lang_code)
+@app.route("/tokeniser/<lang_code>", methods=["POST"])
+def tokeniser_handler(lang_code: str) -> dict:
+    data: TokeniserRequest = request.get_json()
+    text: str = data.get("text", "")
+    print(f"Received text: {text}, lang_code: {lang_code}")
+    # The parser returns a dictionary representation of AnnotatedDocV2
+    return context["parser"].parse(text, lang_code)
 
-@app.route('/extern_translate', methods=["POST"])
-def google_translate_handler():
-    data = request.get_json()
-    text = data.get('text')
-    from_lang_id = data.get('from_lang_id')
-    to_lang_id = data.get('to_lang_id')
-    provider = data.get('provider')
+
+@app.route("/extern_translate", methods=["POST"])
+def google_translate_handler() -> TranslateResponse:
+    data: TranslateRequest = request.get_json()
+    text: str = data.get("text")
+    from_lang_id: str = data.get("from_lang_id")
+    to_lang_id: str = data.get("to_lang_id")
+    provider: str = data.get("provider")
+    translated_text: str
     try:
         match provider:
-            case 'google':
+            case "google":
                 translator = GoogleTranslator(source=from_lang_id, target=to_lang_id)
-            case 'chatgpt':
+            case "chatgpt":
                 translator = ChatGptTranslator(source=from_lang_id, target=to_lang_id)
-            case 'microsoft':
+            case "microsoft":
                 translator = MicrosoftTranslator(source=from_lang_id, target=to_lang_id)
-            case 'pons':
+            case "pons":
                 translator = PonsTranslator(source=from_lang_id, target=to_lang_id)
-            case 'linguee':
+            case "linguee":
                 translator = LingueeTranslator(source=from_lang_id, target=to_lang_id)
-            case 'mymemory':
+            case "mymemory":
                 translator = MyMemoryTranslator(source=from_lang_id, target=to_lang_id)
-            case 'yandex':
+            case "yandex":
                 translator = YandexTranslator(source=from_lang_id, target=to_lang_id)
-            case 'papago':
+            case "papago":
                 translator = PapagoTranslator(source=from_lang_id, target=to_lang_id)
-            case 'deepl':
+            case "deepl":
                 translator = DeeplTranslator(source=from_lang_id, target=to_lang_id)
-            case 'qcri':
+            case "qcri":
                 translator = QcriTranslator(source=from_lang_id, target=to_lang_id)
             case _:
-                return 'Invalid provider'
+                translated_text = "Invalid provider"
+                # In a real application, you might want to return a proper error response with a status code
+                return TranslateResponse(translated_text=translated_text)
         translated_text = translator.translate(text)
     except Exception as e:
         translated_text = str(e)
     print(translated_text)
-    return {
-        "translated_text": translated_text
-    }
+    return TranslateResponse(translated_text=translated_text)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Arguments for NLP server")
-    parser.add_argument('--port', type=int, help='The port to run the NLP server', required=True)
-    parser.add_argument('--influx_path', type=str, help='The path to the influx content directory', required=True)
+    parser.add_argument("--port", type=int, help="The port to run the NLP server", required=True)
     args = parser.parse_args()
-    
-    context['port'] = args.port
-    context['influx_path'] = args.influx_path
-    app.run(host='127.0.0.1', port=args.port)
+
+    context["port"] = args.port
+    context["parser"] = SpacyParser()
+    app.run(host="127.0.0.1", port=args.port)

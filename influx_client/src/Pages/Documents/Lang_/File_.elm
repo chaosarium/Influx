@@ -2,25 +2,26 @@ module Pages.Documents.Lang_.File_ exposing (Model, Msg, page)
 
 import Api
 import Api.GetAnnotatedDoc
-import Api.TokenEdit
-import Bindings exposing (GetDocResponse, LanguageEntry, Phrase, SentenceConstituent, Token)
-import Browser.Events exposing (onMouseUp)
+import Api.TermEdit
+import Bindings exposing (..)
 import Components.AnnotatedText as AnnotatedText
 import Components.DbgDisplay
-import Components.TokenEditForm as TokenEditForm
+import Components.TermEditForm as TermEditForm
 import Components.Topbar
 import Datastore.DictContext as DictContext
 import Datastore.DocContext as DocContext
 import Datastore.FocusContext as FocusContext
+import Dict
 import Effect exposing (Effect)
 import Html exposing (..)
-import Html.Attributes exposing (alt, class, src)
+import Html.Attributes exposing (class)
+import Html.Events
 import Html.Extra
 import Http
-import Json.Decode
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
+import Toast
 import Utils
 import Utils.ModifierState as ModifierState
 import View exposing (View)
@@ -50,7 +51,8 @@ type alias Model =
     , working_doc : DocContext.T
     , working_dict : DictContext.T
     , focus_ctx : FocusContext.T
-    , form_model : TokenEditForm.Model
+    , form_model : TermEditForm.Model
+    , toast_tray : Toast.Tray String
     }
 
 
@@ -66,9 +68,9 @@ init args () =
       , working_doc = DocContext.empty
       , working_dict = DictContext.empty
       , focus_ctx = FocusContext.new
-      , form_model = TokenEditForm.empty
+      , form_model = TermEditForm.empty
+      , toast_tray = Toast.tray
       }
-      -- TODO combine working_doc and focus_ctx into some module?
     , Effect.sendCmd (Api.GetAnnotatedDoc.get args ApiResponded)
     )
 
@@ -83,25 +85,35 @@ type Msg
       -- Mouse selection...
     | SelectionMouseEvent FocusContext.Msg -- will update focus context
     | NoopMouseEvent FocusContext.Msg -- for mouse events that don't change the focus context
-      -- Token editor...
-    | TokenEditorEvent TokenEditForm.Msg
+      -- Term editor...
+    | TermEditorEvent TermEditForm.Msg
       -- Shared
     | ModifierStateMsg ModifierState.Msg
+    | ToastMsg Toast.Msg
+    | AddToast String
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
-    -- base event handling
     case msg of
+        ToastMsg tmsg ->
+            let
+                ( toast_tray, toast_cmd ) =
+                    Toast.update tmsg model.toast_tray
+            in
+            ( { model | toast_tray = toast_tray }
+            , Effect.sendCmd (Cmd.map ToastMsg toast_cmd)
+            )
+
         ApiResponded (Ok res) ->
             let
                 _ =
-                    Debug.log "ApiResponded" res
+                    Effect.none
             in
             ( { model
                 | get_doc_api_res = Api.Success res
-                , working_doc = DocContext.fromAnnotatedDocument res.annotatedDoc
-                , working_dict = DictContext.fromAnnotatedDocument res.annotatedDoc
+                , working_doc = DocContext.fromAnnotatedDocument res.langId res.annotatedDoc
+                , working_dict = DictContext.fromAnnotatedDocument res.langId res.annotatedDoc
               }
             , Effect.none
             )
@@ -115,10 +127,10 @@ update msg model =
         SelectionMouseEvent m ->
             let
                 focus_ctx =
-                    FocusContext.update model.working_doc.text m model.focus_ctx
+                    FocusContext.update model.working_doc m model.focus_ctx
 
                 ( form_model, _ ) =
-                    TokenEditForm.update model.working_dict (TokenEditForm.EditingConUpdated model.focus_ctx.constituent_selection) model.form_model
+                    TermEditForm.update model.working_dict (TermEditForm.EditingSegUpdated focus_ctx.segment_slice focus_ctx.segment_selection) model.form_model
             in
             ( { model
                 | focus_ctx = focus_ctx
@@ -127,36 +139,44 @@ update msg model =
             , Effect.none
             )
 
-        TokenEditorEvent formMsg ->
+        TermEditorEvent formMsg ->
             case formMsg of
-                TokenEditForm.RequestCreateToken token ->
+                TermEditForm.RequestEditTerm action term ->
                     ( model
-                    , Effect.sendCmd (Api.TokenEdit.create token (TokenEditorEvent << TokenEditForm.GotCreateTokenResponse))
+                    , Effect.sendCmd (Api.TermEdit.edit { requestedAction = action, term = term } (TermEditorEvent << TermEditForm.GotTermEditResponse))
                     )
 
-                TokenEditForm.RequestUpdateToken token ->
-                    ( model
-                    , Effect.sendCmd (Api.TokenEdit.update token (TokenEditorEvent << TokenEditForm.GotUpdateTokenResponse))
-                    )
-
-                TokenEditForm.RequestDeleteToken token ->
-                    ( model
-                    , Effect.sendCmd (Api.TokenEdit.delete token (TokenEditorEvent << TokenEditForm.GotDeleteTokenResponse))
-                    )
-
-                TokenEditForm.OverwriteToken token ->
-                    ( { model | working_dict = DictContext.overwriteToken model.working_dict token }
+                TermEditForm.OverwriteTerm term ->
+                    ( { model | working_dict = DictContext.overwriteTerm model.working_dict term }
                     , Effect.none
+                    )
+
+                TermEditForm.AddToast message ->
+                    let
+                        ( toast_tray, toast_cmd ) =
+                            Toast.add model.toast_tray (Toast.expireIn 5000 message)
+                    in
+                    ( { model | toast_tray = toast_tray }
+                    , Effect.sendCmd (Cmd.map ToastMsg toast_cmd)
                     )
 
                 _ ->
                     let
                         ( form_model, child_fx ) =
-                            TokenEditForm.update model.working_dict formMsg model.form_model
+                            TermEditForm.update model.working_dict formMsg model.form_model
                     in
                     ( { model | form_model = form_model }
-                    , Effect.map TokenEditorEvent child_fx
+                    , Effect.map TermEditorEvent child_fx
                     )
+
+        AddToast message ->
+            let
+                ( toast_tray, toast_cmd ) =
+                    Toast.add model.toast_tray (Toast.expireIn 1000 message)
+            in
+            ( { model | toast_tray = toast_tray }
+            , Effect.sendCmd (Cmd.map ToastMsg toast_cmd)
+            )
 
         _ ->
             ( model, Effect.none )
@@ -168,7 +188,6 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    -- onMouseUp (Json.Decode.succeed (SelectionMouseEvent (FocusContext.SelectMouseUp ())))
     ModifierState.subscriptions ModifierStateMsg
 
 
@@ -178,22 +197,27 @@ subscriptions model =
 -- start TODO put in component
 
 
-viewConExtraInfo : SentenceConstituent -> Html msg
-viewConExtraInfo con =
-    case con of
-        Bindings.CompositToken { shadows } ->
-            Html.span [] [ Html.text "=  ", AnnotatedText.viewCompositTokenShadows shadows ]
+viewSegExtraInfo : DictContext.T -> SentSegV2 -> Html Msg
+viewSegExtraInfo dict seg =
+    case seg.inner of
+        TokenSeg { orthography } ->
+            Utils.htmlIf (Maybe.withDefault "" seg.attributes.lemma /= orthography) <| Html.span [] [ Html.text (" (lemma is " ++ Maybe.withDefault "" seg.attributes.lemma ++ ")") ]
 
-        Bindings.SubwordToken { orthography, lemma } ->
-            Utils.htmlIf (orthography /= lemma) <| Html.span [] [ Html.text (" (lemma is " ++ lemma ++ ")") ]
+        PhraseSeg { normalisedOrthography, components } ->
+            Html.span []
+                [ Html.text "=  "
+                , AnnotatedText.viewRegisteredPhrase
+                    { dict = dict, modifier_state = ModifierState.init, mouse_handler = NoopMouseEvent, focus_predicate = \_ -> False, seg_display_predicate = \_ -> True, doc_seg_display_predicate = \_ -> True }
+                    []
+                    (Maybe.withDefault { id = Nothing, langId = Bindings.SerialId -1, orthographySeq = [], definition = "", notes = "", originalContext = "", status = Bindings.Unmarked } (Dict.get normalisedOrthography dict.phraseDict))
+                    seg
+                    components
+                ]
 
-        Bindings.SingleToken { orthography, lemma } ->
-            Utils.htmlIf (orthography /= lemma) <| Html.span [] [ Html.text (" (lemma is " ++ lemma ++ ")") ]
-
-        Bindings.SentenceWhitespace _ ->
+        WhitespaceSeg ->
             Html.Extra.nothing
 
-        Bindings.PhraseToken _ ->
+        PunctuationSeg ->
             Html.Extra.nothing
 
 
@@ -206,7 +230,6 @@ view route model =
     let
         annotatedDocViewCtx =
             { dict = model.working_dict
-            , bypass_shadowned = True
             , modifier_state = model.modifier_state
             , mouse_handler = SelectionMouseEvent
             , focus_predicate =
@@ -215,38 +238,37 @@ view route model =
                         \_ -> False
 
                     Just slice ->
-                        FocusContext.isCstInSlice slice
-            , cst_display_predicate = \_ -> True
-            , doc_cst_display_predicate = \_ -> True
+                        FocusContext.isSentSegInSlice slice
+            , seg_display_predicate = \_ -> True
+            , doc_seg_display_predicate = \_ -> True
             }
     in
     let
-        selectedConstViewCtx =
+        selectedSegViewCtx =
             { dict = model.working_dict
-            , bypass_shadowned = True
             , modifier_state = model.modifier_state
             , mouse_handler = NoopMouseEvent
             , focus_predicate = \_ -> False
-            , cst_display_predicate =
+            , seg_display_predicate =
                 case model.focus_ctx.slice_selection of
                     Nothing ->
                         \_ -> False
 
                     Just slice ->
-                        FocusContext.isCstInSlice slice
-            , doc_cst_display_predicate =
+                        FocusContext.isSentSegInSlice slice
+            , doc_seg_display_predicate =
                 case model.focus_ctx.slice_selection of
                     Nothing ->
                         \_ -> False
 
                     Just slice ->
-                        FocusContext.isDocCstInSlice slice
+                        FocusContext.isDocSegInSlice slice
             }
     in
     { title = "File view"
     , body =
         [ Components.Topbar.view {}
-        , Components.DbgDisplay.view "route" route
+        , Html.div [ class "toast-tray" ] [ Toast.render viewToast model.toast_tray (Toast.config ToastMsg) ]
         , Html.h1 [] [ Html.text ("lang: " ++ route.params.lang ++ ", file: " ++ Utils.unwrappedPercentDecode route.params.file) ]
         , case model.get_doc_api_res of
             Api.Loading ->
@@ -256,11 +278,20 @@ view route model =
                 Html.text ("Error: " ++ Api.stringOfHttpErrMsg err)
 
             Api.Success _ ->
-                div [ class "annotated-doc-div dbg-off" ]
+                div [ class "annotated-doc-div", class "dbg-on" ]
                     (AnnotatedText.view
                         annotatedDocViewCtx
                         model.working_doc
                     )
+
+        -- for debugging check focus context model
+        , Components.DbgDisplay.view "model.focus_ctx.last_hovered_at" model.focus_ctx.last_hovered_at
+        , Components.DbgDisplay.view "model.focus_ctx.mouse_down_at" model.focus_ctx.mouse_down_at
+        , Components.DbgDisplay.view "model.focus_ctx.last_mouse_down_at" model.focus_ctx.last_mouse_down_at
+        , Components.DbgDisplay.view "model.focus_ctx.slice_selection" model.focus_ctx.slice_selection
+        , Components.DbgDisplay.view "model.focus_ctx.selected_text" model.focus_ctx.selected_text
+        , Components.DbgDisplay.view "model.focus_ctx.segment_selection" model.focus_ctx.segment_selection
+        , Components.DbgDisplay.view "model.focus_ctx.segment_slice" model.focus_ctx.segment_slice
 
         -- selected text
         , div []
@@ -270,30 +301,29 @@ view route model =
                 )
             ]
 
-        -- selected constituent
+        -- selected segment
         , div []
             [ span []
-                [ Html.text "selected const: " ]
+                [ Html.text "selected seg: " ]
             , Maybe.withDefault
                 (Html.text "")
-                (Maybe.andThen (AnnotatedText.viewSentenceConstituent { selectedConstViewCtx | bypass_shadowned = False }) model.focus_ctx.constituent_selection)
-            , Html.Extra.viewMaybe (\con -> viewConExtraInfo con) model.focus_ctx.constituent_selection
+                (Maybe.andThen (AnnotatedText.viewSentenceSegment selectedSegViewCtx) model.focus_ctx.segment_selection)
+            , Html.Extra.viewMaybe (\seg -> viewSegExtraInfo model.working_dict seg) model.focus_ctx.segment_selection
             ]
-
-        -- whole text but selected only
-        -- , div []
-        --     [ span []
-        --         [ Html.text "selection, rich display: " ]
-        --     , span [ class "" ]
-        --         (AnnotatedText.view
-        --             selectedConstViewCtx
-        --             model.working_doc
-        --         )
-        --     ]
-        , TokenEditForm.view model.form_model
-            TokenEditorEvent
+        , TermEditForm.view model.form_model
+            TermEditorEvent
             { dict = model.working_dict
             }
-        , Components.DbgDisplay.view "model.focus_ctx" model.focus_ctx
+
+        -- for debugging. click to toast a message
+        , Html.button
+            [ Html.Events.onClick (AddToast "Test toast")
+            ]
+            [ Html.text "Test toast" ]
         ]
     }
+
+
+viewToast : List (Html.Attribute msg) -> Toast.Info String -> Html msg
+viewToast attributes toast =
+    Html.div (class "toast toast--spaced" :: attributes) [ Html.text toast.content ]

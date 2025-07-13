@@ -1,6 +1,6 @@
 module Datastore.DictContext exposing (..)
 
-import Bindings exposing (AnnotatedDocument, Phrase, Token)
+import Bindings exposing (..)
 import BindingsUtils exposing (..)
 import Dict exposing (Dict)
 
@@ -12,6 +12,7 @@ import Dict exposing (Dict)
 type alias T =
     { tokenDict : Dict String Token
     , phraseDict : Dict String Phrase
+    , lang_id : InfluxResourceId
     }
 
 
@@ -23,11 +24,12 @@ empty : T
 empty =
     { tokenDict = Dict.empty
     , phraseDict = Dict.empty
+    , lang_id = SerialId -1 -- placeholder
     }
 
 
-fromAnnotatedDocument : Bindings.AnnotatedDocument -> T
-fromAnnotatedDocument annotated_doc =
+fromAnnotatedDocument : InfluxResourceId -> Bindings.AnnotatedDocV2 -> T
+fromAnnotatedDocument lang_id annotated_doc =
     { tokenDict =
         case annotated_doc.tokenDict of
             Nothing ->
@@ -42,6 +44,7 @@ fromAnnotatedDocument annotated_doc =
 
             Just phraseDict ->
                 phraseDict
+    , lang_id = lang_id
     }
 
 
@@ -55,14 +58,14 @@ lookupPhrase dict_ctx term =
     Dict.get term dict_ctx.phraseDict
 
 
-overwriteToken : T -> Token -> T
-overwriteToken dict_ctx token =
-    { dict_ctx | tokenDict = Dict.insert token.orthography token dict_ctx.tokenDict }
+overwriteTerm : T -> Term -> T
+overwriteTerm dict_ctx term =
+    case term of
+        TokenTerm token ->
+            { dict_ctx | tokenDict = Dict.insert token.orthography token dict_ctx.tokenDict }
 
-
-overwritePhrase : T -> Phrase -> T
-overwritePhrase dict_ctx phrase =
-    { dict_ctx | phraseDict = Dict.insert (BindingsUtils.orthographySeqToNormalized phrase.orthographySeq) phrase dict_ctx.phraseDict }
+        PhraseTerm phrase ->
+            { dict_ctx | phraseDict = Dict.insert (BindingsUtils.orthographySeqToNormalized phrase.orthographySeq) phrase dict_ctx.phraseDict }
 
 
 

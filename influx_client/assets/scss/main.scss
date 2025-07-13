@@ -22,6 +22,7 @@ nav.navbar {
         padding: 0;
         margin: 0;
     }
+
     ul li {
         display: inline;
         margin-right: 10px;
@@ -50,18 +51,23 @@ pre.dbg-json-pre {
     line-height: 1.8;
 }
 
+span.document-whitespace-span {
+    white-space: pre-wrap;
+
+}
+
+
 .dbg-on {
     span.sentence-span {
         border: 1px solid rgb(220, 172, 172);
         padding-block: 2px;
-    }i
+    }
 
     span.document-whitespace-span {
         border: 1px dotted rgb(186, 166, 166);
-        white-space: pre-wrap;
     }
 
-    span.composit-token-span {
+    span.multiword-token-span {
         border: 2px solid #60a5fa;
     }
 
@@ -79,7 +85,11 @@ pre.dbg-json-pre {
     }
 
     span.sentence-whitespace-span {
-        border: 1px dotted #38bdf8;
+    border: 1px dotted #38bdf8;
+}
+
+    span.sentence-punctuation-span {
+        border: 1px solid #ff0000; /* Example style for punctuation */
     }
 }
 
@@ -87,27 +97,35 @@ pre.dbg-json-pre {
 span.tkn-unmarked {
     background: $gray4;
 }
+
 span.tkn-ignored {
     background: $violet4;
 }
+
 span.tkn-l1 {
     background: $red4;
 }
+
 span.tkn-l2 {
     background: $orange4;
 }
+
 span.tkn-l3 {
     background: $amber4;
 }
+
 span.tkn-l4 {
     background: $lime4;
 }
+
 span.tkn-l5 {
     background: $green4;
 }
+
 span.tkn-known {
     background: none;
 }
+
 span.tkn-nostatus {
     background: red;
 }
@@ -139,4 +157,48 @@ span.clickable-tkn-span {
 
 .dbg-todo {
     background-color: $amber9;
+}
+
+
+// toast stuff
+
+.toast-tray {
+    position: fixed;
+    top: 1em;
+    right: 1em;
+}
+
+.toast {
+    font-family: sans-serif;
+    box-sizing: content-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    width: 15em;
+    padding: 0.8em 1em;
+    background: #4a90e2;
+    color: white;
+    opacity: 1;
+    transition:
+        opacity 0.6s ease,
+        transform 0.6s ease;
+}
+
+.toast::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: 2px 2px 5px 1px #999;
+    opacity: 0.5;
+    transition:
+        opacity 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.toast--spaced {
+    margin-bottom: 1em;
 }
