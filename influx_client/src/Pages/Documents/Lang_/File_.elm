@@ -321,12 +321,6 @@ view route model =
             { dict = model.working_dict
             , doc_path = Just { lang = route.params.lang, file = route.params.file }
             }
-
-        -- for debugging. click to toast a message
-        , Html.button
-            [ Html.Events.onClick (AddToast "Test toast")
-            ]
-            [ Html.text "Test toast" ]
         ]
     }
 

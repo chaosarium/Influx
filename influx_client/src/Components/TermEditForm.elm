@@ -465,7 +465,8 @@ viewTermForm form lift args =
         form_data =
             case form.working_term of
                 TokenTerm token ->
-                    { orthography = token.orthography
+                    { token_or_phrase = "Token"
+                    , orthography = token.orthography
                     , definition = token.definition
                     , phonetic = Just token.phonetic
                     , status = token.status
@@ -473,7 +474,8 @@ viewTermForm form lift args =
                     }
 
                 PhraseTerm phrase ->
-                    { orthography = BindingsUtils.orthographySeqToNormalized phrase.orthographySeq
+                    { token_or_phrase = "Phrase"
+                    , orthography = BindingsUtils.orthographySeqToNormalized phrase.orthographySeq
                     , definition = phrase.definition
                     , phonetic = Nothing
                     , status = phrase.status
@@ -481,9 +483,9 @@ viewTermForm form lift args =
                     }
     in
     Html.form
-        [ Styles.bgGrey
-        ]
-        [ inputC [ disabled True ] "Orthography" "orthographyInput" (lift << InputChanged << UpdateOrthographyInput) form_data.orthography
+        [ Styles.bgGrey ]
+        [ Html.text ("Editing " ++ form_data.token_or_phrase)
+        , inputC [ disabled True ] "Orthography" "orthographyInput" (lift << InputChanged << UpdateOrthographyInput) form_data.orthography
         , inputC [] "Definition" "definitionInput" (lift << InputChanged << UpdateDefinitionInput) form_data.definition
         , case form_data.phonetic of
             Just p ->
