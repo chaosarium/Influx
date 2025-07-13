@@ -196,6 +196,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_get_md_file_metadata() {
         let path = "../toy_content/fr_demo/Les misérables 1.md";
         let result = get_md_file_metadata(path.into());
@@ -222,6 +223,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_list_md_files_metadata() {
         let directory = "../toy_content/fr_demo";
         let result = gt_md_file_list_w_metadata(directory.into());

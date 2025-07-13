@@ -5,7 +5,7 @@ use crate::{db::InfluxResourceId, prelude::*};
 use anyhow::Result;
 use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
 use log::warn;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use DB::*;
 
 #[derive(
@@ -283,7 +283,7 @@ impl DB {
     pub async fn query_tokens_by_orthographies(
         &self,
         lang_id: InfluxResourceId,
-        orthography_set: &HashSet<String>,
+        orthography_set: &BTreeSet<String>,
     ) -> Result<Vec<Token>> {
         orthography_set
             .iter()
@@ -367,14 +367,14 @@ impl DB {
     pub async fn get_dict_from_orthography_set(
         &self,
         lang_id: InfluxResourceId,
-        orthography_set: HashSet<String>,
-    ) -> Result<HashMap<String, Token>> {
+        orthography_set: BTreeSet<String>,
+    ) -> Result<BTreeMap<String, Token>> {
         let query_result = self
             .query_tokens_by_orthographies(lang_id.clone(), &orthography_set)
             .await?;
 
         // loop through sequence, apply token if found, otherwise apply UNMARKED token
-        let populated_seq: HashMap<String, Token> = orthography_set
+        let populated_seq: BTreeMap<String, Token> = orthography_set
             .iter()
             .map(|orthography| {
                 (
@@ -386,7 +386,7 @@ impl DB {
                         .unwrap_or(Token::unmarked_token(lang_id.clone(), orthography)),
                 )
             })
-            .collect::<HashMap<String, Token>>()
+            .collect::<BTreeMap<String, Token>>()
             .into();
 
         Ok(populated_seq)
@@ -397,9 +397,11 @@ impl DB {
         &self,
         lang_id: InfluxResourceId,
         orthography_seq: Vec<String>,
-    ) -> Result<HashMap<String, Token>> {
-        let orthography_set: HashSet<String> =
-            orthography_seq.iter().cloned().collect::<HashSet<String>>();
+    ) -> Result<BTreeMap<String, Token>> {
+        let orthography_set: BTreeSet<String> = orthography_seq
+            .iter()
+            .cloned()
+            .collect::<BTreeSet<String>>();
         self.get_dict_from_orthography_set(lang_id, orthography_set)
             .await
     }
@@ -408,13 +410,13 @@ impl DB {
     pub async fn get_dict_from_text_set(
         &self,
         lang_id: InfluxResourceId,
-        text_set: HashSet<String>,
-    ) -> Result<HashMap<String, Token>> {
-        let orthography_set: HashSet<String> = text_set
+        text_set: BTreeSet<String>,
+    ) -> Result<BTreeMap<String, Token>> {
+        let orthography_set: BTreeSet<String> = text_set
             .iter()
             .cloned()
             .map(|x| x.to_lowercase())
-            .collect::<HashSet<String>>();
+            .collect::<BTreeSet<String>>();
         self.get_dict_from_orthography_set(lang_id, orthography_set)
             .await
     }
@@ -424,12 +426,12 @@ impl DB {
         &self,
         lang_id: InfluxResourceId,
         text_seq: Vec<String>,
-    ) -> Result<HashMap<String, Token>> {
-        let orthography_set: HashSet<String> = text_seq
+    ) -> Result<BTreeMap<String, Token>> {
+        let orthography_set: BTreeSet<String> = text_seq
             .iter()
             .cloned()
             .map(|x| x.to_lowercase())
-            .collect::<HashSet<String>>();
+            .collect::<BTreeSet<String>>();
         self.get_dict_from_orthography_set(lang_id, orthography_set)
             .await
     }
@@ -489,341 +491,3 @@ impl DB {
         }
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use crate::db::DBLocation;
-
-//     use super::*;
-
-//     #[tokio::test]
-//     async fn test_create_token() {
-//         for db_choice in [
-//             crate::DBChoice::SurrealMemory,
-//             crate::DBChoice::PostgresServer,
-//         ] {
-//             let db = DB::create_db(db_choice).await.unwrap();
-//             let token = Token::essential_token("langs:en_demo", "test");
-//             let token = db.create_token(token).await.unwrap();
-//             println!("{:?}", token);
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn test_query_token_by_orthography() {
-//         for db_choice in [
-//             crate::DBChoice::SurrealMemory,
-//             crate::DBChoice::PostgresServer,
-//         ] {
-//             let db = DB::create_db(db_choice).await.unwrap();
-
-//             let _ = db
-//                 .create_token(Token::fancier_token(
-//                     "langs:en_demo",
-//                     "test",
-//                     "testdef",
-//                     "tɛst",
-//                     TokenStatus::L1,
-//                 ))
-//                 .await
-//                 .unwrap();
-//             let _ = db
-//                 .create_token(Token::fancier_token(
-//                     "langs:en_demo",
-//                     "wrong",
-//                     "testdef",
-//                     "tɛst",
-//                     TokenStatus::L1,
-//                 ))
-//                 .await
-//                 .unwrap();
-//             let _ = db
-//                 .create_token(Token::fancier_token(
-//                     "langs:wrong",
-//                     "test",
-//                     "testdef",
-//                     "tɛst",
-//                     TokenStatus::L1,
-//                 ))
-//                 .await
-//                 .unwrap();
-//             let res = db
-//                 .query_token_by_orthography("test".to_string(), "langs:en_demo".to_string())
-//                 .await;
-//             assert!(res.is_ok());
-//             let token = res.unwrap();
-//             assert!(token.is_some());
-//             let token = token.unwrap();
-
-//             println!("query result: {:#?}", token);
-//             assert_eq!(token.orthography, "test".to_string());
-//             assert_eq!(token.phonetic, "tɛst".to_string());
-//             assert_eq!(token.definition, "testdef".to_string());
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn test_query_token_by_id() {
-//         for db_choice in [
-//             crate::DBChoice::SurrealMemory,
-//             crate::DBChoice::PostgresServer,
-//         ] {
-//             let db = DB::create_db(db_choice).await.unwrap();
-
-//             let tkn: Token = db
-//                 .create_token(Token::fancier_token(
-//                     "langs:en_demo",
-//                     "test",
-//                     "testdef",
-//                     "tɛst",
-//                     TokenStatus::L1,
-//                 ))
-//                 .await
-//                 .unwrap();
-//             let res = db.query_token_by_id(tkn.id.unwrap().id.to_string()).await;
-//             assert!(res.is_ok());
-//             let token = res.unwrap().unwrap();
-//             assert_eq!(token.orthography, "test".to_string());
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn test_update_token() {
-//         let db = DB::create_db(DBLocation::Mem).await;
-//         let tkn1: Token = db
-//             .create_token(Token::fancier_token(
-//                 "langs:en_demo",
-//                 "tkn1",
-//                 "deforig",
-//                 "",
-//                 TokenStatus::L1,
-//             ))
-//             .await
-//             .unwrap();
-//         let tkn2: Token = db
-//             .create_token(Token::fancier_token(
-//                 "langs:en_demo",
-//                 "tkn2",
-//                 "deforig",
-//                 "",
-//                 TokenStatus::L1,
-//             ))
-//             .await
-//             .unwrap();
-//         let res1 = db
-//             .query_token_by_id(tkn1.id.unwrap().id.to_string())
-//             .await
-//             .unwrap()
-//             .unwrap();
-//         let tkn1_new_bad_res = db
-//             .update_token_by_id(Token {
-//                 id: res1.id.clone(),
-//                 orthography: "tkn2".to_string(),
-//                 lang_id: res1.lang_id.clone(),
-//                 phonetic: res1.phonetic.clone(),
-//                 status: res1.status.clone(),
-//                 definition: res1.definition.clone(),
-//                 notes: res1.notes.clone(),
-//                 original_context: res1.original_context.clone(),
-//                 tags: res1.tags.clone(),
-//                 srs: res1.srs.clone(),
-//             })
-//             .await;
-//         assert!(tkn1_new_bad_res.is_err());
-//         let tkn1_new_good_res = db
-//             .update_token_by_id(Token {
-//                 id: res1.id.clone(),
-//                 orthography: "tkn1new".to_string(),
-//                 lang_id: res1.lang_id.clone(),
-//                 phonetic: res1.phonetic.clone(),
-//                 status: res1.status.clone(),
-//                 definition: res1.definition.clone(),
-//                 notes: res1.notes.clone(),
-//                 original_context: res1.original_context.clone(),
-//                 tags: res1.tags.clone(),
-//                 srs: res1.srs.clone(),
-//             })
-//             .await;
-//         assert!(tkn1_new_good_res.is_ok());
-
-//         assert!(db
-//             .token_exists("tkn1new".to_string(), "langs:en_demo".to_string())
-//             .await
-//             .unwrap());
-//         assert!(!db
-//             .token_exists("tkn1".to_string(), "langs:en_demo".to_string())
-//             .await
-//             .unwrap());
-//     }
-
-//     #[tokio::test]
-//     #[should_panic]
-//     async fn test_create_duplicate_tokens() {
-//         let db = DB::create_db(DBLocation::Mem).await;
-//         let _ = db
-//             .create_token(Token::fancier_token(
-//                 "langs:en_demo",
-//                 "test",
-//                 "testdef",
-//                 "tɛst",
-//                 TokenStatus::L1,
-//             ))
-//             .await
-//             .unwrap();
-//         let _ = db
-//             .create_token(Token::fancier_token(
-//                 "langs:en_demo",
-//                 "test",
-//                 "testdef",
-//                 "tɛst",
-//                 TokenStatus::L1,
-//             ))
-//             .await
-//             .unwrap();
-
-//         let res = db
-//             .query_token_by_orthography("test".to_string(), "langs:en_demo".to_string())
-//             .await;
-//         dbg!(&res);
-//     }
-
-//     #[tokio::test]
-//     async fn test_nonexistent_token_query() {
-//         let db = DB::create_db(DBLocation::Mem).await;
-//         let _ = db
-//             .create_token(Token::fancier_token(
-//                 "langs:en_demo",
-//                 "test",
-//                 "testdef",
-//                 "tɛst",
-//                 TokenStatus::L1,
-//             ))
-//             .await
-//             .unwrap();
-//         let _ = db
-//             .create_token(Token::fancier_token(
-//                 "langs:en_demo",
-//                 "wrong",
-//                 "testdef",
-//                 "tɛst",
-//                 TokenStatus::L1,
-//             ))
-//             .await
-//             .unwrap();
-//         let _ = db
-//             .create_token(Token::fancier_token(
-//                 "langs:wrong",
-//                 "test",
-//                 "testdef",
-//                 "tɛst",
-//                 TokenStatus::L1,
-//             ))
-//             .await
-//             .unwrap();
-
-//         let res = db
-//             .query_token_by_orthography("test".to_string(), "langs:fr_demo".to_string())
-//             .await;
-//         assert!(res.is_ok());
-//         let token = res.unwrap();
-//         assert!(token.is_none());
-//         let res = db
-//             .query_token_by_orthography("testt".to_string(), "langs:en_demo".to_string())
-//             .await;
-//         assert!(res.is_ok());
-//         let token = res.unwrap();
-//         assert!(token.is_none());
-//     }
-
-//     #[tokio::test]
-//     async fn test_query_tokens_by_orthographies() {
-//         let db = DB::create_db(DBLocation::Mem).await;
-//         add_dummy_tokens(&db).await;
-
-//         // make sure we can query all three tokens
-//         let tokens = db
-//             .query_tokens_by_orthographies(
-//                 hashset! {
-//                     "t1".to_string().to_lowercase(),
-//                     "t2".to_string().to_lowercase(),
-//                     "t3".to_string().to_lowercase(),
-//                 },
-//                 "langs:en".to_string(),
-//             )
-//             .await
-//             .unwrap();
-//         println!("query result: {:#?}", tokens);
-//         assert!({
-//             tokens
-//                 .iter()
-//                 .any(|token| token.orthography == "t1".to_string())
-//                 && tokens
-//                     .iter()
-//                     .any(|token| token.orthography == "t2".to_string())
-//                 && tokens
-//                     .iter()
-//                     .any(|token| token.orthography == "t3".to_string())
-//         });
-//     }
-
-//     async fn add_dummy_tokens(db: &DB) {
-//         db.create_token(Token::fancier_token(
-//             "langs:en",
-//             "t1",
-//             "t1_def",
-//             "t1_phon",
-//             TokenStatus::L1,
-//         ))
-//         .await
-//         .unwrap();
-//         db.create_token(Token::fancier_token(
-//             "langs:en",
-//             "t2",
-//             "t2_def",
-//             "t1_phon",
-//             TokenStatus::L1,
-//         ))
-//         .await
-//         .unwrap();
-//         db.create_token(Token::fancier_token(
-//             "langs:en",
-//             "t3",
-//             "t3_def",
-//             "t1_phon",
-//             TokenStatus::L1,
-//         ))
-//         .await
-//         .unwrap();
-//     }
-
-//     #[tokio::test]
-//     async fn test_get_dict_from_text_seq() {
-//         let db = DB::create_db(DBLocation::Mem).await;
-//         add_dummy_tokens(&db).await;
-
-//         // make sure we can query all three tokens
-//         let tokens = db
-//             .get_dict_from_text_seq(
-//                 vec![
-//                     "T1".to_string().to_lowercase(),
-//                     "T3".to_string().to_lowercase(),
-//                     "t2".to_string().to_lowercase(),
-//                 ],
-//                 "langs:en".to_string(),
-//             )
-//             .await
-//             .unwrap();
-//         println!("query result: {:#?}", tokens);
-//         assert!({
-//             tokens
-//                 .iter()
-//                 .any(|(k, v)| *k == "t1".to_string() && v.orthography == "t1".to_string())
-//                 && tokens
-//                     .iter()
-//                     .any(|(k, v)| *k == "t2".to_string() && v.orthography == "t2".to_string())
-//                 && tokens
-//                     .iter()
-//                     .any(|(k, v)| *k == "t3".to_string() && v.orthography == "t3".to_string())
-//         });
-//     }
-// }

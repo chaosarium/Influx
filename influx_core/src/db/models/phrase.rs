@@ -3,7 +3,7 @@ use super::*;
 use crate::db::{deserialize_surreal_thing, deserialize_surreal_thing_opt};
 use crate::{db::InfluxResourceId, prelude::*, utils::trie::Trie};
 use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use vocab::TokenStatus;
 use DB::*;
 
@@ -163,7 +163,7 @@ impl DB {
     pub async fn query_phrase_by_onset_orthographies(
         &self,
         lang_id: InfluxResourceId,
-        onset_orthography_set: HashSet<String>,
+        onset_orthography_set: BTreeSet<String>,
     ) -> Result<Vec<Phrase>> {
         match self {
             Surreal { engine } => {
@@ -246,13 +246,13 @@ impl DB {
     pub async fn get_phrases_from_text_set(
         &self,
         lang_id: InfluxResourceId,
-        text_set: HashSet<String>,
+        text_set: BTreeSet<String>,
     ) -> Result<Vec<Phrase>> {
-        let onset_orthography_set: HashSet<String> = text_set
+        let onset_orthography_set: BTreeSet<String> = text_set
             .iter()
             .cloned()
             .map(|x| x.to_lowercase())
-            .collect::<HashSet<String>>();
+            .collect::<BTreeSet<String>>();
         self.query_phrase_by_onset_orthographies(lang_id, onset_orthography_set)
             .await
     }
@@ -263,11 +263,11 @@ impl DB {
         lang_id: InfluxResourceId,
         text_seq: Vec<String>,
     ) -> Result<Vec<Phrase>> {
-        let onset_orthography_set: HashSet<String> = text_seq
+        let onset_orthography_set: BTreeSet<String> = text_seq
             .iter()
             .cloned()
             .map(|x| x.to_lowercase())
-            .collect::<HashSet<String>>();
+            .collect::<BTreeSet<String>>();
         self.query_phrase_by_onset_orthographies(lang_id, onset_orthography_set)
             .await
     }
@@ -363,73 +363,3 @@ pub fn mk_phrase_trie(phrases: Vec<Phrase>) -> Trie<String, Phrase> {
             .collect::<Vec<(Vec<String>, Phrase)>>(),
     )
 }
-
-// mod tests {
-//     use crate::db::DBLocation;
-//     use super::*;
-
-//     #[tokio::test]
-//     async fn test_create_phrase() {
-//         let db = DB::create_db(DBLocation::Mem).await;
-//         let phrase = Phrase::essential_phrase("en_demo", vec!["hello".to_string(), "world".to_string()]);
-//         let created = db.create_phrase(phrase).await.unwrap();
-//         // dbg!("created: {:?}", created);
-//         assert_eq!(created.orthography_seq, vec!["hello".to_string(), "world".to_string()]);
-//     }
-
-//     #[tokio::test]
-//     async fn test_query_phrase() {
-//         let db = DB::create_db(DBLocation::Mem).await;
-//         let phrase = Phrase::essential_phrase("en_demo", vec!["hello".to_string(), "world".to_string()]);
-//         let created = db.create_phrase(phrase).await.unwrap();
-//         let phrase = Phrase::essential_phrase("en_demo", vec!["world".to_string(), "record".to_string()]);
-//         let created = db.create_phrase(phrase).await.unwrap();
-//         let phrase = Phrase::essential_phrase("en_demo", vec!["world".to_string(), "wide".to_string(), "web".to_string()]);
-//         let created = db.create_phrase(phrase).await.unwrap();
-//         let phrase = Phrase::essential_phrase("en_demo", vec!["hello".to_string(), "moon".to_string()]);
-//         let created = db.create_phrase(phrase).await.unwrap();
-
-//         let queried = db.query_phrase_by_onset_orthographies(vec!["hello".to_string()].into_iter().collect(), "en_demo".to_string()).await.unwrap();
-//         // dbg!("queried: {:?}", &queried);
-//         assert_eq!(queried.len(), 2);
-//         assert!(queried.iter().any(|phrase| phrase.orthography_seq == vec!["hello".to_string(), "world".to_string()]));
-//         assert!(queried.iter().any(|phrase| phrase.orthography_seq == vec!["hello".to_string(), "moon".to_string()]));
-
-//         let queried = db.query_phrase_by_onset_orthographies(vec!["world".to_string(), "earth".to_string()].into_iter().collect(), "en_demo".to_string()).await.unwrap();
-//         // dbg!("queried: {:?}", &queried);
-//         assert_eq!(queried.len(), 2);
-//         assert!(queried.iter().any(|phrase| phrase.orthography_seq == vec!["world".to_string(), "record".to_string()]));
-//         assert!(queried.iter().any(|phrase| phrase.orthography_seq == vec!["world".to_string(), "wide".to_string(), "web".to_string()]));
-
-//         let from_text_seq = db.get_phrases_from_text_seq(vec!["Hello".to_string(), "world".to_string(), "record".to_string()], "en_demo".to_string()).await.unwrap();
-//         // dbg!("from_text_seq: {:?}", &from_text_seq);
-//         assert_eq!(from_text_seq.len(), 4);
-//         assert!(from_text_seq.iter().any(|phrase| phrase.orthography_seq == vec!["hello".to_string(), "world".to_string()]));
-//         assert!(from_text_seq.iter().any(|phrase| phrase.orthography_seq == vec!["hello".to_string(), "moon".to_string()]));
-//         assert!(from_text_seq.iter().any(|phrase| phrase.orthography_seq == vec!["world".to_string(), "record".to_string()]));
-//         assert!(from_text_seq.iter().any(|phrase| phrase.orthography_seq == vec!["world".to_string(), "wide".to_string(), "web".to_string()]));
-//     }
-
-//     #[tokio::test]
-//     async fn test_query_phrase_by_orthography_seq() {
-//         let db = DB::create_db(DBLocation::Mem).await;
-//         let phrase = Phrase::essential_phrase("en_demo", vec!["hello".to_string(), "moon".to_string()]);
-//         let created = db.create_phrase(phrase).await.unwrap();
-
-//         let updated = db.update_phrase_by_id(Phrase {
-//             id: created.id.clone(),
-//             lang_id: "en_demo".to_string(),
-//             orthography_seq: vec!["hello".to_string(), "moon".to_string()],
-//             definition: "placeholder".to_string(),
-//             notes: "updated notes".to_string(),
-//             original_context: "".to_string(),
-//             status: TokenStatus::L5,
-//             tags: vec![],
-//             srs: SRSInfo::default(),
-//         }).await.unwrap();
-
-//         let queried = db.query_phrase_by_orthography_seq(vec!["hello".to_string(), "moon".to_string()], "en_demo".to_string()).await.unwrap();
-//         assert_eq!(queried.len(), 1);
-//         assert_eq!(queried[0].notes, "updated notes".to_string());
-//     }
-// }

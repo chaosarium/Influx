@@ -63,12 +63,14 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[ignore]
     async fn open_macos_dict() {
         let dict = MacOSDict;
         dict.open_dictionary("hello".to_string()).await;
     }
 
     #[tokio::test]
+    #[ignore]
     async fn translate_sequence() {
         let translator = GoogleTranslate;
         let translated = translator

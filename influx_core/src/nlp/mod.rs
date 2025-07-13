@@ -1,7 +1,7 @@
 #![allow(unused_imports, unused_must_use)]
 use core::panic;
 use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use anyhow;
 use indoc::indoc;
@@ -79,13 +79,13 @@ pub struct AnnotatedDocV2 {
     pub text: String,
     pub segments: Vec<DocSegV2>,
 
-    pub orthography_set: HashSet<String>,
-    pub lemma_set: HashSet<String>,
+    pub orthography_set: BTreeSet<String>,
+    pub lemma_set: BTreeSet<String>,
 
-    pub token_dict: Option<HashMap<String, Token>>,
+    pub token_dict: Option<BTreeMap<String, Token>>,
     // pub phrase_dict: Option<HashMap<Vec<String>, Phrase>>,
     // JavaScript doesn't support HashMaps with non-string keys, sad. We'll concat the keys into a string for now.
-    pub phrase_dict: Option<HashMap<String, Phrase>>,
+    pub phrase_dict: Option<BTreeMap<String, Phrase>>,
 }
 
 /// given text and language, return a tokenised document before phrase fitting
@@ -119,7 +119,7 @@ pub fn phrase_fit_pipeline(
 ) -> AnnotatedDocV2 {
     dbg!(&potential_phrases);
 
-    let phrase_dict: HashMap<String, Phrase> = potential_phrases
+    let phrase_dict: BTreeMap<String, Phrase> = potential_phrases
         .get_all_entries()
         .into_iter()
         .map(|(k, v)| (k.join(" "), v.clone()))
@@ -311,8 +311,6 @@ mod tests {
                                         lemma: Some(
                                             "hello",
                                         ),
-                                            false,
-                                        ),
                                         upos: Some(
                                             "INTJ",
                                         ),
@@ -355,8 +353,6 @@ mod tests {
                                         lemma: Some(
                                             "world",
                                         ),
-                                            false,
-                                        ),
                                         upos: Some(
                                             "NOUN",
                                         ),
@@ -379,15 +375,10 @@ mod tests {
                                     text: "!",
                                     start_char: 11,
                                     end_char: 12,
-                                    inner: TokenSeg {
-                                        idx: 2,
-                                        orthography: "!",
-                                    },
+                                    inner: PunctuationSeg,
                                     attributes: SegAttribute {
                                         lemma: Some(
                                             "!",
-                                        ),
-                                            true,
                                         ),
                                         upos: Some(
                                             "PUNCT",
@@ -434,8 +425,6 @@ mod tests {
                                         lemma: Some(
                                             "hi",
                                         ),
-                                            false,
-                                        ),
                                         upos: Some(
                                             "INTJ",
                                         ),
@@ -456,15 +445,10 @@ mod tests {
                                     text: "!",
                                     start_char: 15,
                                     end_char: 16,
-                                    inner: TokenSeg {
-                                        idx: 4,
-                                        orthography: "!",
-                                    },
+                                    inner: PunctuationSeg,
                                     attributes: SegAttribute {
                                         lemma: Some(
                                             "!",
-                                        ),
-                                            true,
                                         ),
                                         upos: Some(
                                             "PUNCT",
@@ -488,16 +472,16 @@ mod tests {
                     },
                 ],
                 orthography_set: {
+                    "!",
                     "hello",
                     "hi",
                     "world",
-                    "!",
                 },
                 lemma_set: {
-                    "hello",
-                    "world",
-                    "hi",
                     "!",
+                    "hello",
+                    "hi",
+                    "world",
                 },
                 token_dict: None,
                 phrase_dict: None,
@@ -536,8 +520,6 @@ mod tests {
                                         lemma: Some(
                                             "let",
                                         ),
-                                            false,
-                                        ),
                                         upos: Some(
                                             "VERB",
                                         ),
@@ -568,8 +550,6 @@ mod tests {
                                         lemma: Some(
                                             "us",
                                         ),
-                                            false,
-                                        ),
                                         upos: Some(
                                             "PRON",
                                         ),
@@ -589,45 +569,15 @@ mod tests {
                                 },
                                 SentSegV2 {
                                     sentence_idx: 0,
-                                    text: " ",
+                                    text: "  ",
                                     start_char: 5,
-                                    end_char: 6,
+                                    end_char: 7,
                                     inner: WhitespaceSeg,
                                     attributes: SegAttribute {
                                         lemma: None,
                                         upos: None,
                                         xpos: None,
                                         dependency: None,
-                                        misc: {},
-                                    },
-                                },
-                                SentSegV2 {
-                                    sentence_idx: 0,
-                                    text: " ",
-                                    start_char: 6,
-                                    end_char: 7,
-                                    inner: TokenSeg {
-                                        idx: 2,
-                                        orthography: " ",
-                                    },
-                                    attributes: SegAttribute {
-                                        lemma: Some(
-                                            " ",
-                                        ),
-                                            false,
-                                        ),
-                                        upos: Some(
-                                            "SPACE",
-                                        ),
-                                        xpos: Some(
-                                            "_SP",
-                                        ),
-                                        dependency: Some(
-                                            (
-                                                1,
-                                                "dep",
-                                            ),
-                                        ),
                                         misc: {},
                                     },
                                 },
@@ -643,8 +593,6 @@ mod tests {
                                     attributes: SegAttribute {
                                         lemma: Some(
                                             "go",
-                                        ),
-                                            false,
                                         ),
                                         upos: Some(
                                             "VERB",
@@ -668,15 +616,10 @@ mod tests {
                                     text: ".",
                                     start_char: 9,
                                     end_char: 10,
-                                    inner: TokenSeg {
-                                        idx: 4,
-                                        orthography: ".",
-                                    },
+                                    inner: PunctuationSeg,
                                     attributes: SegAttribute {
                                         lemma: Some(
                                             ".",
-                                        ),
-                                            true,
                                         ),
                                         upos: Some(
                                             "PUNCT",
@@ -700,17 +643,15 @@ mod tests {
                     },
                 ],
                 orthography_set: {
-                    "let",
-                    " ",
-                    ".",
                     "'s",
+                    ".",
                     "go",
+                    "let",
                 },
                 lemma_set: {
+                    ".",
                     "go",
                     "let",
-                    " ",
-                    ".",
                     "us",
                 },
                 token_dict: None,

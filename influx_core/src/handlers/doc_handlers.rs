@@ -18,11 +18,10 @@ use axum::{
 use md5;
 use serde_json;
 use serde_json::json;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
-use std::{
-    collections::{HashMap, HashSet},
-    path::PathBuf,
-};
+use std::path::PathBuf;
+
 use tracing::info;
 
 const USE_CACHE: bool = false;
@@ -141,16 +140,18 @@ pub async fn get_doc(
         }
     };
 
-    let tokens_dict: HashMap<String, Token> = db
+    let tokens_dict: BTreeMap<String, Token> = db
         .get_dict_from_orthography_set(
             lang_id.clone(),
             tokenised_doc
                 .orthography_set
                 .union(&tokenised_doc.lemma_set)
                 .cloned()
-                .collect::<HashSet<String>>(),
+                .collect::<BTreeSet<String>>(),
         )
-        .await?;
+        .await?
+        .into_iter()
+        .collect();
     tokenised_doc.token_dict = Some(tokens_dict);
 
     // phrase annotation
