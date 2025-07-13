@@ -7,8 +7,6 @@ import Datastore.DocContext as DocContext
 type alias SliceSelection =
     { ss : Int -- start sentence (inclusive)
     , es : Int -- end sentence (inclusive)
-    , st : Int -- start token (inclusive)
-    , et : Int -- end token (inclusive)
     , sc : Int -- start character (inclusive)
     , ec : Int -- end character (inclusive)
     }
@@ -16,7 +14,6 @@ type alias SliceSelection =
 
 type alias SliceSelecting =
     { s : Int -- which sentence
-    , t : Int -- which token
     , c : Int -- which character
     }
 
@@ -51,53 +48,9 @@ type Msg
     | SelectMouseUp ()
 
 
-listLast list =
-    List.head (List.reverse list)
-
-
-getFirstLastIds : List SentSegV2 -> ( Maybe Int, Maybe Int )
-getFirstLastIds list =
-    case ( List.head list, listLast list ) of
-        ( Just first, Just last ) ->
-            let
-                firstId =
-                    case first.inner of
-                        TokenSeg { idx } ->
-                            Just idx
-
-                        _ ->
-                            Nothing
-
-                lastId =
-                    case last.inner of
-                        TokenSeg { idx } ->
-                            Just idx
-
-                        _ ->
-                            Nothing
-            in
-            ( firstId, lastId )
-
-        _ ->
-            ( Nothing, Nothing )
-
-
 getStartEndIdxs : SentSegV2 -> ( SliceSelecting, SliceSelecting )
 getStartEndIdxs cst =
-    case cst.inner of
-        TokenSeg { idx } ->
-            ( { s = cst.sentenceIdx, t = idx, c = cst.startChar }, { s = cst.sentenceIdx, t = idx, c = cst.endChar } )
-
-        PhraseSeg { components } ->
-            case getFirstLastIds components of
-                ( Just firstId, Just lastId ) ->
-                    ( { s = cst.sentenceIdx, t = firstId, c = cst.startChar }, { s = cst.sentenceIdx, t = lastId, c = cst.endChar } )
-
-                _ ->
-                    Debug.todo "unreachable, first or last token of components should have id"
-
-        WhitespaceSeg ->
-            Debug.todo "unreachable, should not have listened to mouse events on whitespace"
+    ( { s = cst.sentenceIdx, c = cst.startChar }, { s = cst.sentenceIdx, c = cst.endChar } )
 
 
 sliceBetween : SentSegV2 -> SentSegV2 -> SliceSelection
@@ -108,26 +61,6 @@ sliceBetween cst1 cst2 =
     in
     { ss = min start1.s start2.s
     , es = max end1.s end2.s
-    , st =
-        case compare start1.s start2.s of
-            LT ->
-                start1.t
-
-            GT ->
-                start2.t
-
-            EQ ->
-                min start1.t start2.t
-    , et =
-        case compare end1.s end2.s of
-            LT ->
-                end2.t
-
-            GT ->
-                end1.t
-
-            EQ ->
-                max end1.t end2.t
     , sc = min start1.c start2.c
     , ec = max end1.c end2.c
     }
