@@ -135,6 +135,7 @@ pub fn phrase_fit_pipeline(
     dbg!(&potential_phrases);
 
     let mut phrase_dict: HashMap<String, Phrase> = HashMap::new();
+    // TODO have phrase dict include all potential phrases in case client recreate them without realising
     let fitted_doc_seg: Vec<DocSegV2> = document
         .segments
         .into_iter()
