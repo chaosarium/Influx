@@ -177,10 +177,31 @@ mouseEventUpdate msg t =
                     }
 
 
+filterSentSegsInSlice :
+    SliceSelection
+    -> List SentSegV2
+    -> List SentSegV2
+filterSentSegsInSlice slice segments =
+    List.concatMap
+        (\cst ->
+            if isSentSegInSlice slice cst then
+                [ cst ]
+
+            else
+                case cst.inner of
+                    PhraseSeg { components } ->
+                        filterSentSegsInSlice slice components
+
+                    _ ->
+                        []
+        )
+        segments
+
+
 update : DocContext.T -> Msg -> T -> T
 update doc_ctx msg t =
     let
-        tt =
+        t_ =
             mouseEventUpdate msg t
 
         segment_slice =
@@ -197,17 +218,17 @@ update doc_ctx msg t =
                                     _ ->
                                         []
                             )
-                        |> List.filter (isSentSegInSlice slice)
+                        |> filterSentSegsInSlice slice
                 )
-                tt.slice_selection
+                t_.slice_selection
     in
-    { tt
+    { t_
         | selected_text =
             Maybe.map
                 (\{ sc, ec } ->
                     String.slice sc ec doc_ctx.text
                 )
-                tt.slice_selection
+                t_.slice_selection
         , segment_slice = segment_slice
     }
 
@@ -239,16 +260,28 @@ getPhraseFromSegmentSlice : InfluxResourceId -> List SentSegV2 -> Maybe Phrase
 getPhraseFromSegmentSlice langId segments =
     let
         orthography_seq =
-            segments
-                |> List.filterMap
-                    (\cst ->
-                        case cst.inner of
-                            TokenSeg { orthography } ->
-                                Just orthography
+            List.concatMap
+                (\cst ->
+                    case cst.inner of
+                        TokenSeg { orthography } ->
+                            [ orthography ]
 
-                            _ ->
-                                Nothing
-                    )
+                        PhraseSeg { components } ->
+                            List.concatMap
+                                (\c ->
+                                    case c.inner of
+                                        TokenSeg { orthography } ->
+                                            [ orthography ]
+
+                                        _ ->
+                                            []
+                                )
+                                components
+
+                        _ ->
+                            []
+                )
+                segments
     in
     if List.length orthography_seq > 1 then
         Just

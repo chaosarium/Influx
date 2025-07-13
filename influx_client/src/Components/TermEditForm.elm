@@ -171,6 +171,25 @@ switchToPhraseEdit dict_ctx normalised_orthography =
             ErrorForm ("Phrase not found: " ++ normalised_orthography)
 
 
+switchToPossiblyNewPhraseEdit : DictContext.T -> Phrase -> FormModel
+switchToPossiblyNewPhraseEdit dict_ctx phrase =
+    let
+        normalized_orthography =
+            BindingsUtils.orthographySeqToNormalized phrase.orthographySeq
+    in
+    -- try switch to phrase in dictionary, if not found, create a new one
+    case switchToPhraseEdit dict_ctx normalized_orthography of
+        ErrorForm _ ->
+            TermForm
+                { orig_term = PhraseTerm (BindingsUtils.phraseDefaultUnmarkedToL1 phrase)
+                , working_term = PhraseTerm (BindingsUtils.phraseDefaultUnmarkedToL1 phrase)
+                , write_action = Create
+                }
+
+        x ->
+            x
+
+
 handleGotTermEditAck : Model -> String -> Result Http.Error TermEditResponse -> ( Model, Effect Msg )
 handleGotTermEditAck model label res =
     case res of
@@ -252,14 +271,10 @@ update dict_ctx msg model =
                         ( Just seg_slice, Nothing, _ ) ->
                             case FocusContext.getPhraseFromSegmentSlice dict_ctx.lang_id seg_slice of
                                 Just phrase ->
-                                    TermForm
-                                        { orig_term = PhraseTerm phrase
-                                        , working_term = PhraseTerm phrase
-                                        , write_action = Create
-                                        }
+                                    Debug.log "switch to maybe new phrase" <| switchToPossiblyNewPhraseEdit dict_ctx phrase
 
                                 Nothing ->
-                                    NothingForm
+                                    Debug.log "didn't get phrase from seg slice" <| NothingForm
 
                         _ ->
                             NothingForm

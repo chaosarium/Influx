@@ -281,6 +281,15 @@ view route model =
                         model.working_doc
                     )
 
+        -- for debugging check focus context model
+        , Components.DbgDisplay.view "model.focus_ctx.last_hovered_at" model.focus_ctx.last_hovered_at
+        , Components.DbgDisplay.view "model.focus_ctx.mouse_down_at" model.focus_ctx.mouse_down_at
+        , Components.DbgDisplay.view "model.focus_ctx.last_mouse_down_at" model.focus_ctx.last_mouse_down_at
+        , Components.DbgDisplay.view "model.focus_ctx.slice_selection" model.focus_ctx.slice_selection
+        , Components.DbgDisplay.view "model.focus_ctx.selected_text" model.focus_ctx.selected_text
+        , Components.DbgDisplay.view "model.focus_ctx.segment_selection" model.focus_ctx.segment_selection
+        , Components.DbgDisplay.view "model.focus_ctx.segment_slice" model.focus_ctx.segment_slice
+
         -- selected text
         , div []
             [ Html.text
