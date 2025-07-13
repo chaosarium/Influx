@@ -114,7 +114,7 @@ update msg model =
             ( { model
                 | get_doc_api_res = Api.Success res
                 , working_doc = DocContext.fromAnnotatedDocument res.langId res.annotatedDoc
-                , working_dict = DictContext.fromAnnotatedDocument res.langId res.annotatedDoc
+                , working_dict = DictContext.fromTermDictionary res.langId res.termDict
               }
             , Effect.none
             )

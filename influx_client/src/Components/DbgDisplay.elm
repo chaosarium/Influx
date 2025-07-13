@@ -4,11 +4,12 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Json.Decode exposing (decodeString, value)
 import Json.Encode exposing (encode)
+import Utils
 
 
 enableDebug : Bool
 enableDebug =
-    True
+    False
 
 
 view : String -> a -> Html msg
@@ -19,7 +20,7 @@ view title props =
                 [ summary []
                     [ Html.b [] [ Html.text title ] ]
                 , pre [ class "dbg-json-pre" ]
-                    [ Html.text (Debug.toString props) ]
+                    [ Html.text (Utils.dbgToString props) ]
                 ]
             ]
 

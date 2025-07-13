@@ -1,13 +1,11 @@
 use super::api_interfaces::*;
 use super::ServerError;
+use crate::db::models::phrase::mk_phrase_trie;
 use crate::db::models::vocab::Token;
 use crate::doc_store::{gt_md_file_list_w_metadata, read_md_file};
 use crate::nlp;
-use crate::{
-    db::models::phrase::{mk_phrase_trie, Phrase},
-    utils::trie::Trie,
-    ServerState,
-};
+use crate::ServerState;
+use crate::db::models::phrase::Phrase;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -16,12 +14,10 @@ use axum::{
     Json,
 };
 use md5;
-use serde_json;
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::PathBuf;
-
 use tracing::info;
 
 const USE_CACHE: bool = true;
@@ -84,18 +80,18 @@ fn load_cached_nlp_data(
     }
 }
 
-// TODO do error handling like above
-pub async fn get_doc(
-    State(ServerState { db, influx_path }): State<ServerState>,
-    Path((lang_identifier, file)): Path<(String, String)>,
-) -> Result<Json<GetDocResponse>, ServerError> {
+
+pub(crate) async fn get_annotated_doc_logic(
+    state: &ServerState,
+    lang_identifier: String,
+    file: String,
+) -> Result<GetDocResponse, ServerError> {
     info!(
         "getting doc: lang_identifier = {}, file = {}",
         lang_identifier, file
     );
 
-    // check if lang_id exists, if not return 404
-    if !db
+    if !state.db
         .language_identifier_exists(lang_identifier.clone())
         .await
         .unwrap()
@@ -106,14 +102,14 @@ pub async fn get_doc(
         )));
     }
 
-    let lang_entry = db
+    let lang_entry = state.db
         .get_language_by_identifier(lang_identifier.clone())
         .await?
         .ok_or_else(|| ServerError(anyhow::anyhow!("Language not found")))?;
     let lang_id = lang_entry.id.clone().unwrap();
     let lang_code = lang_entry.code.clone();
 
-    let filepath = influx_path
+    let filepath = state.influx_path
         .join(PathBuf::from(&lang_identifier))
         .join(PathBuf::from(&file));
     println!("trying to access {}", &filepath.display());
@@ -121,11 +117,11 @@ pub async fn get_doc(
     let (metadata, text) = read_md_file(filepath.clone())?;
     let text_checksum: String = text_checksum(text.clone());
 
-    let nlp_filepath = influx_path
+    let nlp_filepath = state.influx_path
         .join(PathBuf::from("_influx_nlp_cache"))
         .join(PathBuf::from(format!("{}.nlp", &text_checksum)));
 
-    let mut tokenised_doc: nlp::AnnotatedDocV2 = match load_cached_nlp_data(&nlp_filepath, &text) {
+    let tokenised_doc: nlp::AnnotatedDocV2 = match load_cached_nlp_data(&nlp_filepath, &text) {
         Ok(cached_doc) if USE_CACHE => cached_doc,
         _ => {
             // run tokenisation pipeline and cache it
@@ -140,7 +136,7 @@ pub async fn get_doc(
         }
     };
 
-    let tokens_dict: BTreeMap<String, Token> = db
+    let tokens_dict: BTreeMap<String, Token> = state.db
         .get_dict_from_orthography_set(
             lang_id.clone(),
             tokenised_doc
@@ -152,20 +148,28 @@ pub async fn get_doc(
         .await?
         .into_iter()
         .collect();
-    tokenised_doc.token_dict = Some(tokens_dict);
 
-    // phrase annotation
-    let potential_phrases: Vec<Phrase> = db
+    let potential_phrases: Vec<Phrase> = state.db
         .query_phrase_by_onset_orthographies(lang_id.clone(), tokenised_doc.orthography_set.clone())
         .await?;
-    let phrase_trie: Trie<String, Phrase> = mk_phrase_trie(potential_phrases);
-    let tokenised_phrased_annotated_doc = nlp::phrase_fit_pipeline(tokenised_doc, phrase_trie);
+    let phrase_trie = mk_phrase_trie(potential_phrases);
+    let (annotated_doc, mut term_dict) = nlp::phrase_fit_pipeline(tokenised_doc, phrase_trie);
+    term_dict.token_dict = Some(tokens_dict);
 
     let result = GetDocResponse {
         metadata,
         lang_id,
         text,
-        annotated_doc: tokenised_phrased_annotated_doc,
+        annotated_doc,
+        term_dict,
     };
-    Ok(Json(result))
+    Ok(result)
+}
+
+pub async fn get_doc(
+    State(state): State<ServerState>,
+    Path((lang_identifier, file)): Path<(String, String)>,
+) -> Result<Json<GetDocResponse>, ServerError> {
+    let response = get_annotated_doc_logic(&state, lang_identifier, file).await?;
+    Ok(Json(response))
 }

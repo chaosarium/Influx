@@ -18,6 +18,7 @@ import Route exposing (Route)
 import Route.Path
 import Shared.Model
 import Shared.Msg
+import Utils
 
 
 
@@ -47,7 +48,7 @@ init : Result Json.Decode.Error Flags -> Route () -> ( Model, Effect Msg )
 init flagsResult route =
     let
         _ =
-            Debug.log "FLAGS" flagsResult
+            Utils.dbgLog "FLAGS" flagsResult
     in
     ( {}
     , Effect.none

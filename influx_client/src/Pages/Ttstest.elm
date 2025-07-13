@@ -8,6 +8,7 @@ import Json.Decode as D
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
+import Utils
 import View exposing (View)
 
 
@@ -94,7 +95,7 @@ subscriptions model =
                 Nothing ->
                     D.decodeValue (D.field "tag" D.string) value
                         |> Result.withDefault ""
-                        |> Debug.log "Unhandled incoming port"
+                        |> Utils.dbgLog "Unhandled incoming port"
                         |> always Nothing
                         |> Maybe.withDefault UserClickedButton
         )

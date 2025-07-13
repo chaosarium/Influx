@@ -106,3 +106,19 @@ classIfNot cond attr =
 htmlIf : Bool -> Html.Html msg -> Html.Html msg
 htmlIf cond html =
     Html.Extra.viewIf cond html
+
+
+
+-- The following can be enabled for debugging purposes. Do not touch them.
+
+
+dbgLog : String -> a -> a
+dbgLog msg value =
+    -- Debug.log msg value
+    value
+
+
+dbgToString : a -> String
+dbgToString value =
+    -- Debug.toString value
+    "debug not enabled"

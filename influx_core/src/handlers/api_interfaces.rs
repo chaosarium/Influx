@@ -69,4 +69,5 @@ pub struct GetDocResponse {
     pub lang_id: InfluxResourceId,
     pub text: String,
     pub annotated_doc: nlp::AnnotatedDocV2,
+    pub term_dict: nlp::TermDictionary,
 }

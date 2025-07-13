@@ -81,12 +81,16 @@ pub struct AnnotatedDocV2 {
 
     pub orthography_set: BTreeSet<String>,
     pub lemma_set: BTreeSet<String>,
+}
 
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+pub struct TermDictionary {
     pub token_dict: Option<BTreeMap<String, Token>>,
     // pub phrase_dict: Option<HashMap<Vec<String>, Phrase>>,
     // JavaScript doesn't support HashMaps with non-string keys, sad. We'll concat the keys into a string for now.
     pub phrase_dict: Option<BTreeMap<String, Phrase>>,
 }
+
 
 /// given text and language, return a tokenised document before phrase fitting
 pub async fn tokenise_pipeline(
@@ -116,7 +120,7 @@ pub async fn tokenise_pipeline(
 pub fn phrase_fit_pipeline(
     document: AnnotatedDocV2,
     potential_phrases: Trie<String, Phrase>,
-) -> AnnotatedDocV2 {
+) -> (AnnotatedDocV2, TermDictionary) {
     dbg!(&potential_phrases);
 
     let phrase_dict: BTreeMap<String, Phrase> = potential_phrases
@@ -266,15 +270,20 @@ pub fn phrase_fit_pipeline(
         })
         .collect();
 
-    AnnotatedDocV2 {
-        text: document.text,
-        segments: fitted_doc_seg,
-        orthography_set: document.orthography_set,
-        lemma_set: document.lemma_set,
-        token_dict: document.token_dict,
-        phrase_dict: Some(phrase_dict),
-    }
+    (
+        AnnotatedDocV2 {
+            text: document.text,
+            segments: fitted_doc_seg,
+            orthography_set: document.orthography_set,
+            lemma_set: document.lemma_set,
+        },
+        TermDictionary {
+            token_dict: None,
+            phrase_dict: Some(phrase_dict),
+        }
+    )
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -483,8 +492,6 @@ mod tests {
                     "hi",
                     "world",
                 },
-                token_dict: None,
-                phrase_dict: None,
             }
         "#]];
         expected.assert_debug_eq(&res);
@@ -654,8 +661,6 @@ mod tests {
                     "let",
                     "us",
                 },
-                token_dict: None,
-                phrase_dict: None,
             }
         "#]];
         expected.assert_debug_eq(&res);

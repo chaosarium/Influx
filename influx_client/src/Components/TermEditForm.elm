@@ -421,7 +421,7 @@ tokenStatusOfStringExn str =
             Unmarked
 
         _ ->
-            Debug.todo ("tokenStatusOfStringExn: unknown token status: " ++ str)
+            Utils.dbgLog "unrecognised input, defaulting to Unmarked" Unmarked
 
 
 tokenStatusToString : TokenStatus -> String

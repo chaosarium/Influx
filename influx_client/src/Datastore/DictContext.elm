@@ -28,17 +28,17 @@ empty =
     }
 
 
-fromAnnotatedDocument : InfluxResourceId -> Bindings.AnnotatedDocV2 -> T
-fromAnnotatedDocument lang_id annotated_doc =
+fromTermDictionary : InfluxResourceId -> TermDictionary -> T
+fromTermDictionary lang_id term_dict =
     { tokenDict =
-        case annotated_doc.tokenDict of
+        case term_dict.tokenDict of
             Nothing ->
                 Dict.empty
 
             Just tokenDict ->
                 tokenDict
     , phraseDict =
-        case annotated_doc.phraseDict of
+        case term_dict.phraseDict of
             Nothing ->
                 Dict.empty
 

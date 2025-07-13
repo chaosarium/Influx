@@ -49,7 +49,7 @@ impl Phrase {
             notes: "".to_string(),
             original_context: "".to_string(),
             status: TokenStatus::UNMARKED,
-        };
+        }
     }
 }
 
