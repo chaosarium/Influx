@@ -26,18 +26,18 @@ pub enum DocType {
 
 #[derive(Deserialize, Debug, Serialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode)]
 pub struct DocMetadata {
-    title: String,
-    doc_type: DocType,
-    tags: Vec<String>,
-    date_created: DateTime<Utc>,
-    date_modified: DateTime<Utc>,
+    pub title: String,
+    pub doc_type: DocType,
+    pub tags: Vec<String>,
+    pub date_created: DateTime<Utc>,
+    pub date_modified: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
 pub struct DocEntry {
-    path: PathBuf,
-    filename: PathBuf,
-    metadata: DocMetadata,
+    pub path: PathBuf,
+    pub filename: PathBuf,
+    pub metadata: DocMetadata,
 }
 
 // #[derive(Serialize, Deserialize, Debug, Elm, ElmEncode, ElmDecode)]

@@ -1,9 +1,10 @@
 use super::api_interfaces::*;
 use super::ServerError;
+use crate::db::models::document::Document;
 use crate::db::models::phrase::mk_phrase_trie;
 use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
-use crate::doc_store::{gt_md_file_list_w_metadata, read_md_file};
+use crate::doc_store::{DocEntry, DocMetadata, DocType};
 use crate::nlp;
 use crate::ServerState;
 use axum::{
@@ -22,31 +23,65 @@ use tracing::info;
 
 const USE_CACHE: bool = true;
 
+fn document_to_doc_entry(document: Document) -> DocEntry {
+    let doc_type = match document.doc_type.as_str() {
+        "Video" => DocType::Video,
+        "Audio" => DocType::Audio,
+        _ => DocType::Text,
+    };
+    
+    DocEntry {
+        path: PathBuf::from(&document.filename),
+        filename: PathBuf::from(&document.filename),
+        metadata: DocMetadata {
+            title: document.title,
+            doc_type,
+            tags: document.tags,
+            date_created: document.created_ts,
+            date_modified: document.updated_ts,
+        },
+    }
+}
+
 pub async fn get_docs_list(
-    State(ServerState { influx_path, db }): State<ServerState>,
+    State(ServerState { influx_path: _, db }): State<ServerState>,
     Path(lang_id): Path<String>,
 ) -> Response {
     // check if lang_id exists, if not return 404
-    if !db
-        .language_identifier_exists(lang_id.clone())
-        .await
-        .unwrap()
-    {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(json!({
-                "error": format!("lang_id {} not found", lang_id),
-            })),
-        )
-            .into_response();
-    }
+    let lang_entry = match db.get_language_by_identifier(lang_id.clone()).await {
+        Ok(Some(entry)) => entry,
+        Ok(None) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": format!("lang_id {} not found", lang_id),
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Database error: {}", e),
+                })),
+            )
+                .into_response();
+        }
+    };
 
-    match gt_md_file_list_w_metadata(influx_path.join(PathBuf::from(lang_id))) {
-        Ok(list) => (StatusCode::OK, Json(list)).into_response(),
+    match db.get_documents_by_lang_id(lang_entry.id.unwrap()).await {
+        Ok(documents) => {
+            let doc_entries: Vec<DocEntry> = documents
+                .into_iter()
+                .map(document_to_doc_entry)
+                .collect();
+            (StatusCode::OK, Json(doc_entries)).into_response()
+        }
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({
-                "error": format!("failed to access lang_id content folder on disk: {}", e),
+                "error": format!("Failed to retrieve documents: {}", e),
             })),
         )
             .into_response(),
@@ -90,18 +125,6 @@ pub(crate) async fn get_annotated_doc_logic(
         lang_identifier, file
     );
 
-    if !state
-        .db
-        .language_identifier_exists(lang_identifier.clone())
-        .await
-        .unwrap()
-    {
-        return Err(ServerError(anyhow::anyhow!(
-            "lang_id {} not found",
-            lang_identifier
-        )));
-    }
-
     let lang_entry = state
         .db
         .get_language_by_identifier(lang_identifier.clone())
@@ -110,13 +133,26 @@ pub(crate) async fn get_annotated_doc_logic(
     let lang_id = lang_entry.id.clone().unwrap();
     let lang_code = lang_entry.code.clone();
 
-    let filepath = state
-        .influx_path
-        .join(PathBuf::from(&lang_identifier))
-        .join(PathBuf::from(&file));
-    println!("trying to access {}", &filepath.display());
+    // Get document from database instead of file system
+    let document = state
+        .db
+        .get_document_by_lang_and_filename(lang_id.clone(), file.clone())
+        .await?
+        .ok_or_else(|| ServerError(anyhow::anyhow!("Document not found: {}", file)))?;
 
-    let (metadata, text) = read_md_file(filepath.clone())?;
+    let text = document.content.clone();
+    let metadata = DocMetadata {
+        title: document.title.clone(),
+        doc_type: match document.doc_type.as_str() {
+            "Video" => DocType::Video,
+            "Audio" => DocType::Audio,
+            _ => DocType::Text,
+        },
+        tags: document.tags.clone(),
+        date_created: document.created_ts,
+        date_modified: document.updated_ts,
+    };
+    
     let text_checksum: String = text_checksum(text.clone());
 
     let nlp_filepath = state

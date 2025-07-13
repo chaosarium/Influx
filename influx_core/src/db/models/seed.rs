@@ -1,7 +1,9 @@
+use super::document::Document;
 use super::phrase::Phrase;
 use super::vocab::{Token, TokenStatus};
 use super::DB;
 use crate::db::models::lang::LanguageEntry;
+use chrono::{DateTime, Utc};
 
 use anyhow::Result;
 
@@ -219,10 +221,87 @@ impl DB {
         Ok(())
     }
 
+    pub async fn seed_document_table(&self) -> Result<()> {
+        let documents = vec![
+            Document {
+                id: None,
+                lang_id: self
+                    .get_language_by_identifier("en_demo".into())
+                    .await?
+                    .unwrap()
+                    .id
+                    .unwrap(),
+                title: "Toy Document".to_string(),
+                filename: "toy.md".to_string(),
+                content: "This is a simple toy document for testing purposes. It contains some basic English text that can be used to test the language learning features.".to_string(),
+                doc_type: "Text".to_string(),
+                tags: vec!["demo".to_string(), "english".to_string()],
+                created_ts: Utc::now(),
+                updated_ts: Utc::now(),
+            },
+            Document {
+                id: None,
+                lang_id: self
+                    .get_language_by_identifier("fr_demo".into())
+                    .await?
+                    .unwrap()
+                    .id
+                    .unwrap(),
+                title: "Document Français".to_string(),
+                filename: "toy.md".to_string(),
+                content: "Ceci est un document de démonstration en français. Il contient du texte simple pour tester les fonctionnalités d'apprentissage des langues. Bonjour le monde!".to_string(),
+                doc_type: "Text".to_string(),
+                tags: vec!["demo".to_string(), "français".to_string()],
+                created_ts: Utc::now(),
+                updated_ts: Utc::now(),
+            },
+            Document {
+                id: None,
+                lang_id: self
+                    .get_language_by_identifier("ja_demo".into())
+                    .await?
+                    .unwrap()
+                    .id
+                    .unwrap(),
+                title: "日本語の文書".to_string(),
+                filename: "toy.md".to_string(),
+                content: "これは日本語のデモ文書です。言語学習機能をテストするための簡単なテキストが含まれています。こんにちは世界！".to_string(),
+                doc_type: "Text".to_string(),
+                tags: vec!["demo".to_string(), "日本語".to_string()],
+                created_ts: Utc::now(),
+                updated_ts: Utc::now(),
+            },
+            Document {
+                id: None,
+                lang_id: self
+                    .get_language_by_identifier("en_demo".into())
+                    .await?
+                    .unwrap()
+                    .id
+                    .unwrap(),
+                title: "Macbeth Excerpt".to_string(),
+                filename: "macbeth excerpt.md".to_string(),
+                content: "Tomorrow, and tomorrow, and tomorrow, creeps in this petty pace from day to day, to the last syllable of recorded time; and all our yesterdays have lighted fools the way to dusty death.".to_string(),
+                doc_type: "Text".to_string(),
+                tags: vec!["literature".to_string(), "shakespeare".to_string()],
+                created_ts: Utc::now(),
+                updated_ts: Utc::now(),
+            },
+        ];
+
+        for document in documents {
+            println!("Creating document: {:?}", document.title);
+            self.create_document(document).await?;
+        }
+
+        Ok(())
+    }
+
     pub async fn seed_all_tables(&self) -> Result<()> {
         self.seed_lang_table().await?;
         self.seed_vocab_table().await?;
         self.seed_phrase_table().await?;
+        self.seed_document_table().await?;
         Ok(())
     }
 }

@@ -82,3 +82,23 @@ BEFORE UPDATE ON phrase
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_ts();
 
+CREATE TABLE IF NOT EXISTS document (
+    id BIGSERIAL PRIMARY KEY,
+    lang_id BIGINT NOT NULL REFERENCES language (id) ON DELETE CASCADE,
+    
+    title TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    content TEXT NOT NULL,
+    doc_type TEXT NOT NULL DEFAULT 'Text',
+    tags TEXT[] NOT NULL DEFAULT '{}',
+    
+    UNIQUE(lang_id, filename),
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp
+);
+
+CREATE TRIGGER set_updated_ts_document
+BEFORE UPDATE ON document
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_ts();
+

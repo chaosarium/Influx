@@ -1,5 +1,6 @@
 #![allow(unused_imports)]
 
+pub mod document;
 pub mod lang;
 pub mod phrase;
 pub mod seed;

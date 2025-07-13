@@ -44,6 +44,7 @@ elm_rs = {version="0.2.2", features=['chrono']}
 log = "0.4.22"
 env_logger = "0.11.6"
 sqlx = {version = "0.8.3", features = [ "postgres", "runtime-tokio", "tls-native-tls", "time" ]}
+time = { version = "0.3", features = ["serde"] }
 dotenvy = "0.15.7"
 
 [dev-dependencies]

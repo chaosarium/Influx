@@ -2319,6 +2319,7 @@ dependencies = [
  "sqlx",
  "surrealdb",
  "thiserror 2.0.9",
+ "time",
  "tokio",
  "toml",
  "tower",
