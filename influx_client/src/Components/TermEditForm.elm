@@ -7,11 +7,11 @@ import Datastore.DictContext as DictContext
 import Datastore.FocusContext as FocusContext
 import Effect exposing (Effect)
 import Html exposing (Html, div, span)
-import Html.Attributes exposing (class, disabled, style)
-import Html.Events exposing (onClick, onInput, onMouseDown, onMouseEnter, onMouseOver, onMouseUp, onSubmit)
+import Html.Attributes exposing (style)
+import Html.Events exposing (onInput)
 import Http
 import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
-
+import Components.FormElements exposing (inputC, textboxC, selectC, buttonC, SelectCOption)
 
 
 -- MODEL
@@ -311,74 +311,6 @@ update dict_ctx msg model =
 
 
 -- VIEW
--- start component lib
-
-
-inputC : List (Html.Attribute msg) -> String -> String -> (String -> msg) -> String -> Html msg
-inputC attrs label id toMsg value =
-    div []
-        [ Html.label [ Html.Attributes.for id ] [ Html.text label ]
-        , Html.input
-            (attrs
-                ++ [ Html.Attributes.type_ "text"
-                   , Html.Attributes.id id
-                   , Html.Events.onInput toMsg
-                   , Html.Attributes.value value
-                   ]
-            )
-            []
-        ]
-
-
-textboxC : String -> String -> (String -> msg) -> String -> Html msg
-textboxC label id toMsg value =
-    div []
-        [ Html.label [ Html.Attributes.for id ] [ Html.text label ]
-        , Html.textarea
-            [ Html.Attributes.id id
-            , Html.Events.onInput toMsg
-            , Html.Attributes.value value
-            ]
-            []
-        ]
-
-
-type alias SelectCOption =
-    { value : String, label : String }
-
-
-selectC : String -> String -> (String -> msg) -> List SelectCOption -> String -> Html msg
-selectC label id toMsg options selectedValue =
-    div []
-        [ Html.label [ Html.Attributes.for id ] [ Html.text label ]
-        , Html.select
-            [ Html.Attributes.id id
-            , Html.Attributes.value selectedValue
-            , Html.Events.onInput toMsg
-            , Html.Attributes.required True
-            ]
-            (Html.option
-                [ Html.Attributes.value ""
-                , Html.Attributes.disabled True
-                , Html.Attributes.selected (selectedValue == "")
-                , Html.Attributes.hidden True
-                ]
-                [ Html.text "Select a status... (or default to L1)" ]
-                :: List.map
-                    (\opt ->
-                        Html.option
-                            [ Html.Attributes.value opt.value
-                            , Html.Attributes.selected (opt.value == selectedValue)
-                            ]
-                            [ Html.text opt.label ]
-                    )
-                    options
-            )
-        ]
-
-
-
--- end component lib
 
 
 tokenStatusOptions : List SelectCOption
@@ -485,7 +417,7 @@ viewTermForm form lift args =
     Html.form
         [ Styles.bgGrey ]
         [ Html.text ("Editing " ++ form_data.token_or_phrase)
-        , inputC [ disabled True ] "Orthography" "orthographyInput" (lift << InputChanged << UpdateOrthographyInput) form_data.orthography
+        , inputC [ Html.Attributes.disabled True ] "Orthography" "orthographyInput" (lift << InputChanged << UpdateOrthographyInput) form_data.orthography
         , inputC [] "Definition" "definitionInput" (lift << InputChanged << UpdateDefinitionInput) form_data.definition
         , case form_data.phonetic of
             Just p ->
@@ -507,28 +439,13 @@ viewTermForm form lift args =
             )
         , textboxC "Notes" "notesInput" (lift << InputChanged << UpdateNotesInput) form_data.notes
         , Utils.htmlIf (form.write_action == Create) <|
-            Html.input
-                [ Html.Attributes.type_ "button"
-                , Html.Attributes.value "Create"
-                , Html.Events.onClick (lift (RequestEditTerm CreateTerm form.working_term args.doc_path))
-                ]
-                []
+            buttonC [ Html.Events.onClick (lift (RequestEditTerm CreateTerm form.working_term args.doc_path)) ] "Create"
         , Utils.htmlIf (form.write_action == Update) <|
-            Html.input
-                [ Html.Attributes.type_ "button"
-                , Html.Attributes.value "Update"
-                , Html.Events.onClick (lift (RequestEditTerm UpdateTerm form.working_term args.doc_path))
-                ]
-                []
+            buttonC [ Html.Events.onClick (lift (RequestEditTerm UpdateTerm form.working_term args.doc_path)) ] "Update"
         , Utils.htmlIf (form.write_action == Update) <|
-            Html.input
-                [ Html.Attributes.type_ "button"
-                , Html.Attributes.value "Delete"
-                , Html.Events.onClick (lift (RequestEditTerm DeleteTerm form.working_term args.doc_path))
-                ]
-                []
+            buttonC [ Html.Events.onClick (lift (RequestEditTerm DeleteTerm form.working_term args.doc_path)) ] "Delete"
         , if form.working_term /= form.orig_term then
-            div [ style "color" "orange", style "margin-top" "8px" ]
+            Html.div [ Html.Attributes.style "color" "orange", Html.Attributes.style "margin-top" "8px" ]
                 [ Html.text "You have unsaved changes." ]
 
           else
@@ -550,4 +467,5 @@ view model lift { dict, doc_path } =
             viewTermForm term_form lift { dict = dict, doc_path = doc_path }
 
         _ ->
-            div [] [ Html.text "No segment selected for editing." ]
+            Html.div [] [ Html.text "No segment selected for editing." ]
+

@@ -196,12 +196,6 @@ subscriptions model =
     ModifierState.subscriptions ModifierStateMsg
 
 
-
--- Annotated Text view
--- VIEW
--- start TODO put in component
-
-
 viewSegExtraInfo : DictContext.T -> SentSegV2 -> Html Msg
 viewSegExtraInfo dict seg =
     case seg.inner of
