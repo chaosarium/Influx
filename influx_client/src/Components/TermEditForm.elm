@@ -64,9 +64,10 @@ type FormMsg
 type Msg
     = InputChanged FormMsg
       -- upward propagation
-    | RequestEditTerm TermEditAction Term
+    | RequestEditTerm TermEditAction Term (Maybe DocPath)
     | OverwriteTerm Term
     | AddToast String
+    | GotUpdatedAnnotatedDoc AnnotatedDocV2
       -- downward propagation
     | EditingSegUpdated (Maybe (List SentSegV2)) (Maybe SentSegV2)
     | GotTermEditResponse (Result Http.Error TermEditResponse)
@@ -226,7 +227,18 @@ handleGotTermEditAck model label res =
                         _ ->
                             model.form_model
               }
-            , Effect.batch [ Effect.sendMsg <| OverwriteTerm updated_term, Effect.sendMsg <| AddToast (label ++ ": Success") ]
+            , Effect.batch
+                ([ Effect.sendMsg <| OverwriteTerm updated_term
+                 , Effect.sendMsg <| AddToast (label ++ ": Success")
+                 ]
+                    ++ (case response.updatedAnnotatedDoc of
+                            Just doc ->
+                                [ Effect.sendMsg <| GotUpdatedAnnotatedDoc doc ]
+
+                            Nothing ->
+                                []
+                       )
+                )
             )
 
         Err err ->
@@ -274,10 +286,10 @@ update dict_ctx msg model =
                         ( Just seg_slice, Nothing, _ ) ->
                             case FocusContext.getPhraseFromSegmentSlice dict_ctx.lang_id seg_slice of
                                 Just phrase ->
-                                    Debug.log "switch to maybe new phrase" <| switchToPossiblyNewPhraseEdit dict_ctx phrase
+                                    switchToPossiblyNewPhraseEdit dict_ctx phrase
 
                                 Nothing ->
-                                    Debug.log "didn't get phrase from seg slice" <| NothingForm
+                                    NothingForm
 
                         _ ->
                             NothingForm
@@ -445,6 +457,7 @@ viewTermForm :
     -> (Msg -> msg)
     ->
         { dict : DictContext.T
+        , doc_path : Maybe DocPath
         }
     -> Html msg
 viewTermForm form lift args =
@@ -495,21 +508,21 @@ viewTermForm form lift args =
             Html.input
                 [ Html.Attributes.type_ "button"
                 , Html.Attributes.value "Create"
-                , Html.Events.onClick (lift (RequestEditTerm CreateTerm form.working_term))
+                , Html.Events.onClick (lift (RequestEditTerm CreateTerm form.working_term args.doc_path))
                 ]
                 []
         , Utils.htmlIf (form.write_action == Update) <|
             Html.input
                 [ Html.Attributes.type_ "button"
                 , Html.Attributes.value "Update"
-                , Html.Events.onClick (lift (RequestEditTerm UpdateTerm form.working_term))
+                , Html.Events.onClick (lift (RequestEditTerm UpdateTerm form.working_term args.doc_path))
                 ]
                 []
         , Utils.htmlIf (form.write_action == Update) <|
             Html.input
                 [ Html.Attributes.type_ "button"
                 , Html.Attributes.value "Delete"
-                , Html.Events.onClick (lift (RequestEditTerm DeleteTerm form.working_term))
+                , Html.Events.onClick (lift (RequestEditTerm DeleteTerm form.working_term args.doc_path))
                 ]
                 []
         , if form.working_term /= form.orig_term then
@@ -526,12 +539,13 @@ view :
     -> (Msg -> msg)
     ->
         { dict : DictContext.T
+        , doc_path : Maybe DocPath
         }
     -> Html msg
-view model lift { dict } =
+view model lift { dict, doc_path } =
     case model.form_model of
         TermForm term_form ->
-            viewTermForm term_form lift { dict = dict }
+            viewTermForm term_form lift { dict = dict, doc_path = doc_path }
 
         _ ->
             div [] [ Html.text "No segment selected for editing." ]

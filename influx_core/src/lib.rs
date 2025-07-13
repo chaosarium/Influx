@@ -69,26 +69,6 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
             "/docs/{language_identifier}/{file}",
             get(handlers::doc_handlers::get_doc),
         )
-        .route(
-            "/vocab/delete_token",
-            post(handlers::term_handlers::delete_token),
-        )
-        .route(
-            "/vocab/update_token",
-            post(handlers::term_handlers::update_token),
-        )
-        .route(
-            "/vocab/create_token",
-            post(handlers::term_handlers::create_token),
-        )
-        .route(
-            "/phrase/update_phrase",
-            post(handlers::term_handlers::update_phrase),
-        )
-        .route(
-            "/phrase/delete_phrase",
-            post(handlers::term_handlers::delete_phrase),
-        )
         .route("/term/edit", post(handlers::term_handlers::edit_term))
         .route("/lang", get(handlers::lang_handlers::get_language_list))
         .route(
@@ -145,6 +125,7 @@ mod tests {
                 handlers::GetDocResponse,
                 handlers::TermEditRequest,
                 handlers::TermEditResponse,
+                handlers::DocPath,
                 nlp::AnnotatedDocV2,
                 nlp::DocSegV2,
                 nlp::DocSegVariants,
@@ -166,6 +147,7 @@ mod tests {
                 handlers::GetDocResponse,
                 handlers::TermEditRequest,
                 handlers::TermEditResponse,
+                handlers::DocPath,
                 nlp::AnnotatedDocV2,
                 nlp::DocSegV2,
                 nlp::DocSegVariants,

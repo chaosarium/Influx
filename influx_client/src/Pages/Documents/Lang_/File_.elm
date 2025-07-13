@@ -91,6 +91,7 @@ type Msg
     | ModifierStateMsg ModifierState.Msg
     | ToastMsg Toast.Msg
     | AddToast String
+    | GotUpdatedAnnotatedDoc AnnotatedDocV2
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -141,9 +142,14 @@ update msg model =
 
         TermEditorEvent formMsg ->
             case formMsg of
-                TermEditForm.RequestEditTerm action term ->
+                TermEditForm.RequestEditTerm action term doc_path ->
                     ( model
-                    , Effect.sendCmd (Api.TermEdit.edit { requestedAction = action, term = term } (TermEditorEvent << TermEditForm.GotTermEditResponse))
+                    , Effect.sendCmd (Api.TermEdit.edit { requestedAction = action, term = term, docPath = doc_path } (TermEditorEvent << TermEditForm.GotTermEditResponse))
+                    )
+
+                TermEditForm.GotUpdatedAnnotatedDoc updated_doc ->
+                    ( { model | working_doc = DocContext.fromAnnotatedDocument model.working_doc.lang_id updated_doc }
+                    , Effect.none
                     )
 
                 TermEditForm.OverwriteTerm term ->
@@ -313,6 +319,7 @@ view route model =
         , TermEditForm.view model.form_model
             TermEditorEvent
             { dict = model.working_dict
+            , doc_path = Just { lang = route.params.lang, file = route.params.file }
             }
 
         -- for debugging. click to toast a message

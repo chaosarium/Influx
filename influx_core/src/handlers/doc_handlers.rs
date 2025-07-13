@@ -24,7 +24,7 @@ use std::path::PathBuf;
 
 use tracing::info;
 
-const USE_CACHE: bool = false;
+const USE_CACHE: bool = true;
 
 pub async fn get_docs_list(
     State(ServerState { influx_path, db }): State<ServerState>,

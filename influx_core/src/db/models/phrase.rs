@@ -39,6 +39,18 @@ impl Phrase {
             status: TokenStatus::L1,
         }
     }
+
+    pub fn unmarked_phrase(lang_id: InfluxResourceId, orthography_seq: Vec<String>) -> Self {
+        Phrase {
+            id: None,
+            lang_id: lang_id,
+            orthography_seq: orthography_seq,
+            definition: "".to_string(),
+            notes: "".to_string(),
+            original_context: "".to_string(),
+            status: TokenStatus::UNMARKED,
+        };
+    }
 }
 
 impl DB {
@@ -352,6 +364,12 @@ impl DB {
                 Ok(record)
             }
         }
+    }
+
+    pub async fn delete_phrase_and_return_unmarked(&self, phrase: Phrase) -> Result<Phrase> {
+        let unmarked_phrase = Phrase::unmarked_phrase(phrase.lang_id.clone(), phrase.orthography_seq.clone());
+        let _ = self.delete_phrase_and_return_deleted(phrase).await?;
+        Ok(unmarked_phrase)
     }
 }
 

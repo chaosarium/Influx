@@ -42,14 +42,23 @@ pub enum TermEditAction {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
+pub struct DocPath {
+    pub lang: String,
+    pub file: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
 pub struct TermEditRequest {
     pub requested_action: TermEditAction,
     pub term: Term,
+    pub doc_path: Option<DocPath>,
 }
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
+
+#[derive(Debug, Serialize, Deserialize, Clone, Elm, ElmEncode, ElmDecode)]
 pub struct TermEditResponse {
     pub performed_action: TermEditAction,
     pub term: Term,
+    pub updated_annotated_doc: Option<nlp::AnnotatedDocV2>,
 }
 
 // DOCUMENT
