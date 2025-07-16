@@ -367,7 +367,8 @@ impl DB {
     }
 
     pub async fn delete_phrase_and_return_unmarked(&self, phrase: Phrase) -> Result<Phrase> {
-        let unmarked_phrase = Phrase::unmarked_phrase(phrase.lang_id.clone(), phrase.orthography_seq.clone());
+        let unmarked_phrase =
+            Phrase::unmarked_phrase(phrase.lang_id.clone(), phrase.orthography_seq.clone());
         let _ = self.delete_phrase_and_return_deleted(phrase).await?;
         Ok(unmarked_phrase)
     }

@@ -1,5 +1,5 @@
 use super::ServerError;
-use crate::db::models::phrase::{Phrase};
+use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
 use crate::handlers::api_interfaces::*;
 use crate::ServerState;
@@ -75,7 +75,9 @@ pub async fn edit_term(
     };
 
     let updated_annotated_doc = if let Some(doc_path) = request.doc_path {
-        let response = super::doc_handlers::get_annotated_doc_logic(&state, doc_path.lang, doc_path.file).await?;
+        let response =
+            super::doc_handlers::get_annotated_doc_logic(&state, doc_path.lang, doc_path.file)
+                .await?;
         Some(response.annotated_doc)
     } else {
         None

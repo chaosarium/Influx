@@ -29,7 +29,7 @@ fn document_to_doc_entry(document: Document) -> DocEntry {
         "Audio" => DocType::Audio,
         _ => DocType::Text,
     };
-    
+
     DocEntry {
         path: PathBuf::from(&document.filename),
         filename: PathBuf::from(&document.filename),
@@ -72,10 +72,8 @@ pub async fn get_docs_list(
 
     match db.get_documents_by_lang_id(lang_entry.id.unwrap()).await {
         Ok(documents) => {
-            let doc_entries: Vec<DocEntry> = documents
-                .into_iter()
-                .map(document_to_doc_entry)
-                .collect();
+            let doc_entries: Vec<DocEntry> =
+                documents.into_iter().map(document_to_doc_entry).collect();
             (StatusCode::OK, Json(doc_entries)).into_response()
         }
         Err(e) => (
@@ -152,7 +150,7 @@ pub(crate) async fn get_annotated_doc_logic(
         date_created: document.created_ts,
         date_modified: document.updated_ts,
     };
-    
+
     let text_checksum: String = text_checksum(text.clone());
 
     let nlp_filepath = state
