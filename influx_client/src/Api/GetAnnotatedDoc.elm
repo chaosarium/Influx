@@ -11,15 +11,14 @@ decoder =
 
 
 get :
-    { languageId : String
-    , filepath : String
+    { filepath : String
     }
     -> (Result Http.Error Bindings.GetDocResponse -> msg)
     -> Cmd msg
 get args onResponse =
     let
         url =
-            "http://127.0.0.1:3000/docs/" ++ args.languageId ++ "/" ++ args.filepath
+            "http://127.0.0.1:3000/doc/" ++ args.filepath
     in
     Http.get
         { url = url

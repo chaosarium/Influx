@@ -11,16 +11,13 @@ decoder =
 
 
 get :
-    { languageId : String
+    { languageId : Maybe Bindings.InfluxResourceId
     }
     -> (Result Http.Error (List Bindings.DocEntry) -> msg)
     -> Cmd msg
 get args onResponse =
-    let
-        url =
-            "http://127.0.0.1:3000/docs/" ++ args.languageId
-    in
-    Http.get
-        { url = url
+    Http.post
+        { url = "http://127.0.0.1:3000/docs"
+        , body = Http.jsonBody (Bindings.getDocsRequestEncoder { languageId = args.languageId })
         , expect = Http.expectJson onResponse decoder
         }

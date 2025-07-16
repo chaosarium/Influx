@@ -1,4 +1,4 @@
-module Pages.Documents.Lang_.File_ exposing (Model, Msg, page)
+module Pages.Documents.Doc_ exposing (Model, Msg, page)
 
 import Api
 import Api.GetAnnotatedDoc
@@ -27,10 +27,10 @@ import Utils.ModifierState as ModifierState
 import View exposing (View)
 
 
-page : Shared.Model -> Route { lang : String, file : String } -> Page Model Msg
+page : Shared.Model -> Route { doc : String } -> Page Model Msg
 page shared route =
     Page.new
-        { init = init { languageId = route.params.lang, filepath = route.params.file }
+        { init = init { documentId = route.params.doc }
         , update = update
         , subscriptions = subscriptions
         , view = view route
@@ -38,7 +38,7 @@ page shared route =
 
 
 type alias ThisRoute =
-    Route { lang : String, file : String }
+    Route { doc : String }
 
 
 
@@ -47,31 +47,26 @@ type alias ThisRoute =
 
 type alias Model =
     { get_doc_api_res : Api.Data GetDocResponse
-    , modifier_state : ModifierState.Model
     , working_doc : DocContext.T
     , working_dict : DictContext.T
     , focus_ctx : FocusContext.T
     , form_model : TermEditForm.Model
+    , modifier_state : ModifierState.Model
     , toast_tray : Toast.Tray String
     }
 
 
-init :
-    { languageId : String
-    , filepath : String
-    }
-    -> ()
-    -> ( Model, Effect Msg )
-init args () =
+init : { documentId : String } -> () -> ( Model, Effect Msg )
+init { documentId } () =
     ( { get_doc_api_res = Api.Loading
-      , modifier_state = ModifierState.init
       , working_doc = DocContext.empty
       , working_dict = DictContext.empty
       , focus_ctx = FocusContext.new
       , form_model = TermEditForm.empty
+      , modifier_state = ModifierState.init
       , toast_tray = Toast.tray
       }
-    , Effect.sendCmd (Api.GetAnnotatedDoc.get args ApiResponded)
+    , Effect.sendCmd (Api.GetAnnotatedDoc.get { filepath = documentId } ApiResponded)
     )
 
 
@@ -142,8 +137,16 @@ update msg model =
         TermEditorEvent formMsg ->
             case formMsg of
                 TermEditForm.RequestEditTerm action term doc_path ->
+                    let
+                        documentId = case doc_path of
+                            Just path -> 
+                                case String.toInt path.file of
+                                    Just id -> Just (Bindings.SerialId id)
+                                    Nothing -> Nothing
+                            Nothing -> Nothing
+                    in
                     ( model
-                    , Effect.sendCmd (Api.TermEdit.edit { requestedAction = action, term = term, docPath = doc_path } (TermEditorEvent << TermEditForm.GotTermEditResponse))
+                    , Effect.sendCmd (Api.TermEdit.edit { requestedAction = action, term = term, documentId = documentId } (TermEditorEvent << TermEditForm.GotTermEditResponse))
                     )
 
                 TermEditForm.GotUpdatedAnnotatedDoc updated_doc ->
@@ -193,31 +196,50 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    ModifierState.subscriptions ModifierStateMsg
+    Sub.batch
+        [ ModifierState.subscriptions ModifierStateMsg
+        ]
 
 
-viewSegExtraInfo : DictContext.T -> SentSegV2 -> Html Msg
+
+-- VIEW
+
+
+viewSegExtraInfo : DictContext.T -> SentSegV2 -> Html msg
 viewSegExtraInfo dict seg =
-    case seg.inner of
-        TokenSeg { orthography } ->
-            Utils.htmlIf (Maybe.withDefault "" seg.attributes.lemma /= orthography) <| Html.span [] [ Html.text (" (lemma is " ++ Maybe.withDefault "" seg.attributes.lemma ++ ")") ]
+    let
+        orthography =
+            case seg.inner of
+                TokenSeg token ->
+                    token.orthography
 
-        PhraseSeg { normalisedOrthography, components } ->
-            Html.span []
-                [ Html.text "=  "
-                , AnnotatedText.viewRegisteredPhrase
-                    { dict = dict, modifier_state = ModifierState.init, mouse_handler = NoopMouseEvent, focus_predicate = \_ -> False, seg_display_predicate = \_ -> True, doc_seg_display_predicate = \_ -> True }
-                    []
-                    (Maybe.withDefault { id = Nothing, langId = Bindings.SerialId -1, orthographySeq = [], definition = "", notes = "", originalContext = "", status = Bindings.Unmarked } (Dict.get normalisedOrthography dict.phraseDict))
-                    seg
-                    components
-                ]
+                PhraseSeg phrase ->
+                    phrase.normalisedOrthography
 
-        WhitespaceSeg ->
-            Html.Extra.nothing
+                WhitespaceSeg ->
+                    ""
 
-        PunctuationSeg ->
-            Html.Extra.nothing
+                PunctuationSeg ->
+                    ""
+
+        token_info =
+            case DictContext.lookupToken dict orthography of
+                Just token ->
+                    [ Html.text ("token: " ++ token.orthography ++ " -> " ++ token.definition) ]
+
+                Nothing ->
+                    [ Html.text "no token info" ]
+
+        phrase_info =
+            case DictContext.lookupPhrase dict orthography of
+                Just phrase ->
+                    [ Html.text ("phrase: " ++ String.join " " phrase.orthographySeq ++ " -> " ++ phrase.definition) ]
+
+                Nothing ->
+                    [ Html.text "no phrase info" ]
+    in
+    Html.div []
+        (token_info ++ phrase_info)
 
 
 
@@ -264,11 +286,11 @@ view route model =
                         FocusContext.isDocSegInSlice slice
             }
     in
-    { title = "File view"
+    { title = "Document view"
     , body =
         [ Components.Topbar.view {}
         , Html.div [ class "toast-tray" ] [ Toast.render viewToast model.toast_tray (Toast.config ToastMsg) ]
-        , Html.h1 [] [ Html.text ("lang: " ++ route.params.lang ++ ", file: " ++ Utils.unwrappedPercentDecode route.params.file) ]
+        , Html.h1 [] [ Html.text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
         , case model.get_doc_api_res of
             Api.Loading ->
                 Html.text "Loading..."
@@ -312,7 +334,19 @@ view route model =
         , TermEditForm.view model.form_model
             TermEditorEvent
             { dict = model.working_dict
-            , doc_path = Just { lang = route.params.lang, file = route.params.file }
+            , doc_path =
+                Just
+                    { lang =
+                        String.fromInt
+                            (case model.working_doc.lang_id of
+                                Bindings.SerialId id ->
+                                    id
+
+                                Bindings.StringId id ->
+                                    0
+                            )
+                    , file = route.params.doc
+                    }
             }
         ]
     }

@@ -30,7 +30,6 @@ impl DB {
         let languages = vec![
             LanguageEntry {
                 id: None,
-                identifier: "fr_demo".to_string(),
                 code: "fr".to_string(),
                 name: "French".to_string(),
                 dicts: vec![
@@ -40,7 +39,6 @@ impl DB {
             },
             LanguageEntry {
                 id: None,
-                identifier: "en_demo".to_string(),
                 code: "en".to_string(),
                 name: "English".to_string(),
                 dicts: vec![
@@ -50,23 +48,14 @@ impl DB {
             },
             LanguageEntry {
                 id: None,
-                identifier: "ja_demo".to_string(),
                 code: "ja".to_string(),
                 name: "Japanese".to_string(),
                 dicts: vec!["dict:///###".to_string()],
             },
             LanguageEntry {
                 id: None,
-                identifier: "zh-hant_demo".to_string(),
                 code: "zh-hant".to_string(),
                 name: "Mandarin".to_string(),
-                dicts: vec!["dict:///###".to_string()],
-            },
-            LanguageEntry {
-                id: None,
-                identifier: "de_not_exist".to_string(),
-                code: "de".to_string(),
-                name: "Non-existent".to_string(),
                 dicts: vec!["dict:///###".to_string()],
             },
         ];
@@ -82,7 +71,7 @@ impl DB {
     pub async fn seed_vocab_table(&self) -> Result<()> {
         let tokens = vec![
             Token::fancier_token(
-                self.get_language_by_identifier("en_demo".into())
+                self.get_language_by_code("en".into())
                     .await?
                     .unwrap()
                     .id
@@ -93,7 +82,7 @@ impl DB {
                 TokenStatus::L5,
             ),
             Token::fancier_token(
-                self.get_language_by_identifier("fr_demo".into())
+                self.get_language_by_code("fr".into())
                     .await?
                     .unwrap()
                     .id
@@ -104,7 +93,7 @@ impl DB {
                 TokenStatus::L5,
             ),
             Token::fancier_token(
-                self.get_language_by_identifier("fr_demo".into())
+                self.get_language_by_code("fr".into())
                     .await?
                     .unwrap()
                     .id
@@ -115,7 +104,7 @@ impl DB {
                 TokenStatus::L5,
             ),
             Token::fancier_token(
-                self.get_language_by_identifier("fr_demo".into())
+                self.get_language_by_code("fr".into())
                     .await?
                     .unwrap()
                     .id
@@ -126,7 +115,7 @@ impl DB {
                 TokenStatus::L5,
             ),
             Token::fancier_token(
-                self.get_language_by_identifier("fr_demo".into())
+                self.get_language_by_code("fr".into())
                     .await?
                     .unwrap()
                     .id
@@ -137,7 +126,7 @@ impl DB {
                 TokenStatus::L5,
             ),
             Token::fancier_token(
-                self.get_language_by_identifier("fr_demo".into())
+                self.get_language_by_code("fr".into())
                     .await?
                     .unwrap()
                     .id
@@ -148,7 +137,7 @@ impl DB {
                 TokenStatus::L4,
             ),
             Token::fancier_token(
-                self.get_language_by_identifier("fr_demo".into())
+                self.get_language_by_code("fr".into())
                     .await?
                     .unwrap()
                     .id
@@ -159,7 +148,7 @@ impl DB {
                 TokenStatus::L3,
             ),
             Token::fancier_token(
-                self.get_language_by_identifier("fr_demo".into())
+                self.get_language_by_code("fr".into())
                     .await?
                     .unwrap()
                     .id
@@ -170,7 +159,7 @@ impl DB {
                 TokenStatus::L2,
             ),
             Token::fancier_token(
-                self.get_language_by_identifier("fr_demo".into())
+                self.get_language_by_code("fr".into())
                     .await?
                     .unwrap()
                     .id
@@ -181,7 +170,7 @@ impl DB {
                 TokenStatus::L1,
             ),
             Token::fancier_token(
-                self.get_language_by_identifier("fr_demo".into())
+                self.get_language_by_code("fr".into())
                     .await?
                     .unwrap()
                     .id
@@ -205,7 +194,7 @@ impl DB {
             Phrase {
                 id: None,
                 lang_id: self
-                    .get_language_by_identifier("en_demo".into())
+                    .get_language_by_code("en".into())
                     .await?
                     .unwrap()
                     .id
@@ -219,7 +208,7 @@ impl DB {
             Phrase {
                 id: None,
                 lang_id: self
-                    .get_language_by_identifier("en_demo".into())
+                    .get_language_by_code("en".into())
                     .await?
                     .unwrap()
                     .id
@@ -242,25 +231,25 @@ impl DB {
     pub async fn seed_document_table(&self) -> Result<()> {
         // Get language IDs
         let en_lang_id = self
-            .get_language_by_identifier("en_demo".into())
+            .get_language_by_code("en".into())
             .await?
             .unwrap()
             .id
             .unwrap();
         let fr_lang_id = self
-            .get_language_by_identifier("fr_demo".into())
+            .get_language_by_code("fr".into())
             .await?
             .unwrap()
             .id
             .unwrap();
         let ja_lang_id = self
-            .get_language_by_identifier("ja_demo".into())
+            .get_language_by_code("ja".into())
             .await?
             .unwrap()
             .id
             .unwrap();
         let zh_lang_id = self
-            .get_language_by_identifier("zh-hant_demo".into())
+            .get_language_by_code("zh-hant".into())
             .await?
             .unwrap()
             .id

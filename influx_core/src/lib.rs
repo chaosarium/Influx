@@ -61,14 +61,8 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/connection_test", get(handlers::connection_test))
-        .route(
-            "/docs/{language_identifier}",
-            get(handlers::doc_handlers::get_docs_list),
-        )
-        .route(
-            "/docs/{language_identifier}/{file}",
-            get(handlers::doc_handlers::get_doc),
-        )
+        .route("/docs", post(handlers::doc_handlers::get_docs_list))
+        .route("/doc/{id}", get(handlers::doc_handlers::get_doc))
         .route("/term/edit", post(handlers::term_handlers::edit_term))
         .route("/lang", get(handlers::lang_handlers::get_language_list))
         .route(
@@ -125,6 +119,7 @@ mod tests {
                 handlers::GetDocResponse,
                 handlers::TermEditRequest,
                 handlers::TermEditResponse,
+                handlers::GetDocsRequest,
                 nlp::TermDictionary,
                 handlers::DocPath,
                 nlp::AnnotatedDocV2,
@@ -148,6 +143,7 @@ mod tests {
                 handlers::GetDocResponse,
                 handlers::TermEditRequest,
                 handlers::TermEditResponse,
+                handlers::GetDocsRequest,
                 nlp::TermDictionary,
                 handlers::DocPath,
                 nlp::AnnotatedDocV2,

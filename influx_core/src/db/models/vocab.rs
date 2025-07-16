@@ -241,7 +241,7 @@ impl DB {
         lang_identifier: String,
         orthography: String,
     ) -> Result<Option<Token>> {
-        let lang_id = self.get_language_by_identifier(lang_identifier).await?;
+        let lang_id = self.get_language_by_code(lang_identifier).await?;
         match lang_id {
             Some(lang_id) => {
                 self.query_token_by_orthography(lang_id.id.unwrap(), orthography)

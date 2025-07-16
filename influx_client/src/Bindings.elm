@@ -45,7 +45,6 @@ influxResourceIdEncoder enum =
 
 type alias LanguageEntry =
     { id : Maybe InfluxResourceId
-    , identifier : String
     , code : String
     , name : String
     , dicts : List String
@@ -56,7 +55,6 @@ languageEntryEncoder : LanguageEntry -> Json.Encode.Value
 languageEntryEncoder struct =
     Json.Encode.object
         [ ( "id", (Maybe.withDefault Json.Encode.null << Maybe.map influxResourceIdEncoder) struct.id )
-        , ( "identifier", Json.Encode.string struct.identifier )
         , ( "code", Json.Encode.string struct.code )
         , ( "name", Json.Encode.string struct.name )
         , ( "dicts", Json.Encode.list Json.Encode.string struct.dicts )
@@ -104,6 +102,7 @@ docMetadataEncoder struct =
 
 type alias DocEntry =
     { id : InfluxResourceId
+    , language : LanguageEntry
     , metadata : DocMetadata
     }
 
@@ -112,6 +111,7 @@ docEntryEncoder : DocEntry -> Json.Encode.Value
 docEntryEncoder struct =
     Json.Encode.object
         [ ( "id", influxResourceIdEncoder struct.id )
+        , ( "language", languageEntryEncoder struct.language )
         , ( "metadata", docMetadataEncoder struct.metadata )
         ]
 
@@ -262,7 +262,7 @@ getDocResponseEncoder struct =
 type alias TermEditRequest =
     { requestedAction : TermEditAction
     , term : Term
-    , docPath : Maybe DocPath
+    , documentId : Maybe InfluxResourceId
     }
 
 
@@ -271,7 +271,7 @@ termEditRequestEncoder struct =
     Json.Encode.object
         [ ( "requested_action", termEditActionEncoder struct.requestedAction )
         , ( "term", termEncoder struct.term )
-        , ( "doc_path", (Maybe.withDefault Json.Encode.null << Maybe.map docPathEncoder) struct.docPath )
+        , ( "document_id", (Maybe.withDefault Json.Encode.null << Maybe.map influxResourceIdEncoder) struct.documentId )
         ]
 
 
@@ -288,6 +288,18 @@ termEditResponseEncoder struct =
         [ ( "performed_action", termEditActionEncoder struct.performedAction )
         , ( "term", termEncoder struct.term )
         , ( "updated_annotated_doc", (Maybe.withDefault Json.Encode.null << Maybe.map annotatedDocV2Encoder) struct.updatedAnnotatedDoc )
+        ]
+
+
+type alias GetDocsRequest =
+    { languageId : Maybe InfluxResourceId
+    }
+
+
+getDocsRequestEncoder : GetDocsRequest -> Json.Encode.Value
+getDocsRequestEncoder struct =
+    Json.Encode.object
+        [ ( "language_id", (Maybe.withDefault Json.Encode.null << Maybe.map influxResourceIdEncoder) struct.languageId )
         ]
 
 
@@ -447,7 +459,6 @@ languageEntryDecoder : Json.Decode.Decoder LanguageEntry
 languageEntryDecoder =
     Json.Decode.succeed LanguageEntry
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" (Json.Decode.nullable influxResourceIdDecoder)))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "identifier" Json.Decode.string))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "code" Json.Decode.string))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "name" Json.Decode.string))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "dicts" (Json.Decode.list Json.Decode.string)))
@@ -503,6 +514,7 @@ docEntryDecoder : Json.Decode.Decoder DocEntry
 docEntryDecoder =
     Json.Decode.succeed DocEntry
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" influxResourceIdDecoder))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "language" languageEntryDecoder))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "metadata" docMetadataDecoder))
 
 
@@ -676,7 +688,7 @@ termEditRequestDecoder =
     Json.Decode.succeed TermEditRequest
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "requested_action" termEditActionDecoder))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "term" termDecoder))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "doc_path" (Json.Decode.nullable docPathDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "document_id" (Json.Decode.nullable influxResourceIdDecoder)))
 
 
 termEditResponseDecoder : Json.Decode.Decoder TermEditResponse
@@ -685,6 +697,12 @@ termEditResponseDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "performed_action" termEditActionDecoder))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "term" termDecoder))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "updated_annotated_doc" (Json.Decode.nullable annotatedDocV2Decoder)))
+
+
+getDocsRequestDecoder : Json.Decode.Decoder GetDocsRequest
+getDocsRequestDecoder =
+    Json.Decode.succeed GetDocsRequest
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "language_id" (Json.Decode.nullable influxResourceIdDecoder)))
 
 
 termDictionaryDecoder : Json.Decode.Decoder TermDictionary

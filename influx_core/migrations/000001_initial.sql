@@ -2,7 +2,6 @@
 
 CREATE TABLE IF NOT EXISTS language (
     id BIGSERIAL PRIMARY KEY,
-    identifier TEXT NOT NULL UNIQUE,
 
     code TEXT NOT NULL,
     dicts TEXT[] NOT NULL,

@@ -22,7 +22,7 @@ pub async fn get_language_by_identifier(
     State(ServerState { influx_path, db }): State<ServerState>,
     Path(id): Path<String>,
 ) -> Result<Json<Option<LanguageEntry>>, ServerError> {
-    let language = db.get_language_by_identifier(id).await?;
+    let language = db.get_language_by_code(id).await?;
     if language.is_none() {
         return Err(anyhow::anyhow!("Language not found").into());
     }

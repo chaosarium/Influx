@@ -65,10 +65,7 @@ impl DB {
         }
     }
 
-    pub async fn get_documents_by_lang_id(
-        &self,
-        lang_id: InfluxResourceId,
-    ) -> Result<Vec<Document>> {
+    pub async fn get_all_documents(&self) -> Result<Vec<crate::doc_store::DocEntry>> {
         match self {
             Surreal { engine: _ } => {
                 // SurrealDB is deprecated, skip implementation
@@ -77,47 +74,59 @@ impl DB {
             Postgres { pool } => {
                 let records = sqlx::query!(
                     r#"
-                        SELECT id, lang_id, title, content, doc_type, tags, created_ts, updated_ts
-                        FROM document
-                        WHERE lang_id = $1
-                        ORDER BY created_ts ASC
-                    "#,
-                    lang_id.as_i64()?
+                        SELECT 
+                            d.id, d.lang_id, d.title, d.content, d.doc_type, d.tags, d.created_ts, d.updated_ts,
+                            l.code as lang_code, l.name as lang_name, l.dicts as lang_dicts
+                        FROM document d
+                        JOIN language l ON d.lang_id = l.id
+                        ORDER BY d.created_ts ASC
+                    "#
                 )
                 .fetch_all(pool.as_ref())
                 .await?;
 
-                let documents = records
+                let doc_entries = records
                     .into_iter()
-                    .map(|record| Document {
-                        id: Some(InfluxResourceId::SerialId(record.id)),
-                        lang_id: InfluxResourceId::SerialId(record.lang_id),
-                        title: record.title,
-                        content: record.content,
-                        doc_type: record.doc_type,
-                        tags: record.tags,
-                        created_ts: DateTime::<Utc>::from_timestamp(
-                            record.created_ts.unix_timestamp(),
-                            0,
-                        )
-                        .unwrap(),
-                        updated_ts: DateTime::<Utc>::from_timestamp(
-                            record.updated_ts.unix_timestamp(),
-                            0,
-                        )
-                        .unwrap(),
+                    .map(|record| {
+                        let doc_type = match record.doc_type.as_str() {
+                            "Video" => crate::doc_store::DocType::Video,
+                            "Audio" => crate::doc_store::DocType::Audio,
+                            _ => crate::doc_store::DocType::Text,
+                        };
+
+                        crate::doc_store::DocEntry {
+                            id: InfluxResourceId::SerialId(record.id),
+                            language: crate::db::models::lang::LanguageEntry {
+                                id: Some(InfluxResourceId::SerialId(record.lang_id)),
+                                code: record.lang_code,
+                                name: record.lang_name,
+                                dicts: record.lang_dicts,
+                            },
+                            metadata: crate::doc_store::DocMetadata {
+                                title: record.title,
+                                doc_type,
+                                tags: record.tags,
+                                date_created: DateTime::<Utc>::from_timestamp(
+                                    record.created_ts.unix_timestamp(),
+                                    0,
+                                )
+                                .unwrap(),
+                                date_modified: DateTime::<Utc>::from_timestamp(
+                                    record.updated_ts.unix_timestamp(),
+                                    0,
+                                )
+                                .unwrap(),
+                            },
+                        }
                     })
                     .collect();
 
-                Ok(documents)
+                Ok(doc_entries)
             }
         }
     }
 
-    pub async fn get_document_by_id(
-        &self,
-        id: InfluxResourceId,
-    ) -> Result<Option<Document>> {
+    pub async fn get_document_by_id(&self, id: InfluxResourceId) -> Result<Option<Document>> {
         match self {
             Surreal { engine: _ } => {
                 // SurrealDB is deprecated, skip implementation

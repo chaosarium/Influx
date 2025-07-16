@@ -8,6 +8,7 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 
 // https://github.com/tokio-rs/axum/blob/main/examples/anyhow-error-response/src/main.rs
+#[derive(Debug)]
 pub struct ServerError(pub anyhow::Error);
 impl IntoResponse for ServerError {
     fn into_response(self) -> Response {
@@ -48,10 +49,15 @@ pub struct DocPath {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
+pub struct GetDocsRequest {
+    pub language_id: Option<InfluxResourceId>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
 pub struct TermEditRequest {
     pub requested_action: TermEditAction,
     pub term: Term,
-    pub doc_path: Option<DocPath>,
+    pub document_id: Option<InfluxResourceId>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Elm, ElmEncode, ElmDecode)]

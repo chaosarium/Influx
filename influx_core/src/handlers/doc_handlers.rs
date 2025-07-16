@@ -1,13 +1,12 @@
 use super::api_interfaces::*;
 use super::ServerError;
-use crate::db::models::document::Document;
 use crate::db::models::phrase::mk_phrase_trie;
 use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
-use crate::doc_store::{DocEntry, DocMetadata, DocType};
+use crate::db::InfluxResourceId;
+use crate::doc_store::{DocMetadata, DocType};
 use crate::nlp;
 use crate::ServerState;
-use crate::db::InfluxResourceId;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -24,65 +23,25 @@ use tracing::info;
 
 const USE_CACHE: bool = true;
 
-fn document_to_doc_entry(document: Document) -> DocEntry {
-    let doc_type = match document.doc_type.as_str() {
-        "Video" => DocType::Video,
-        "Audio" => DocType::Audio,
-        _ => DocType::Text,
-    };
-
-    DocEntry {
-        id: document.id.clone().unwrap(),
-        metadata: DocMetadata {
-            title: document.title,
-            doc_type,
-            tags: document.tags,
-            date_created: document.created_ts,
-            date_modified: document.updated_ts,
-        },
-    }
-}
-
 pub async fn get_docs_list(
     State(ServerState { influx_path: _, db }): State<ServerState>,
-    Path(lang_id): Path<String>,
+    Json(request): Json<GetDocsRequest>,
 ) -> Response {
-    // check if lang_id exists, if not return 404
-    let lang_entry = match db.get_language_by_identifier(lang_id.clone()).await {
-        Ok(Some(entry)) => entry,
-        Ok(None) => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(json!({
-                    "error": format!("lang_id {} not found", lang_id),
-                })),
-            )
-                .into_response();
-        }
-        Err(e) => {
-            return (
+    match request.language_id {
+        None => match db.get_all_documents().await {
+            Ok(doc_entries) => (StatusCode::OK, Json(doc_entries)).into_response(),
+            Err(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
-                    "error": format!("Database error: {}", e),
+                    "error": format!("Failed to retrieve all documents: {}", e),
                 })),
             )
-                .into_response();
+                .into_response(),
+        },
+        Some(lang_id) => {
+            // Return documents for specific language
+            panic!("not yet implemented")
         }
-    };
-
-    match db.get_documents_by_lang_id(lang_entry.id.unwrap()).await {
-        Ok(documents) => {
-            let doc_entries: Vec<DocEntry> =
-                documents.into_iter().map(document_to_doc_entry).collect();
-            (StatusCode::OK, Json(doc_entries)).into_response()
-        }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({
-                "error": format!("Failed to retrieve documents: {}", e),
-            })),
-        )
-            .into_response(),
     }
 }
 
@@ -115,28 +74,25 @@ fn load_cached_nlp_data(
 
 pub(crate) async fn get_annotated_doc_logic(
     state: &ServerState,
-    lang_identifier: String,
-    file: String,
+    document_id: InfluxResourceId,
 ) -> Result<GetDocResponse, ServerError> {
-    info!(
-        "getting doc: lang_identifier = {}, file = {}",
-        lang_identifier, file
-    );
+    info!("getting doc: document_id = {:?}", document_id);
 
-    let lang_entry = state
-        .db
-        .get_language_by_identifier(lang_identifier.clone())
-        .await?
-        .ok_or_else(|| ServerError(anyhow::anyhow!("Language not found")))?;
-    let lang_id = lang_entry.id.clone().unwrap();
-    let lang_code = lang_entry.code.clone();
-
-    // Get document from database instead of file system
+    // Get document from database
     let document = state
         .db
-        .get_document_by_id(InfluxResourceId::SerialId(file.parse::<i64>().map_err(|_| ServerError(anyhow::anyhow!("Invalid document ID: {}", file)))?))
+        .get_document_by_id(document_id)
         .await?
-        .ok_or_else(|| ServerError(anyhow::anyhow!("Document not found: {}", file)))?;
+        .ok_or_else(|| ServerError(anyhow::anyhow!("Document not found")))?;
+
+    // Get language from the document
+    let lang_entry = state
+        .db
+        .get_language(document.lang_id.clone())
+        .await?
+        .ok_or_else(|| ServerError(anyhow::anyhow!("Language not found for document")))?;
+    let lang_id = lang_entry.id.clone().unwrap();
+    let lang_code = lang_entry.code.clone();
 
     let text = document.content.clone();
     let metadata = DocMetadata {
@@ -216,8 +172,12 @@ pub(crate) async fn get_annotated_doc_logic(
 
 pub async fn get_doc(
     State(state): State<ServerState>,
-    Path((lang_identifier, file)): Path<(String, String)>,
+    Path(id): Path<String>,
 ) -> Result<Json<GetDocResponse>, ServerError> {
-    let response = get_annotated_doc_logic(&state, lang_identifier, file).await?;
+    let document_id = InfluxResourceId::SerialId(
+        id.parse::<i64>()
+            .map_err(|_| ServerError(anyhow::anyhow!("Invalid document ID: {}", id)))?,
+    );
+    let response = get_annotated_doc_logic(&state, document_id).await?;
     Ok(Json(response))
 }

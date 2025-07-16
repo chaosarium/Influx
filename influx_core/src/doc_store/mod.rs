@@ -36,6 +36,7 @@ pub struct DocMetadata {
 #[derive(Debug, Clone, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
 pub struct DocEntry {
     pub id: crate::db::InfluxResourceId,
+    pub language: crate::db::models::lang::LanguageEntry,
     pub metadata: DocMetadata,
 }
 

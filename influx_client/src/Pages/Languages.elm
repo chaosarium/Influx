@@ -75,9 +75,7 @@ viewLanguage language =
     Html.li []
         [ Html.span [] [ Html.text language.name ]
         , Html.text " "
-        , Html.span [] [ Html.text ("[" ++ language.identifier ++ "]") ]
-        , Html.text " "
-        , Html.span [] [ Html.a [ Html.Attributes.href ("/documents/" ++ language.identifier) ] [ Html.text "documents" ] ]
+        , Html.span [] [ Html.text ("[" ++ language.code ++ "]") ]
         ]
 
 
