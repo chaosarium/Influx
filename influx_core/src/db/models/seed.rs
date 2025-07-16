@@ -7,20 +7,24 @@ use chrono::{DateTime, Utc};
 
 use anyhow::Result;
 
-macro_rules! create_document_from_file {
-    ($lang_id:expr, $filename:expr, $title:expr, $file_path:expr, $tags:expr) => {
-        Document {
-            id: None,
-            lang_id: $lang_id.clone(),
-            title: $title.to_string(),
-            filename: $filename.to_string(),
-            content: include_str!($file_path).to_string(),
-            doc_type: "Text".to_string(),
-            tags: $tags,
-            created_ts: Utc::now(),
-            updated_ts: Utc::now(),
-        }
-    };
+fn create_document(
+    lang_id: crate::db::InfluxResourceId,
+    filename: &str,
+    title: &str,
+    content: &str,
+    tags: Vec<String>,
+) -> Document {
+    Document {
+        id: None,
+        lang_id,
+        title: title.to_string(),
+        filename: filename.to_string(),
+        content: content.to_string(),
+        doc_type: "Text".to_string(),
+        tags,
+        created_ts: Utc::now(),
+        updated_ts: Utc::now(),
+    }
 }
 
 impl DB {
@@ -239,119 +243,128 @@ impl DB {
 
     pub async fn seed_document_table(&self) -> Result<()> {
         // Get language IDs
-        let en_lang_id = self.get_language_by_identifier("en_demo".into()).await?.unwrap().id.unwrap();
-        let fr_lang_id = self.get_language_by_identifier("fr_demo".into()).await?.unwrap().id.unwrap();
-        let ja_lang_id = self.get_language_by_identifier("ja_demo".into()).await?.unwrap().id.unwrap();
-        let zh_lang_id = self.get_language_by_identifier("zh-hant_demo".into()).await?.unwrap().id.unwrap();
+        let en_lang_id = self
+            .get_language_by_identifier("en_demo".into())
+            .await?
+            .unwrap()
+            .id
+            .unwrap();
+        let fr_lang_id = self
+            .get_language_by_identifier("fr_demo".into())
+            .await?
+            .unwrap()
+            .id
+            .unwrap();
+        let ja_lang_id = self
+            .get_language_by_identifier("ja_demo".into())
+            .await?
+            .unwrap()
+            .id
+            .unwrap();
+        let zh_lang_id = self
+            .get_language_by_identifier("zh-hant_demo".into())
+            .await?
+            .unwrap()
+            .id
+            .unwrap();
 
         let mut documents = vec![
             // Original seed documents
-            Document {
-                id: None,
-                lang_id: en_lang_id.clone(),
-                title: "Toy Document Seed".to_string(),
-                filename: "seed.md".to_string(),
-                content: "This is a simple toy document for testing purposes. It contains some basic English text that can be used to test the language learning features.".to_string(),
-                doc_type: "Text".to_string(),
-                tags: vec!["demo".to_string(), "english".to_string(), "seed".to_string()],
-                created_ts: Utc::now(),
-                updated_ts: Utc::now(),
-            },
-            Document {
-                id: None,
-                lang_id: fr_lang_id.clone(),
-                title: "Document Français Seed".to_string(),
-                filename: "seed.md".to_string(),
-                content: "Ceci est un document de démonstration en français. Il contient du texte simple pour tester les fonctionnalités d'apprentissage des langues. Bonjour le monde!".to_string(),
-                doc_type: "Text".to_string(),
-                tags: vec!["demo".to_string(), "français".to_string(), "seed".to_string()],
-                created_ts: Utc::now(),
-                updated_ts: Utc::now(),
-            },
-            Document {
-                id: None,
-                lang_id: ja_lang_id.clone(),
-                title: "日本語の文書 Seed".to_string(),
-                filename: "seed.md".to_string(),
-                content: "これは日本語のデモ文書です。言語学習機能をテストするための簡単なテキストが含まれています。こんにちは世界！".to_string(),
-                doc_type: "Text".to_string(),
-                tags: vec!["demo".to_string(), "日本語".to_string(), "seed".to_string()],
-                created_ts: Utc::now(),
-                updated_ts: Utc::now(),
-            },
+            create_document(
+                en_lang_id.clone(),
+                "seed.md",
+                "Toy Document Seed",
+                "This is a simple toy document for testing purposes. It contains some basic English text that can be used to test the language learning features.",
+                vec!["demo".to_string(), "english".to_string(), "seed".to_string()],
+            ),
+            create_document(
+                fr_lang_id.clone(),
+                "seed.md",
+                "Document Français Seed",
+                "Ceci est un document de démonstration en français. Il contient du texte simple pour tester les fonctionnalités d'apprentissage des langues. Bonjour le monde!",
+                vec!["demo".to_string(), "français".to_string(), "seed".to_string()],
+            ),
+            create_document(
+                ja_lang_id.clone(),
+                "seed.md",
+                "日本語の文書 Seed",
+                "これは日本語のデモ文書です。言語学習機能をテストするための簡単なテキストが含まれています。こんにちは世界！",
+                vec!["demo".to_string(), "日本語".to_string(), "seed".to_string()],
+            ),
         ];
 
-        // Add documents from seed_content files using the macro
+        // Add documents from seed_content files
         documents.extend(vec![
             // English documents
-            create_document_from_file!(
-                en_lang_id,
+            create_document(
+                en_lang_id.clone(),
                 "toy.md",
                 "Toy Example",
-                "seed_content/en_demo/toy.txt",
-                vec!["demo".to_string(), "english".to_string()]
+                include_str!("seed_content/en_demo/toy.txt"),
+                vec!["demo".to_string(), "english".to_string()],
             ),
-            create_document_from_file!(
-                en_lang_id,
+            create_document(
+                en_lang_id.clone(),
                 "macbeth excerpt.md",
                 "Macbeth Excerpt",
-                "seed_content/en_demo/macbeth_excerpt.txt",
-                vec!["literature".to_string(), "shakespeare".to_string()]
+                include_str!("seed_content/en_demo/macbeth_excerpt.txt"),
+                vec!["literature".to_string(), "shakespeare".to_string()],
             ),
-            create_document_from_file!(
-                en_lang_id,
+            create_document(
+                en_lang_id.clone(),
                 "long.md",
                 "Long Document",
-                "seed_content/en_demo/long.txt",
-                vec!["demo".to_string(), "long".to_string()]
+                include_str!("seed_content/en_demo/long.txt"),
+                vec!["demo".to_string(), "long".to_string()],
             ),
-            create_document_from_file!(
-                en_lang_id,
+            create_document(
+                en_lang_id.clone(),
                 "phrase_test.md",
                 "Phrase Test",
-                "seed_content/en_demo/phrase_test.txt",
-                vec!["demo".to_string(), "test".to_string()]
+                include_str!("seed_content/en_demo/phrase_test.txt"),
+                vec!["demo".to_string(), "test".to_string()],
             ),
-            
             // French documents
-            create_document_from_file!(
-                fr_lang_id,
+            create_document(
+                fr_lang_id.clone(),
                 "toy.md",
                 "Exemple Jouet",
-                "seed_content/fr_demo/toy.txt",
-                vec!["demo".to_string(), "français".to_string()]
+                include_str!("seed_content/fr_demo/toy.txt"),
+                vec!["demo".to_string(), "français".to_string()],
             ),
-            create_document_from_file!(
-                fr_lang_id,
+            create_document(
+                fr_lang_id.clone(),
                 "les misérables excerpt.md",
                 "Les Misérables Excerpt",
-                "seed_content/fr_demo/les_miserables_excerpt.txt",
-                vec!["literature".to_string(), "hugo".to_string()]
+                include_str!("seed_content/fr_demo/les_miserables_excerpt.txt"),
+                vec!["literature".to_string(), "hugo".to_string()],
             ),
-            create_document_from_file!(
-                fr_lang_id,
+            create_document(
+                fr_lang_id.clone(),
                 "inflection_lemma_test.md",
                 "Inflection Lemma Test",
-                "seed_content/fr_demo/inflection_lemma_test.txt",
-                vec!["demo".to_string(), "test".to_string(), "grammar".to_string()]
+                include_str!("seed_content/fr_demo/inflection_lemma_test.txt"),
+                vec![
+                    "demo".to_string(),
+                    "test".to_string(),
+                    "grammar".to_string(),
+                ],
             ),
-            
             // Japanese documents
-            create_document_from_file!(
-                ja_lang_id,
+            create_document(
+                ja_lang_id.clone(),
                 "rashonmon 1.md",
                 "羅生門",
-                "seed_content/ja_demo/rashonmon_1.txt",
-                vec!["literature".to_string(), "akutagawa".to_string()]
+                include_str!("seed_content/ja_demo/rashonmon_1.txt"),
+                vec!["literature".to_string(), "akutagawa".to_string()],
             ),
-            
             // Chinese documents
-            create_document_from_file!(
-                zh_lang_id,
+            create_document(
+                zh_lang_id.clone(),
                 "diary of a madman.md",
                 "狂人日記",
-                "seed_content/zh-hant_demo/diary_of_a_madman.txt",
-                vec!["literature".to_string(), "lu_xun".to_string()]
+                include_str!("seed_content/zh-hant_demo/diary_of_a_madman.txt"),
+                vec!["literature".to_string(), "lu_xun".to_string()],
             ),
         ]);
 
