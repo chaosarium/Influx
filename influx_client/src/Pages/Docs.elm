@@ -1,4 +1,4 @@
-module Pages.Documents exposing (Model, Msg, page)
+module Pages.Docs exposing (Model, Msg, page)
 
 import Api
 import Api.GetDocuments
@@ -144,7 +144,7 @@ viewDocumentsTable documents =
                 (\doc ->
                     tr [ style "border" "1px solid #ddd" ]
                         [ td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ a [ href ("/documents/" ++ documentIdToString doc.id) ]
+                            [ a [ href ("/doc/" ++ documentIdToString doc.id) ]
                                 [ text doc.metadata.title ]
                             ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]

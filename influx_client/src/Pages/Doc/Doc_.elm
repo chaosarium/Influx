@@ -1,4 +1,4 @@
-module Pages.Documents.Doc_ exposing (Model, Msg, page)
+module Pages.Doc.Doc_ exposing (Model, Msg, page)
 
 import Api
 import Api.GetAnnotatedDoc
@@ -138,12 +138,18 @@ update msg model =
             case formMsg of
                 TermEditForm.RequestEditTerm action term doc_path ->
                     let
-                        documentId = case doc_path of
-                            Just path -> 
-                                case String.toInt path.file of
-                                    Just id -> Just (Bindings.SerialId id)
-                                    Nothing -> Nothing
-                            Nothing -> Nothing
+                        documentId =
+                            case doc_path of
+                                Just path ->
+                                    case String.toInt path.file of
+                                        Just id ->
+                                            Just (Bindings.SerialId id)
+
+                                        Nothing ->
+                                            Nothing
+
+                                Nothing ->
+                                    Nothing
                     in
                     ( model
                     , Effect.sendCmd (Api.TermEdit.edit { requestedAction = action, term = term, documentId = documentId } (TermEditorEvent << TermEditForm.GotTermEditResponse))
