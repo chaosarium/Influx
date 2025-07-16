@@ -7,7 +7,6 @@ use chrono::{DateTime, Utc};
 
 use anyhow::Result;
 
-// Macro to create a document from an included file
 macro_rules! create_document_from_file {
     ($lang_id:expr, $filename:expr, $title:expr, $file_path:expr, $tags:expr) => {
         Document {
