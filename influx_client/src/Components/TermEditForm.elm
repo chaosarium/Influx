@@ -2,6 +2,7 @@ module Components.TermEditForm exposing (..)
 
 import Bindings exposing (..)
 import BindingsUtils exposing (getSentenceSegmentOrthography)
+import Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC, textboxC)
 import Components.Styles as Styles
 import Datastore.DictContext as DictContext
 import Datastore.FocusContext as FocusContext
@@ -11,7 +12,7 @@ import Html.Attributes exposing (style)
 import Html.Events exposing (onInput)
 import Http
 import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
-import Components.FormElements exposing (inputC, textboxC, selectC, buttonC, SelectCOption)
+
 
 
 -- MODEL
@@ -468,4 +469,3 @@ view model lift { dict, doc_path } =
 
         _ ->
             Html.div [] [ Html.text "No segment selected for editing." ]
-

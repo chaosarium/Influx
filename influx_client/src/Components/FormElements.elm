@@ -1,7 +1,7 @@
-module Components.FormElements exposing (inputC, textboxC, selectC, buttonC, SelectCOption)
+module Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC, textboxC)
 
 import Html exposing (Html, div)
-import Html.Attributes exposing (class, disabled, for, id, type_, value, selected, hidden)
+import Html.Attributes exposing (class, disabled, for, hidden, id, selected, type_, value)
 import Html.Events exposing (onClick, onInput)
 
 
