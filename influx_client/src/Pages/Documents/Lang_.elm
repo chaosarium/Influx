@@ -77,11 +77,16 @@ subscriptions model =
 
 viewDocEntry : String -> DocEntry -> Html.Html msg
 viewDocEntry lang document =
+    let
+        documentIdString = case document.id of
+            Bindings.SerialId id -> String.fromInt id
+            Bindings.StringId id -> id
+    in
     Html.li []
         [ Html.span [] [ Html.text document.metadata.title ]
         , Html.text " "
-        , Html.a [ Html.Attributes.href ("/documents/" ++ lang ++ "/" ++ document.filename) ]
-            [ Html.text document.filename ]
+        , Html.a [ Html.Attributes.href ("/documents/" ++ lang ++ "/" ++ documentIdString) ]
+            [ Html.text document.metadata.title ]
         ]
 
 

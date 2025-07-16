@@ -7,6 +7,7 @@ use crate::db::models::vocab::Token;
 use crate::doc_store::{DocEntry, DocMetadata, DocType};
 use crate::nlp;
 use crate::ServerState;
+use crate::db::InfluxResourceId;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -31,8 +32,7 @@ fn document_to_doc_entry(document: Document) -> DocEntry {
     };
 
     DocEntry {
-        path: PathBuf::from(&document.filename),
-        filename: PathBuf::from(&document.filename),
+        id: document.id.clone().unwrap(),
         metadata: DocMetadata {
             title: document.title,
             doc_type,
@@ -134,7 +134,7 @@ pub(crate) async fn get_annotated_doc_logic(
     // Get document from database instead of file system
     let document = state
         .db
-        .get_document_by_lang_and_filename(lang_id.clone(), file.clone())
+        .get_document_by_id(InfluxResourceId::SerialId(file.parse::<i64>().map_err(|_| ServerError(anyhow::anyhow!("Invalid document ID: {}", file)))?))
         .await?
         .ok_or_else(|| ServerError(anyhow::anyhow!("Document not found: {}", file)))?;
 

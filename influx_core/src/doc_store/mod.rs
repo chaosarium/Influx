@@ -35,8 +35,7 @@ pub struct DocMetadata {
 
 #[derive(Debug, Clone, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
 pub struct DocEntry {
-    pub path: PathBuf,
-    pub filename: PathBuf,
+    pub id: crate::db::InfluxResourceId,
     pub metadata: DocMetadata,
 }
 
@@ -99,28 +98,4 @@ pub fn write_md_file(
     let file_content = format!("---\n{}\n---\n{}", front_matter, content);
     fs::write(filepath, file_content)?;
     Ok(())
-}
-
-pub fn gt_md_file_list_w_metadata(dir: PathBuf) -> Result<Vec<DocEntry>, io::Error> {
-    let md_entries = get_md_files_list(dir)?;
-
-    let mut doc_entries: Vec<DocEntry> = Vec::new();
-
-    for entry in md_entries {
-        let path = entry.path();
-
-        let filename = path.file_name().unwrap().into();
-
-        let metadata = get_md_file_metadata(path.clone())?;
-        let doc_entry = DocEntry {
-            path,
-            filename,
-            metadata,
-        };
-        doc_entries.push(doc_entry);
-    }
-
-    doc_entries.sort_by(|a, b| a.metadata.date_created.cmp(&b.metadata.date_created));
-
-    Ok(doc_entries)
 }

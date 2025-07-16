@@ -103,8 +103,7 @@ docMetadataEncoder struct =
 
 
 type alias DocEntry =
-    { path : String
-    , filename : String
+    { id : InfluxResourceId
     , metadata : DocMetadata
     }
 
@@ -112,8 +111,7 @@ type alias DocEntry =
 docEntryEncoder : DocEntry -> Json.Encode.Value
 docEntryEncoder struct =
     Json.Encode.object
-        [ ( "path", Json.Encode.string struct.path )
-        , ( "filename", Json.Encode.string struct.filename )
+        [ ( "id", influxResourceIdEncoder struct.id )
         , ( "metadata", docMetadataEncoder struct.metadata )
         ]
 
@@ -504,8 +502,7 @@ docMetadataDecoder =
 docEntryDecoder : Json.Decode.Decoder DocEntry
 docEntryDecoder =
     Json.Decode.succeed DocEntry
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "path" Json.Decode.string))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "filename" Json.Decode.string))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" influxResourceIdDecoder))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "metadata" docMetadataDecoder))
 
 

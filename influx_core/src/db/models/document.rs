@@ -10,7 +10,6 @@ pub struct Document {
     pub id: Option<InfluxResourceId>,
     pub lang_id: InfluxResourceId,
     pub title: String,
-    pub filename: String,
     pub content: String,
     pub doc_type: String,
     pub tags: Vec<String>,
@@ -31,13 +30,12 @@ impl DB {
             Postgres { pool } => {
                 let record = sqlx::query!(
                     r#"
-                        INSERT INTO document (lang_id, title, filename, content, doc_type, tags)
-                        VALUES ($1, $2, $3, $4, $5, $6)
-                        RETURNING id, lang_id, title, filename, content, doc_type, tags, created_ts, updated_ts
+                        INSERT INTO document (lang_id, title, content, doc_type, tags)
+                        VALUES ($1, $2, $3, $4, $5)
+                        RETURNING id, lang_id, title, content, doc_type, tags, created_ts, updated_ts
                     "#,
                     document.lang_id.as_i64()?,
                     document.title,
-                    document.filename,
                     document.content,
                     document.doc_type,
                     &document.tags
@@ -49,7 +47,6 @@ impl DB {
                     id: Some(InfluxResourceId::SerialId(record.id)),
                     lang_id: InfluxResourceId::SerialId(record.lang_id),
                     title: record.title,
-                    filename: record.filename,
                     content: record.content,
                     doc_type: record.doc_type,
                     tags: record.tags,
@@ -80,7 +77,7 @@ impl DB {
             Postgres { pool } => {
                 let records = sqlx::query!(
                     r#"
-                        SELECT id, lang_id, title, filename, content, doc_type, tags, created_ts, updated_ts
+                        SELECT id, lang_id, title, content, doc_type, tags, created_ts, updated_ts
                         FROM document
                         WHERE lang_id = $1
                         ORDER BY created_ts ASC
@@ -96,7 +93,6 @@ impl DB {
                         id: Some(InfluxResourceId::SerialId(record.id)),
                         lang_id: InfluxResourceId::SerialId(record.lang_id),
                         title: record.title,
-                        filename: record.filename,
                         content: record.content,
                         doc_type: record.doc_type,
                         tags: record.tags,
@@ -118,10 +114,9 @@ impl DB {
         }
     }
 
-    pub async fn get_document_by_lang_and_filename(
+    pub async fn get_document_by_id(
         &self,
-        lang_id: InfluxResourceId,
-        filename: String,
+        id: InfluxResourceId,
     ) -> Result<Option<Document>> {
         match self {
             Surreal { engine: _ } => {
@@ -131,12 +126,11 @@ impl DB {
             Postgres { pool } => {
                 let record = sqlx::query!(
                     r#"
-                        SELECT id, lang_id, title, filename, content, doc_type, tags, created_ts, updated_ts
+                        SELECT id, lang_id, title, content, doc_type, tags, created_ts, updated_ts
                         FROM document
-                        WHERE lang_id = $1 AND filename = $2
+                        WHERE id = $1
                     "#,
-                    lang_id.as_i64()?,
-                    filename
+                    id.as_i64()?
                 )
                 .fetch_optional(pool.as_ref())
                 .await?;
@@ -145,7 +139,6 @@ impl DB {
                     id: Some(InfluxResourceId::SerialId(r.id)),
                     lang_id: InfluxResourceId::SerialId(r.lang_id),
                     title: r.title,
-                    filename: r.filename,
                     content: r.content,
                     doc_type: r.doc_type,
                     tags: r.tags,
@@ -169,13 +162,12 @@ impl DB {
                 let record = sqlx::query!(
                     r#"
                         UPDATE document 
-                        SET title = $2, filename = $3, content = $4, doc_type = $5, tags = $6
+                        SET title = $2, content = $3, doc_type = $4, tags = $5
                         WHERE id = $1
-                        RETURNING id, lang_id, title, filename, content, doc_type, tags, created_ts, updated_ts
+                        RETURNING id, lang_id, title, content, doc_type, tags, created_ts, updated_ts
                     "#,
                     document.id.unwrap().as_i64()?,
                     document.title,
-                    document.filename,
                     document.content,
                     document.doc_type,
                     &document.tags
@@ -187,7 +179,6 @@ impl DB {
                     id: Some(InfluxResourceId::SerialId(record.id)),
                     lang_id: InfluxResourceId::SerialId(record.lang_id),
                     title: record.title,
-                    filename: record.filename,
                     content: record.content,
                     doc_type: record.doc_type,
                     tags: record.tags,

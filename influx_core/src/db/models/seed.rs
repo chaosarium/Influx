@@ -9,7 +9,6 @@ use anyhow::Result;
 
 fn create_document(
     lang_id: crate::db::InfluxResourceId,
-    filename: &str,
     title: &str,
     content: &str,
     tags: Vec<String>,
@@ -18,7 +17,6 @@ fn create_document(
         id: None,
         lang_id,
         title: title.to_string(),
-        filename: filename.to_string(),
         content: content.to_string(),
         doc_type: "Text".to_string(),
         tags,
@@ -272,21 +270,18 @@ impl DB {
             // Original seed documents
             create_document(
                 en_lang_id.clone(),
-                "seed.md",
                 "Toy Document Seed",
                 "This is a simple toy document for testing purposes. It contains some basic English text that can be used to test the language learning features.",
                 vec!["demo".to_string(), "english".to_string(), "seed".to_string()],
             ),
             create_document(
                 fr_lang_id.clone(),
-                "seed.md",
                 "Document Français Seed",
                 "Ceci est un document de démonstration en français. Il contient du texte simple pour tester les fonctionnalités d'apprentissage des langues. Bonjour le monde!",
                 vec!["demo".to_string(), "français".to_string(), "seed".to_string()],
             ),
             create_document(
                 ja_lang_id.clone(),
-                "seed.md",
                 "日本語の文書 Seed",
                 "これは日本語のデモ文書です。言語学習機能をテストするための簡単なテキストが含まれています。こんにちは世界！",
                 vec!["demo".to_string(), "日本語".to_string(), "seed".to_string()],
@@ -298,28 +293,24 @@ impl DB {
             // English documents
             create_document(
                 en_lang_id.clone(),
-                "toy.md",
                 "Toy Example",
                 include_str!("seed_content/en_demo/toy.txt"),
                 vec!["demo".to_string(), "english".to_string()],
             ),
             create_document(
                 en_lang_id.clone(),
-                "macbeth excerpt.md",
                 "Macbeth Excerpt",
                 include_str!("seed_content/en_demo/macbeth_excerpt.txt"),
                 vec!["literature".to_string(), "shakespeare".to_string()],
             ),
             create_document(
                 en_lang_id.clone(),
-                "long.md",
                 "Long Document",
                 include_str!("seed_content/en_demo/long.txt"),
                 vec!["demo".to_string(), "long".to_string()],
             ),
             create_document(
                 en_lang_id.clone(),
-                "phrase_test.md",
                 "Phrase Test",
                 include_str!("seed_content/en_demo/phrase_test.txt"),
                 vec!["demo".to_string(), "test".to_string()],
@@ -327,21 +318,18 @@ impl DB {
             // French documents
             create_document(
                 fr_lang_id.clone(),
-                "toy.md",
                 "Exemple Jouet",
                 include_str!("seed_content/fr_demo/toy.txt"),
                 vec!["demo".to_string(), "français".to_string()],
             ),
             create_document(
                 fr_lang_id.clone(),
-                "les misérables excerpt.md",
                 "Les Misérables Excerpt",
                 include_str!("seed_content/fr_demo/les_miserables_excerpt.txt"),
                 vec!["literature".to_string(), "hugo".to_string()],
             ),
             create_document(
                 fr_lang_id.clone(),
-                "inflection_lemma_test.md",
                 "Inflection Lemma Test",
                 include_str!("seed_content/fr_demo/inflection_lemma_test.txt"),
                 vec![
@@ -353,7 +341,6 @@ impl DB {
             // Japanese documents
             create_document(
                 ja_lang_id.clone(),
-                "rashonmon 1.md",
                 "羅生門",
                 include_str!("seed_content/ja_demo/rashonmon_1.txt"),
                 vec!["literature".to_string(), "akutagawa".to_string()],
@@ -361,7 +348,6 @@ impl DB {
             // Chinese documents
             create_document(
                 zh_lang_id.clone(),
-                "diary of a madman.md",
                 "狂人日記",
                 include_str!("seed_content/zh-hant_demo/diary_of_a_madman.txt"),
                 vec!["literature".to_string(), "lu_xun".to_string()],
