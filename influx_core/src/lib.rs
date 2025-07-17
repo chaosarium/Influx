@@ -63,6 +63,7 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
         .route("/connection_test", get(handlers::connection_test))
         .route("/docs", post(handlers::doc_handlers::get_docs_list))
         .route("/doc/{id}", get(handlers::doc_handlers::get_doc))
+        .route("/doc/edit", post(handlers::doc_handlers::update_document))
         .route("/term/edit", post(handlers::term_handlers::edit_term))
         .route("/lang", get(handlers::lang_handlers::get_language_list))
         .route(

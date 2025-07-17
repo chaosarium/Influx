@@ -7,7 +7,7 @@ use surrealdb::RecordId;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
 pub struct LanguageEntry {
-    #[serde(deserialize_with = "deserialize_surreal_thing_opt")]
+    // #[serde(deserialize_with = "deserialize_surreal_thing_opt")]
     pub id: Option<InfluxResourceId>,
     // for now, code is used to tell tokenizers what model to use
     pub code: String,

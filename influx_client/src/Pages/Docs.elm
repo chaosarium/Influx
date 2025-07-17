@@ -129,6 +129,7 @@ viewDocumentsTable docPackages =
                 , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Type" ]
                 , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Created" ]
                 , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Modified" ]
+                , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Actions" ]
                 ]
             ]
         , tbody []
@@ -149,6 +150,12 @@ viewDocumentsTable docPackages =
                             [ text (formatDate docPackage.document.createdTs) ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
                             [ text (formatDate docPackage.document.updatedTs) ]
+                        , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
+                            [ a
+                                [ href ("/doc/edit/" ++ documentIdToString docPackage.documentId)
+                                ]
+                                [ text "Edit" ]
+                            ]
                         ]
                 )
                 docPackages

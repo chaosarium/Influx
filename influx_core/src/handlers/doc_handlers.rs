@@ -1,6 +1,6 @@
 use super::api_interfaces::*;
 use super::ServerError;
-use crate::db::models::document::DocPackage;
+use crate::db::models::document::{DocPackage, Document};
 use crate::db::models::phrase::mk_phrase_trie;
 use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
@@ -175,4 +175,12 @@ pub async fn get_doc(
     );
     let response = get_annotated_doc_logic(&state, document_id).await?;
     Ok(Json(response))
+}
+
+pub async fn update_document(
+    State(ServerState { db, .. }): State<ServerState>,
+    Json(payload): Json<Document>,
+) -> Result<Json<Document>, ServerError> {
+    println!("document update attempt payload: {:?}", payload);
+    Ok(Json(db.update_document(payload).await?))
 }

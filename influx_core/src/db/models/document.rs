@@ -6,7 +6,6 @@ use time::OffsetDateTime;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Elm, ElmEncode, ElmDecode)]
 pub struct Document {
-    #[serde(deserialize_with = "deserialize_surreal_thing_opt")]
     pub id: Option<InfluxResourceId>,
     pub lang_id: InfluxResourceId,
     pub title: String,
@@ -175,7 +174,7 @@ impl DB {
                 let record = sqlx::query!(
                     r#"
                         UPDATE document 
-                        SET title = $2, content = $3, doc_type = $4, tags = $5
+                        SET title = $2, content = $3, doc_type = $4, tags = $5, lang_id = $6
                         WHERE id = $1
                         RETURNING id, lang_id, title, content, doc_type, tags, created_ts, updated_ts
                     "#,
@@ -183,7 +182,8 @@ impl DB {
                     document.title,
                     document.content,
                     document.doc_type,
-                    &document.tags
+                    &document.tags,
+                    document.lang_id.as_i64()?
                 )
                 .fetch_one(pool.as_ref())
                 .await?;
