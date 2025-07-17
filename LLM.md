@@ -18,7 +18,7 @@ You can find a brief Elm syntax reference in `elm-syntax.txt`.
 
 ```
 .
-├── influx_client  frontend written in Elm (with the elm-land framework) 
+├── influx_client  frontend written in Elm (with the elm-land framework)
 ├── influx_core    backend written in Rust
 ├── influx_nlp     language server currently used for tokenization
 ├── research       misc experiments
@@ -28,10 +28,10 @@ You can find a brief Elm syntax reference in `elm-syntax.txt`.
 ## Commands
 
 - **Elm Frontend (in `influx_client`):** To see if influx_client type checks, compile it by running `elm-land build`.
-    - To build sass: `sass -w assets/scss/main.scss static/dist/main.css`
+  - To build sass: `sass -w assets/scss/main.scss static/dist/main.css`
 - **Python NLP Service (in `influx_nlp`):** `uv run pytest .`, `uv run pytest . --inline-snapshot=fix`, `uv run black .`
 - **Rust (in `influx_core`):** `cargo test` (it's better to run specific test cases), `cargo fmt`, `cargo test generate_elm_bindings` (generates Elm types)
-- **SQLX (in `influx_core`):** this is used for database migration. Run `cargo sqlx` to manage the development database. 
+- **SQLX (in `influx_core`):** this is used for database migration. Run `cargo sqlx` to manage the development database.
 
 More common commands are scattered around `**/justfile`s.
 
@@ -39,18 +39,22 @@ More common commands are scattered around `**/justfile`s.
 
 - Axum + Postgres (SurrealDB is deprecated, but we keep the code around) backend service exposing an API
 - Python + NLP libraries via another HTTP server for NLP
-    - The current focus is to get Spacy working while ignoring other things
-- Elm frontend that interacts with the API 
+  - The current focus is to get Spacy working while ignoring other things
+- Elm frontend that interacts with the API
 - fsrs-rs for SRS algorithm (planned)
 
 ## Code Style Guidelines
 
 - Do not remove comments
 - **In General:**
-    - Prefer descriptive names, use domain terminology (Token, Phrase, DocSeg, etc.)
+  - Prefer descriptive names, use domain terminology (Token, Phrase, DocSeg, etc.)
 - **Python:**
-    - Do not be sloppy about types. Do not do things like `if foo` when `foo` is a list. Do things like `if foo != []` instead.
-    - Test cases use `inline-snapshot` and shold be snapshot tests.
-    - Always include type annotation.
+  - Do not be sloppy about types. Do not do things like `if foo` when `foo` is a list. Do things like `if foo != []` instead.
+  - Test cases use `inline-snapshot` and shold be snapshot tests.
+  - Always include type annotation.
 - **Elm:**
-    - Component functions end in uppercase `C`, e.g. `textboxC` for some textbox component used in HTML forms.
+  - Component functions end in uppercase `C`, e.g. `textboxC` for some textbox component used in HTML forms.
+
+## Security/Authentication/Validation
+
+Disregard these for now as the app is intended to run locally and we want to move quickly.
