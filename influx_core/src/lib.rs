@@ -66,8 +66,8 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
         .route("/term/edit", post(handlers::term_handlers::edit_term))
         .route("/lang", get(handlers::lang_handlers::get_language_list))
         .route(
-            "/lang/{id}",
-            get(handlers::lang_handlers::get_language_by_identifier),
+            "/lang/{lang_id}",
+            get(handlers::lang_handlers::get_language_by_id),
         )
         .route(
             "/extern/macos_dict/{language_identifier}/{orthography}",

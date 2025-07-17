@@ -236,19 +236,12 @@ impl DB {
         }
     }
 
-    pub async fn query_token_by_lang_identifier_and_orthography(
+    pub async fn query_token_by_lang_id_and_orthography(
         &self,
-        lang_identifier: String,
+        lang_id: InfluxResourceId,
         orthography: String,
     ) -> Result<Option<Token>> {
-        let lang_id = self.get_language_by_code(lang_identifier).await?;
-        match lang_id {
-            Some(lang_id) => {
-                self.query_token_by_orthography(lang_id.id.unwrap(), orthography)
-                    .await
-            }
-            None => Ok(None),
-        }
+        self.query_token_by_orthography(lang_id, orthography).await
     }
 
     pub async fn query_token_by_id(&self, id: InfluxResourceId) -> Result<Option<Token>> {

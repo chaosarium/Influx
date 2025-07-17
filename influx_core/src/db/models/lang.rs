@@ -108,35 +108,4 @@ impl DB {
             }
         }
     }
-
-    pub async fn get_language_by_code(&self, code: String) -> Result<Option<LanguageEntry>> {
-        match self {
-            Surreal { engine } => {
-                let mut res: Response = engine
-                    .query("SELECT * FROM language WHERE code = $code")
-                    .bind(("code", code))
-                    .await?;
-
-                match res.take(0) {
-                    Ok::<Vec<LanguageEntry>, _>(v) => Ok(v.into_iter().next()),
-                    _ => Err(anyhow::anyhow!("Error getting language by code")),
-                }
-            }
-            Postgres { pool } => {
-                let record = sqlx::query_as!(
-                    LanguageEntry,
-                    r#"
-                        SELECT id as "id: Option<InfluxResourceId>", code, name, dicts
-                        FROM language
-                        WHERE code = $1;
-                    "#,
-                    code
-                )
-                .fetch_optional(pool.as_ref())
-                .await?;
-
-                Ok(record)
-            }
-        }
-    }
 }

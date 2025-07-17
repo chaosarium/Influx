@@ -69,117 +69,43 @@ impl DB {
     }
 
     pub async fn seed_vocab_table(&self) -> Result<()> {
+        // Get language entries first and store their IDs
+        let languages = self.get_languages_vec().await?;
+        let en_lang = languages.iter().find(|l| l.code == "en").unwrap();
+        let fr_lang = languages.iter().find(|l| l.code == "fr").unwrap();
+
+        let en_lang_id = en_lang.id.clone().unwrap();
+        let fr_lang_id = fr_lang.id.clone().unwrap();
+
         let tokens = vec![
+            Token::fancier_token(en_lang_id, "first", "1st", "ehh", TokenStatus::L5),
+            Token::fancier_token(fr_lang_id.clone(), "voix", "voice", "vwa", TokenStatus::L5),
+            Token::fancier_token(fr_lang_id.clone(), "parler", "speak", "", TokenStatus::L5),
             Token::fancier_token(
-                self.get_language_by_code("en".into())
-                    .await?
-                    .unwrap()
-                    .id
-                    .unwrap(),
-                "first",
-                "1st",
-                "ehh",
-                TokenStatus::L5,
-            ),
-            Token::fancier_token(
-                self.get_language_by_code("fr".into())
-                    .await?
-                    .unwrap()
-                    .id
-                    .unwrap(),
-                "voix",
-                "voice",
-                "vwa",
-                TokenStatus::L5,
-            ),
-            Token::fancier_token(
-                self.get_language_by_code("fr".into())
-                    .await?
-                    .unwrap()
-                    .id
-                    .unwrap(),
-                "parler",
-                "speak",
-                "",
-                TokenStatus::L5,
-            ),
-            Token::fancier_token(
-                self.get_language_by_code("fr".into())
-                    .await?
-                    .unwrap()
-                    .id
-                    .unwrap(),
+                fr_lang_id.clone(),
                 "parlerez",
                 "speak",
                 "inflection of parler",
                 TokenStatus::L5,
             ),
             Token::fancier_token(
-                self.get_language_by_code("fr".into())
-                    .await?
-                    .unwrap()
-                    .id
-                    .unwrap(),
+                fr_lang_id.clone(),
                 "habitaient",
                 "lived",
                 "inflection of habiter",
                 TokenStatus::L5,
             ),
+            Token::fancier_token(fr_lang_id.clone(), "cœur", "heart", "kœʀ", TokenStatus::L4),
+            Token::fancier_token(fr_lang_id.clone(), "qui", "谁", "", TokenStatus::L3),
+            Token::fancier_token(fr_lang_id.clone(), "au", "= à le, or", "", TokenStatus::L2),
             Token::fancier_token(
-                self.get_language_by_code("fr".into())
-                    .await?
-                    .unwrap()
-                    .id
-                    .unwrap(),
-                "cœur",
-                "heart",
-                "kœʀ",
-                TokenStatus::L4,
-            ),
-            Token::fancier_token(
-                self.get_language_by_code("fr".into())
-                    .await?
-                    .unwrap()
-                    .id
-                    .unwrap(),
-                "qui",
-                "谁",
-                "",
-                TokenStatus::L3,
-            ),
-            Token::fancier_token(
-                self.get_language_by_code("fr".into())
-                    .await?
-                    .unwrap()
-                    .id
-                    .unwrap(),
-                "au",
-                "= à le, or",
-                "",
-                TokenStatus::L2,
-            ),
-            Token::fancier_token(
-                self.get_language_by_code("fr".into())
-                    .await?
-                    .unwrap()
-                    .id
-                    .unwrap(),
+                fr_lang_id.clone(),
                 "kiwis",
                 "kiwi plural",
                 "kiwi",
                 TokenStatus::L1,
             ),
-            Token::fancier_token(
-                self.get_language_by_code("fr".into())
-                    .await?
-                    .unwrap()
-                    .id
-                    .unwrap(),
-                "les",
-                "le -> les",
-                "",
-                TokenStatus::IGNORED,
-            ),
+            Token::fancier_token(fr_lang_id, "les", "le -> les", "", TokenStatus::IGNORED),
         ];
 
         for token in tokens {
@@ -190,15 +116,15 @@ impl DB {
     }
 
     pub async fn seed_phrase_table(&self) -> Result<()> {
+        // Get language entries first and store their IDs
+        let languages = self.get_languages_vec().await?;
+        let en_lang = languages.iter().find(|l| l.code == "en").unwrap();
+        let en_lang_id = en_lang.id.clone().unwrap();
+
         let phrases = vec![
             Phrase {
                 id: None,
-                lang_id: self
-                    .get_language_by_code("en".into())
-                    .await?
-                    .unwrap()
-                    .id
-                    .unwrap(),
+                lang_id: en_lang_id.clone(),
                 orthography_seq: vec!["hello".to_string(), "world".to_string()],
                 definition: "placeholder".to_string(),
                 notes: "a very familiar phrase! (for programmers)".to_string(),
@@ -207,12 +133,7 @@ impl DB {
             },
             Phrase {
                 id: None,
-                lang_id: self
-                    .get_language_by_code("en".into())
-                    .await?
-                    .unwrap()
-                    .id
-                    .unwrap(),
+                lang_id: en_lang_id,
                 orthography_seq: vec!["world".to_string(), "wide".to_string(), "web".to_string()],
                 definition: "placeholder".to_string(),
                 notes: "I wonder what this is".to_string(),
@@ -229,31 +150,17 @@ impl DB {
     }
 
     pub async fn seed_document_table(&self) -> Result<()> {
-        // Get language IDs
-        let en_lang_id = self
-            .get_language_by_code("en".into())
-            .await?
-            .unwrap()
-            .id
-            .unwrap();
-        let fr_lang_id = self
-            .get_language_by_code("fr".into())
-            .await?
-            .unwrap()
-            .id
-            .unwrap();
-        let ja_lang_id = self
-            .get_language_by_code("ja".into())
-            .await?
-            .unwrap()
-            .id
-            .unwrap();
-        let zh_lang_id = self
-            .get_language_by_code("zh-hant".into())
-            .await?
-            .unwrap()
-            .id
-            .unwrap();
+        // Get language entries first and store their IDs
+        let languages = self.get_languages_vec().await?;
+        let en_lang = languages.iter().find(|l| l.code == "en").unwrap();
+        let fr_lang = languages.iter().find(|l| l.code == "fr").unwrap();
+        let ja_lang = languages.iter().find(|l| l.code == "ja").unwrap();
+        let zh_lang = languages.iter().find(|l| l.code == "zh-hant").unwrap();
+
+        let en_lang_id = en_lang.id.clone().unwrap();
+        let fr_lang_id = fr_lang.id.clone().unwrap();
+        let ja_lang_id = ja_lang.id.clone().unwrap();
+        let zh_lang_id = zh_lang.id.clone().unwrap();
 
         let mut documents = vec![
             // Original seed documents

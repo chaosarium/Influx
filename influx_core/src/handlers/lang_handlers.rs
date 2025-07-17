@@ -18,11 +18,15 @@ pub async fn get_language_list(
     Ok(Json(languages))
 }
 
-pub async fn get_language_by_identifier(
+pub async fn get_language_by_id(
     State(ServerState { influx_path, db }): State<ServerState>,
-    Path(id): Path<String>,
+    Path(lang_id): Path<String>,
 ) -> Result<Json<Option<LanguageEntry>>, ServerError> {
-    let language = db.get_language_by_code(id).await?;
+    let id = lang_id
+        .parse::<i64>()
+        .map_err(|_| anyhow::anyhow!("Invalid language ID format"))?;
+    let resource_id = crate::db::InfluxResourceId::from(id);
+    let language = db.get_language(resource_id).await?;
     if language.is_none() {
         return Err(anyhow::anyhow!("Language not found").into());
     }
