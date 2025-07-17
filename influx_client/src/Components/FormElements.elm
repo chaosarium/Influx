@@ -1,4 +1,4 @@
-module Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC, textboxC)
+module Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC, stringListC, textboxC)
 
 import Html exposing (Html, div)
 import Html.Attributes exposing (class, disabled, for, hidden, id, selected, type_, value)
@@ -65,6 +65,43 @@ selectC label id_ toMsg options selectedValue =
                     )
                     options
             )
+        ]
+
+
+stringListC : String -> String -> (List String -> msg) -> (String -> msg) -> List String -> String -> Html msg
+stringListC label id_ onListChange onInputChange items currentInput =
+    div []
+        [ Html.label [ for id_ ] [ Html.text label ]
+        , div []
+            (List.indexedMap
+                (\index item ->
+                    div []
+                        [ Html.span [] [ Html.text item ]
+                        , Html.button
+                            [ type_ "button"
+                            , onClick (onListChange (List.take index items ++ List.drop (index + 1) items))
+                            ]
+                            [ Html.text "×" ]
+                        ]
+                )
+                items
+            )
+        , div []
+            [ Html.input
+                [ type_ "text"
+                , id id_
+                , onInput onInputChange
+                , value currentInput
+                , Html.Attributes.placeholder "Add new tag..."
+                ]
+                []
+            , Html.button
+                [ type_ "button"
+                , onClick (onListChange (items ++ [ String.trim currentInput ]))
+                , disabled (String.trim currentInput == "")
+                ]
+                [ Html.text "Add" ]
+            ]
         ]
 
 
