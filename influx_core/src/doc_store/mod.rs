@@ -16,21 +16,3 @@ use toml::Table;
 use toml::Value;
 use yaml_front_matter::Document;
 use yaml_front_matter::YamlFrontMatter;
-
-#[derive(Deserialize, PartialEq, Debug, Serialize, Copy, Clone, Elm, ElmEncode, ElmDecode)]
-pub enum DocType {
-    Text,
-    Video,
-    Audio,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
-pub struct DocEntry {
-    pub id: crate::db::InfluxResourceId,
-    pub language: crate::db::models::lang::LanguageEntry,
-    pub title: String,
-    pub doc_type: DocType,
-    pub tags: Vec<String>,
-    pub date_created: DateTime<Utc>,
-    pub date_modified: DateTime<Utc>,
-}

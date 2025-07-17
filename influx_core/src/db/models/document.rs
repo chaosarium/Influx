@@ -17,6 +17,14 @@ pub struct Document {
     pub updated_ts: DateTime<Utc>,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
+pub struct DocPackage {
+    pub document_id: InfluxResourceId,
+    pub language_id: InfluxResourceId,
+    pub document: Document,
+    pub language: crate::db::models::lang::LanguageEntry,
+}
+
 use DB::*;
 
 impl DB {
@@ -65,7 +73,7 @@ impl DB {
         }
     }
 
-    pub async fn get_all_documents(&self) -> Result<Vec<crate::doc_store::DocEntry>> {
+    pub async fn get_all_documents(&self) -> Result<Vec<DocPackage>> {
         match self {
             Surreal { engine: _ } => {
                 // SurrealDB is deprecated, skip implementation
@@ -85,41 +93,39 @@ impl DB {
                 .fetch_all(pool.as_ref())
                 .await?;
 
-                let doc_entries = records
+                let doc_packages = records
                     .into_iter()
-                    .map(|record| {
-                        let doc_type = match record.doc_type.as_str() {
-                            "Video" => crate::doc_store::DocType::Video,
-                            "Audio" => crate::doc_store::DocType::Audio,
-                            _ => crate::doc_store::DocType::Text,
-                        };
-
-                        crate::doc_store::DocEntry {
-                            id: InfluxResourceId::SerialId(record.id),
-                            language: crate::db::models::lang::LanguageEntry {
-                                id: Some(InfluxResourceId::SerialId(record.lang_id)),
-                                code: record.lang_code,
-                                name: record.lang_name,
-                                dicts: record.lang_dicts,
-                            },
+                    .map(|record| DocPackage {
+                        document_id: InfluxResourceId::SerialId(record.id),
+                        language_id: InfluxResourceId::SerialId(record.lang_id),
+                        document: Document {
+                            id: Some(InfluxResourceId::SerialId(record.id)),
+                            lang_id: InfluxResourceId::SerialId(record.lang_id),
                             title: record.title,
-                            doc_type,
+                            content: record.content,
+                            doc_type: record.doc_type,
                             tags: record.tags,
-                            date_created: DateTime::<Utc>::from_timestamp(
+                            created_ts: DateTime::<Utc>::from_timestamp(
                                 record.created_ts.unix_timestamp(),
                                 0,
                             )
                             .unwrap(),
-                            date_modified: DateTime::<Utc>::from_timestamp(
+                            updated_ts: DateTime::<Utc>::from_timestamp(
                                 record.updated_ts.unix_timestamp(),
                                 0,
                             )
                             .unwrap(),
-                        }
+                        },
+                        language: crate::db::models::lang::LanguageEntry {
+                            id: Some(InfluxResourceId::SerialId(record.lang_id)),
+                            code: record.lang_code,
+                            name: record.lang_name,
+                            dicts: record.lang_dicts,
+                        },
                     })
                     .collect();
 
-                Ok(doc_entries)
+                Ok(doc_packages)
             }
         }
     }

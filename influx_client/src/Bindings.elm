@@ -61,46 +61,47 @@ languageEntryEncoder struct =
         ]
 
 
-type DocType
-    = Text
-    | Video
-    | Audio
-
-
-docTypeEncoder : DocType -> Json.Encode.Value
-docTypeEncoder enum =
-    case enum of
-        Text ->
-            Json.Encode.string "Text"
-
-        Video ->
-            Json.Encode.string "Video"
-
-        Audio ->
-            Json.Encode.string "Audio"
-
-
-type alias DocEntry =
-    { id : InfluxResourceId
-    , language : LanguageEntry
+type alias Document =
+    { id : Maybe InfluxResourceId
+    , langId : InfluxResourceId
     , title : String
-    , docType : DocType
+    , content : String
+    , docType : String
     , tags : List String
-    , dateCreated : String
-    , dateModified : String
+    , createdTs : String
+    , updatedTs : String
     }
 
 
-docEntryEncoder : DocEntry -> Json.Encode.Value
-docEntryEncoder struct =
+documentEncoder : Document -> Json.Encode.Value
+documentEncoder struct =
     Json.Encode.object
-        [ ( "id", influxResourceIdEncoder struct.id )
-        , ( "language", languageEntryEncoder struct.language )
+        [ ( "id", (Maybe.withDefault Json.Encode.null << Maybe.map influxResourceIdEncoder) struct.id )
+        , ( "lang_id", influxResourceIdEncoder struct.langId )
         , ( "title", Json.Encode.string struct.title )
-        , ( "doc_type", docTypeEncoder struct.docType )
+        , ( "content", Json.Encode.string struct.content )
+        , ( "doc_type", Json.Encode.string struct.docType )
         , ( "tags", Json.Encode.list Json.Encode.string struct.tags )
-        , ( "date_created", Json.Encode.string struct.dateCreated )
-        , ( "date_modified", Json.Encode.string struct.dateModified )
+        , ( "created_ts", Json.Encode.string struct.createdTs )
+        , ( "updated_ts", Json.Encode.string struct.updatedTs )
+        ]
+
+
+type alias DocPackage =
+    { documentId : InfluxResourceId
+    , languageId : InfluxResourceId
+    , document : Document
+    , language : LanguageEntry
+    }
+
+
+docPackageEncoder : DocPackage -> Json.Encode.Value
+docPackageEncoder struct =
+    Json.Encode.object
+        [ ( "document_id", influxResourceIdEncoder struct.documentId )
+        , ( "language_id", influxResourceIdEncoder struct.languageId )
+        , ( "document", documentEncoder struct.document )
+        , ( "language", languageEntryEncoder struct.language )
         ]
 
 
@@ -228,13 +229,7 @@ termEditActionEncoder enum =
 
 
 type alias GetDocResponse =
-    { title : String
-    , docType : DocType
-    , tags : List String
-    , dateCreated : String
-    , dateModified : String
-    , langId : InfluxResourceId
-    , text : String
+    { docPackage : DocPackage
     , annotatedDoc : AnnotatedDocV2
     , termDict : TermDictionary
     }
@@ -243,13 +238,7 @@ type alias GetDocResponse =
 getDocResponseEncoder : GetDocResponse -> Json.Encode.Value
 getDocResponseEncoder struct =
     Json.Encode.object
-        [ ( "title", Json.Encode.string struct.title )
-        , ( "doc_type", docTypeEncoder struct.docType )
-        , ( "tags", Json.Encode.list Json.Encode.string struct.tags )
-        , ( "date_created", Json.Encode.string struct.dateCreated )
-        , ( "date_modified", Json.Encode.string struct.dateModified )
-        , ( "lang_id", influxResourceIdEncoder struct.langId )
-        , ( "text", Json.Encode.string struct.text )
+        [ ( "doc_package", docPackageEncoder struct.docPackage )
         , ( "annotated_doc", annotatedDocV2Encoder struct.annotatedDoc )
         , ( "term_dict", termDictionaryEncoder struct.termDict )
         ]
@@ -460,52 +449,26 @@ languageEntryDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "dicts" (Json.Decode.list Json.Decode.string)))
 
 
-docTypeDecoder : Json.Decode.Decoder DocType
-docTypeDecoder =
-    Json.Decode.oneOf
-        [ Json.Decode.string
-            |> Json.Decode.andThen
-                (\x ->
-                    case x of
-                        "Text" ->
-                            Json.Decode.succeed Text
-
-                        unexpected ->
-                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
-                )
-        , Json.Decode.string
-            |> Json.Decode.andThen
-                (\x ->
-                    case x of
-                        "Video" ->
-                            Json.Decode.succeed Video
-
-                        unexpected ->
-                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
-                )
-        , Json.Decode.string
-            |> Json.Decode.andThen
-                (\x ->
-                    case x of
-                        "Audio" ->
-                            Json.Decode.succeed Audio
-
-                        unexpected ->
-                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
-                )
-        ]
-
-
-docEntryDecoder : Json.Decode.Decoder DocEntry
-docEntryDecoder =
-    Json.Decode.succeed DocEntry
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" influxResourceIdDecoder))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "language" languageEntryDecoder))
+documentDecoder : Json.Decode.Decoder Document
+documentDecoder =
+    Json.Decode.succeed Document
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" (Json.Decode.nullable influxResourceIdDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lang_id" influxResourceIdDecoder))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "title" Json.Decode.string))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "doc_type" docTypeDecoder))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "content" Json.Decode.string))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "doc_type" Json.Decode.string))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "tags" (Json.Decode.list Json.Decode.string)))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "date_created" Json.Decode.string))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "date_modified" Json.Decode.string))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "created_ts" Json.Decode.string))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "updated_ts" Json.Decode.string))
+
+
+docPackageDecoder : Json.Decode.Decoder DocPackage
+docPackageDecoder =
+    Json.Decode.succeed DocPackage
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "document_id" influxResourceIdDecoder))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "language_id" influxResourceIdDecoder))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "document" documentDecoder))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "language" languageEntryDecoder))
 
 
 tokenDecoder : Json.Decode.Decoder Token
@@ -666,13 +629,7 @@ termEditActionDecoder =
 getDocResponseDecoder : Json.Decode.Decoder GetDocResponse
 getDocResponseDecoder =
     Json.Decode.succeed GetDocResponse
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "title" Json.Decode.string))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "doc_type" docTypeDecoder))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "tags" (Json.Decode.list Json.Decode.string)))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "date_created" Json.Decode.string))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "date_modified" Json.Decode.string))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lang_id" influxResourceIdDecoder))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" Json.Decode.string))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "doc_package" docPackageDecoder))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "annotated_doc" annotatedDocV2Decoder))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "term_dict" termDictionaryDecoder))
 

@@ -1,7 +1,6 @@
 use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
 use crate::db::InfluxResourceId;
-use crate::doc_store;
 use crate::nlp;
 use crate::prelude::*;
 use axum::http::StatusCode;
@@ -71,13 +70,7 @@ pub struct TermEditResponse {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Elm, ElmEncode, ElmDecode)]
 pub struct GetDocResponse {
-    pub title: String,
-    pub doc_type: doc_store::DocType,
-    pub tags: Vec<String>,
-    pub date_created: chrono::DateTime<chrono::Utc>,
-    pub date_modified: chrono::DateTime<chrono::Utc>,
-    pub lang_id: InfluxResourceId,
-    pub text: String,
+    pub doc_package: crate::db::models::document::DocPackage,
     pub annotated_doc: nlp::AnnotatedDocV2,
     pub term_dict: nlp::TermDictionary,
 }

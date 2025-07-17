@@ -1,7 +1,6 @@
 use super::ServerError;
 use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
-use crate::db::InfluxResourceId;
 use crate::handlers::api_interfaces::*;
 use crate::ServerState;
 use axum::extract::State;

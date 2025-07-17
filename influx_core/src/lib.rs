@@ -101,15 +101,14 @@ mod tests {
     #[test]
     fn generate_elm_bindings() {
         use crate::db::models::lang;
-        use crate::doc_store;
 
         let mut out_buf = vec![];
         elm_rs::export!("Bindings", &mut out_buf, {
             encoders: [
                 db::InfluxResourceId,
                 lang::LanguageEntry,
-                doc_store::DocType,
-                doc_store::DocEntry,
+                db::models::document::Document,
+                db::models::document::DocPackage,
                 db::models::vocab::Token,
                 db::models::vocab::TokenStatus,
                 db::models::phrase::Phrase,
@@ -131,8 +130,8 @@ mod tests {
             decoders: [
                 db::InfluxResourceId,
                 lang::LanguageEntry,
-                doc_store::DocType,
-                doc_store::DocEntry,
+                db::models::document::Document,
+                db::models::document::DocPackage,
                 db::models::vocab::Token,
                 db::models::vocab::TokenStatus,
                 db::models::phrase::Phrase,

@@ -1,10 +1,10 @@
 use super::api_interfaces::*;
 use super::ServerError;
+use crate::db::models::document::DocPackage;
 use crate::db::models::phrase::mk_phrase_trie;
 use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
 use crate::db::InfluxResourceId;
-use crate::doc_store::DocType;
 use crate::nlp;
 use crate::ServerState;
 use axum::{
@@ -29,7 +29,7 @@ pub async fn get_docs_list(
 ) -> Response {
     match request.language_id {
         None => match db.get_all_documents().await {
-            Ok(doc_entries) => (StatusCode::OK, Json(doc_entries)).into_response(),
+            Ok(doc_packages) => (StatusCode::OK, Json(doc_packages)).into_response(),
             Err(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -81,7 +81,7 @@ pub(crate) async fn get_annotated_doc_logic(
     // Get document from database
     let document = state
         .db
-        .get_document_by_id(document_id)
+        .get_document_by_id(document_id.clone())
         .await?
         .ok_or_else(|| ServerError(anyhow::anyhow!("Document not found")))?;
 
@@ -95,15 +95,14 @@ pub(crate) async fn get_annotated_doc_logic(
     let lang_code = lang_entry.code.clone();
 
     let text = document.content.clone();
-    let title = document.title.clone();
-    let doc_type = match document.doc_type.as_str() {
-        "Video" => DocType::Video,
-        "Audio" => DocType::Audio,
-        _ => DocType::Text,
+
+    // Create DocPackage
+    let doc_package = DocPackage {
+        document_id: document_id.clone(),
+        language_id: lang_id.clone(),
+        document: document.clone(),
+        language: lang_entry.clone(),
     };
-    let tags = document.tags.clone();
-    let date_created = document.created_ts;
-    let date_modified = document.updated_ts;
 
     let text_checksum: String = text_checksum(text.clone());
 
@@ -156,13 +155,7 @@ pub(crate) async fn get_annotated_doc_logic(
     let annotated_doc = nlp::phrase_fit_pipeline(tokenised_doc, phrase_trie);
 
     let result = GetDocResponse {
-        title,
-        doc_type,
-        tags,
-        date_created,
-        date_modified,
-        lang_id,
-        text,
+        doc_package,
         annotated_doc,
         term_dict: nlp::TermDictionary {
             token_dict: tokens_dict,

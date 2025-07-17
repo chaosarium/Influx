@@ -2,7 +2,7 @@ module Pages.Docs exposing (Model, Msg, page)
 
 import Api
 import Api.GetDocuments
-import Bindings exposing (DocEntry, DocType(..), InfluxResourceId(..))
+import Bindings exposing (DocPackage, InfluxResourceId(..))
 import Components.DbgDisplay
 import Components.Topbar
 import Effect exposing (Effect)
@@ -35,7 +35,7 @@ type alias ThisRoute =
 
 
 type alias Model =
-    { docData : Api.Data (List DocEntry) }
+    { docData : Api.Data (List DocPackage) }
 
 
 init : () -> ( Model, Effect Msg )
@@ -50,7 +50,7 @@ init () =
 
 
 type Msg
-    = ApiResponded (Result Http.Error (List DocEntry))
+    = ApiResponded (Result Http.Error (List DocPackage))
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -76,17 +76,9 @@ subscriptions model =
 -- VIEW
 
 
-docTypeToString : DocType -> String
+docTypeToString : String -> String
 docTypeToString docType =
-    case docType of
-        Text ->
-            "Text"
-
-        Video ->
-            "Video"
-
-        Audio ->
-            "Audio"
+    docType
 
 
 formatDate : String -> String
@@ -105,29 +97,29 @@ documentIdToString id =
             stringId
 
 
-viewDocumentRow : DocEntry -> Html msg
-viewDocumentRow document =
+viewDocumentRow : DocPackage -> Html msg
+viewDocumentRow docPackage =
     let
         documentId =
-            documentIdToString document.id
+            documentIdToString docPackage.documentId
 
         tagsString =
-            String.join ", " document.tags
+            String.join ", " docPackage.document.tags
     in
     tr []
         [ td []
             [ a [ href ("/documents/" ++ documentId) ]
-                [ text document.title ]
+                [ text docPackage.document.title ]
             ]
         , td [] [ text tagsString ]
-        , td [] [ text (docTypeToString document.docType) ]
-        , td [] [ text (formatDate document.dateCreated) ]
-        , td [] [ text (formatDate document.dateModified) ]
+        , td [] [ text (docTypeToString docPackage.document.docType) ]
+        , td [] [ text (formatDate docPackage.document.createdTs) ]
+        , td [] [ text (formatDate docPackage.document.updatedTs) ]
         ]
 
 
-viewDocumentsTable : List DocEntry -> Html msg
-viewDocumentsTable documents =
+viewDocumentsTable : List DocPackage -> Html msg
+viewDocumentsTable docPackages =
     table [ style "border-collapse" "collapse", style "width" "100%" ]
         [ thead []
             [ tr []
@@ -141,25 +133,25 @@ viewDocumentsTable documents =
             ]
         , tbody []
             (List.map
-                (\doc ->
+                (\docPackage ->
                     tr [ style "border" "1px solid #ddd" ]
                         [ td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ a [ href ("/doc/" ++ documentIdToString doc.id) ]
-                                [ text doc.title ]
+                            [ a [ href ("/doc/" ++ documentIdToString docPackage.documentId) ]
+                                [ text docPackage.document.title ]
                             ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ text doc.language.name ]
+                            [ text docPackage.language.name ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ text (String.join ", " doc.tags) ]
+                            [ text (String.join ", " docPackage.document.tags) ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ text (docTypeToString doc.docType) ]
+                            [ text (docTypeToString docPackage.document.docType) ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ text (formatDate doc.dateCreated) ]
+                            [ text (formatDate docPackage.document.createdTs) ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ text (formatDate doc.dateModified) ]
+                            [ text (formatDate docPackage.document.updatedTs) ]
                         ]
                 )
-                documents
+                docPackages
             )
         ]
 
@@ -177,8 +169,8 @@ view route model =
             Api.Failure httpError ->
                 div [] [ Html.text "Error: ", Html.text (Api.stringOfHttpErrMsg httpError) ]
 
-            Api.Success documents ->
+            Api.Success docPackages ->
                 div []
-                    [ viewDocumentsTable documents ]
+                    [ viewDocumentsTable docPackages ]
         ]
     }

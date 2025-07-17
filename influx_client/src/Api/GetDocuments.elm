@@ -5,15 +5,15 @@ import Http
 import Json.Decode
 
 
-decoder : Json.Decode.Decoder (List Bindings.DocEntry)
+decoder : Json.Decode.Decoder (List Bindings.DocPackage)
 decoder =
-    Json.Decode.list Bindings.docEntryDecoder
+    Json.Decode.list Bindings.docPackageDecoder
 
 
 get :
     { languageId : Maybe Bindings.InfluxResourceId
     }
-    -> (Result Http.Error (List Bindings.DocEntry) -> msg)
+    -> (Result Http.Error (List Bindings.DocPackage) -> msg)
     -> Cmd msg
 get args onResponse =
     Http.post
