@@ -112,17 +112,17 @@ viewDocumentRow document =
             documentIdToString document.id
 
         tagsString =
-            String.join ", " document.metadata.tags
+            String.join ", " document.tags
     in
     tr []
         [ td []
             [ a [ href ("/documents/" ++ documentId) ]
-                [ text document.metadata.title ]
+                [ text document.title ]
             ]
         , td [] [ text tagsString ]
-        , td [] [ text (docTypeToString document.metadata.docType) ]
-        , td [] [ text (formatDate document.metadata.dateCreated) ]
-        , td [] [ text (formatDate document.metadata.dateModified) ]
+        , td [] [ text (docTypeToString document.docType) ]
+        , td [] [ text (formatDate document.dateCreated) ]
+        , td [] [ text (formatDate document.dateModified) ]
         ]
 
 
@@ -145,18 +145,18 @@ viewDocumentsTable documents =
                     tr [ style "border" "1px solid #ddd" ]
                         [ td [ style "border" "1px solid #ddd", style "padding" "8px" ]
                             [ a [ href ("/doc/" ++ documentIdToString doc.id) ]
-                                [ text doc.metadata.title ]
+                                [ text doc.title ]
                             ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
                             [ text doc.language.name ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ text (String.join ", " doc.metadata.tags) ]
+                            [ text (String.join ", " doc.tags) ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ text (docTypeToString doc.metadata.docType) ]
+                            [ text (docTypeToString doc.docType) ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ text (formatDate doc.metadata.dateCreated) ]
+                            [ text (formatDate doc.dateCreated) ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ text (formatDate doc.metadata.dateModified) ]
+                            [ text (formatDate doc.dateModified) ]
                         ]
                 )
                 documents

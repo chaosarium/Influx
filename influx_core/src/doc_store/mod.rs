@@ -24,20 +24,15 @@ pub enum DocType {
     Audio,
 }
 
-#[derive(Deserialize, Debug, Serialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode)]
-pub struct DocMetadata {
+#[derive(Debug, Clone, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
+pub struct DocEntry {
+    pub id: crate::db::InfluxResourceId,
+    pub language: crate::db::models::lang::LanguageEntry,
     pub title: String,
     pub doc_type: DocType,
     pub tags: Vec<String>,
     pub date_created: DateTime<Utc>,
     pub date_modified: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
-pub struct DocEntry {
-    pub id: crate::db::InfluxResourceId,
-    pub language: crate::db::models::lang::LanguageEntry,
-    pub metadata: DocMetadata,
 }
 
 // #[derive(Serialize, Deserialize, Debug, Elm, ElmEncode, ElmDecode)]
@@ -78,25 +73,4 @@ fn get_md_files_list(dir: PathBuf) -> Result<Vec<fs::DirEntry>, io::Error> {
         .collect();
 
     Ok(md_entries)
-}
-
-fn get_md_file_metadata(path: PathBuf) -> Result<DocMetadata, io::Error> {
-    Ok((read_md_file(path)?).0)
-}
-
-pub fn read_md_file(path: PathBuf) -> Result<(DocMetadata, String), io::Error> {
-    let file_buf = fs::read_to_string(path)?;
-    let document: Document<DocMetadata> = YamlFrontMatter::parse::<DocMetadata>(&file_buf).unwrap();
-    Ok((document.metadata, document.content))
-}
-
-pub fn write_md_file(
-    filepath: PathBuf,
-    metadata: DocMetadata,
-    content: String,
-) -> Result<(), io::Error> {
-    let front_matter = serde_yaml::to_string(&metadata).unwrap();
-    let file_content = format!("---\n{}\n---\n{}", front_matter, content);
-    fs::write(filepath, file_content)?;
-    Ok(())
 }

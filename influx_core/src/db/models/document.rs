@@ -102,21 +102,19 @@ impl DB {
                                 name: record.lang_name,
                                 dicts: record.lang_dicts,
                             },
-                            metadata: crate::doc_store::DocMetadata {
-                                title: record.title,
-                                doc_type,
-                                tags: record.tags,
-                                date_created: DateTime::<Utc>::from_timestamp(
-                                    record.created_ts.unix_timestamp(),
-                                    0,
-                                )
-                                .unwrap(),
-                                date_modified: DateTime::<Utc>::from_timestamp(
-                                    record.updated_ts.unix_timestamp(),
-                                    0,
-                                )
-                                .unwrap(),
-                            },
+                            title: record.title,
+                            doc_type,
+                            tags: record.tags,
+                            date_created: DateTime::<Utc>::from_timestamp(
+                                record.created_ts.unix_timestamp(),
+                                0,
+                            )
+                            .unwrap(),
+                            date_modified: DateTime::<Utc>::from_timestamp(
+                                record.updated_ts.unix_timestamp(),
+                                0,
+                            )
+                            .unwrap(),
                         }
                     })
                     .collect();

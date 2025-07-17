@@ -4,7 +4,7 @@ use crate::db::models::phrase::mk_phrase_trie;
 use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
 use crate::db::InfluxResourceId;
-use crate::doc_store::{DocMetadata, DocType};
+use crate::doc_store::DocType;
 use crate::nlp;
 use crate::ServerState;
 use axum::{
@@ -95,17 +95,15 @@ pub(crate) async fn get_annotated_doc_logic(
     let lang_code = lang_entry.code.clone();
 
     let text = document.content.clone();
-    let metadata = DocMetadata {
-        title: document.title.clone(),
-        doc_type: match document.doc_type.as_str() {
-            "Video" => DocType::Video,
-            "Audio" => DocType::Audio,
-            _ => DocType::Text,
-        },
-        tags: document.tags.clone(),
-        date_created: document.created_ts,
-        date_modified: document.updated_ts,
+    let title = document.title.clone();
+    let doc_type = match document.doc_type.as_str() {
+        "Video" => DocType::Video,
+        "Audio" => DocType::Audio,
+        _ => DocType::Text,
     };
+    let tags = document.tags.clone();
+    let date_created = document.created_ts;
+    let date_modified = document.updated_ts;
 
     let text_checksum: String = text_checksum(text.clone());
 
@@ -158,7 +156,11 @@ pub(crate) async fn get_annotated_doc_logic(
     let annotated_doc = nlp::phrase_fit_pipeline(tokenised_doc, phrase_trie);
 
     let result = GetDocResponse {
-        metadata,
+        title,
+        doc_type,
+        tags,
+        date_created,
+        date_modified,
         lang_id,
         text,
         annotated_doc,

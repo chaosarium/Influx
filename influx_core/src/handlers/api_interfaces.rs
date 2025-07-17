@@ -71,7 +71,11 @@ pub struct TermEditResponse {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Elm, ElmEncode, ElmDecode)]
 pub struct GetDocResponse {
-    pub metadata: doc_store::DocMetadata,
+    pub title: String,
+    pub doc_type: doc_store::DocType,
+    pub tags: Vec<String>,
+    pub date_created: chrono::DateTime<chrono::Utc>,
+    pub date_modified: chrono::DateTime<chrono::Utc>,
     pub lang_id: InfluxResourceId,
     pub text: String,
     pub annotated_doc: nlp::AnnotatedDocV2,

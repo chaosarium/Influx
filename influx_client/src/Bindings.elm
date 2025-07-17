@@ -80,30 +80,14 @@ docTypeEncoder enum =
             Json.Encode.string "Audio"
 
 
-type alias DocMetadata =
-    { title : String
+type alias DocEntry =
+    { id : InfluxResourceId
+    , language : LanguageEntry
+    , title : String
     , docType : DocType
     , tags : List String
     , dateCreated : String
     , dateModified : String
-    }
-
-
-docMetadataEncoder : DocMetadata -> Json.Encode.Value
-docMetadataEncoder struct =
-    Json.Encode.object
-        [ ( "title", Json.Encode.string struct.title )
-        , ( "doc_type", docTypeEncoder struct.docType )
-        , ( "tags", Json.Encode.list Json.Encode.string struct.tags )
-        , ( "date_created", Json.Encode.string struct.dateCreated )
-        , ( "date_modified", Json.Encode.string struct.dateModified )
-        ]
-
-
-type alias DocEntry =
-    { id : InfluxResourceId
-    , language : LanguageEntry
-    , metadata : DocMetadata
     }
 
 
@@ -112,7 +96,11 @@ docEntryEncoder struct =
     Json.Encode.object
         [ ( "id", influxResourceIdEncoder struct.id )
         , ( "language", languageEntryEncoder struct.language )
-        , ( "metadata", docMetadataEncoder struct.metadata )
+        , ( "title", Json.Encode.string struct.title )
+        , ( "doc_type", docTypeEncoder struct.docType )
+        , ( "tags", Json.Encode.list Json.Encode.string struct.tags )
+        , ( "date_created", Json.Encode.string struct.dateCreated )
+        , ( "date_modified", Json.Encode.string struct.dateModified )
         ]
 
 
@@ -240,7 +228,11 @@ termEditActionEncoder enum =
 
 
 type alias GetDocResponse =
-    { metadata : DocMetadata
+    { title : String
+    , docType : DocType
+    , tags : List String
+    , dateCreated : String
+    , dateModified : String
     , langId : InfluxResourceId
     , text : String
     , annotatedDoc : AnnotatedDocV2
@@ -251,7 +243,11 @@ type alias GetDocResponse =
 getDocResponseEncoder : GetDocResponse -> Json.Encode.Value
 getDocResponseEncoder struct =
     Json.Encode.object
-        [ ( "metadata", docMetadataEncoder struct.metadata )
+        [ ( "title", Json.Encode.string struct.title )
+        , ( "doc_type", docTypeEncoder struct.docType )
+        , ( "tags", Json.Encode.list Json.Encode.string struct.tags )
+        , ( "date_created", Json.Encode.string struct.dateCreated )
+        , ( "date_modified", Json.Encode.string struct.dateModified )
         , ( "lang_id", influxResourceIdEncoder struct.langId )
         , ( "text", Json.Encode.string struct.text )
         , ( "annotated_doc", annotatedDocV2Encoder struct.annotatedDoc )
@@ -500,22 +496,16 @@ docTypeDecoder =
         ]
 
 
-docMetadataDecoder : Json.Decode.Decoder DocMetadata
-docMetadataDecoder =
-    Json.Decode.succeed DocMetadata
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "title" Json.Decode.string))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "doc_type" docTypeDecoder))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "tags" (Json.Decode.list Json.Decode.string)))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "date_created" Json.Decode.string))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "date_modified" Json.Decode.string))
-
-
 docEntryDecoder : Json.Decode.Decoder DocEntry
 docEntryDecoder =
     Json.Decode.succeed DocEntry
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" influxResourceIdDecoder))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "language" languageEntryDecoder))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "metadata" docMetadataDecoder))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "title" Json.Decode.string))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "doc_type" docTypeDecoder))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "tags" (Json.Decode.list Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "date_created" Json.Decode.string))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "date_modified" Json.Decode.string))
 
 
 tokenDecoder : Json.Decode.Decoder Token
@@ -676,7 +666,11 @@ termEditActionDecoder =
 getDocResponseDecoder : Json.Decode.Decoder GetDocResponse
 getDocResponseDecoder =
     Json.Decode.succeed GetDocResponse
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "metadata" docMetadataDecoder))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "title" Json.Decode.string))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "doc_type" docTypeDecoder))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "tags" (Json.Decode.list Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "date_created" Json.Decode.string))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "date_modified" Json.Decode.string))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lang_id" influxResourceIdDecoder))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" Json.Decode.string))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "annotated_doc" annotatedDocV2Decoder))
