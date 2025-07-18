@@ -4,6 +4,7 @@ use super::vocab::{Token, TokenStatus};
 use super::DB;
 use crate::db::models::lang::LanguageEntry;
 use chrono::{DateTime, Utc};
+use std::collections::HashMap;
 
 use anyhow::Result;
 
@@ -26,7 +27,7 @@ fn create_document(
 }
 
 impl DB {
-    pub async fn seed_lang_table(&self) -> Result<()> {
+    pub async fn seed_lang_table(&self) -> Result<HashMap<String, crate::db::InfluxResourceId>> {
         let languages = vec![
             LanguageEntry {
                 id: None,
@@ -60,22 +61,22 @@ impl DB {
             },
         ];
 
+        let mut lang_map = HashMap::new();
+        
         for language in languages {
             println!("Creating language: {:?}", language);
-            self.create_language(language).await.unwrap();
+            let code = language.code.clone();
+            let created_language = self.create_language(language).await?;
+            let lang_id = created_language.id.unwrap();
+            lang_map.insert(code, lang_id);
         }
 
-        Ok(())
+        Ok(lang_map)
     }
 
-    pub async fn seed_vocab_table(&self) -> Result<()> {
-        // Get language entries first and store their IDs
-        let languages = self.get_languages_vec().await?;
-        let en_lang = languages.iter().find(|l| l.code == "en").unwrap();
-        let fr_lang = languages.iter().find(|l| l.code == "fr").unwrap();
-
-        let en_lang_id = en_lang.id.clone().unwrap();
-        let fr_lang_id = fr_lang.id.clone().unwrap();
+    pub async fn seed_vocab_table(&self, lang_map: &HashMap<String, crate::db::InfluxResourceId>) -> Result<()> {
+        let en_lang_id = lang_map.get("en").unwrap().clone();
+        let fr_lang_id = lang_map.get("fr").unwrap().clone();
 
         let tokens = vec![
             Token::fancier_token(en_lang_id, "first", "1st", "ehh", TokenStatus::L5),
@@ -115,11 +116,8 @@ impl DB {
         Ok(())
     }
 
-    pub async fn seed_phrase_table(&self) -> Result<()> {
-        // Get language entries first and store their IDs
-        let languages = self.get_languages_vec().await?;
-        let en_lang = languages.iter().find(|l| l.code == "en").unwrap();
-        let en_lang_id = en_lang.id.clone().unwrap();
+    pub async fn seed_phrase_table(&self, lang_map: &HashMap<String, crate::db::InfluxResourceId>) -> Result<()> {
+        let en_lang_id = lang_map.get("en").unwrap().clone();
 
         let phrases = vec![
             Phrase {
@@ -149,18 +147,11 @@ impl DB {
         Ok(())
     }
 
-    pub async fn seed_document_table(&self) -> Result<()> {
-        // Get language entries first and store their IDs
-        let languages = self.get_languages_vec().await?;
-        let en_lang = languages.iter().find(|l| l.code == "en").unwrap();
-        let fr_lang = languages.iter().find(|l| l.code == "fr").unwrap();
-        let ja_lang = languages.iter().find(|l| l.code == "ja").unwrap();
-        let zh_lang = languages.iter().find(|l| l.code == "zh-hant").unwrap();
-
-        let en_lang_id = en_lang.id.clone().unwrap();
-        let fr_lang_id = fr_lang.id.clone().unwrap();
-        let ja_lang_id = ja_lang.id.clone().unwrap();
-        let zh_lang_id = zh_lang.id.clone().unwrap();
+    pub async fn seed_document_table(&self, lang_map: &HashMap<String, crate::db::InfluxResourceId>) -> Result<()> {
+        let en_lang_id = lang_map.get("en").unwrap().clone();
+        let fr_lang_id = lang_map.get("fr").unwrap().clone();
+        let ja_lang_id = lang_map.get("ja").unwrap().clone();
+        let zh_lang_id = lang_map.get("zh-hant").unwrap().clone();
 
         let mut documents = vec![
             // Original seed documents
@@ -259,10 +250,10 @@ impl DB {
     }
 
     pub async fn seed_all_tables(&self) -> Result<()> {
-        self.seed_lang_table().await?;
-        self.seed_vocab_table().await?;
-        self.seed_phrase_table().await?;
-        self.seed_document_table().await?;
+        let lang_map = self.seed_lang_table().await?;
+        self.seed_vocab_table(&lang_map).await?;
+        self.seed_phrase_table(&lang_map).await?;
+        self.seed_document_table(&lang_map).await?;
         Ok(())
     }
 }
