@@ -40,3 +40,5 @@ influx_client/static/dist
 influx_nlp/main.build/**
 influx_nlp/main.onefile-build/**
 influx_nlp/main.dist/**
+
+external
