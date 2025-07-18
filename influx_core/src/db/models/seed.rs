@@ -62,7 +62,7 @@ impl DB {
         ];
 
         let mut lang_map = HashMap::new();
-        
+
         for language in languages {
             println!("Creating language: {:?}", language);
             let code = language.code.clone();
@@ -74,7 +74,10 @@ impl DB {
         Ok(lang_map)
     }
 
-    pub async fn seed_vocab_table(&self, lang_map: &HashMap<String, crate::db::InfluxResourceId>) -> Result<()> {
+    pub async fn seed_vocab_table(
+        &self,
+        lang_map: &HashMap<String, crate::db::InfluxResourceId>,
+    ) -> Result<()> {
         let en_lang_id = lang_map.get("en").unwrap().clone();
         let fr_lang_id = lang_map.get("fr").unwrap().clone();
 
@@ -116,7 +119,10 @@ impl DB {
         Ok(())
     }
 
-    pub async fn seed_phrase_table(&self, lang_map: &HashMap<String, crate::db::InfluxResourceId>) -> Result<()> {
+    pub async fn seed_phrase_table(
+        &self,
+        lang_map: &HashMap<String, crate::db::InfluxResourceId>,
+    ) -> Result<()> {
         let en_lang_id = lang_map.get("en").unwrap().clone();
 
         let phrases = vec![
@@ -147,7 +153,10 @@ impl DB {
         Ok(())
     }
 
-    pub async fn seed_document_table(&self, lang_map: &HashMap<String, crate::db::InfluxResourceId>) -> Result<()> {
+    pub async fn seed_document_table(
+        &self,
+        lang_map: &HashMap<String, crate::db::InfluxResourceId>,
+    ) -> Result<()> {
         let en_lang_id = lang_map.get("en").unwrap().clone();
         let fr_lang_id = lang_map.get("fr").unwrap().clone();
         let ja_lang_id = lang_map.get("ja").unwrap().clone();
