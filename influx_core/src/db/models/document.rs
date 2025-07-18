@@ -230,4 +230,63 @@ impl DB {
             }
         }
     }
+
+    pub async fn get_annotated_document_cache(
+        &self,
+        document_id: InfluxResourceId,
+        text_checksum: &str,
+    ) -> Result<Option<serde_json::Value>> {
+        match self {
+            Surreal { engine: _ } => {
+                // SurrealDB is deprecated, skip implementation
+                Err(anyhow::anyhow!("SurrealDB is deprecated"))
+            }
+            Postgres { pool } => {
+                let record = sqlx::query!(
+                    r#"
+                        SELECT cached_data
+                        FROM annotated_document_cache
+                        WHERE document_id = $1 AND text_checksum = $2
+                    "#,
+                    document_id.as_i64()?,
+                    text_checksum
+                )
+                .fetch_optional(pool.as_ref())
+                .await?;
+
+                Ok(record.map(|r| r.cached_data))
+            }
+        }
+    }
+
+    pub async fn set_annotated_document_cache(
+        &self,
+        document_id: InfluxResourceId,
+        text_checksum: &str,
+        cached_data: &serde_json::Value,
+    ) -> Result<()> {
+        match self {
+            Surreal { engine: _ } => {
+                // SurrealDB is deprecated, skip implementation
+                Err(anyhow::anyhow!("SurrealDB is deprecated"))
+            }
+            Postgres { pool } => {
+                sqlx::query!(
+                    r#"
+                        INSERT INTO annotated_document_cache (document_id, text_checksum, cached_data)
+                        VALUES ($1, $2, $3)
+                        ON CONFLICT (document_id, text_checksum)
+                        DO UPDATE SET cached_data = EXCLUDED.cached_data, updated_ts = CURRENT_TIMESTAMP
+                    "#,
+                    document_id.as_i64()?,
+                    text_checksum,
+                    cached_data
+                )
+                .execute(pool.as_ref())
+                .await?;
+
+                Ok(())
+            }
+        }
+    }
 }

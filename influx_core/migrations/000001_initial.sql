@@ -99,3 +99,21 @@ BEFORE UPDATE ON document
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_ts();
 
+CREATE TABLE IF NOT EXISTS annotated_document_cache (
+    id BIGSERIAL PRIMARY KEY,
+    document_id BIGINT NOT NULL REFERENCES document (id) ON DELETE CASCADE,
+    
+    text_checksum TEXT NOT NULL,
+    cached_data JSONB NOT NULL,
+    
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+    
+    UNIQUE(document_id, text_checksum)
+);
+
+CREATE TRIGGER set_updated_ts_annotated_document_cache
+BEFORE UPDATE ON annotated_document_cache
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_ts();
+

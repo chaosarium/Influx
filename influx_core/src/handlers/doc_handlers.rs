@@ -17,8 +17,6 @@ use axum::{
 use md5;
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs;
-use std::path::PathBuf;
 use tracing::info;
 
 const USE_CACHE: bool = true;
@@ -50,25 +48,19 @@ fn text_checksum(text: String) -> String {
     format!("{:x}", digest)
 }
 
-fn load_cached_nlp_data(
-    nlp_filepath: &PathBuf,
-    text: &str,
-) -> Result<nlp::AnnotatedDocV2, anyhow::Error> {
-    if nlp_filepath.exists() {
-        let nlp_file_content = fs::read_to_string(nlp_filepath)?;
-        let cached_doc: nlp::AnnotatedDocV2 = serde_json::from_str(&nlp_file_content)?;
-        if cached_doc.text == text {
-            Ok(cached_doc)
-        } else {
-            Err(anyhow::anyhow!(
-                "Cached NLP data does not match the provided text"
-            ))
-        }
+async fn load_cached_nlp_data(
+    db: &crate::db::DB,
+    document_id: InfluxResourceId,
+    text_checksum: &str,
+) -> Result<Option<nlp::AnnotatedDocV2>, anyhow::Error> {
+    if let Some(cached_json) = db
+        .get_annotated_document_cache(document_id, text_checksum)
+        .await?
+    {
+        let cached_doc: nlp::AnnotatedDocV2 = serde_json::from_value(cached_json)?;
+        Ok(Some(cached_doc))
     } else {
-        Err(anyhow::anyhow!(
-            "NLP cache file does not exist at path: {}",
-            nlp_filepath.display()
-        ))
+        Ok(None)
     }
 }
 
@@ -106,25 +98,34 @@ pub(crate) async fn get_annotated_doc_logic(
 
     let text_checksum: String = text_checksum(text.clone());
 
-    let nlp_filepath = state
-        .influx_path
-        .join(PathBuf::from("_influx_nlp_cache"))
-        .join(PathBuf::from(format!("{}.nlp", &text_checksum)));
-
-    let tokenised_doc: nlp::AnnotatedDocV2 = match load_cached_nlp_data(&nlp_filepath, &text) {
-        Ok(cached_doc) if USE_CACHE => cached_doc,
-        _ => {
-            // run tokenisation pipeline and cache it
-            let it = nlp::tokenise_pipeline(text.as_str(), lang_code.clone()).await?;
-            let serialized_doc = serde_json::to_string(&it)?;
-            if !nlp_filepath.exists() {
-                fs::create_dir_all(nlp_filepath.parent().unwrap())?;
+    let tokenised_doc: nlp::AnnotatedDocV2 =
+        match load_cached_nlp_data(&state.db, document_id.clone(), &text_checksum).await {
+            Ok(Some(cached_doc)) if USE_CACHE => {
+                info!(
+                    "Using cached NLP data for document_id: {:?}, checksum: {}",
+                    document_id, text_checksum
+                );
+                cached_doc
             }
-            fs::write(nlp_filepath.clone(), serialized_doc)?;
-            info!("wrote nlp cache file to {}", nlp_filepath.display());
-            it
-        }
-    };
+            _ => {
+                // run tokenisation pipeline and cache it
+                let it = nlp::tokenise_pipeline(text.as_str(), lang_code.clone()).await?;
+                let serialized_json = serde_json::to_value(&it)?;
+                state
+                    .db
+                    .set_annotated_document_cache(
+                        document_id.clone(),
+                        &text_checksum,
+                        &serialized_json,
+                    )
+                    .await?;
+                info!(
+                    "Cached NLP data in database for document_id: {:?}, checksum: {}",
+                    document_id, text_checksum
+                );
+                it
+            }
+        };
 
     let tokens_dict: BTreeMap<String, Token> = state
         .db
