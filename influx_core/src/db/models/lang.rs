@@ -108,4 +108,43 @@ impl DB {
             }
         }
     }
+
+    pub async fn update_language(&self, language: LanguageEntry) -> Result<LanguageEntry> {
+        let id = language
+            .id
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Language ID is required for update"))?;
+
+        match self {
+            Surreal { engine } => {
+                let updated: Result<Option<LanguageEntry>, surrealdb::Error> =
+                    engine.update(("language", id)).content(language).await;
+
+                match updated {
+                    Ok(Some(entry)) => Ok(entry),
+                    Ok(None) => Err(anyhow::anyhow!("Language not found for update")),
+                    Err(e) => Err(anyhow::anyhow!("Error updating language: {}", e)),
+                }
+            }
+            Postgres { pool } => {
+                let record = sqlx::query_as!(
+                    LanguageEntry,
+                    r#"
+                        UPDATE language 
+                        SET code = $2, name = $3, dicts = $4
+                        WHERE id = $1
+                        RETURNING id as "id: Option<InfluxResourceId>", code, name, dicts
+                    "#,
+                    id.as_i64()?,
+                    language.code,
+                    language.name,
+                    &language.dicts
+                )
+                .fetch_one(pool.as_ref())
+                .await?;
+
+                Ok(record)
+            }
+        }
+    }
 }

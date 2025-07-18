@@ -10,7 +10,7 @@ view props =
         [ nav [ class "navbar" ]
             [ ul []
                 [ li [] [ a [ href "/" ] [ text "Home" ] ]
-                , li [] [ a [ href "/languages" ] [ text "Languages" ] ]
+                , li [] [ a [ href "/langs" ] [ text "Languages" ] ]
                 , li [] [ a [ href "/docs" ] [ text "Documents" ] ]
                 , li [] [ a [ href "/ttstest" ] [ text "TTSTest" ] ]
                 ]

@@ -32,3 +32,11 @@ pub async fn get_language_by_id(
     }
     Ok(Json(language))
 }
+
+pub async fn update_language(
+    State(ServerState { db, .. }): State<ServerState>,
+    Json(payload): Json<LanguageEntry>,
+) -> Result<Json<LanguageEntry>, ServerError> {
+    println!("language update attempt payload: {:?}", payload);
+    Ok(Json(db.update_language(payload).await?))
+}

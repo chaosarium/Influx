@@ -70,6 +70,7 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
             "/lang/{lang_id}",
             get(handlers::lang_handlers::get_language_by_id),
         )
+        .route("/lang/edit", post(handlers::lang_handlers::update_language))
         .route(
             "/extern/macos_dict/{language_identifier}/{orthography}",
             get(handlers::integration_handlers::lookup_in_macos_dict),
