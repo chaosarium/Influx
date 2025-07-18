@@ -9,9 +9,10 @@ import Components.Styles as Styles
 import Components.Topbar
 import Effect exposing (Effect)
 import Html exposing (..)
-import Html.Attributes exposing (class, style)
-import Html.Events exposing (onClick)
+import Html.Attributes exposing (class, selected, style, value)
+import Html.Events exposing (onClick, onInput)
 import Http
+import Json.Decode as D
 import Page exposing (Page)
 import Route exposing (Route)
 import Route.Path
@@ -36,6 +37,13 @@ type alias ThisRoute =
     Route { langId : String }
 
 
+type alias Voice =
+    { name : String
+    , lang : String
+    , default : Bool
+    }
+
+
 
 -- INIT
 
@@ -45,6 +53,7 @@ type alias Model =
     , languageData : Api.Data LanguageEntry
     , formModel : FormModel
     , isSubmitting : Bool
+    , availableVoices : List Voice
     }
 
 
@@ -58,6 +67,8 @@ type alias LanguageFormModel =
     { originalLanguage : LanguageEntry
     , workingLanguage : LanguageEntry
     , currentDictInput : String
+    , ttsRateInput : String
+    , ttsPitchInput : String
     }
 
 
@@ -76,8 +87,12 @@ init { languageId } () =
       , languageData = Api.Loading
       , formModel = LoadingForm
       , isSubmitting = False
+      , availableVoices = []
       }
-    , Effect.sendCmd (Api.GetLanguage.get { langId = languageId } LanguageDataResponded)
+    , Effect.batch
+        [ Effect.sendCmd (Api.GetLanguage.get { langId = languageId } LanguageDataResponded)
+        , Effect.ttsGetVoices
+        ]
     )
 
 
@@ -91,9 +106,13 @@ type Msg
     | UpdateNameInput String
     | UpdateDictsList (List String)
     | UpdateDictInput String
+    | UpdateTtsRateInput String
+    | UpdateTtsPitchInput String
+    | UpdateTtsVoice String
     | SubmitForm
     | CancelEdit
     | LanguageEditResponded (Result Http.Error LanguageEntry)
+    | VoicesReceived (Maybe D.Value)
     | SharedMsg Shared.Msg.Msg
 
 
@@ -111,6 +130,8 @@ update msg model =
                         { originalLanguage = language
                         , workingLanguage = language
                         , currentDictInput = ""
+                        , ttsRateInput = Maybe.withDefault "" (Maybe.map String.fromFloat language.ttsRate)
+                        , ttsPitchInput = Maybe.withDefault "" (Maybe.map String.fromFloat language.ttsPitch)
                         }
               }
             , Effect.none
@@ -155,6 +176,41 @@ update msg model =
                 _ ->
                     ( model, Effect.none )
 
+        UpdateTtsRateInput value ->
+            let
+                rateValue =
+                    if String.isEmpty value then
+                        Nothing
+
+                    else
+                        String.toFloat value
+            in
+            updateWorkingLanguage (\lang -> { lang | ttsRate = rateValue }) model
+                |> updateFormInput (\formModel -> { formModel | ttsRateInput = value })
+
+        UpdateTtsPitchInput value ->
+            let
+                pitchValue =
+                    if String.isEmpty value then
+                        Nothing
+
+                    else
+                        String.toFloat value
+            in
+            updateWorkingLanguage (\lang -> { lang | ttsPitch = pitchValue }) model
+                |> updateFormInput (\formModel -> { formModel | ttsPitchInput = value })
+
+        UpdateTtsVoice value ->
+            let
+                voiceValue =
+                    if String.isEmpty value then
+                        Nothing
+
+                    else
+                        Just value
+            in
+            updateWorkingLanguage (\lang -> { lang | ttsVoice = voiceValue }) model
+
         SubmitForm ->
             case model.formModel of
                 EditingLanguage { workingLanguage } ->
@@ -177,6 +233,8 @@ update msg model =
                         { originalLanguage = updatedLanguage
                         , workingLanguage = updatedLanguage
                         , currentDictInput = ""
+                        , ttsRateInput = Maybe.withDefault "" (Maybe.map String.fromFloat updatedLanguage.ttsRate)
+                        , ttsPitchInput = Maybe.withDefault "" (Maybe.map String.fromFloat updatedLanguage.ttsPitch)
                         }
                 , isSubmitting = False
               }
@@ -186,6 +244,21 @@ update msg model =
         LanguageEditResponded (Err httpError) ->
             ( { model | isSubmitting = False }
             , Effect.sendSharedMsg (Shared.Msg.AddToast ("Failed to update language: " ++ Api.stringOfHttpErrMsg httpError))
+            )
+
+        VoicesReceived maybeValue ->
+            let
+                voices =
+                    case maybeValue of
+                        Just value ->
+                            D.decodeValue (D.list voiceDecoder) value
+                                |> Result.withDefault []
+
+                        Nothing ->
+                            []
+            in
+            ( { model | availableVoices = voices }
+            , Effect.none
             )
 
 
@@ -205,13 +278,59 @@ updateWorkingLanguage updateFn model =
             ( model, Effect.none )
 
 
+updateFormInput : (LanguageFormModel -> LanguageFormModel) -> ( Model, Effect Msg ) -> ( Model, Effect Msg )
+updateFormInput updateFn ( model, effect ) =
+    case model.formModel of
+        EditingLanguage formModel ->
+            ( { model
+                | formModel = EditingLanguage (updateFn formModel)
+              }
+            , effect
+            )
+
+        _ ->
+            ( model, effect )
+
+
+voiceDecoder : D.Decoder Voice
+voiceDecoder =
+    D.map3 Voice
+        (D.field "name" D.string)
+        (D.field "lang" D.string)
+        (D.field "default" D.bool)
+
+
 
 -- SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Effect.jsIncoming
+        (\value ->
+            let
+                maybeMsg =
+                    case D.decodeValue (D.field "tag" D.string) value of
+                        Ok "VOICES_LIST" ->
+                            D.decodeValue (D.field "data" D.value) value
+                                |> Result.toMaybe
+                                |> VoicesReceived
+                                |> Just
+
+                        _ ->
+                            Nothing
+            in
+            case maybeMsg of
+                Just msg ->
+                    msg
+
+                Nothing ->
+                    D.decodeValue (D.field "tag" D.string) value
+                        |> Result.withDefault ""
+                        |> Utils.dbgLog "Unhandled incoming port"
+                        |> always Nothing
+                        |> Maybe.withDefault (SharedMsg (Shared.Msg.AddToast "Unknown message"))
+        )
 
 
 
@@ -233,13 +352,13 @@ view shared route model =
                 div [ style "color" "red" ] [ Html.text error ]
 
             EditingLanguage formModel ->
-                viewLanguageForm formModel model.isSubmitting
+                viewLanguageForm formModel model.isSubmitting model.availableVoices
         ]
     }
 
 
-viewLanguageForm : LanguageFormModel -> Bool -> Html Msg
-viewLanguageForm { originalLanguage, workingLanguage, currentDictInput } isSubmitting =
+viewLanguageForm : LanguageFormModel -> Bool -> List Voice -> Html Msg
+viewLanguageForm { originalLanguage, workingLanguage, currentDictInput, ttsRateInput, ttsPitchInput } isSubmitting availableVoices =
     let
         hasChanges =
             originalLanguage /= workingLanguage
@@ -248,6 +367,10 @@ viewLanguageForm { originalLanguage, workingLanguage, currentDictInput } isSubmi
         [ inputC [] "Language Code" "codeInput" UpdateCodeInput workingLanguage.code
         , inputC [] "Language Name" "nameInput" UpdateNameInput workingLanguage.name
         , stringListC "Dictionary URLs" "dictsInput" UpdateDictsList UpdateDictInput workingLanguage.dicts currentDictInput
+        , Html.h3 [] [ Html.text "Text-to-Speech Settings" ]
+        , inputC [] "TTS Rate (0.1-10.0)" "ttsRateInput" UpdateTtsRateInput ttsRateInput
+        , inputC [] "TTS Pitch (0.0-2.0)" "ttsPitchInput" UpdateTtsPitchInput ttsPitchInput
+        , viewVoiceDropdown workingLanguage.ttsVoice availableVoices
         , div []
             [ buttonC
                 [ onClick SubmitForm
@@ -275,6 +398,28 @@ viewLanguageForm { originalLanguage, workingLanguage, currentDictInput } isSubmi
 
           else
             Utils.htmlEmpty
+        ]
+
+
+viewVoiceDropdown : Maybe String -> List Voice -> Html Msg
+viewVoiceDropdown selectedVoice voices =
+    Html.div []
+        [ Html.label [] [ Html.text "TTS Voice" ]
+        , Html.select
+            [ onInput UpdateTtsVoice
+            , value (Maybe.withDefault "" selectedVoice)
+            ]
+            (Html.option [ value "" ] [ Html.text "-- Select Voice --" ]
+                :: List.map
+                    (\voice ->
+                        Html.option
+                            [ value voice.name
+                            , selected (selectedVoice == Just voice.name)
+                            ]
+                            [ Html.text (voice.name ++ " (" ++ voice.lang ++ ")") ]
+                    )
+                    voices
+            )
         ]
 
 

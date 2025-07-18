@@ -48,6 +48,9 @@ type alias LanguageEntry =
     , code : String
     , name : String
     , dicts : List String
+    , ttsRate : Maybe Float
+    , ttsPitch : Maybe Float
+    , ttsVoice : Maybe String
     }
 
 
@@ -58,6 +61,9 @@ languageEntryEncoder struct =
         , ( "code", Json.Encode.string struct.code )
         , ( "name", Json.Encode.string struct.name )
         , ( "dicts", Json.Encode.list Json.Encode.string struct.dicts )
+        , ( "tts_rate", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.float) struct.ttsRate )
+        , ( "tts_pitch", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.float) struct.ttsPitch )
+        , ( "tts_voice", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.string) struct.ttsVoice )
         ]
 
 
@@ -447,6 +453,9 @@ languageEntryDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "code" Json.Decode.string))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "name" Json.Decode.string))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "dicts" (Json.Decode.list Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "tts_rate" (Json.Decode.nullable Json.Decode.float)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "tts_pitch" (Json.Decode.nullable Json.Decode.float)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "tts_voice" (Json.Decode.nullable Json.Decode.string)))
 
 
 documentDecoder : Json.Decode.Decoder Document

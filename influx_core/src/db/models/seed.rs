@@ -37,6 +37,9 @@ impl DB {
                     "dict:///###".to_string(),
                     "http://www.wordreference.com/fren/###".to_string(),
                 ],
+                tts_rate: None,
+                tts_pitch: None,
+                tts_voice: None,
             },
             LanguageEntry {
                 id: None,
@@ -46,18 +49,27 @@ impl DB {
                     "dict:///###".to_string(),
                     "http://www.wordreference.com/enfr/###".to_string(),
                 ],
+                tts_rate: None,
+                tts_pitch: None,
+                tts_voice: None,
             },
             LanguageEntry {
                 id: None,
                 code: "ja".to_string(),
                 name: "Japanese".to_string(),
                 dicts: vec!["dict:///###".to_string()],
+                tts_rate: None,
+                tts_pitch: None,
+                tts_voice: None,
             },
             LanguageEntry {
                 id: None,
                 code: "zh-hant".to_string(),
                 name: "Mandarin".to_string(),
                 dicts: vec!["dict:///###".to_string()],
+                tts_rate: None,
+                tts_pitch: None,
+                tts_voice: None,
             },
         ];
 

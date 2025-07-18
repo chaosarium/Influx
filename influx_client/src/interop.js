@@ -22,7 +22,7 @@ export const onReady = ({ app, env }) => {
                 case "GET_VOICES":
                     let voices = speechSynthesis.getVoices();
                     let voiceData = voices.map(v => ({ name: v.name, lang: v.lang, default: v.default }));
-                    app.ports.incoming.send({ tag: "VOICES_LIST", data: voiceData });
+                    app.ports.jsIncoming.send({ tag: "VOICES_LIST", data: voiceData });
                     return;
                 case "SPEAK":
                     let utterance = new SpeechSynthesisUtterance(data.text);
@@ -38,6 +38,22 @@ export const onReady = ({ app, env }) => {
                     return;
                 case "CANCEL":
                     speechSynthesis.cancel();
+                    return;
+                case "CANCEL_AND_SPEAK":
+                    speechSynthesis.cancel();
+                    // Small delay to ensure cancel completes before starting new speech
+                    setTimeout(() => {
+                        let utterance = new SpeechSynthesisUtterance(data.text);
+                        if (data.voice) {
+                            let voice = speechSynthesis.getVoices().find(v => v.name === data.voice);
+                            if (voice) {
+                                utterance.voice = voice;
+                            }
+                        }
+                        utterance.rate = data.rate || 1;
+                        utterance.pitch = data.pitch || 1;
+                        speechSynthesis.speak(utterance);
+                    }, 50);
                     return;
                 default:
                     console.warn(`Unhandled outgoing port: "${tag}"`);

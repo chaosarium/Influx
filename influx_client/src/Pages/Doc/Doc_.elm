@@ -9,6 +9,7 @@ import Components.AnnotatedText as AnnotatedText
 import Components.DbgDisplay
 import Components.TermEditForm as TermEditForm
 import Components.Topbar
+import Components.TtsEmitter
 import Datastore.DictContext as DictContext
 import Datastore.DocContext as DocContext
 import Datastore.FocusContext as FocusContext
@@ -80,6 +81,9 @@ type Msg
     | NoopMouseEvent FocusContext.Msg -- for mouse events that don't change the focus context
       -- Term editor...
     | TermEditorEvent TermEditForm.Msg
+      -- TTS controls...
+    | StartTts
+    | StopTts
       -- Shared
     | SharedMsg Shared.Msg.Msg
 
@@ -168,6 +172,35 @@ update msg model =
 
         NoopMouseEvent _ ->
             ( model, Effect.none )
+
+        StartTts ->
+            case model.get_doc_api_res of
+                Api.Success response ->
+                    let
+                        selectedText =
+                            Maybe.withDefault "" model.focus_ctx.selected_text
+
+                        language =
+                            response.docPackage.language
+                    in
+                    if String.isEmpty (String.trim selectedText) then
+                        ( model, Effect.none )
+
+                    else
+                        ( model
+                        , Effect.ttsCancelAndSpeak
+                            { text = selectedText
+                            , voice = language.ttsVoice
+                            , rate = language.ttsRate
+                            , pitch = language.ttsPitch
+                            }
+                        )
+
+                _ ->
+                    ( model, Effect.none )
+
+        StopTts ->
+            ( model, Effect.ttsCancel )
 
 
 
@@ -358,6 +391,19 @@ view shared route model =
                     ++ Maybe.withDefault "" model.focus_ctx.selected_text
                 )
             ]
+
+        -- TTS controls for selected text
+        , case model.get_doc_api_res of
+            Api.Success response ->
+                Components.TtsEmitter.view
+                    { text = Maybe.withDefault "" model.focus_ctx.selected_text
+                    , language = response.docPackage.language
+                    , onStartTts = StartTts
+                    , onStopTts = StopTts
+                    }
+
+            _ ->
+                text ""
 
         -- selected segment
         , div []

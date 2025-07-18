@@ -6,7 +6,7 @@ port module Effect exposing
     , pushRoutePath, replaceRoutePath
     , loadExternalUrl, back
     , map, toCmd
-    , jsIncoming, openWindowDialog, sendSharedMsg, ttsCancel, ttsGetVoices, ttsSpeak
+    , jsIncoming, openWindowDialog, sendSharedMsg, ttsCancel, ttsCancelAndSpeak, ttsGetVoices, ttsSpeak
     )
 
 {-|
@@ -198,6 +198,20 @@ ttsCancel =
     SendMessageToJavaScript
         { tag = "CANCEL"
         , data = Json.Encode.null
+        }
+
+
+ttsCancelAndSpeak : { text : String, voice : Maybe String, rate : Maybe Float, pitch : Maybe Float } -> Effect msg
+ttsCancelAndSpeak options =
+    SendMessageToJavaScript
+        { tag = "CANCEL_AND_SPEAK"
+        , data =
+            Json.Encode.object
+                [ ( "text", Json.Encode.string options.text )
+                , ( "voice", Maybe.withDefault Json.Encode.null (Maybe.map Json.Encode.string options.voice) )
+                , ( "rate", Maybe.withDefault Json.Encode.null (Maybe.map Json.Encode.float options.rate) )
+                , ( "pitch", Maybe.withDefault Json.Encode.null (Maybe.map Json.Encode.float options.pitch) )
+                ]
         }
 
 

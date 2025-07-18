@@ -5,7 +5,10 @@ CREATE TABLE IF NOT EXISTS language (
 
     code TEXT NOT NULL,
     dicts TEXT[] NOT NULL,
-    name TEXT NOT NULL, 
+    name TEXT NOT NULL,
+    tts_rate DOUBLE PRECISION,
+    tts_pitch DOUBLE PRECISION,
+    tts_voice TEXT,
     
     created_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     updated_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp

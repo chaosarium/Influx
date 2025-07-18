@@ -83,7 +83,8 @@ impl DB {
                     r#"
                         SELECT 
                             d.id, d.lang_id, d.title, d.content, d.doc_type, d.tags, d.created_ts, d.updated_ts,
-                            l.code as lang_code, l.name as lang_name, l.dicts as lang_dicts
+                            l.code as lang_code, l.name as lang_name, l.dicts as lang_dicts,
+                            l.tts_rate as lang_tts_rate, l.tts_pitch as lang_tts_pitch, l.tts_voice as lang_tts_voice
                         FROM document d
                         JOIN language l ON d.lang_id = l.id
                         ORDER BY d.created_ts ASC
@@ -120,6 +121,9 @@ impl DB {
                             code: record.lang_code,
                             name: record.lang_name,
                             dicts: record.lang_dicts,
+                            tts_rate: record.lang_tts_rate,
+                            tts_pitch: record.lang_tts_pitch,
+                            tts_voice: record.lang_tts_voice,
                         },
                     })
                     .collect();
