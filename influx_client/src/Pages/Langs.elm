@@ -3,6 +3,7 @@ module Pages.Langs exposing (Model, Msg, page)
 import Api
 import Api.GetLanguages
 import Bindings exposing (InfluxResourceId(..), LanguageEntry)
+import BindingsUtils
 import Components.Topbar
 import Effect exposing (Effect)
 import Html exposing (..)
@@ -70,16 +71,6 @@ subscriptions model =
 -- VIEW
 
 
-languageIdToString : InfluxResourceId -> String
-languageIdToString id =
-    case id of
-        SerialId intId ->
-            String.fromInt intId
-
-        StringId stringId ->
-            stringId
-
-
 viewLanguagesTable : List LanguageEntry -> Html msg
 viewLanguagesTable languages =
     table [ style "border-collapse" "collapse", style "width" "100%" ]
@@ -105,7 +96,7 @@ viewLanguagesTable languages =
                             [ case language.id of
                                 Just langId ->
                                     a
-                                        [ href ("/lang/edit/" ++ languageIdToString langId) ]
+                                        [ href ("/lang/edit/" ++ BindingsUtils.influxResourceIdToString langId) ]
                                         [ text "Edit" ]
 
                                 Nothing ->

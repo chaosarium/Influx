@@ -4,6 +4,7 @@ import Api
 import Api.GetAnnotatedDoc
 import Api.TermEdit
 import Bindings exposing (..)
+import BindingsUtils
 import Components.AnnotatedText as AnnotatedText
 import Components.DbgDisplay
 import Components.TermEditForm as TermEditForm
@@ -14,7 +15,7 @@ import Datastore.FocusContext as FocusContext
 import Dict
 import Effect exposing (Effect)
 import Html exposing (..)
-import Html.Attributes exposing (class)
+import Html.Attributes exposing (class, href, style)
 import Html.Events
 import Html.Extra
 import Http
@@ -182,6 +183,57 @@ subscriptions model =
 -- VIEW
 
 
+viewDocumentInfo : GetDocResponse -> Html msg
+viewDocumentInfo response =
+    let
+        document =
+            response.docPackage.document
+
+        language =
+            response.docPackage.language
+
+        documentId =
+            BindingsUtils.influxResourceIdToString response.docPackage.documentId
+
+        languageId =
+            case language.id of
+                Just langId ->
+                    BindingsUtils.influxResourceIdToString langId
+
+                Nothing ->
+                    "unknown"
+    in
+    div []
+        [ h2 [] [ text document.title ]
+        , p []
+            [ text "Language: "
+            , text language.name
+            , text " ("
+            , text language.code
+            , text ")"
+            ]
+        , p []
+            [ text "Type: "
+            , text document.docType
+            ]
+        , p []
+            [ text "Tags: "
+            , text (String.join ", " document.tags)
+            ]
+        , p []
+            [ text "Created: "
+            , text (String.left 10 document.createdTs)
+            , text " | Updated: "
+            , text (String.left 10 document.updatedTs)
+            ]
+        , p []
+            [ a [ href ("/doc/edit/" ++ documentId) ] [ text "Edit Document" ]
+            , text " | "
+            , a [ href ("/lang/edit/" ++ languageId) ] [ text "Edit Language" ]
+            ]
+        ]
+
+
 viewSegExtraInfo : DictContext.T -> SentSegV2 -> Html msg
 viewSegExtraInfo dict seg =
     let
@@ -267,20 +319,28 @@ view shared route model =
     , body =
         [ Components.Topbar.view {}
         , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
-        , Html.h1 [] [ Html.text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
         , case model.get_doc_api_res of
             Api.Loading ->
-                Html.text "Loading..."
+                div []
+                    [ Html.h1 [] [ Html.text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
+                    , Html.text "Loading..."
+                    ]
 
             Api.Failure err ->
-                Html.text ("Error: " ++ Api.stringOfHttpErrMsg err)
+                div []
+                    [ Html.h1 [] [ Html.text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
+                    , Html.text ("Error: " ++ Api.stringOfHttpErrMsg err)
+                    ]
 
-            Api.Success _ ->
-                div [ class "annotated-doc-div", class "dbg-on" ]
-                    (AnnotatedText.view
-                        annotatedDocViewCtx
-                        model.working_doc
-                    )
+            Api.Success response ->
+                div []
+                    [ viewDocumentInfo response
+                    , div [ class "annotated-doc-div", class "dbg-on" ]
+                        (AnnotatedText.view
+                            annotatedDocViewCtx
+                            model.working_doc
+                        )
+                    ]
 
         -- for debugging check focus context model
         , Components.DbgDisplay.view "model.focus_ctx.last_hovered_at" model.focus_ctx.last_hovered_at

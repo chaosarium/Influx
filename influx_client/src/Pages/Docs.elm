@@ -3,6 +3,7 @@ module Pages.Docs exposing (Model, Msg, page)
 import Api
 import Api.GetDocuments
 import Bindings exposing (DocPackage, InfluxResourceId(..))
+import BindingsUtils
 import Components.DbgDisplay
 import Components.Topbar
 import Effect exposing (Effect)
@@ -87,21 +88,11 @@ formatDate dateString =
     String.left 10 dateString
 
 
-documentIdToString : InfluxResourceId -> String
-documentIdToString id =
-    case id of
-        SerialId intId ->
-            String.fromInt intId
-
-        StringId stringId ->
-            stringId
-
-
 viewDocumentRow : DocPackage -> Html msg
 viewDocumentRow docPackage =
     let
         documentId =
-            documentIdToString docPackage.documentId
+            BindingsUtils.influxResourceIdToString docPackage.documentId
 
         tagsString =
             String.join ", " docPackage.document.tags
@@ -137,7 +128,7 @@ viewDocumentsTable docPackages =
                 (\docPackage ->
                     tr [ style "border" "1px solid #ddd" ]
                         [ td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ a [ href ("/doc/" ++ documentIdToString docPackage.documentId) ]
+                            [ a [ href ("/doc/" ++ BindingsUtils.influxResourceIdToString docPackage.documentId) ]
                                 [ text docPackage.document.title ]
                             ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
@@ -152,7 +143,7 @@ viewDocumentsTable docPackages =
                             [ text (formatDate docPackage.document.updatedTs) ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
                             [ a
-                                [ href ("/doc/edit/" ++ documentIdToString docPackage.documentId)
+                                [ href ("/doc/edit/" ++ BindingsUtils.influxResourceIdToString docPackage.documentId)
                                 ]
                                 [ text "Edit" ]
                             ]

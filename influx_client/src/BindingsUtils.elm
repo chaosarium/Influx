@@ -42,3 +42,13 @@ phraseDefaultUnmarkedToL1 phrase =
 
         _ ->
             phrase
+
+
+influxResourceIdToString : InfluxResourceId -> String
+influxResourceIdToString id =
+    case id of
+        SerialId intId ->
+            String.fromInt intId
+
+        StringId stringId ->
+            stringId
