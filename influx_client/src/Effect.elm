@@ -6,7 +6,7 @@ port module Effect exposing
     , pushRoutePath, replaceRoutePath
     , loadExternalUrl, back
     , map, toCmd
-    , jsIncoming, openWindowDialog, ttsCancel, ttsGetVoices, ttsSpeak
+    , jsIncoming, openWindowDialog, sendSharedMsg, ttsCancel, ttsGetVoices, ttsSpeak
     )
 
 {-|
@@ -87,6 +87,13 @@ sendMsg msg =
     Task.succeed msg
         |> Task.perform identity
         |> SendCmd
+
+
+{-| Send a message to the shared state.
+-}
+sendSharedMsg : Shared.Msg.Msg -> Effect msg
+sendSharedMsg sharedMsg =
+    SendSharedMsg sharedMsg
 
 
 

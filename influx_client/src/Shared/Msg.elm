@@ -2,6 +2,9 @@ module Shared.Msg exposing (Msg(..))
 
 {-| -}
 
+import Toast
+import Utils.ModifierState
+
 
 {-| Normally, this value would live in "Shared.elm"
 but that would lead to a circular dependency import cycle.
@@ -12,3 +15,6 @@ own file, so they can be imported by `Effect.elm`
 -}
 type Msg
     = NoOp
+    | ToastMsg Toast.Msg
+    | ModifierStateMsg Utils.ModifierState.Msg
+    | AddToast String

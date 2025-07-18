@@ -21,6 +21,7 @@ import Http
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
+import Shared.Msg
 import Toast
 import Utils
 import Utils.ModifierState as ModifierState
@@ -33,7 +34,7 @@ page shared route =
         { init = init { documentId = route.params.doc }
         , update = update
         , subscriptions = subscriptions
-        , view = view route
+        , view = view shared route
         }
 
 
@@ -51,8 +52,6 @@ type alias Model =
     , working_dict : DictContext.T
     , focus_ctx : FocusContext.T
     , form_model : TermEditForm.Model
-    , modifier_state : ModifierState.Model
-    , toast_tray : Toast.Tray String
     }
 
 
@@ -63,8 +62,6 @@ init { documentId } () =
       , working_dict = DictContext.empty
       , focus_ctx = FocusContext.new
       , form_model = TermEditForm.empty
-      , modifier_state = ModifierState.init
-      , toast_tray = Toast.tray
       }
     , Effect.sendCmd (Api.GetAnnotatedDoc.get { filepath = documentId } ApiResponded)
     )
@@ -83,22 +80,14 @@ type Msg
       -- Term editor...
     | TermEditorEvent TermEditForm.Msg
       -- Shared
-    | ModifierStateMsg ModifierState.Msg
-    | ToastMsg Toast.Msg
-    | AddToast String
+    | SharedMsg Shared.Msg.Msg
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
-        ToastMsg tmsg ->
-            let
-                ( toast_tray, toast_cmd ) =
-                    Toast.update tmsg model.toast_tray
-            in
-            ( { model | toast_tray = toast_tray }
-            , Effect.sendCmd (Cmd.map ToastMsg toast_cmd)
-            )
+        SharedMsg sharedMsg ->
+            ( model, Effect.sendSharedMsg sharedMsg )
 
         ApiResponded (Ok res) ->
             let
@@ -112,9 +101,6 @@ update msg model =
               }
             , Effect.none
             )
-
-        ModifierStateMsg m ->
-            ( { model | modifier_state = ModifierState.update m model.modifier_state }, Effect.none )
 
         ApiResponded (Err httpError) ->
             ( { model | get_doc_api_res = Api.Failure httpError }, Effect.none )
@@ -166,12 +152,8 @@ update msg model =
                     )
 
                 TermEditForm.AddToast message ->
-                    let
-                        ( toast_tray, toast_cmd ) =
-                            Toast.add model.toast_tray (Toast.expireIn 5000 message)
-                    in
-                    ( { model | toast_tray = toast_tray }
-                    , Effect.sendCmd (Cmd.map ToastMsg toast_cmd)
+                    ( model
+                    , Effect.sendSharedMsg (Shared.Msg.AddToast message)
                     )
 
                 _ ->
@@ -183,16 +165,7 @@ update msg model =
                     , Effect.map TermEditorEvent child_fx
                     )
 
-        AddToast message ->
-            let
-                ( toast_tray, toast_cmd ) =
-                    Toast.add model.toast_tray (Toast.expireIn 1000 message)
-            in
-            ( { model | toast_tray = toast_tray }
-            , Effect.sendCmd (Cmd.map ToastMsg toast_cmd)
-            )
-
-        _ ->
+        NoopMouseEvent _ ->
             ( model, Effect.none )
 
 
@@ -202,9 +175,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ ModifierState.subscriptions ModifierStateMsg
-        ]
+    Sub.none
 
 
 
@@ -252,12 +223,12 @@ viewSegExtraInfo dict seg =
 -- end
 
 
-view : ThisRoute -> Model -> View Msg
-view route model =
+view : Shared.Model -> ThisRoute -> Model -> View Msg
+view shared route model =
     let
         annotatedDocViewCtx =
             { dict = model.working_dict
-            , modifier_state = model.modifier_state
+            , modifier_state = shared.modifier_state
             , mouse_handler = SelectionMouseEvent
             , focus_predicate =
                 case model.focus_ctx.slice_selection of
@@ -273,7 +244,7 @@ view route model =
     let
         selectedSegViewCtx =
             { dict = model.working_dict
-            , modifier_state = model.modifier_state
+            , modifier_state = shared.modifier_state
             , mouse_handler = NoopMouseEvent
             , focus_predicate = \_ -> False
             , seg_display_predicate =
@@ -295,7 +266,7 @@ view route model =
     { title = "Document view"
     , body =
         [ Components.Topbar.view {}
-        , Html.div [ class "toast-tray" ] [ Toast.render viewToast model.toast_tray (Toast.config ToastMsg) ]
+        , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
         , Html.h1 [] [ Html.text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
         , case model.get_doc_api_res of
             Api.Loading ->

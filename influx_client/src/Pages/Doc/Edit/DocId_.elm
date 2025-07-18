@@ -17,6 +17,7 @@ import Page exposing (Page)
 import Route exposing (Route)
 import Route.Path
 import Shared
+import Shared.Msg
 import Toast
 import Utils
 import View exposing (View)
@@ -28,7 +29,7 @@ page shared route =
         { init = init { documentId = route.params.docId }
         , update = update
         , subscriptions = subscriptions
-        , view = view route
+        , view = view shared route
         }
 
 
@@ -45,7 +46,6 @@ type alias Model =
     , documentData : Api.Data Document
     , languagesData : Api.Data (List LanguageEntry)
     , formModel : FormModel
-    , toast_tray : Toast.Tray String
     , isSubmitting : Bool
     }
 
@@ -78,7 +78,6 @@ init { documentId } () =
       , documentData = Api.Loading
       , languagesData = Api.Loading
       , formModel = LoadingForm
-      , toast_tray = Toast.tray
       , isSubmitting = False
       }
     , Effect.batch
@@ -104,30 +103,14 @@ type Msg
     | SubmitForm
     | CancelEdit
     | DocumentEditResponded (Result Http.Error Document)
-    | ToastMsg Toast.Msg
-    | AddToast String
+    | SharedMsg Shared.Msg.Msg
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
-        ToastMsg tmsg ->
-            let
-                ( toast_tray, toast_cmd ) =
-                    Toast.update tmsg model.toast_tray
-            in
-            ( { model | toast_tray = toast_tray }
-            , Effect.sendCmd (Cmd.map ToastMsg toast_cmd)
-            )
-
-        AddToast message ->
-            let
-                ( toast_tray, toast_cmd ) =
-                    Toast.add model.toast_tray (Toast.expireIn 5000 message)
-            in
-            ( { model | toast_tray = toast_tray }
-            , Effect.sendCmd (Cmd.map ToastMsg toast_cmd)
-            )
+        SharedMsg sharedMsg ->
+            ( model, Effect.sendSharedMsg sharedMsg )
 
         DocumentDataResponded (Ok res) ->
             let
@@ -161,7 +144,7 @@ update msg model =
 
         LanguagesDataResponded (Err httpError) ->
             ( { model | languagesData = Api.Failure httpError }
-            , Effect.sendMsg (AddToast ("Failed to load languages: " ++ Api.stringOfHttpErrMsg httpError))
+            , Effect.sendSharedMsg (Shared.Msg.AddToast ("Failed to load languages: " ++ Api.stringOfHttpErrMsg httpError))
             )
 
         UpdateTitleInput value ->
@@ -196,7 +179,7 @@ update msg model =
                     updateWorkingDocument (\doc -> { doc | langId = SerialId langId }) model
 
                 Nothing ->
-                    ( model, Effect.sendMsg (AddToast "Invalid language selection") )
+                    ( model, Effect.sendSharedMsg (Shared.Msg.AddToast "Invalid language selection") )
 
         SubmitForm ->
             case model.formModel of
@@ -223,12 +206,12 @@ update msg model =
                         }
                 , isSubmitting = False
               }
-            , Effect.sendMsg (AddToast "Document updated successfully")
+            , Effect.sendSharedMsg (Shared.Msg.AddToast "Document updated successfully")
             )
 
         DocumentEditResponded (Err httpError) ->
             ( { model | isSubmitting = False }
-            , Effect.sendMsg (AddToast ("Failed to update document: " ++ Api.stringOfHttpErrMsg httpError))
+            , Effect.sendSharedMsg (Shared.Msg.AddToast ("Failed to update document: " ++ Api.stringOfHttpErrMsg httpError))
             )
 
 
@@ -281,12 +264,12 @@ languageOptions languages =
         languages
 
 
-view : ThisRoute -> Model -> View Msg
-view route model =
+view : Shared.Model -> ThisRoute -> Model -> View Msg
+view shared route model =
     { title = "Edit Document"
     , body =
         [ Components.Topbar.view {}
-        , Html.div [ class "toast-tray" ] [ Toast.render viewToast model.toast_tray (Toast.config ToastMsg) ]
+        , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
         , Html.h1 [] [ Html.text "Edit Document" ]
         , case model.formModel of
             LoadingForm ->
