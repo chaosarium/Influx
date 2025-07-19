@@ -108,7 +108,7 @@ pub async fn tokenise_pipeline(
         url = %response.url(),
         "NLP server response received"
     );
-    
+
     if response.status().is_success() {
         debug!("Request to NLP server succeeded");
         let res_json: AnnotatedDocV2 = response.json::<AnnotatedDocV2>().await?;

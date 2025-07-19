@@ -72,13 +72,21 @@ impl DB {
         }
     }
 
-    pub async fn get_all_documents(&self) -> Result<Vec<DocPackage>> {
+    pub async fn get_documents(
+        &self,
+        lang_id: Option<InfluxResourceId>,
+    ) -> Result<Vec<DocPackage>> {
         match self {
             Surreal { engine: _ } => {
                 // SurrealDB is deprecated, skip implementation
                 Err(anyhow::anyhow!("SurrealDB is deprecated"))
             }
             Postgres { pool } => {
+                let lang_id_i64 = match &lang_id {
+                    Some(id) => Some(id.as_i64()?),
+                    None => None,
+                };
+
                 let records = sqlx::query!(
                     r#"
                         SELECT 
@@ -87,8 +95,10 @@ impl DB {
                             l.tts_rate as lang_tts_rate, l.tts_pitch as lang_tts_pitch, l.tts_voice as lang_tts_voice
                         FROM document d
                         JOIN language l ON d.lang_id = l.id
+                        WHERE ($1::bigint IS NULL OR d.lang_id = $1)
                         ORDER BY d.created_ts ASC
-                    "#
+                    "#,
+                    lang_id_i64
                 )
                 .fetch_all(pool.as_ref())
                 .await?;

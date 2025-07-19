@@ -17,7 +17,7 @@ use axum::{
 use md5;
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 const USE_CACHE: bool = true;
 
@@ -25,28 +25,15 @@ pub async fn get_docs_list(
     State(ServerState { influx_path: _, db }): State<ServerState>,
     Json(request): Json<GetDocsRequest>,
 ) -> Response {
-    match request.language_id {
-        None => match db.get_all_documents().await {
-            Ok(doc_packages) => (StatusCode::OK, Json(doc_packages)).into_response(),
-            Err(e) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({
-                    "error": format!("Failed to retrieve all documents: {}", e),
-                })),
-            )
-                .into_response(),
-        },
-        Some(lang_id) => {
-            // Return documents for specific language
-            warn!(language_id = ?lang_id, "Documents by language not yet implemented");
-            (
-                StatusCode::NOT_IMPLEMENTED,
-                Json(json!({
-                    "error": "Documents by language not yet implemented",
-                })),
-            )
-                .into_response()
-        }
+    match db.get_documents(request.language_id).await {
+        Ok(doc_packages) => (StatusCode::OK, Json(doc_packages)).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error": format!("Failed to retrieve documents: {}", e),
+            })),
+        )
+            .into_response(),
     }
 }
 
