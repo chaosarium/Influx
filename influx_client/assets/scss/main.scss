@@ -54,7 +54,7 @@ pre.dbg-json-pre {
     border-bottom: 1px solid rgb(233, 233, 233);
     padding-top: 10px;
     padding-bottom: 10px;
-    line-height: 1.8;
+    line-height: 3.2;
     user-select: none;
     white-space: preserve;
 }
@@ -256,10 +256,10 @@ span.clickable-tkn-span {
 .beforeafter::before {
     content: attr(data-top);
     position: absolute;
-    top: -1.8em;
+    top: -1.2em;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 0.75em;
+    font-size: 0.6em;
     color: #2563eb;
     font-weight: 500;
     line-height: 1.2;
@@ -271,10 +271,10 @@ span.clickable-tkn-span {
 .beforeafter::after {
     content: attr(data-bottom);
     position: absolute;
-    bottom: -1.8em;
+    bottom: -1.2em;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 0.75em;
+    font-size: 0.6em;
     color: #dc2626;
     font-style: italic;
     line-height: 1.2;
