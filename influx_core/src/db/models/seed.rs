@@ -6,7 +6,8 @@ use crate::db::models::lang::LanguageEntry;
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
+use tracing::{debug, error, info};
 
 fn create_document(
     lang_id: crate::db::InfluxResourceId,
@@ -76,7 +77,7 @@ impl DB {
         let mut lang_map = HashMap::new();
 
         for language in languages {
-            println!("Creating language: {:?}", language);
+            debug!(code = %language.code, name = %language.name, "Creating language");
             let code = language.code.clone();
             let created_language = self.create_language(language).await?;
             let lang_id = created_language.id.unwrap();
@@ -263,7 +264,7 @@ impl DB {
         ]);
 
         for document in documents {
-            println!("Creating document: {:?}", document.title);
+            debug!(title = %document.title, lang_id = ?document.lang_id, "Creating document");
             self.create_document(document).await?;
         }
 

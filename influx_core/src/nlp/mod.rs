@@ -3,12 +3,13 @@ use core::panic;
 use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
-use anyhow;
+use anyhow::{self, Context};
 use indoc::indoc;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::env;
 use std::path::PathBuf;
+use tracing::{debug, error, info, warn};
 use ts_rs::TS;
 
 use crate::db::models::phrase::Phrase;
@@ -102,11 +103,21 @@ pub async fn tokenise_pipeline(
     });
     let response = client.post(&url).json(&payload).send().await?;
 
-    dbg!(&response);
+    info!(
+        status = %response.status(),
+        url = %response.url(),
+        "NLP server response received"
+    );
+    
     if response.status().is_success() {
-        println!("Request to NLP server succeeded");
+        debug!("Request to NLP server succeeded");
         let res_json: AnnotatedDocV2 = response.json::<AnnotatedDocV2>().await?;
-        dbg!(&res_json);
+        debug!(
+            segments_count = res_json.segments.len(),
+            orthography_count = res_json.orthography_set.len(),
+            lemma_count = res_json.lemma_set.len(),
+            "Parsed NLP response"
+        );
 
         let annotated_document: AnnotatedDocV2 = res_json;
         Ok(annotated_document)
@@ -203,12 +214,21 @@ pub fn phrase_fit_pipeline(
                             }
 
                             // Add the phrase token
-                            let phrase = potential_phrases
+                            let phrase = match potential_phrases
                                 .search_for_payload(
                                     lex_segment_orthographies[*lex_start..*lex_end].to_vec(),
                                 )
                                 .1
-                                .unwrap();
+                            {
+                                Some(p) => p,
+                                None => {
+                                    error!(
+                                        "Failed to find phrase in trie for orthographies: {:?}",
+                                        &lex_segment_orthographies[*lex_start..*lex_end]
+                                    );
+                                    return vec![]; // Return empty vec to continue processing
+                                }
+                            };
                             let phrase_start_char = original_segments[*start].start_char;
                             let phrase_end_char = original_segments[*end - 1].end_char;
                             let phrase_text = original_segments[*start..*end]
@@ -274,12 +294,12 @@ mod tests {
     use expect_test::{expect, Expect};
 
     #[tokio::test]
-    async fn test_tokenise_pipeline_small1() {
+    async fn test_tokenise_pipeline_small1() -> anyhow::Result<()> {
         const TEXT: &str = "Hello world! Hi!";
 
         let res = tokenise_pipeline(TEXT, "en".to_string()).await;
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let res = res.context("Failed to execute tokenise_pipeline test")?;
         let expected = expect![[r#"
             AnnotatedDocV2 {
                 text: "Hello world! Hi!",
@@ -481,12 +501,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_tokenise_pipeline_small2() {
+    async fn test_tokenise_pipeline_small2() -> anyhow::Result<()> {
         const TEXT: &str = "Let's  go.";
 
         let res = tokenise_pipeline(TEXT, "en".to_string()).await;
         assert!(res.is_ok());
-        let res = res.unwrap();
+        let res = res.context("Failed to execute tokenise_pipeline test")?;
         let expected = expect![[r#"
             AnnotatedDocV2 {
                 text: "Let's  go.",

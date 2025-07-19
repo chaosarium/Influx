@@ -5,12 +5,13 @@ use crate::handlers::api_interfaces::*;
 use crate::ServerState;
 use axum::extract::State;
 use axum::Json;
+use tracing::debug;
 
 pub async fn create_token(
     State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<Token>,
 ) -> Result<Json<Token>, ServerError> {
-    println!("token create attempt payload: {:?}", payload);
+    debug!(token_id = ?payload.id, orthography = %payload.orthography, "Creating token");
     Ok(Json(db.create_token(payload).await?))
 }
 
@@ -18,7 +19,7 @@ async fn create_phrase(
     State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<Phrase>,
 ) -> Result<Json<Phrase>, ServerError> {
-    println!("phrase create attempt payload: {:?}", payload);
+    debug!(phrase_id = ?payload.id, orthography_seq = ?payload.orthography_seq, "Creating phrase");
     Ok(Json(db.create_phrase(payload).await?))
 }
 
@@ -26,7 +27,7 @@ pub async fn update_token(
     State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<Token>,
 ) -> Result<Json<Token>, ServerError> {
-    println!("token update attempt payload: {:?}", payload);
+    debug!(token_id = ?payload.id, orthography = %payload.orthography, "Updating token");
     Ok(Json(db.update_token(payload).await?))
 }
 
@@ -34,7 +35,7 @@ pub async fn update_phrase(
     State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<Phrase>,
 ) -> Result<Json<Phrase>, ServerError> {
-    println!("phrase update attempt payload: {:?}", payload);
+    debug!(phrase_id = ?payload.id, orthography_seq = ?payload.orthography_seq, "Updating phrase");
     Ok(Json(db.update_phrase(payload).await?))
 }
 
@@ -42,7 +43,7 @@ pub async fn delete_token(
     State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<Token>,
 ) -> Result<Json<Token>, ServerError> {
-    println!("token delete attempt payload: {:?}", payload);
+    debug!(token_id = ?payload.id, orthography = %payload.orthography, "Deleting token");
     Ok(Json(db.delete_token_and_return_unmarked(payload).await?))
 }
 
@@ -50,7 +51,7 @@ pub async fn delete_phrase(
     State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<Phrase>,
 ) -> Result<Json<Phrase>, ServerError> {
-    println!("phrase delete attempt payload: {:?}", payload);
+    debug!(phrase_id = ?payload.id, orthography_seq = ?payload.orthography_seq, "Deleting phrase");
     Ok(Json(db.delete_phrase_and_return_deleted(payload).await?))
 }
 
@@ -58,7 +59,7 @@ pub async fn edit_term(
     State(state): State<ServerState>,
     Json(request): Json<TermEditRequest>,
 ) -> Result<Json<TermEditResponse>, ServerError> {
-    println!("term edit attempt request: {:?}", request);
+    debug!(action = ?request.requested_action, document_id = ?request.document_id, "Processing term edit request");
     use Term::*;
     use TermEditAction::*;
     let term_becomes = match (&request.requested_action, request.term) {

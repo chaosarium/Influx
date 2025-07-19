@@ -4,8 +4,8 @@ use crate::db::{deserialize_surreal_thing, deserialize_surreal_thing_opt};
 use crate::{db::InfluxResourceId, prelude::*};
 use anyhow::Result;
 use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
-use log::warn;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use tracing::{debug, warn};
 use DB::*;
 
 #[derive(
@@ -435,10 +435,14 @@ impl DB {
     pub async fn update_token(&self, token: Token) -> Result<Token> {
         assert!(token.id.is_some());
         assert!(token.orthography.to_lowercase() == token.orthography);
-        let id = token.id.clone().unwrap();
-        let existing_token = self.query_token_by_id(id.clone()).await?;
-        assert!(existing_token.is_some());
-        let existing_token = existing_token.unwrap();
+        let id = token
+            .id
+            .clone()
+            .ok_or_else(|| anyhow::anyhow!("Token must have an ID to be updated"))?;
+        let existing_token = self
+            .query_token_by_id(id.clone())
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Token with ID {:?} not found in database", id))?;
         if token.orthography != existing_token.orthography {
             if self
                 .token_exists(token.lang_id.clone(), token.orthography.clone())

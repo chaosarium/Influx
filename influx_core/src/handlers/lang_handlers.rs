@@ -9,11 +9,12 @@ use axum::Json;
 use crate::ServerState;
 
 use axum::extract::State;
+use tracing::debug;
 
 pub async fn get_language_list(
     State(ServerState { influx_path, db }): State<ServerState>,
 ) -> Result<Json<Vec<LanguageEntry>>, ServerError> {
-    println!("get_language_list");
+    debug!("Fetching language list");
     let languages = db.get_languages_vec().await?;
     Ok(Json(languages))
 }
@@ -37,6 +38,6 @@ pub async fn update_language(
     State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<LanguageEntry>,
 ) -> Result<Json<LanguageEntry>, ServerError> {
-    println!("language update attempt payload: {:?}", payload);
+    debug!(language_id = ?payload.id, code = %payload.code, name = %payload.name, "Updating language");
     Ok(Json(db.update_language(payload).await?))
 }

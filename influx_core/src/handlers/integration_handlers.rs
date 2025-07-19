@@ -7,13 +7,14 @@ use axum::extract::Path;
 use axum::extract::State;
 use axum::Json;
 use serde::Deserialize;
+use tracing::debug;
 
 pub async fn lookup_in_macos_dict(
     State(ServerState { db, .. }): State<ServerState>,
     Path((lang_id, orthography)): Path<(String, String)>,
 ) -> Result<(), ServerError> {
     let dict = integration::MacOSDict;
-    println!("lookup_in_macos_dict: {:?}", orthography);
+    debug!(orthography = %orthography, language = %lang_id, "Looking up word in macOS dictionary");
     dict.open_dictionary(orthography).await;
     Ok(())
 }

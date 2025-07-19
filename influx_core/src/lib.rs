@@ -4,10 +4,10 @@ use axum::{
     Router,
 };
 use clap::{Parser, ValueEnum};
-use log::info;
 use std::path::PathBuf;
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
+use tracing::info;
 
 pub mod db;
 pub(crate) mod doc_store;
@@ -101,7 +101,7 @@ mod tests {
     use std::fs;
 
     #[test]
-    fn generate_elm_bindings() {
+    fn generate_elm_bindings() -> anyhow::Result<()> {
         use crate::db::models::lang;
 
         let mut out_buf = vec![];
@@ -155,10 +155,12 @@ mod tests {
             queries: [],
             query_fields: [],
         })
-        .unwrap();
-        let out_str = String::from_utf8(out_buf).unwrap();
+        .context("Failed to generate Elm bindings")?;
+        let out_str =
+            String::from_utf8(out_buf).context("Failed to convert Elm bindings to UTF-8")?;
 
         let out_path = "../influx_client/src/Bindings.elm";
-        fs::write(out_path, out_str).expect("Unable to write file");
+        fs::write(out_path, out_str).context("Failed to write Elm bindings file")?;
+        Ok(())
     }
 }

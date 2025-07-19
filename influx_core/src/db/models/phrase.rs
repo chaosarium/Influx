@@ -292,11 +292,15 @@ impl DB {
             .iter()
             .all(|s| s.to_lowercase() == *s));
         assert!(phrase.id.is_some());
-        let id = phrase.id.clone().unwrap();
+        let id = phrase
+            .id
+            .clone()
+            .ok_or_else(|| anyhow::anyhow!("Phrase must have an ID to be updated"))?;
 
-        let existing_phrase = self.query_phrase_by_id(id.clone()).await?;
-        assert!(existing_phrase.is_some());
-        let existing_phrase = existing_phrase.unwrap();
+        let existing_phrase = self
+            .query_phrase_by_id(id.clone())
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Phrase with ID {:?} not found in database", id))?;
         if phrase.orthography_seq != existing_phrase.orthography_seq {
             assert!(
                 !self

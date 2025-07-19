@@ -17,7 +17,7 @@ use axum::{
 use md5;
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};
-use tracing::info;
+use tracing::{debug, info, warn};
 
 const USE_CACHE: bool = true;
 
@@ -38,7 +38,14 @@ pub async fn get_docs_list(
         },
         Some(lang_id) => {
             // Return documents for specific language
-            panic!("not yet implemented")
+            warn!(language_id = ?lang_id, "Documents by language not yet implemented");
+            (
+                StatusCode::NOT_IMPLEMENTED,
+                Json(json!({
+                    "error": "Documents by language not yet implemented",
+                })),
+            )
+                .into_response()
         }
     }
 }
@@ -83,7 +90,10 @@ pub(crate) async fn get_annotated_doc_logic(
         .get_language(document.lang_id.clone())
         .await?
         .ok_or_else(|| ServerError(anyhow::anyhow!("Language not found for document")))?;
-    let lang_id = lang_entry.id.clone().unwrap();
+    let lang_id = lang_entry
+        .id
+        .clone()
+        .ok_or_else(|| ServerError(anyhow::anyhow!("Language entry missing ID")))?;
     let lang_code = lang_entry.code.clone();
 
     let text = document.content.clone();
@@ -182,6 +192,6 @@ pub async fn update_document(
     State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<Document>,
 ) -> Result<Json<Document>, ServerError> {
-    println!("document update attempt payload: {:?}", payload);
+    debug!(document_id = ?payload.id, title = %payload.title, "Updating document");
     Ok(Json(db.update_document(payload).await?))
 }
