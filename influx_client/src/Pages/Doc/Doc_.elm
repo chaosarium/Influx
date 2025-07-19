@@ -21,6 +21,7 @@ import Html.Attributes exposing (class, href, style)
 import Html.Events
 import Html.Extra
 import Http
+import Json.Decode as Decode
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
@@ -57,6 +58,7 @@ type alias Model =
     , form_model : TermEditForm.Model
     , translation_result : Maybe String
     , popup_state : Maybe { position : { x : Float, y : Float }, content : AnnotatedText.PopupContent }
+    , annotation_config : AnnotatedText.AnnotationConfig
     }
 
 
@@ -69,6 +71,7 @@ init { documentId } () =
       , form_model = TermEditForm.empty
       , translation_result = Nothing
       , popup_state = Nothing
+      , annotation_config = { topAnnotation = AnnotatedText.Definition, bottomAnnotation = AnnotatedText.Phonetic }
       }
     , Effect.sendCmd (Api.GetAnnotatedDoc.get { filepath = documentId } ApiResponded)
     )
@@ -95,6 +98,9 @@ type Msg
       -- Popup...
     | ShowPopup { x : Float, y : Float } AnnotatedText.PopupContent
     | HidePopup
+      -- Annotation configuration...
+    | SetTopAnnotation AnnotatedText.AnnotationOption
+    | SetBottomAnnotation AnnotatedText.AnnotationOption
       -- Shared
     | SharedMsg Shared.Msg.Msg
 
@@ -265,6 +271,16 @@ update msg model =
             , Effect.none
             )
 
+        SetTopAnnotation option ->
+            ( { model | annotation_config = { topAnnotation = option, bottomAnnotation = model.annotation_config.bottomAnnotation } }
+            , Effect.none
+            )
+
+        SetBottomAnnotation option ->
+            ( { model | annotation_config = { topAnnotation = model.annotation_config.topAnnotation, bottomAnnotation = option } }
+            , Effect.none
+            )
+
 
 
 -- SUBSCRIPTIONS
@@ -367,6 +383,229 @@ viewSegExtraInfo dict seg =
         (token_info ++ phrase_info)
 
 
+annotationOptionToString : AnnotatedText.AnnotationOption -> String
+annotationOptionToString option =
+    case option of
+        AnnotatedText.None ->
+            "None"
+
+        AnnotatedText.Phonetic ->
+            "Phonetic"
+
+        AnnotatedText.Definition ->
+            "Definition"
+
+        AnnotatedText.Lemma ->
+            "Lemma"
+
+        AnnotatedText.Upos ->
+            "Part of Speech (UPOS)"
+
+        AnnotatedText.Xpos ->
+            "Language-specific POS (XPOS)"
+
+
+viewAnnotationSelector : String -> AnnotatedText.AnnotationOption -> (AnnotatedText.AnnotationOption -> Msg) -> Html Msg
+viewAnnotationSelector label currentOption onSelect =
+    let
+        options =
+            [ AnnotatedText.None
+            , AnnotatedText.Definition
+            , AnnotatedText.Phonetic
+            , AnnotatedText.Lemma
+            , AnnotatedText.Upos
+            , AnnotatedText.Xpos
+            ]
+
+        optionView option =
+            Html.option
+                [ Html.Attributes.value (annotationOptionToString option)
+                , Html.Attributes.selected (option == currentOption)
+                ]
+                [ Html.text (annotationOptionToString option) ]
+    in
+    div []
+        [ Html.label [] [ Html.text (label ++ ": ") ]
+        , Html.select
+            [ Html.Events.on "change"
+                (Decode.map
+                    (\value ->
+                        case value of
+                            "None" ->
+                                onSelect AnnotatedText.None
+
+                            "Phonetic" ->
+                                onSelect AnnotatedText.Phonetic
+
+                            "Definition" ->
+                                onSelect AnnotatedText.Definition
+
+                            "Lemma" ->
+                                onSelect AnnotatedText.Lemma
+
+                            "Part of Speech (UPOS)" ->
+                                onSelect AnnotatedText.Upos
+
+                            "Language-specific POS (XPOS)" ->
+                                onSelect AnnotatedText.Xpos
+
+                            _ ->
+                                onSelect AnnotatedText.None
+                    )
+                    (Decode.at [ "target", "value" ] Decode.string)
+                )
+            ]
+            (List.map optionView options)
+        ]
+
+
+viewAnnotationControls : AnnotatedText.AnnotationConfig -> Html Msg
+viewAnnotationControls config =
+    div []
+        [ h3 [] [ Html.text "Annotation Display Settings" ]
+        , p [] [ Html.text "Choose what to display above and below the text:" ]
+        , div []
+            [ viewAnnotationSelector "Top annotation" config.topAnnotation SetTopAnnotation
+            , viewAnnotationSelector "Bottom annotation" config.bottomAnnotation SetBottomAnnotation
+            ]
+        ]
+
+
+viewTermDetails : DictContext.T -> Maybe SentSegV2 -> Html msg
+viewTermDetails dict maybeSeg =
+    case maybeSeg of
+        Nothing ->
+            Html.text ""
+
+        Just seg ->
+            let
+                orthography =
+                    case seg.inner of
+                        TokenSeg token ->
+                            token.orthography
+
+                        PhraseSeg phrase ->
+                            phrase.normalisedOrthography
+
+                        WhitespaceSeg ->
+                            ""
+
+                        PunctuationSeg ->
+                            ""
+
+                maybeToken =
+                    if String.isEmpty orthography then
+                        Nothing
+
+                    else
+                        DictContext.lookupToken dict orthography
+
+                maybePhrase =
+                    if String.isEmpty orthography then
+                        Nothing
+
+                    else
+                        DictContext.lookupPhrase dict orthography
+
+                termInfo =
+                    case ( maybeToken, maybePhrase ) of
+                        ( Just token, _ ) ->
+                            [ li [] [ Html.text ("Orthography: " ++ token.orthography) ]
+                            , li [] [ Html.text ("Definition: " ++ token.definition) ]
+                            , li [] [ Html.text ("Phonetic: " ++ token.phonetic) ]
+                            , li [] [ Html.text ("Notes: " ++ token.notes) ]
+                            , li [] [ Html.text ("Original Context: " ++ token.originalContext) ]
+                            , li [] [ Html.text ("Status: " ++ tokenStatusToString token.status) ]
+                            ]
+
+                        ( Nothing, Just phrase ) ->
+                            [ li [] [ Html.text ("Phrase: " ++ String.join " " phrase.orthographySeq) ]
+                            , li [] [ Html.text ("Definition: " ++ phrase.definition) ]
+                            , li [] [ Html.text ("Notes: " ++ phrase.notes) ]
+                            , li [] [ Html.text ("Original Context: " ++ phrase.originalContext) ]
+                            , li [] [ Html.text ("Status: " ++ tokenStatusToString phrase.status) ]
+                            ]
+
+                        ( Nothing, Nothing ) ->
+                            [ li [] [ Html.text "No term information available" ] ]
+
+                segAttributeInfo =
+                    [ li [] [ Html.text ("Text: " ++ seg.text) ]
+                    , li [] [ Html.text ("Sentence Index: " ++ String.fromInt seg.sentenceIdx) ]
+                    , li [] [ Html.text ("Start Char: " ++ String.fromInt seg.startChar) ]
+                    , li [] [ Html.text ("End Char: " ++ String.fromInt seg.endChar) ]
+                    , case seg.attributes.lemma of
+                        Just lemma ->
+                            li [] [ Html.text ("Lemma: " ++ lemma) ]
+
+                        Nothing ->
+                            li [] [ Html.text "Lemma: (none)" ]
+                    , case seg.attributes.upos of
+                        Just upos ->
+                            li [] [ Html.text ("UPOS: " ++ upos) ]
+
+                        Nothing ->
+                            li [] [ Html.text "UPOS: (none)" ]
+                    , case seg.attributes.xpos of
+                        Just xpos ->
+                            li [] [ Html.text ("XPOS: " ++ xpos) ]
+
+                        Nothing ->
+                            li [] [ Html.text "XPOS: (none)" ]
+                    , case seg.attributes.dependency of
+                        Just ( parentIdx, relation ) ->
+                            li [] [ Html.text ("Dependency: " ++ String.fromInt parentIdx ++ " (" ++ relation ++ ")") ]
+
+                        Nothing ->
+                            li [] [ Html.text "Dependency: (none)" ]
+                    , li []
+                        [ Html.text "Misc: "
+                        , if Dict.isEmpty seg.attributes.misc then
+                            Html.text "(none)"
+
+                          else
+                            ul []
+                                (Dict.toList seg.attributes.misc
+                                    |> List.map (\( key, value ) -> li [] [ Html.text (key ++ ": " ++ value) ])
+                                )
+                        ]
+                    ]
+            in
+            div []
+                [ h3 [] [ Html.text "Selected Term Details" ]
+                , ul []
+                    (termInfo ++ segAttributeInfo)
+                ]
+
+
+tokenStatusToString : TokenStatus -> String
+tokenStatusToString status =
+    case status of
+        Unmarked ->
+            "Unmarked"
+
+        Ignored ->
+            "Ignored"
+
+        L1 ->
+            "L1"
+
+        L2 ->
+            "L2"
+
+        L3 ->
+            "L3"
+
+        L4 ->
+            "L4"
+
+        L5 ->
+            "L5"
+
+        Known ->
+            "Known"
+
+
 
 -- end
 
@@ -390,6 +629,7 @@ view shared route model =
             , popup_state = model.popup_state
             , on_hover_start = ShowPopup
             , on_hover_end = HidePopup
+            , annotation_config = model.annotation_config
             }
     in
     let
@@ -415,6 +655,7 @@ view shared route model =
             , popup_state = Nothing
             , on_hover_start = \_ _ -> HidePopup
             , on_hover_end = HidePopup
+            , annotation_config = model.annotation_config
             }
     in
     { title = "Document view"
@@ -442,6 +683,7 @@ view shared route model =
                             annotatedDocViewCtx
                             model.working_doc
                         )
+                    , viewAnnotationControls model.annotation_config
                     ]
 
         -- for debugging check focus context model
@@ -516,6 +758,7 @@ view shared route model =
                     , file = route.params.doc
                     }
             }
+        , viewTermDetails model.working_dict model.focus_ctx.segment_selection
         ]
     }
 

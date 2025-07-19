@@ -1,4 +1,4 @@
-module Components.AnnotatedText exposing (PopupContent(..), view, viewRegisteredPhrase, viewSentenceSegment)
+module Components.AnnotatedText exposing (AnnotationConfig, AnnotationOption(..), PopupContent(..), view, viewRegisteredPhrase, viewSentenceSegment)
 
 import Bindings exposing (DocSegV2, DocSegVariants(..), Phrase, SentSegV2, SentSegVariants(..), Token, TokenStatus(..))
 import Components.Popup as Popup
@@ -15,6 +15,21 @@ import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
 import Utils.ModifierState as ModifierState
 
 
+type AnnotationOption
+    = Phonetic
+    | Definition
+    | Lemma
+    | Upos
+    | Xpos
+    | None
+
+
+type alias AnnotationConfig =
+    { topAnnotation : AnnotationOption
+    , bottomAnnotation : AnnotationOption
+    }
+
+
 type alias Args msg =
     { dict : Datastore.DictContext.T
     , modifier_state : ModifierState.Model
@@ -25,6 +40,7 @@ type alias Args msg =
     , popup_state : Maybe { position : { x : Float, y : Float }, content : PopupContent }
     , on_hover_start : { x : Float, y : Float } -> PopupContent -> msg
     , on_hover_end : msg
+    , annotation_config : AnnotationConfig
     }
 
 
@@ -161,6 +177,50 @@ phraseDictLookup dict_ctx orthography =
     Dict.get orthography dict_ctx.phraseDict
 
 
+getAnnotationText : AnnotationOption -> Maybe Token -> Maybe Phrase -> SentSegV2 -> String
+getAnnotationText option maybeToken maybePhrase seg =
+    case option of
+        None ->
+            ""
+
+        Phonetic ->
+            case maybeToken of
+                Just token ->
+                    token.phonetic
+
+                Nothing ->
+                    ""
+
+        Definition ->
+            case ( maybeToken, maybePhrase ) of
+                ( Just token, _ ) ->
+                    token.definition
+
+                ( Nothing, Just phrase ) ->
+                    phrase.definition
+
+                ( Nothing, Nothing ) ->
+                    ""
+
+        Lemma ->
+            case seg.attributes.lemma of
+                Just lemma ->
+                    if lemma /= seg.text then
+                        lemma
+
+                    else
+                        ""
+
+                Nothing ->
+                    ""
+
+        Upos ->
+            Maybe.withDefault "" seg.attributes.upos
+
+        Xpos ->
+            Maybe.withDefault "" seg.attributes.xpos
+
+
 viewPhraseSubsegment :
     Args msg
     -> SentSegV2
@@ -232,8 +292,15 @@ viewRegisteredTkn :
     -> SentSegV2
     -> Html msg
 viewRegisteredTkn args attrs text tkn seg =
+    let
+        topText =
+            getAnnotationText args.annotation_config.topAnnotation (Just tkn) Nothing seg
+
+        bottomText =
+            getAnnotationText args.annotation_config.bottomAnnotation (Just tkn) Nothing seg
+    in
     doubleRubyC
-        tkn.definition
+        topText
         (attrs
             ++ [ tokenStatusToClass tkn.status
                , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
@@ -246,7 +313,7 @@ viewRegisteredTkn args attrs text tkn seg =
                ]
         )
         [ Html.text text ]
-        tkn.phonetic
+        bottomText
 
 
 viewRegisteredPhrase :
@@ -257,8 +324,15 @@ viewRegisteredPhrase :
     -> List SentSegV2
     -> Html msg
 viewRegisteredPhrase args attrs phrase seg components =
+    let
+        topText =
+            getAnnotationText args.annotation_config.topAnnotation Nothing (Just phrase) seg
+
+        bottomText =
+            getAnnotationText args.annotation_config.bottomAnnotation Nothing (Just phrase) seg
+    in
     doubleRubyC
-        phrase.definition
+        topText
         (attrs
             ++ [ Utils.attributeIfNot args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
                , Utils.attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
@@ -271,7 +345,7 @@ viewRegisteredPhrase args attrs phrase seg components =
                ]
         )
         (List.map (viewPhraseSubsegment args) components)
-        ""
+        bottomText
 
 
 viewSentenceSegment :
