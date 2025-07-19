@@ -33,15 +33,10 @@ view args doc =
 
 doubleRubyC : String -> List (Html.Attribute msg) -> List (Html msg) -> String -> Html msg
 doubleRubyC topText mainAttrs mainContent bottomText =
-    -- span [ class "double-ruby" ]
-    --     [ span [ class "ruby-top" ] [ Html.text topText ]
-    --     , span (class "ruby-main" :: mainAttrs) mainContent
-    --     , span [ class "ruby-bottom" ] [ Html.text bottomText ]
-    --     ]
     span
         ([ Html.Attributes.attribute "data-top" topText
          , Html.Attributes.attribute "data-bottom" bottomText
-         , class "beforeafter auto-width"
+         , class "double-ruby tkn-auto-width"
          ]
             ++ mainAttrs
         )
@@ -63,7 +58,7 @@ viewDocumentSegment args segment =
                     (List.filterMap (viewSentenceSegment args) segments)
 
             DocumentWhitespace ->
-                span [ class "document-whitespace-span", class "tkn-nostatus" ] [ Html.text segment.text ]
+                span [ class "document-whitespace-span" ] [ Html.text segment.text ]
 
 
 tokenDictLookup : Datastore.DictContext.T -> String -> Maybe Token
@@ -177,7 +172,7 @@ viewRegisteredPhrase args attrs phrase seg components =
                , Utils.attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
                , Utils.attributeIfNot args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
                , tokenStatusToClass phrase.status
-               , class "ruby-main"
+               , class "clickable-tkn-span"
                , Utils.classIf (args.focus_predicate seg) "tkn-focus"
                ]
         )
@@ -213,26 +208,16 @@ viewSentenceSegment args seg =
                             viewRegisteredPhrase args [ class "phrase-span" ] phrase seg components
 
                 WhitespaceSeg ->
-                    span [ class "sentence-whitespace-span", Utils.classIf (args.focus_predicate seg) "tkn-focus", class "tkn-nostatus" ] [ Html.text seg.text ]
+                    span [ class "sentence-whitespace-span", Utils.classIf (args.focus_predicate seg) "tkn-focus" ] [ Html.text seg.text ]
 
-                -- if String.all ((==) ' ') seg.text && String.length seg.text == 1 then
-                --     span [ class "sentence-whitespace-span", Utils.classIf (args.focus_predicate seg) "tkn-focus", class "tkn-nostatus" ] [ Html.text seg.text ]
-                -- else
-                --     doubleRubyC
-                --         ""
-                --         [ class "sentence-whitespace-span", class "tkn-nostatus", Utils.classIf (args.focus_predicate seg) "tkn-focus" ]
-                --         [ Html.text seg.text ]
-                --         ""
                 PunctuationSeg ->
-                    span [ class "sentence-punctuation-span", Utils.classIf (args.focus_predicate seg) "tkn-focus", class "tkn-nostatus" ] [ Html.text seg.text ]
-             -- doubleRubyC
-             --     ""
-             --     [ onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
-             --     , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
-             --     , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
-             --     , class "clickable-tkn-span"
-             --     , Utils.classIf (args.focus_predicate seg) "tkn-focus"
-             --     ]
-             --     [ Html.text seg.text ]
-             --     ""
+                    span
+                        [ class "sentence-punctuation-span"
+                        , Utils.classIf (args.focus_predicate seg) "tkn-focus"
+                        , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
+                        , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
+                        , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+                        , class "clickable-tkn-span"
+                        ]
+                        [ Html.text seg.text ]
             )

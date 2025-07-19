@@ -102,9 +102,10 @@ function adjustAnnotationWidth(element) {
     const bottomWidth = bottomText ? measureTextWidth(bottomText, annotationFontSize, fontFamily) : 0;
     
     // Find the maximum width
-    const maxWidth = Math.max(mainWidth, topWidth, bottomWidth);
+    const maxWidth = Math.min(Math.max(mainWidth, topWidth, bottomWidth), 2 * mainWidth);
     
-    // Add some padding to prevent tight fits
+    // Set CSS custom property for pseudo-element max-width constraint
+    element.style.setProperty('--annotation-max-width', maxWidth + 'px');
     
     // Set minimum width if needed
     if (maxWidth > mainWidth) {
@@ -118,7 +119,7 @@ function adjustAnnotationWidth(element) {
 function adjustAnnotationWidths() {
     // Use requestAnimationFrame to ensure DOM is fully updated
     requestAnimationFrame(() => {
-        const annotations = document.querySelectorAll('.beforeafter.auto-width');
+        const annotations = document.querySelectorAll('.double-ruby.tkn-auto-width');
         annotations.forEach(adjustAnnotationWidth);
     });
 }

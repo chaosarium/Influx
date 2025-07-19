@@ -138,41 +138,6 @@ rtc {
     ruby-position: over;
 }
 
-// Cross-browser compatible double ruby annotation styles
-.double-ruby {
-    display: inline-grid;
-    grid-template-rows: 1em auto 1em;
-    align-items: center;
-    vertical-align: middle;
-}
-
-
-
-.ruby-top,
-.ruby-bottom {
-    font-size: 0.6em;
-    // user-select: none;
-    text-align: center;
-    height: 1em;
-    line-height: 1em;
-    display: block;
-}
-
-.ruby-main {
-    // user-select: text;
-    text-align: center;
-    white-space: pre;
-    font-size: 1em;
-    line-height: 1.2;
-}
-
-/* Allow annotation selection if selection starts inside */
-.ruby-top:active,
-.ruby-top:focus,
-.ruby-bottom:active,
-.ruby-bottom:focus {
-    user-select: text;
-}
 
 /* Container for annotated text to handle spacing */
 .annotated-text-container {
@@ -180,9 +145,6 @@ rtc {
     user-select: none;
 }
 
-.annotated-text-container .double-ruby {
-    font-size: 1rem; // Restore font size for ruby elements??
-}
 
 span.tkn-focus {
     text-decoration: underline;
@@ -247,7 +209,7 @@ span.clickable-tkn-span {
     margin-bottom: 1em;
 }
 
-.beforeafter {
+.double-ruby {
     position: relative;
     display: inline;
     // display: inline-block;
@@ -255,14 +217,14 @@ span.clickable-tkn-span {
     // background-color: #e5e7eb;
 }
 
-.beforeafter.auto-width {
+.double-ruby.auto-width {
     /* JavaScript will set min-width dynamically */
     text-align: center;
     box-sizing: border-box;
 }
 
 
-.beforeafter::before {
+.double-ruby::before {
     content: attr(data-top);
     position: absolute;
     top: -1.2em;
@@ -274,10 +236,13 @@ span.clickable-tkn-span {
     line-height: 1.2;
     white-space: nowrap;
     pointer-events: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: var(--annotation-max-width, 100%);
 }
 
 /* Bottom annotation using ::after */
-.beforeafter::after {
+.double-ruby::after {
     content: attr(data-bottom);
     position: absolute;
     bottom: -1.2em;
@@ -289,15 +254,18 @@ span.clickable-tkn-span {
     line-height: 1.2;
     white-space: nowrap;
     pointer-events: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: var(--annotation-max-width, 100%);
 }
 
 /* Hide pseudo-elements when data attributes are empty */
-.beforeafter:not([data-top])::before,
-.beforeafter[data-top=""]::before {
+.double-ruby:not([data-top])::before,
+.double-ruby[data-top=""]::before {
     display: none;
 }
 
-.beforeafter:not([data-bottom])::after,
-.beforeafter[data-bottom=""]::after {
+.double-ruby:not([data-bottom])::after,
+.double-ruby[data-bottom=""]::after {
     display: none;
 }
