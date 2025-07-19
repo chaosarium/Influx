@@ -55,6 +55,9 @@ export const onReady = ({ app, env }) => {
                         speechSynthesis.speak(utterance);
                     }, 50);
                     return;
+                case "ADJUST_ANNOTATION_WIDTHS":
+                    adjustAnnotationWidths();
+                    return;
                 default:
                     console.warn(`Unhandled outgoing port: "${tag}"`);
                     return;
@@ -62,3 +65,60 @@ export const onReady = ({ app, env }) => {
         });
     }
 };
+
+// Width adjustment functionality for annotations
+function measureTextWidth(text, fontSize, fontFamily) {
+    const span = document.createElement('span');
+    span.style.position = 'absolute';
+    span.style.visibility = 'hidden';
+    span.style.whiteSpace = 'nowrap';
+    span.style.fontSize = fontSize;
+    span.style.fontFamily = fontFamily;
+    span.textContent = text;
+    
+    document.body.appendChild(span);
+    const width = span.offsetWidth;
+    document.body.removeChild(span);
+    
+    return width;
+}
+
+function adjustAnnotationWidth(element) {
+    const topText = element.getAttribute('data-top') || '';
+    const bottomText = element.getAttribute('data-bottom') || '';
+    const mainText = element.textContent || '';
+    
+    // Get computed styles
+    const computedStyle = window.getComputedStyle(element);
+    const fontSize = computedStyle.fontSize;
+    const fontFamily = computedStyle.fontFamily;
+    
+    // Calculate annotation font size (0.6em of main font)
+    const annotationFontSize = parseFloat(fontSize) * 0.6 + 'px';
+    
+    // Measure widths
+    const mainWidth = measureTextWidth(mainText, fontSize, fontFamily);
+    const topWidth = topText ? measureTextWidth(topText, annotationFontSize, fontFamily) : 0;
+    const bottomWidth = bottomText ? measureTextWidth(bottomText, annotationFontSize, fontFamily) : 0;
+    
+    // Find the maximum width
+    const maxWidth = Math.max(mainWidth, topWidth, bottomWidth);
+    
+    // Add some padding to prevent tight fits
+    
+    // Set minimum width if needed
+    if (maxWidth > mainWidth) {
+        element.style.textAlign = 'center';
+        const padWidth = (maxWidth - mainWidth) / 2;
+        element.style.paddingLeft = padWidth + 'px';
+        element.style.paddingRight = padWidth + 'px';
+    }
+}
+
+function adjustAnnotationWidths() {
+    // Use requestAnimationFrame to ensure DOM is fully updated
+    requestAnimationFrame(() => {
+        const annotations = document.querySelectorAll('.beforeafter.auto-width');
+        annotations.forEach(adjustAnnotationWidth);
+    });
+}

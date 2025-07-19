@@ -6,7 +6,7 @@ port module Effect exposing
     , pushRoutePath, replaceRoutePath
     , loadExternalUrl, back
     , map, toCmd
-    , jsIncoming, openWindowDialog, sendSharedMsg, ttsCancel, ttsCancelAndSpeak, ttsGetVoices, ttsSpeak
+    , adjustAnnotationWidths, jsIncoming, openWindowDialog, sendSharedMsg, ttsCancel, ttsCancelAndSpeak, ttsGetVoices, ttsSpeak
     )
 
 {-|
@@ -212,6 +212,14 @@ ttsCancelAndSpeak options =
                 , ( "rate", Maybe.withDefault Json.Encode.null (Maybe.map Json.Encode.float options.rate) )
                 , ( "pitch", Maybe.withDefault Json.Encode.null (Maybe.map Json.Encode.float options.pitch) )
                 ]
+        }
+
+
+adjustAnnotationWidths : Effect msg
+adjustAnnotationWidths =
+    SendMessageToJavaScript
+        { tag = "ADJUST_ANNOTATION_WIDTHS"
+        , data = Json.Encode.null
         }
 
 

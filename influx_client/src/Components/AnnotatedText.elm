@@ -38,7 +38,14 @@ doubleRubyC topText mainAttrs mainContent bottomText =
     --     , span (class "ruby-main" :: mainAttrs) mainContent
     --     , span [ class "ruby-bottom" ] [ Html.text bottomText ]
     --     ]
-    span ([ Html.Attributes.attribute "data-top" topText, Html.Attributes.attribute "data-bottom" bottomText, class "beforeafter" ] ++ mainAttrs) mainContent
+    span
+        ([ Html.Attributes.attribute "data-top" topText
+         , Html.Attributes.attribute "data-bottom" bottomText
+         , class "beforeafter auto-width"
+         ]
+            ++ mainAttrs
+        )
+        mainContent
 
 
 viewDocumentSegment :

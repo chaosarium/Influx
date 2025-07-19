@@ -101,16 +101,12 @@ update msg model =
             ( model, Effect.sendSharedMsg sharedMsg )
 
         ApiResponded (Ok res) ->
-            let
-                _ =
-                    Effect.none
-            in
             ( { model
                 | get_doc_api_res = Api.Success res
                 , working_doc = DocContext.fromAnnotatedDocument res.docPackage.languageId res.annotatedDoc
                 , working_dict = DictContext.fromTermDictionary res.docPackage.languageId res.termDict
               }
-            , Effect.none
+            , Effect.adjustAnnotationWidths
             )
 
         ApiResponded (Err httpError) ->
@@ -154,7 +150,7 @@ update msg model =
 
                 TermEditForm.GotUpdatedAnnotatedDoc updated_doc ->
                     ( { model | working_doc = DocContext.fromAnnotatedDocument model.working_doc.lang_id updated_doc }
-                    , Effect.none
+                    , Effect.adjustAnnotationWidths
                     )
 
                 TermEditForm.OverwriteTerm term ->

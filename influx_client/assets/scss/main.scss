@@ -185,7 +185,8 @@ rtc {
 }
 
 span.tkn-focus {
-    text-decoration: underline double;
+    text-decoration: underline;
+
     // display: inline-block;
 
 }
@@ -249,7 +250,15 @@ span.clickable-tkn-span {
 .beforeafter {
     position: relative;
     display: inline;
+    // display: inline-block;
+    // vertical-align: baseline;
     // background-color: #e5e7eb;
+}
+
+.beforeafter.auto-width {
+    /* JavaScript will set min-width dynamically */
+    text-align: center;
+    box-sizing: border-box;
 }
 
 
