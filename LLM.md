@@ -28,7 +28,7 @@ You can find a brief Elm syntax reference in `elm-syntax.txt`.
 ## Commands
 
 - **Elm Frontend (in `influx_client`):** To see if influx_client type checks, compile it by running `elm-land build`.
-  - To build sass: `sass -w assets/scss/main.scss static/dist/main.css`
+  - No need to build `assets/scss/main.scss`. There is already a background process that will build it automatically.
 - **Python NLP Service (in `influx_nlp`):** `uv run pytest .`, `uv run pytest . --inline-snapshot=fix`, `uv run black .`
 - **Rust (in `influx_core`):** `cargo test` (it's better to run specific test cases), `cargo fmt`, `cargo test generate_elm_bindings` (generates Elm types)
 - **SQLX (in `influx_core`):** this is used for database migration. Run `cargo sqlx` to manage the development database.

@@ -420,7 +420,7 @@ view shared route model =
             Api.Success response ->
                 div []
                     [ viewDocumentInfo response
-                    , div [ class "annotated-doc-div", class "dbg-on" ]
+                    , div [ class "annotated-doc-div", class "dbg-off" ]
                         (AnnotatedText.view
                             annotatedDocViewCtx
                             model.working_doc

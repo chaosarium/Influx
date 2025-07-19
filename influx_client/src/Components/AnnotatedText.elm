@@ -31,6 +31,15 @@ view args doc =
     List.map (viewDocumentSegment args) doc.segments
 
 
+doubleRubyC : String -> List (Html.Attribute msg) -> List (Html msg) -> String -> Html msg
+doubleRubyC topText mainAttrs mainContent bottomText =
+    span [ class "double-ruby" ]
+        [ span [ class "ruby-top" ] [ Html.text topText ]
+        , span (class "ruby-main" :: mainAttrs) mainContent
+        , span [ class "ruby-bottom" ] [ Html.text bottomText ]
+        ]
+
+
 viewDocumentSegment :
     Args msg
     -> DocSegV2
@@ -42,7 +51,7 @@ viewDocumentSegment args segment =
     else
         case segment.inner of
             Sentence { segments } ->
-                span [ class "sentence-span" ]
+                span [ class "sentence-span annotated-text-container" ]
                     (List.filterMap (viewSentenceSegment args) segments)
 
             DocumentWhitespace ->
@@ -73,7 +82,7 @@ viewPhraseSubsegment args seg =
             ]
     in
     case seg.inner of
-        TokenSeg { orthography } ->
+        TokenSeg _ ->
             span (attrs ++ [ class "single-token-span" ]) [ Html.text seg.text ]
 
         WhitespaceSeg ->
@@ -130,25 +139,19 @@ viewRegisteredTkn :
     -> SentSegV2
     -> Html msg
 viewRegisteredTkn args attrs text tkn seg =
-    ruby []
-        [ rb []
-            [ span
-                (attrs
-                    ++ [ tokenStatusToClass tkn.status
-                       , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
-                       , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
-                       , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
-                       , class "clickable-tkn-span"
-                       , Utils.classIf (args.focus_predicate seg) "tkn-focus"
-                       ]
-                )
-                [ Html.text text ]
-            ]
-        , rt [] [ Html.text tkn.definition ]
-        , rtc []
-            [ rt [] [ Html.text tkn.phonetic ]
-            ]
-        ]
+    doubleRubyC
+        tkn.definition
+        (attrs
+            ++ [ tokenStatusToClass tkn.status
+               , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
+               , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
+               , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+               , class "clickable-tkn-span"
+               , Utils.classIf (args.focus_predicate seg) "tkn-focus"
+               ]
+        )
+        [ Html.text text ]
+        tkn.phonetic
 
 
 viewRegisteredPhrase :
@@ -159,21 +162,19 @@ viewRegisteredPhrase :
     -> List SentSegV2
     -> Html msg
 viewRegisteredPhrase args attrs phrase seg components =
-    ruby []
-        [ rb []
-            [ span
-                (attrs
-                    ++ [ Utils.attributeIfNot args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
-                       , Utils.attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
-                       , Utils.attributeIfNot args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
-                       , tokenStatusToClass phrase.status
-                       , Utils.classIf (args.focus_predicate seg) "tkn-focus"
-                       ]
-                )
-                (List.map (viewPhraseSubsegment args) components)
-            ]
-        , rt [] [ Html.text phrase.definition ]
-        ]
+    doubleRubyC
+        phrase.definition
+        (attrs
+            ++ [ Utils.attributeIfNot args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
+               , Utils.attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
+               , Utils.attributeIfNot args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+               , tokenStatusToClass phrase.status
+               , class "ruby-main"
+               , Utils.classIf (args.focus_predicate seg) "tkn-focus"
+               ]
+        )
+        (List.map (viewPhraseSubsegment args) components)
+        ""
 
 
 viewSentenceSegment :
@@ -204,8 +205,21 @@ viewSentenceSegment args seg =
                             viewRegisteredPhrase args [ class "phrase-span" ] phrase seg components
 
                 WhitespaceSeg ->
-                    span [ class "sentence-whitespace-span" ] [ Html.text seg.text ]
+                    doubleRubyC
+                        ""
+                        [ class "sentence-whitespace-span", Utils.classIf (args.focus_predicate seg) "tkn-focus" ]
+                        [ Html.text seg.text ]
+                        ""
 
                 PunctuationSeg ->
-                    span [ class "sentence-punctuation-span" ] [ Html.text seg.text ]
+                    doubleRubyC
+                        ""
+                        [ onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
+                        , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
+                        , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+                        , class "clickable-tkn-span"
+                        , Utils.classIf (args.focus_predicate seg) "tkn-focus"
+                        ]
+                        [ Html.text seg.text ]
+                        ""
             )
