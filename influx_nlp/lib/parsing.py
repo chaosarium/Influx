@@ -190,27 +190,3 @@ class SpacyParser(BaseParser):
             orthography_set=list(orthography_set),
             lemma_set=list(lemma_set),
         )
-
-
-# ignore this for now. focus on spacy.
-class StanzaParser(BaseParser):
-    def __init__(self, model_dir: str):
-        super().__init__()
-        self.model_dir: str = model_dir
-
-    def _init_for_lang(self, lang_code: str) -> dict:
-        nlp = stanza.Pipeline(
-            lang=lang_code,
-            processors="tokenize, lemma, mwt, pos",
-            model_dir=self.model_dir,
-            logging_level="WARN",
-        )
-        return nlp
-
-    def _parse_with_pipeline(self, text: str, nlp) -> dict:
-        # This is the old implementation, will be updated later
-        doc = nlp(text)
-        sentences: List[List[dict]] = []
-        for sentence in doc.sentences:
-            sentences.append([token.to_dict() for token in sentence.tokens])
-        return sentences
