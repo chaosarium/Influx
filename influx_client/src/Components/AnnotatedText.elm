@@ -40,6 +40,7 @@ type alias Args msg =
     , popup_state : Maybe { position : { x : Float, y : Float }, content : PopupContent }
     , on_hover_start : { x : Float, y : Float } -> PopupContent -> msg
     , on_hover_end : msg
+    , on_mouse_enter_with_position : Float -> Float -> FocusContext.Msg -> PopupContent -> msg
     , annotation_config : AnnotationConfig
     }
 
@@ -125,10 +126,15 @@ createPopupContent content =
             ]
 
 
-onHoverWithPosition : (Float -> Float -> msg) -> Html.Attribute msg
-onHoverWithPosition toMsg =
+
+-- Combined mouse enter handler that handles both position-based popup and focus selection
+-- We need to create a message that can handle both the popup positioning and focus selection
+
+
+onMouseEnterWithPositionAndFocus : (Float -> Float -> FocusContext.Msg -> msg) -> FocusContext.Msg -> Html.Attribute msg
+onMouseEnterWithPositionAndFocus combinedMsg focusMsg =
     Html.Events.on "mouseenter"
-        (Decode.map2 toMsg
+        (Decode.map2 (\x y -> combinedMsg x y focusMsg)
             (Decode.at [ "target", "offsetLeft" ] Decode.float)
             (Decode.map2 (+)
                 (Decode.at [ "target", "offsetTop" ] Decode.float)
@@ -303,10 +309,11 @@ viewRegisteredTkn args attrs text tkn seg =
         topText
         (attrs
             ++ [ tokenStatusToClass tkn.status
-               , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
                , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
                , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
-               , onHoverWithPosition (\x y -> args.on_hover_start { x = x, y = y } (TokenPopup tkn seg))
+               , onMouseEnterWithPositionAndFocus
+                    (\x y focusMsg -> args.on_mouse_enter_with_position x y focusMsg (TokenPopup tkn seg))
+                    (FocusContext.SelectMouseEnter seg)
                , onMouseLeave args.on_hover_end
                , class "clickable-tkn-span"
                , Utils.classIf (args.focus_predicate seg) "tkn-focus"
@@ -334,10 +341,12 @@ viewRegisteredPhrase args attrs phrase seg components =
     doubleRubyC
         topText
         (attrs
-            ++ [ Utils.attributeIfNot args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
-               , Utils.attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
+            ++ [ Utils.attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
                , Utils.attributeIfNot args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
-               , onHoverWithPosition (\x y -> args.on_hover_start { x = x, y = y } (PhrasePopup phrase seg))
+               , Utils.attributeIfNot args.modifier_state.alt <|
+                    onMouseEnterWithPositionAndFocus
+                        (\x y focusMsg -> args.on_mouse_enter_with_position x y focusMsg (PhrasePopup phrase seg))
+                        (FocusContext.SelectMouseEnter seg)
                , onMouseLeave args.on_hover_end
                , tokenStatusToClass phrase.status
                , class "clickable-tkn-span"

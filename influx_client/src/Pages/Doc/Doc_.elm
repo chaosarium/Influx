@@ -87,6 +87,7 @@ type Msg
       -- Mouse selection...
     | SelectionMouseEvent FocusContext.Msg -- will update focus context
     | NoopMouseEvent FocusContext.Msg -- for mouse events that don't change the focus context
+    | CombinedMouseEnter { x : Float, y : Float } FocusContext.Msg AnnotatedText.PopupContent -- handles both focus and popup
       -- Term editor...
     | TermEditorEvent TermEditForm.Msg
       -- TTS controls...
@@ -185,6 +186,22 @@ update msg model =
 
         NoopMouseEvent _ ->
             ( model, Effect.none )
+
+        CombinedMouseEnter position focusMsg popupContent ->
+            let
+                focus_ctx =
+                    FocusContext.update model.working_doc focusMsg model.focus_ctx
+
+                ( form_model, _ ) =
+                    TermEditForm.update model.working_dict (TermEditForm.EditingSegUpdated focus_ctx.segment_slice focus_ctx.segment_selection) model.form_model
+            in
+            ( { model
+                | focus_ctx = focus_ctx
+                , form_model = form_model
+                , popup_state = Just { position = position, content = popupContent }
+              }
+            , Effect.none
+            )
 
         StartTts ->
             case model.get_doc_api_res of
@@ -629,6 +646,9 @@ view shared route model =
             , popup_state = model.popup_state
             , on_hover_start = ShowPopup
             , on_hover_end = HidePopup
+            , on_mouse_enter_with_position =
+                \x y focusMsg popupContent ->
+                    CombinedMouseEnter { x = x, y = y } focusMsg popupContent
             , annotation_config = model.annotation_config
             }
     in
@@ -655,6 +675,7 @@ view shared route model =
             , popup_state = Nothing
             , on_hover_start = \_ _ -> HidePopup
             , on_hover_end = HidePopup
+            , on_mouse_enter_with_position = \_ _ _ _ -> HidePopup
             , annotation_config = model.annotation_config
             }
     in
