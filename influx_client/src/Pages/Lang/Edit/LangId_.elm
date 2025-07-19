@@ -109,6 +109,8 @@ type Msg
     | UpdateTtsRateInput String
     | UpdateTtsPitchInput String
     | UpdateTtsVoice String
+    | UpdateDeeplSourceLang String
+    | UpdateDeeplTargetLang String
     | SubmitForm
     | CancelEdit
     | LanguageEditResponded (Result Http.Error LanguageEntry)
@@ -210,6 +212,28 @@ update msg model =
                         Just value
             in
             updateWorkingLanguage (\lang -> { lang | ttsVoice = voiceValue }) model
+
+        UpdateDeeplSourceLang value ->
+            let
+                sourceLangValue =
+                    if String.isEmpty value then
+                        Nothing
+
+                    else
+                        Just value
+            in
+            updateWorkingLanguage (\lang -> { lang | deeplSourceLang = sourceLangValue }) model
+
+        UpdateDeeplTargetLang value ->
+            let
+                targetLangValue =
+                    if String.isEmpty value then
+                        Nothing
+
+                    else
+                        Just value
+            in
+            updateWorkingLanguage (\lang -> { lang | deeplTargetLang = targetLangValue }) model
 
         SubmitForm ->
             case model.formModel of
@@ -371,6 +395,9 @@ viewLanguageForm { originalLanguage, workingLanguage, currentDictInput, ttsRateI
         , inputC [] "TTS Rate (0.1-10.0)" "ttsRateInput" UpdateTtsRateInput ttsRateInput
         , inputC [] "TTS Pitch (0.0-2.0)" "ttsPitchInput" UpdateTtsPitchInput ttsPitchInput
         , viewVoiceDropdown workingLanguage.ttsVoice availableVoices
+        , Html.h3 [] [ Html.text "DeepL Translation Settings" ]
+        , inputC [] "DeepL Source Language Code (e.g., EN, FR, JA)" "deeplSourceInput" UpdateDeeplSourceLang (Maybe.withDefault "" workingLanguage.deeplSourceLang)
+        , inputC [] "DeepL Target Language Code (e.g., EN, DE, FR)" "deeplTargetInput" UpdateDeeplTargetLang (Maybe.withDefault "" workingLanguage.deeplTargetLang)
         , div []
             [ buttonC
                 [ onClick SubmitForm

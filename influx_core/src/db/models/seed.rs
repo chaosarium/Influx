@@ -41,6 +41,8 @@ impl DB {
                 tts_rate: None,
                 tts_pitch: None,
                 tts_voice: None,
+                deepl_source_lang: Some("FR".to_string()),
+                deepl_target_lang: Some("EN".to_string()),
             },
             LanguageEntry {
                 id: None,
@@ -53,6 +55,8 @@ impl DB {
                 tts_rate: None,
                 tts_pitch: None,
                 tts_voice: None,
+                deepl_source_lang: Some("EN".to_string()),
+                deepl_target_lang: Some("DE".to_string()),
             },
             LanguageEntry {
                 id: None,
@@ -62,6 +66,8 @@ impl DB {
                 tts_rate: None,
                 tts_pitch: None,
                 tts_voice: None,
+                deepl_source_lang: Some("JA".to_string()),
+                deepl_target_lang: Some("EN".to_string()),
             },
             LanguageEntry {
                 id: None,
@@ -71,6 +77,8 @@ impl DB {
                 tts_rate: None,
                 tts_pitch: None,
                 tts_voice: None,
+                deepl_source_lang: Some("ZH".to_string()),
+                deepl_target_lang: Some("EN".to_string()),
             },
         ];
 

@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS language (
     tts_rate DOUBLE PRECISION,
     tts_pitch DOUBLE PRECISION,
     tts_voice TEXT,
+    deepl_source_lang TEXT,
+    deepl_target_lang TEXT,
     
     created_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     updated_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp

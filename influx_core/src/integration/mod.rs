@@ -20,6 +20,8 @@ pub trait ExternalTranslator {
 }
 pub struct GoogleTranslate;
 
+pub struct DeeplTranslate;
+
 #[async_trait]
 impl ExternalDict for MacOSDict {
     async fn open_dictionary(&self, query: String) {
@@ -54,6 +56,47 @@ impl ExternalTranslator for GoogleTranslate {
         let response = client.post(url).json(&payload).send().await?;
         let response_body: Value = response.json().await?;
         let translated_text = response_body["translated_text"].as_str().unwrap();
+        Ok(translated_text.to_string())
+    }
+}
+
+#[async_trait]
+impl ExternalTranslator for DeeplTranslate {
+    async fn translate_sequence(
+        &self,
+        input: String,
+        from_lang_id: String,
+        to_lang_id: String,
+    ) -> Result<String> {
+        let client = Client::new();
+        let api_key = std::env::var("DEEPL_API_KEY")
+            .map_err(|_| anyhow::anyhow!("DEEPL_API_KEY environment variable not set"))?;
+
+        let url = "https://api-free.deepl.com/v2/translate";
+        let payload = json!({
+            "text": [input],
+            "target_lang": to_lang_id.to_uppercase(),
+            "source_lang": from_lang_id.to_uppercase()
+        });
+
+        let response = client
+            .post(url)
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("DeepL-Auth-Key {}", api_key))
+            .json(&payload)
+            .send()
+            .await?;
+
+        let response_body: Value = response.json().await?;
+        let translations = response_body["translations"]
+            .as_array()
+            .ok_or_else(|| anyhow::anyhow!("Invalid response format from DeepL"))?;
+
+        let translated_text = translations
+            .first()
+            .and_then(|t| t["text"].as_str())
+            .ok_or_else(|| anyhow::anyhow!("No translation found in DeepL response"))?;
+
         Ok(translated_text.to_string())
     }
 }

@@ -3,6 +3,7 @@ module Pages.Doc.Doc_ exposing (Model, Msg, page)
 import Api
 import Api.GetAnnotatedDoc
 import Api.TermEdit
+import Api.Translate
 import Bindings exposing (..)
 import BindingsUtils
 import Components.AnnotatedText as AnnotatedText
@@ -54,6 +55,7 @@ type alias Model =
     , working_dict : DictContext.T
     , focus_ctx : FocusContext.T
     , form_model : TermEditForm.Model
+    , translation_result : Maybe String
     }
 
 
@@ -64,6 +66,7 @@ init { documentId } () =
       , working_dict = DictContext.empty
       , focus_ctx = FocusContext.new
       , form_model = TermEditForm.empty
+      , translation_result = Nothing
       }
     , Effect.sendCmd (Api.GetAnnotatedDoc.get { filepath = documentId } ApiResponded)
     )
@@ -84,6 +87,9 @@ type Msg
       -- TTS controls...
     | StartTts
     | StopTts
+      -- Translation...
+    | TranslateText
+    | TranslationReceived (Result Http.Error Api.Translate.TranslateResponse)
       -- Shared
     | SharedMsg Shared.Msg.Msg
 
@@ -201,6 +207,52 @@ update msg model =
 
         StopTts ->
             ( model, Effect.ttsCancel )
+
+        TranslateText ->
+            case model.get_doc_api_res of
+                Api.Success response ->
+                    let
+                        selectedText =
+                            Maybe.withDefault "" model.focus_ctx.selected_text
+
+                        language =
+                            response.docPackage.language
+                    in
+                    case ( language.deeplSourceLang, language.deeplTargetLang ) of
+                        ( Just sourceLang, Just targetLang ) ->
+                            if String.isEmpty (String.trim selectedText) then
+                                ( model, Effect.none )
+
+                            else
+                                ( model
+                                , Effect.sendCmd
+                                    (Api.Translate.translate
+                                        { fromLangId = sourceLang
+                                        , toLangId = targetLang
+                                        , sourceSequence = selectedText
+                                        , provider = "deepl"
+                                        }
+                                        TranslationReceived
+                                    )
+                                )
+
+                        _ ->
+                            ( { model | translation_result = Just "DeepL source and target languages not configured for this language" }
+                            , Effect.none
+                            )
+
+                _ ->
+                    ( model, Effect.none )
+
+        TranslationReceived (Ok response) ->
+            ( { model | translation_result = Just response.translatedText }
+            , Effect.none
+            )
+
+        TranslationReceived (Err httpError) ->
+            ( { model | translation_result = Just ("Translation error: " ++ Api.stringOfHttpErrMsg httpError) }
+            , Effect.none
+            )
 
 
 
@@ -390,6 +442,22 @@ view shared route model =
                 ("selected text: "
                     ++ Maybe.withDefault "" model.focus_ctx.selected_text
                 )
+            , Html.br [] []
+            , Html.button
+                [ Html.Events.onClick TranslateText
+                , Html.Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
+                ]
+                [ Html.text "Translate with DeepL" ]
+            , case model.translation_result of
+                Just translation ->
+                    Html.div [ Html.Attributes.style "margin-top" "10px", Html.Attributes.style "padding" "10px", Html.Attributes.style "background-color" "#f0f0f0" ]
+                        [ Html.strong [] [ Html.text "Translation: " ]
+                        , Html.br [] []
+                        , Html.text translation
+                        ]
+
+                Nothing ->
+                    Html.text ""
             ]
 
         -- TTS controls for selected text

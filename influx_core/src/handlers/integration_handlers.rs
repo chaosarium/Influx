@@ -36,10 +36,16 @@ pub async fn extern_translate(
     State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<ExternTranslatePayload>,
 ) -> Result<Json<ExternTranslateResponse>, ServerError> {
-    if payload.provider != "google" {
-        return Err(ServerError(anyhow::anyhow!("unsupported provider")));
-    }
-    let translator = integration::GoogleTranslate;
+    let translator: Box<dyn ExternalTranslator + Send + Sync> = match payload.provider.as_str() {
+        "google" => Box::new(integration::GoogleTranslate),
+        "deepl" => Box::new(integration::DeeplTranslate),
+        _ => {
+            return Err(ServerError(anyhow::anyhow!(
+                "unsupported provider: {}",
+                payload.provider
+            )))
+        }
+    };
     let translated_text = translator
         .translate_sequence(
             payload.source_sequence,

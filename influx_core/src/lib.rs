@@ -98,6 +98,7 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
 mod tests {
 
     use super::*;
+    use anyhow::Context;
     use std::fs;
 
     #[test]

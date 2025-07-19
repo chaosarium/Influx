@@ -35,6 +35,8 @@ You can find a brief Elm syntax reference in `elm-syntax.txt`.
 
 More common commands are scattered around `**/justfile`s.
 
+When updating the database schema, you should just do `cargo sqlx database reset` to recreate the database, as we are still doing rapid development.
+
 ## Architecture
 
 - Axum + Postgres (SurrealDB is deprecated, but we keep the code around) backend service exposing an API

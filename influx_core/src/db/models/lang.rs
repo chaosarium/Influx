@@ -16,6 +16,8 @@ pub struct LanguageEntry {
     pub tts_rate: Option<f64>,
     pub tts_pitch: Option<f64>,
     pub tts_voice: Option<String>,
+    pub deepl_source_lang: Option<String>,
+    pub deepl_target_lang: Option<String>,
 }
 
 use DB::*;
@@ -40,16 +42,18 @@ impl DB {
                 let record = sqlx::query_as!(
                     LanguageEntry,
                     r#"
-                        INSERT INTO language (code, name, dicts, tts_rate, tts_pitch, tts_voice)
-                        VALUES ($1, $2, $3, $4, $5, $6)
-                        RETURNING id as "id: Option<InfluxResourceId>", code, name, dicts, tts_rate, tts_pitch, tts_voice
+                        INSERT INTO language (code, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                        RETURNING id as "id: Option<InfluxResourceId>", code, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang
                     "#,
                     language.code,
                     language.name,
                     &language.dicts,
                     language.tts_rate,
                     language.tts_pitch,
-                    language.tts_voice
+                    language.tts_voice,
+                    language.deepl_source_lang,
+                    language.deepl_target_lang
                 )
                 .fetch_one(pool.as_ref())
                 .await?;
@@ -74,7 +78,7 @@ impl DB {
                 let records = sqlx::query_as!(
                     LanguageEntry,
                     r#"
-                        SELECT id as "id: Option<InfluxResourceId>", code, name, dicts, tts_rate, tts_pitch, tts_voice
+                        SELECT id as "id: Option<InfluxResourceId>", code, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang
                         FROM language
                     "#
                 )
@@ -101,7 +105,7 @@ impl DB {
                 let record = sqlx::query_as!(
                     LanguageEntry,
                     r#"
-                        SELECT id as "id: Option<InfluxResourceId>", code, name, dicts, tts_rate, tts_pitch, tts_voice
+                        SELECT id as "id: Option<InfluxResourceId>", code, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang
                         FROM language
                         WHERE id = $1;
                     "#,
@@ -137,9 +141,9 @@ impl DB {
                     LanguageEntry,
                     r#"
                         UPDATE language 
-                        SET code = $2, name = $3, dicts = $4, tts_rate = $5, tts_pitch = $6, tts_voice = $7
+                        SET code = $2, name = $3, dicts = $4, tts_rate = $5, tts_pitch = $6, tts_voice = $7, deepl_source_lang = $8, deepl_target_lang = $9
                         WHERE id = $1
-                        RETURNING id as "id: Option<InfluxResourceId>", code, name, dicts, tts_rate, tts_pitch, tts_voice
+                        RETURNING id as "id: Option<InfluxResourceId>", code, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang
                     "#,
                     id.as_i64()?,
                     language.code,
@@ -147,7 +151,9 @@ impl DB {
                     &language.dicts,
                     language.tts_rate,
                     language.tts_pitch,
-                    language.tts_voice
+                    language.tts_voice,
+                    language.deepl_source_lang,
+                    language.deepl_target_lang
                 )
                 .fetch_one(pool.as_ref())
                 .await?;

@@ -134,6 +134,8 @@ impl DB {
                             tts_rate: record.lang_tts_rate,
                             tts_pitch: record.lang_tts_pitch,
                             tts_voice: record.lang_tts_voice,
+                            deepl_source_lang: None,
+                            deepl_target_lang: None,
                         },
                     })
                     .collect();

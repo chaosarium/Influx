@@ -294,12 +294,12 @@ mod tests {
     use expect_test::{expect, Expect};
 
     #[tokio::test]
-    async fn test_tokenise_pipeline_small1() -> anyhow::Result<()> {
+    async fn test_tokenise_pipeline_small1() {
         const TEXT: &str = "Hello world! Hi!";
 
         let res = tokenise_pipeline(TEXT, "en".to_string()).await;
         assert!(res.is_ok());
-        let res = res.context("Failed to execute tokenise_pipeline test")?;
+        let res = res.unwrap();
         let expected = expect![[r#"
             AnnotatedDocV2 {
                 text: "Hello world! Hi!",
@@ -501,12 +501,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_tokenise_pipeline_small2() -> anyhow::Result<()> {
+    async fn test_tokenise_pipeline_small2() {
         const TEXT: &str = "Let's  go.";
 
         let res = tokenise_pipeline(TEXT, "en".to_string()).await;
         assert!(res.is_ok());
-        let res = res.context("Failed to execute tokenise_pipeline test")?;
+        let res = res.unwrap();
         let expected = expect![[r#"
             AnnotatedDocV2 {
                 text: "Let's  go.",
