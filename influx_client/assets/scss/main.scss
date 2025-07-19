@@ -269,3 +269,59 @@ span.clickable-tkn-span {
 .double-ruby[data-bottom=""]::after {
     display: none;
 }
+
+/* Popup component styles */
+.popup-container {
+    pointer-events: none;
+    /* Allow clicks to pass through the container */
+    // background-color: white;
+    // border: #999;
+}
+
+.popup-content {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    padding: 8px 12px;
+    max-width: 300px;
+    font-size: 14px;
+    line-height: 1.4;
+    pointer-events: auto;
+    /* Re-enable pointer events for the content */
+}
+
+.popup-content .popup-field {
+    margin-bottom: 4px;
+}
+
+.popup-content .popup-field:last-child {
+    margin-bottom: 0;
+}
+
+.popup-content .popup-label {
+    font-weight: bold;
+    color: #666;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.popup-content .popup-value {
+    color: #333;
+    margin-top: 2px;
+}
+
+.popup-content .popup-definition {
+    color: #2c5aa0;
+    font-weight: 500;
+}
+
+.popup-content .popup-pos {
+    color: #8b5a2b;
+    font-style: italic;
+}
+
+.popup-content .popup-lemma {
+    color: #5a7c65;
+}

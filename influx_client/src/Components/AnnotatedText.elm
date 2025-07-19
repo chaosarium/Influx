@@ -1,6 +1,7 @@
-module Components.AnnotatedText exposing (view, viewRegisteredPhrase, viewSentenceSegment)
+module Components.AnnotatedText exposing (PopupContent(..), view, viewRegisteredPhrase, viewSentenceSegment)
 
 import Bindings exposing (DocSegV2, DocSegVariants(..), Phrase, SentSegV2, SentSegVariants(..), Token, TokenStatus(..))
+import Components.Popup as Popup
 import Datastore.DictContext
 import Datastore.DocContext
 import Datastore.FocusContext as FocusContext
@@ -8,7 +9,8 @@ import Dict
 import Html exposing (Html, div, span)
 import Html.Attributes exposing (class, style)
 import Html.Attributes.Extra
-import Html.Events exposing (onMouseDown, onMouseEnter, onMouseUp)
+import Html.Events exposing (onMouseDown, onMouseEnter, onMouseLeave, onMouseUp)
+import Json.Decode as Decode
 import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
 import Utils.ModifierState as ModifierState
 
@@ -20,7 +22,15 @@ type alias Args msg =
     , focus_predicate : SentSegV2 -> Bool
     , seg_display_predicate : SentSegV2 -> Bool
     , doc_seg_display_predicate : DocSegV2 -> Bool
+    , popup_state : Maybe { position : { x : Float, y : Float }, content : PopupContent }
+    , on_hover_start : { x : Float, y : Float } -> PopupContent -> msg
+    , on_hover_end : msg
     }
+
+
+type PopupContent
+    = TokenPopup Token SentSegV2
+    | PhrasePopup Phrase SentSegV2
 
 
 view :
@@ -28,7 +38,87 @@ view :
     -> Datastore.DocContext.T
     -> List (Html msg)
 view args doc =
-    List.map (viewDocumentSegment args) doc.segments
+    let
+        documentSegments =
+            List.map (viewDocumentSegment args) doc.segments
+
+        popup =
+            case args.popup_state of
+                Nothing ->
+                    Html.text ""
+
+                Just { position, content } ->
+                    Popup.view
+                        { isVisible = True
+                        , position = position
+                        , content = createPopupContent content
+                        }
+    in
+    documentSegments ++ [ popup ]
+
+
+createPopupContent : PopupContent -> List (Html msg)
+createPopupContent content =
+    case content of
+        TokenPopup token seg ->
+            [ div [ class "popup-field" ]
+                [ div [ class "popup-label" ] [ Html.text "Word" ]
+                , div [ class "popup-value" ] [ Html.text token.orthography ]
+                ]
+            , div [ class "popup-field" ]
+                [ div [ class "popup-label" ] [ Html.text "Definition" ]
+                , div [ class "popup-value popup-definition" ] [ Html.text token.definition ]
+                ]
+            , div [ class "popup-field" ]
+                [ div [ class "popup-label" ] [ Html.text "Phonetic" ]
+                , div [ class "popup-value" ] [ Html.text token.phonetic ]
+                ]
+            ]
+                ++ (case seg.attributes.lemma of
+                        Just lemma ->
+                            [ div [ class "popup-field" ]
+                                [ div [ class "popup-label" ] [ Html.text "Lemma" ]
+                                , div [ class "popup-value popup-lemma" ] [ Html.text lemma ]
+                                ]
+                            ]
+
+                        Nothing ->
+                            []
+                   )
+                ++ (case seg.attributes.upos of
+                        Just pos ->
+                            [ div [ class "popup-field" ]
+                                [ div [ class "popup-label" ] [ Html.text "Part of Speech" ]
+                                , div [ class "popup-value popup-pos" ] [ Html.text pos ]
+                                ]
+                            ]
+
+                        Nothing ->
+                            []
+                   )
+
+        PhrasePopup phrase seg ->
+            [ div [ class "popup-field" ]
+                [ div [ class "popup-label" ] [ Html.text "Phrase" ]
+                , div [ class "popup-value" ] [ Html.text (String.join " " phrase.orthographySeq) ]
+                ]
+            , div [ class "popup-field" ]
+                [ div [ class "popup-label" ] [ Html.text "Definition" ]
+                , div [ class "popup-value popup-definition" ] [ Html.text phrase.definition ]
+                ]
+            ]
+
+
+onHoverWithPosition : (Float -> Float -> msg) -> Html.Attribute msg
+onHoverWithPosition toMsg =
+    Html.Events.on "mouseenter"
+        (Decode.map2 toMsg
+            (Decode.at [ "target", "offsetLeft" ] Decode.float)
+            (Decode.map2 (+)
+                (Decode.at [ "target", "offsetTop" ] Decode.float)
+                (Decode.at [ "target", "offsetHeight" ] Decode.float)
+            )
+        )
 
 
 doubleRubyC : String -> List (Html.Attribute msg) -> List (Html msg) -> String -> Html msg
@@ -149,6 +239,8 @@ viewRegisteredTkn args attrs text tkn seg =
                , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
                , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
                , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+               , onHoverWithPosition (\x y -> args.on_hover_start { x = x, y = y } (TokenPopup tkn seg))
+               , onMouseLeave args.on_hover_end
                , class "clickable-tkn-span"
                , Utils.classIf (args.focus_predicate seg) "tkn-focus"
                ]
@@ -171,6 +263,8 @@ viewRegisteredPhrase args attrs phrase seg components =
             ++ [ Utils.attributeIfNot args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
                , Utils.attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
                , Utils.attributeIfNot args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+               , onHoverWithPosition (\x y -> args.on_hover_start { x = x, y = y } (PhrasePopup phrase seg))
+               , onMouseLeave args.on_hover_end
                , tokenStatusToClass phrase.status
                , class "clickable-tkn-span"
                , Utils.classIf (args.focus_predicate seg) "tkn-focus"

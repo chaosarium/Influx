@@ -56,6 +56,7 @@ type alias Model =
     , focus_ctx : FocusContext.T
     , form_model : TermEditForm.Model
     , translation_result : Maybe String
+    , popup_state : Maybe { position : { x : Float, y : Float }, content : AnnotatedText.PopupContent }
     }
 
 
@@ -67,6 +68,7 @@ init { documentId } () =
       , focus_ctx = FocusContext.new
       , form_model = TermEditForm.empty
       , translation_result = Nothing
+      , popup_state = Nothing
       }
     , Effect.sendCmd (Api.GetAnnotatedDoc.get { filepath = documentId } ApiResponded)
     )
@@ -90,6 +92,9 @@ type Msg
       -- Translation...
     | TranslateText
     | TranslationReceived (Result Http.Error Api.Translate.TranslateResponse)
+      -- Popup...
+    | ShowPopup { x : Float, y : Float } AnnotatedText.PopupContent
+    | HidePopup
       -- Shared
     | SharedMsg Shared.Msg.Msg
 
@@ -250,6 +255,16 @@ update msg model =
             , Effect.none
             )
 
+        ShowPopup position content ->
+            ( { model | popup_state = Just { position = position, content = content } }
+            , Effect.none
+            )
+
+        HidePopup ->
+            ( { model | popup_state = Nothing }
+            , Effect.none
+            )
+
 
 
 -- SUBSCRIPTIONS
@@ -372,6 +387,9 @@ view shared route model =
                         FocusContext.isSentSegInSlice slice
             , seg_display_predicate = \_ -> True
             , doc_seg_display_predicate = \_ -> True
+            , popup_state = model.popup_state
+            , on_hover_start = ShowPopup
+            , on_hover_end = HidePopup
             }
     in
     let
@@ -394,6 +412,9 @@ view shared route model =
 
                     Just slice ->
                         FocusContext.isDocSegInSlice slice
+            , popup_state = Nothing
+            , on_hover_start = \_ _ -> HidePopup
+            , on_hover_end = HidePopup
             }
     in
     { title = "Document view"
