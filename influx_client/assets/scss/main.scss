@@ -56,11 +56,12 @@ pre.dbg-json-pre {
     padding-bottom: 10px;
     line-height: 1.8;
     user-select: none;
+    white-space: preserve;
 }
 
 span.document-whitespace-span,
 span.sentence-whitespace-span {
-    white-space: pre-wrap;
+    // white-space: preserve;
 }
 
 .dbg-on {
@@ -243,4 +244,51 @@ span.clickable-tkn-span {
 
 .toast--spaced {
     margin-bottom: 1em;
+}
+
+.beforeafter {
+    position: relative;
+    display: inline;
+    // background-color: #e5e7eb;
+}
+
+
+.beforeafter::before {
+    content: attr(data-top);
+    position: absolute;
+    top: -1.8em;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75em;
+    color: #2563eb;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* Bottom annotation using ::after */
+.beforeafter::after {
+    content: attr(data-bottom);
+    position: absolute;
+    bottom: -1.8em;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75em;
+    color: #dc2626;
+    font-style: italic;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* Hide pseudo-elements when data attributes are empty */
+.beforeafter:not([data-top])::before,
+.beforeafter[data-top=""]::before {
+    display: none;
+}
+
+.beforeafter:not([data-bottom])::after,
+.beforeafter[data-bottom=""]::after {
+    display: none;
 }

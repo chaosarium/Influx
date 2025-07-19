@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Annotated Text Reader with Pseudo-elements</title>
+  <style>
+    body {
+      font-family: 'Times New Roman', serif;
+      font-size: 18px;
+      line-height: 3;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+
+    /* Container for the annotated text */
+    .annotated-text {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Each token span - main text goes directly here */
+    .token {
+      position: relative;
+      display: inline;
+      background-color: #e5e7eb;
+    }
+
+    /* Top annotation using ::before */
+    .token::before {
+      content: attr(data-top);
+      position: absolute;
+      top: -1.8em;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75em;
+      color: #2563eb;
+      font-weight: 500;
+      line-height: 1.2;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    /* Bottom annotation using ::after */
+    .token::after {
+      content: attr(data-bottom);
+      position: absolute;
+      bottom: -1.8em;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75em;
+      color: #dc2626;
+      font-style: italic;
+      line-height: 1.2;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    /* Hide pseudo-elements when data attributes are empty */
+    .token:not([data-top])::before,
+    .token[data-top=""]::before {
+      display: none;
+    }
+
+    .token:not([data-bottom])::after,
+    .token[data-bottom=""]::after {
+      display: none;
+    }
+
+    /* Special handling for whitespace tokens */
+    .token.whitespace {
+      white-space: pre;
+      /* Preserves exact spaces and newlines */
+    }
+
+    /* Styling for the example section */
+    .example-section {
+      margin-top: 40px;
+      padding: 20px;
+      background: #f3f4f6;
+      border-radius: 6px;
+    }
+
+    .example-section h3 {
+      margin-top: 0;
+      color: #374151;
+    }
+
+    .code-block {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      white-space: pre;
+      overflow-x: auto;
+      margin: 10px 0;
+    }
+
+    /* Demo: Make it easier to see token boundaries */
+    .debug .token {
+      outline: 1px dashed rgba(255, 0, 0, 0.2);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="annotated-text">
+    <!-- Much cleaner HTML structure - main text directly in spans -->
+    <span class="token">voix</span> <span class="token">ambiguë</span>   <span class="token">d'un</span> <span class="token" data-top="heart" data-bottom="kœʀ">coeur</span> <span class="token">qui,</span> <span class="token">au</span> <span class="token" data-top="gentle breeze airesnt" data-bottom="zefiʀ">zéphyr,</span>
+    <span class="token whitespace">
+    </span> <span class="token" data-top="prefers" data-bottom="pʁefeʁ">préfère</span> <span class="token">les</span> <span class="token" data-top="bowls" data-bottom="ʒat">jattes</span> <span class="token">de</span> <span class="token">kiwis.</span>
+  </div>
+
+
+</body>
+
+</html>
