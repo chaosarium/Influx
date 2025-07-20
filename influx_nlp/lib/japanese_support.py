@@ -25,12 +25,23 @@ def align_furigana(original: str, reading: str) -> List[Tuple[str, str | None]]:
         align_furigana("難しい", "むずかしい") → [("難", "むずか"), ("し", None), ("い", None)]
         align_furigana("読み書き", "よみかき") → [("読", "よ"), ("み", None), ("書", "か"), ("き", None)]
         align_furigana("漢字", "かんじ") → [("漢字", "かんじ")]
+        align_furigana("所々", "ところどころ") → [("所々", "ところどころ")]
     """
     if original == "" or reading == "":
         return [(original, None)]
 
     if original == reading:
         return [(original, None)]
+
+    # Check if this is an all-kanji compound word with no kana
+    # Include iteration mark "々" as kanji-like for this purpose
+    def is_kanji_or_iteration(char):
+        return wanakana.is_kanji(char) or char == "々"
+
+    if all(is_kanji_or_iteration(char) for char in original):
+        # For all-kanji words, don't split unless we can find clear boundaries
+        # This handles cases like "所々", "漢字", "図書館" etc.
+        return [(original, reading)]
 
     result = []
     orig_idx = 0
@@ -51,9 +62,6 @@ def align_furigana(original: str, reading: str) -> List[Tuple[str, str | None]]:
             read_start = read_idx
 
             # Look for the next matching kana in original text
-            next_kana_in_orig = None
-            next_kana_pos = orig_idx
-
             if orig_idx < len(original):
                 next_kana_in_orig = original[orig_idx]
                 # Convert to hiragana for comparison if it's katakana

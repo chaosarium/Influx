@@ -34,6 +34,10 @@ def test_align_furigana_basic():
     result = align_furigana("美しい", "うつくしい")
     assert result == snapshot([("美", "うつく"), ("し", None), ("い", None)])
 
+    # Repeated kanji compound - this was the problematic case
+    result = align_furigana("所々", "ところどころ")
+    assert result == snapshot([("所々", "ところどころ")])
+
 
 def test_align_furigana_complex():
     """Test furigana alignment with complex cases."""
