@@ -1,6 +1,6 @@
 from __future__ import annotations
 from inline_snapshot import snapshot
-from lib.parsing import SpacyParser
+from lib.parsing import SpacyParser, JapaneseParser
 
 
 def test_spacy_parser_en():
@@ -583,4 +583,139 @@ First / sentence
 Second / sentence
 Third / sentence\
 """
+    )
+
+
+def test_japanese_parser_with_furigana():
+    """Test JapaneseParser adds furigana annotations to misc field."""
+    parser = JapaneseParser()
+    text = "これはテストです。"
+    result = parser.parse(text, "ja")
+    result["orthography_set"].sort()
+    result["lemma_set"].sort()
+    assert result == snapshot(
+        {
+            "text": "これはテストです。",
+            "segments": [
+                {
+                    "text": "これはテストです。",
+                    "start_char": 0,
+                    "end_char": 9,
+                    "inner": {
+                        "Sentence": {
+                            "segments": [
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "これ",
+                                    "start_char": 0,
+                                    "end_char": 2,
+                                    "inner": {"TokenSeg": {"idx": 0, "orthography": "これ"}},
+                                    "attributes": {
+                                        "lemma": "これ",
+                                        "upos": "PRON",
+                                        "xpos": "代名詞",
+                                        "dependency": (2, "nsubj"),
+                                        "misc": {
+                                            "Reading": "コレ",
+                                            "furigana_bracket": "これ",
+                                            "furigana_ruby": "これ",
+                                            "furigana_parentheses": "これ",
+                                            "furigana_alignment": [("これ", None)],
+                                            "hiragana_reading": "これ",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "は",
+                                    "start_char": 2,
+                                    "end_char": 3,
+                                    "inner": {"TokenSeg": {"idx": 1, "orthography": "は"}},
+                                    "attributes": {
+                                        "lemma": "は",
+                                        "upos": "ADP",
+                                        "xpos": "助詞-係助詞",
+                                        "dependency": (0, "case"),
+                                        "misc": {
+                                            "Reading": "ハ",
+                                            "furigana_bracket": "は",
+                                            "furigana_ruby": "は",
+                                            "furigana_parentheses": "は",
+                                            "furigana_alignment": [("は", None)],
+                                            "hiragana_reading": "は",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "テスト",
+                                    "start_char": 3,
+                                    "end_char": 6,
+                                    "inner": {"TokenSeg": {"idx": 2, "orthography": "テスト"}},
+                                    "attributes": {
+                                        "lemma": "テスト",
+                                        "upos": "NOUN",
+                                        "xpos": "名詞-普通名詞-サ変可能",
+                                        "dependency": (2, "ROOT"),
+                                        "misc": {
+                                            "Reading": "テスト",
+                                            "furigana_bracket": "テスト",
+                                            "furigana_ruby": "テスト",
+                                            "furigana_parentheses": "テスト",
+                                            "furigana_alignment": [("テ", None), ("ス", None), ("ト", None)],
+                                            "hiragana_reading": "てすと",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "です",
+                                    "start_char": 6,
+                                    "end_char": 8,
+                                    "inner": {"TokenSeg": {"idx": 3, "orthography": "です"}},
+                                    "attributes": {
+                                        "lemma": "です",
+                                        "upos": "AUX",
+                                        "xpos": "助動詞",
+                                        "dependency": (2, "cop"),
+                                        "misc": {
+                                            "Inflection": "助動詞-デス;終止形-一般",
+                                            "Reading": "デス",
+                                            "furigana_bracket": "です",
+                                            "furigana_ruby": "です",
+                                            "furigana_parentheses": "です",
+                                            "furigana_alignment": [("です", None)],
+                                            "hiragana_reading": "です",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "。",
+                                    "start_char": 8,
+                                    "end_char": 9,
+                                    "inner": "PunctuationSeg",
+                                    "attributes": {
+                                        "lemma": "。",
+                                        "upos": "PUNCT",
+                                        "xpos": "補助記号-句点",
+                                        "dependency": (2, "punct"),
+                                        "misc": {
+                                            "Reading": "。",
+                                            "furigana_bracket": "。",
+                                            "furigana_ruby": "。",
+                                            "furigana_parentheses": "。",
+                                            "furigana_alignment": [("。", None)],
+                                            "hiragana_reading": "。",
+                                        },
+                                    },
+                                },
+                            ]
+                        }
+                    },
+                }
+            ],
+            "orthography_set": ["。", "これ", "です", "は", "テスト"],
+            "lemma_set": ["。", "これ", "です", "は", "テスト"],
+        }
     )

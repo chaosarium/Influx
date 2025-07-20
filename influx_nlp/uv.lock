@@ -431,6 +431,9 @@ dependencies = [
     { name = "ja-ginza" },
     { name = "spacy" },
     { name = "stanza" },
+    { name = "sudachidict-full" },
+    { name = "sudachipy" },
+    { name = "wanakana-python" },
 ]
 
 [package.dev-dependencies]
@@ -442,8 +445,6 @@ dev = [
     { name = "pip" },
     { name = "pykakasi" },
     { name = "spacy" },
-    { name = "sudachidict-full" },
-    { name = "sudachipy" },
     { name = "tabulate" },
     { name = "unidic" },
 ]
@@ -459,6 +460,9 @@ requires-dist = [
     { name = "ja-ginza", specifier = ">=5.2.0" },
     { name = "spacy", specifier = ">=3.8.7" },
     { name = "stanza", specifier = ">=1.10.1" },
+    { name = "sudachidict-full", specifier = ">=20250515" },
+    { name = "sudachipy", specifier = ">=0.6.10" },
+    { name = "wanakana-python", specifier = ">=1.1.4" },
 ]
 
 [package.metadata.requires-dev]
@@ -470,8 +474,6 @@ dev = [
     { name = "pip", specifier = ">=25.1.1" },
     { name = "pykakasi", specifier = ">=2.3.0" },
     { name = "spacy", specifier = ">=3.8.7" },
-    { name = "sudachidict-full", specifier = ">=20250515" },
-    { name = "sudachipy", specifier = ">=0.6.10" },
     { name = "tabulate", specifier = ">=0.9.0" },
     { name = "unidic", specifier = ">=1.1.0" },
 ]
@@ -1847,6 +1849,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/aa/63/e53da845320b757bf
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c8/19/4ec628951a74043532ca2cf5d97b7b14863931476d117c471e8e2b1eb39f/urllib3-2.3.0-py3-none-any.whl", hash = "sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df", size = 128369 },
 ]
+
+[[package]]
+name = "wanakana-python"
+version = "1.2.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7f/e1/8894b11cfb4642e97f0d9df255665a027744b9c9debe6a1abacf2a53a462/wanakana-python-1.2.2.tar.gz", hash = "sha256:2168958ad2126eecddc3a86cfec5ba1f92eff42e85b309214513f5daaf64e08f", size = 15212 }
 
 [[package]]
 name = "wasabi"
