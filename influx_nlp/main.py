@@ -18,6 +18,7 @@ from deep_translator import (
 
 class TokeniserRequest(TypedDict):
     text: str
+    parser_config: dict
 
 
 class TranslateRequest(TypedDict):
@@ -51,12 +52,26 @@ def root_handler() -> str:
 def tokeniser_handler(lang_code: str) -> dict:
     data: TokeniserRequest = request.get_json()
     text: str = data.get("text", "")
-    print(f"Received text: {text}, lang_code: {lang_code}")
-    # for now, we route the parsers here. TODO someday, have the handler take parser selection as arg
-    if lang_code == "ja":
-        return context["ja_parser"].parse(text, lang_code)
+    parser_config: dict = data.get("parser_config", {"parser_type": "base_spacy", "spacy_model": None})
+
+    print(f"Received text: {text}, lang_code: {lang_code}, parser_config: {parser_config}")
+
+    # Select parser based on configuration
+    parser_type = parser_config.get("parser_type", "base_spacy")
+
+    if parser_type == "enhanced_japanese":
+        return context["ja_parser"].parse(text, lang_code, parser_config)
+    elif parser_type == "base_spacy":
+        # For base_spacy, we could potentially use a custom spacy model
+        spacy_model = parser_config.get("spacy_model")
+        if spacy_model:
+            # TODO: Implement custom spacy model loading
+            print(f"Custom spacy model requested: {spacy_model}, but using default for now")
+        return context["parser"].parse(text, lang_code, parser_config)
     else:
-        return context["parser"].parse(text, lang_code)
+        # Fallback to base parser
+        print(f"Unknown parser type: {parser_type}, falling back to base_spacy")
+        return context["parser"].parse(text, lang_code, parser_config)
 
 
 @app.route("/extern_translate", methods=["POST"])

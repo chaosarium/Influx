@@ -111,6 +111,8 @@ type Msg
     | UpdateTtsVoice String
     | UpdateDeeplSourceLang String
     | UpdateDeeplTargetLang String
+    | UpdateParserType String
+    | UpdateSpacyModel String
     | SubmitForm
     | CancelEdit
     | LanguageEditResponded (Result Http.Error LanguageEntry)
@@ -234,6 +236,35 @@ update msg model =
                         Just value
             in
             updateWorkingLanguage (\lang -> { lang | deeplTargetLang = targetLangValue }) model
+
+        UpdateParserType newValue ->
+            updateWorkingLanguage
+                (\lang ->
+                    { lang
+                        | parserConfig =
+                            { parserType = newValue
+                            , spacyModel = lang.parserConfig.spacyModel
+                            }
+                    }
+                )
+                model
+
+        UpdateSpacyModel newValue ->
+            updateWorkingLanguage
+                (\lang ->
+                    { lang
+                        | parserConfig =
+                            { parserType = lang.parserConfig.parserType
+                            , spacyModel =
+                                if String.isEmpty newValue then
+                                    Nothing
+
+                                else
+                                    Just newValue
+                            }
+                    }
+                )
+                model
 
         SubmitForm ->
             case model.formModel of
@@ -398,6 +429,13 @@ viewLanguageForm { originalLanguage, workingLanguage, currentDictInput, ttsRateI
         , Html.h3 [] [ Html.text "DeepL Translation Settings" ]
         , inputC [] "DeepL Source Language Code (e.g., EN, FR, JA)" "deeplSourceInput" UpdateDeeplSourceLang (Maybe.withDefault "" workingLanguage.deeplSourceLang)
         , inputC [] "DeepL Target Language Code (e.g., EN, DE, FR)" "deeplTargetInput" UpdateDeeplTargetLang (Maybe.withDefault "" workingLanguage.deeplTargetLang)
+        , Html.h3 [] [ Html.text "Parser Configuration" ]
+        , viewParserTypeDropdown workingLanguage.parserConfig.parserType
+        , if workingLanguage.parserConfig.parserType == "base_spacy" then
+            inputC [] "Custom spaCy Model (optional)" "spacyModelInput" UpdateSpacyModel (Maybe.withDefault "" workingLanguage.parserConfig.spacyModel)
+
+          else
+            Utils.htmlEmpty
         , div []
             [ buttonC
                 [ onClick SubmitForm
@@ -447,6 +485,28 @@ viewVoiceDropdown selectedVoice voices =
                     )
                     voices
             )
+        ]
+
+
+viewParserTypeDropdown : String -> Html Msg
+viewParserTypeDropdown selectedParserType =
+    Html.div []
+        [ Html.label [] [ Html.text "Parser Type" ]
+        , Html.select
+            [ onInput UpdateParserType
+            , value selectedParserType
+            ]
+            [ Html.option
+                [ value "base_spacy"
+                , selected (selectedParserType == "base_spacy")
+                ]
+                [ Html.text "Base (spaCy)" ]
+            , Html.option
+                [ value "enhanced_japanese"
+                , selected (selectedParserType == "enhanced_japanese")
+                ]
+                [ Html.text "Enhanced Japanese" ]
+            ]
         ]
 
 

@@ -43,6 +43,10 @@ impl DB {
                 tts_voice: None,
                 deepl_source_lang: Some("FR".to_string()),
                 deepl_target_lang: Some("EN".to_string()),
+                parser_config: crate::db::models::lang::ParserConfig {
+                    parser_type: "base_spacy".to_string(),
+                    spacy_model: None,
+                },
             },
             LanguageEntry {
                 id: None,
@@ -57,6 +61,10 @@ impl DB {
                 tts_voice: None,
                 deepl_source_lang: Some("EN".to_string()),
                 deepl_target_lang: Some("DE".to_string()),
+                parser_config: crate::db::models::lang::ParserConfig {
+                    parser_type: "base_spacy".to_string(),
+                    spacy_model: None,
+                },
             },
             LanguageEntry {
                 id: None,
@@ -68,6 +76,10 @@ impl DB {
                 tts_voice: None,
                 deepl_source_lang: Some("JA".to_string()),
                 deepl_target_lang: Some("EN".to_string()),
+                parser_config: crate::db::models::lang::ParserConfig {
+                    parser_type: "enhanced_japanese".to_string(),
+                    spacy_model: None,
+                },
             },
             LanguageEntry {
                 id: None,
@@ -79,6 +91,10 @@ impl DB {
                 tts_voice: None,
                 deepl_source_lang: Some("ZH".to_string()),
                 deepl_target_lang: Some("EN".to_string()),
+                parser_config: crate::db::models::lang::ParserConfig {
+                    parser_type: "base_spacy".to_string(),
+                    spacy_model: None,
+                },
             },
         ];
 

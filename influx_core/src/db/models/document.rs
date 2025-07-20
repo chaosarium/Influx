@@ -134,8 +134,12 @@ impl DB {
                             tts_rate: record.lang_tts_rate,
                             tts_pitch: record.lang_tts_pitch,
                             tts_voice: record.lang_tts_voice,
-                            deepl_source_lang: None,
+                            deepl_source_lang: None, // TODO questionable
                             deepl_target_lang: None,
+                            parser_config: crate::db::models::lang::ParserConfig {
+                                parser_type: "base_spacy".to_string(),
+                                spacy_model: None,
+                            },
                         },
                     })
                     .collect();

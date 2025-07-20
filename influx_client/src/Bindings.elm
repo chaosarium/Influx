@@ -33,6 +33,27 @@ type InfluxResourceId
     | StringId String
 
 
+type alias ParserConfig =
+    { parserType : String
+    , spacyModel : Maybe String
+    }
+
+
+parserConfigEncoder : ParserConfig -> Json.Encode.Value
+parserConfigEncoder struct =
+    Json.Encode.object
+        [ ( "parser_type", Json.Encode.string struct.parserType )
+        , ( "spacy_model", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.string) struct.spacyModel )
+        ]
+
+
+parserConfigDecoder : Json.Decode.Decoder ParserConfig
+parserConfigDecoder =
+    Json.Decode.succeed ParserConfig
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "parser_type" Json.Decode.string))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "spacy_model" (Json.Decode.nullable Json.Decode.string)))
+
+
 influxResourceIdEncoder : InfluxResourceId -> Json.Encode.Value
 influxResourceIdEncoder enum =
     case enum of
@@ -53,6 +74,7 @@ type alias LanguageEntry =
     , ttsVoice : Maybe String
     , deeplSourceLang : Maybe String
     , deeplTargetLang : Maybe String
+    , parserConfig : ParserConfig
     }
 
 
@@ -68,6 +90,7 @@ languageEntryEncoder struct =
         , ( "tts_voice", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.string) struct.ttsVoice )
         , ( "deepl_source_lang", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.string) struct.deeplSourceLang )
         , ( "deepl_target_lang", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.string) struct.deeplTargetLang )
+        , ( "parser_config", parserConfigEncoder struct.parserConfig )
         ]
 
 
@@ -331,6 +354,7 @@ type alias AnnotatedDocV2 =
     , segments : List DocSegV2
     , orthographySet : List String
     , lemmaSet : List String
+    , parserConfig : ParserConfig
     }
 
 
@@ -341,6 +365,7 @@ annotatedDocV2Encoder struct =
         , ( "segments", Json.Encode.list docSegV2Encoder struct.segments )
         , ( "orthography_set", Json.Encode.list Json.Encode.string struct.orthographySet )
         , ( "lemma_set", Json.Encode.list Json.Encode.string struct.lemmaSet )
+        , ( "parser_config", parserConfigEncoder struct.parserConfig )
         ]
 
 
@@ -462,6 +487,7 @@ languageEntryDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "tts_voice" (Json.Decode.nullable Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "deepl_source_lang" (Json.Decode.nullable Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "deepl_target_lang" (Json.Decode.nullable Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "parser_config" parserConfigDecoder))
 
 
 documentDecoder : Json.Decode.Decoder Document
@@ -692,6 +718,7 @@ annotatedDocV2Decoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "segments" (Json.Decode.list docSegV2Decoder)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "orthography_set" (Json.Decode.list Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lemma_set" (Json.Decode.list Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "parser_config" parserConfigDecoder))
 
 
 docSegV2Decoder : Json.Decode.Decoder DocSegV2

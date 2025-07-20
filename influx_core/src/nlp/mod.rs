@@ -82,6 +82,7 @@ pub struct AnnotatedDocV2 {
 
     pub orthography_set: BTreeSet<String>,
     pub lemma_set: BTreeSet<String>,
+    pub parser_config: crate::db::models::lang::ParserConfig,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
@@ -95,11 +96,13 @@ pub struct TermDictionary {
 pub async fn tokenise_pipeline(
     text: &str,
     language_code: String,
+    parser_config: crate::db::models::lang::ParserConfig,
 ) -> anyhow::Result<AnnotatedDocV2> {
     let client = Client::new();
     let url = format!("http://127.0.0.1:3001/tokeniser/{}", language_code);
     let payload = json!({
-        "text": text
+        "text": text,
+        "parser_config": parser_config
     });
     let response = client.post(&url).json(&payload).send().await?;
 
@@ -111,7 +114,11 @@ pub async fn tokenise_pipeline(
 
     if response.status().is_success() {
         debug!("Request to NLP server succeeded");
-        let res_json: AnnotatedDocV2 = response.json::<AnnotatedDocV2>().await?;
+        let res_json: AnnotatedDocV2 = response
+            .json::<AnnotatedDocV2>()
+            .await
+            .context("failed to decode NLP server response")?;
+        debug!("NLP server response decode succeeded");
         debug!(
             segments_count = res_json.segments.len(),
             orthography_count = res_json.orthography_set.len(),
@@ -119,7 +126,8 @@ pub async fn tokenise_pipeline(
             "Parsed NLP response"
         );
 
-        let annotated_document: AnnotatedDocV2 = res_json;
+        let mut annotated_document: AnnotatedDocV2 = res_json;
+        annotated_document.parser_config = parser_config;
         Ok(annotated_document)
     } else {
         Err(anyhow::anyhow!("Request to NLP server failed"))
@@ -285,6 +293,7 @@ pub fn phrase_fit_pipeline(
         segments: fitted_doc_seg,
         orthography_set: document.orthography_set,
         lemma_set: document.lemma_set,
+        parser_config: document.parser_config,
     }
 }
 
@@ -297,7 +306,15 @@ mod tests {
     async fn test_tokenise_pipeline_small1() {
         const TEXT: &str = "Hello world! Hi!";
 
-        let res = tokenise_pipeline(TEXT, "en".to_string()).await;
+        let res = tokenise_pipeline(
+            TEXT,
+            "en".to_string(),
+            crate::db::models::lang::ParserConfig {
+                parser_type: "base_spacy".to_string(),
+                spacy_model: None,
+            },
+        )
+        .await;
         assert!(res.is_ok());
         let res = res.unwrap();
         let expected = expect![[r#"
@@ -504,7 +521,15 @@ mod tests {
     async fn test_tokenise_pipeline_small2() {
         const TEXT: &str = "Let's  go.";
 
-        let res = tokenise_pipeline(TEXT, "en".to_string()).await;
+        let res = tokenise_pipeline(
+            TEXT,
+            "en".to_string(),
+            crate::db::models::lang::ParserConfig {
+                parser_type: "base_spacy".to_string(),
+                spacy_model: None,
+            },
+        )
+        .await;
         assert!(res.is_ok());
         let res = res.unwrap();
         let expected = expect![[r#"

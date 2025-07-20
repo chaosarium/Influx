@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS language (
     tts_voice TEXT,
     deepl_source_lang TEXT,
     deepl_target_lang TEXT,
+    parser_config JSONB NOT NULL DEFAULT '{"parser_type": "base_spacy", "spacy_model": null}'::jsonb,
     
     created_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     updated_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp

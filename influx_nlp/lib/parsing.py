@@ -98,14 +98,23 @@ class BaseParser:
     def _parse_with_pipeline(self, text: str, lang_pipeline) -> any:
         raise NotImplementedError("This method should be implemented by subclasses.")
 
-    def parse(self, text: str, lang_code: str) -> dict:
+    def parse(self, text: str, lang_code: str, parser_config: dict = None) -> dict:
         lang_pipeline = self._get_cache_opt(lang_code)
         if lang_pipeline is None:
             lang_pipeline = self._init_for_lang(lang_code)
             self._set_cache(lang_code, lang_pipeline)
 
         annotated_doc: AnnotatedDocV2 = self._parse_with_pipeline(text, lang_pipeline)
-        return annotated_doc.to_dict()
+
+        # Add parser_config to the response
+        result = annotated_doc.to_dict()
+        if parser_config is not None:
+            result["parser_config"] = parser_config
+        else:
+            # Default parser config
+            result["parser_config"] = {"parser_type": "base_spacy", "spacy_model": None}
+
+        return result
 
 
 class SpacyParser(BaseParser):

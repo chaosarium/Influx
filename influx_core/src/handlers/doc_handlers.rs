@@ -46,12 +46,25 @@ async fn load_cached_nlp_data(
     db: &crate::db::DB,
     document_id: InfluxResourceId,
     text_checksum: &str,
+    parser_config: &crate::db::models::lang::ParserConfig,
 ) -> Result<Option<nlp::AnnotatedDocV2>, anyhow::Error> {
     if let Some(cached_json) = db
-        .get_annotated_document_cache(document_id, text_checksum)
+        .get_annotated_document_cache(document_id.clone(), text_checksum)
         .await?
     {
         let cached_doc: nlp::AnnotatedDocV2 = serde_json::from_value(cached_json)?;
+
+        // Check if parser config matches - invalidate cache if different
+        if cached_doc.parser_config.parser_type != parser_config.parser_type
+            || cached_doc.parser_config.spacy_model != parser_config.spacy_model
+        {
+            info!(
+                "Parser config mismatch for document_id: {:?}, invalidating cache. Cached: {:?}, Current: {:?}",
+                document_id, cached_doc.parser_config, parser_config
+            );
+            return Ok(None);
+        }
+
         Ok(Some(cached_doc))
     } else {
         Ok(None)
@@ -95,34 +108,41 @@ pub(crate) async fn get_annotated_doc_logic(
 
     let text_checksum: String = text_checksum(text.clone());
 
-    let tokenised_doc: nlp::AnnotatedDocV2 =
-        match load_cached_nlp_data(&state.db, document_id.clone(), &text_checksum).await {
-            Ok(Some(cached_doc)) if USE_CACHE => {
-                info!(
-                    "Using cached NLP data for document_id: {:?}, checksum: {}",
-                    document_id, text_checksum
-                );
-                cached_doc
-            }
-            _ => {
-                // run tokenisation pipeline and cache it
-                let it = nlp::tokenise_pipeline(text.as_str(), lang_code.clone()).await?;
-                let serialized_json = serde_json::to_value(&it)?;
-                state
-                    .db
-                    .set_annotated_document_cache(
-                        document_id.clone(),
-                        &text_checksum,
-                        &serialized_json,
-                    )
-                    .await?;
-                info!(
-                    "Cached NLP data in database for document_id: {:?}, checksum: {}",
-                    document_id, text_checksum
-                );
-                it
-            }
-        };
+    let tokenised_doc: nlp::AnnotatedDocV2 = match load_cached_nlp_data(
+        &state.db,
+        document_id.clone(),
+        &text_checksum,
+        &lang_entry.parser_config,
+    )
+    .await
+    {
+        Ok(Some(cached_doc)) if USE_CACHE => {
+            info!(
+                "Using cached NLP data for document_id: {:?}, checksum: {}",
+                document_id, text_checksum
+            );
+            cached_doc
+        }
+        _ => {
+            // run tokenisation pipeline and cache it
+            let it = nlp::tokenise_pipeline(
+                text.as_str(),
+                lang_code.clone(),
+                lang_entry.parser_config.clone(),
+            )
+            .await?;
+            let serialized_json = serde_json::to_value(&it)?;
+            state
+                .db
+                .set_annotated_document_cache(document_id.clone(), &text_checksum, &serialized_json)
+                .await?;
+            info!(
+                "Cached NLP data in database for document_id: {:?}, checksum: {}",
+                document_id, text_checksum
+            );
+            it
+        }
+    };
 
     let tokens_dict: BTreeMap<String, Token> = state
         .db
