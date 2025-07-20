@@ -1,7 +1,7 @@
 from flask import Flask, request
 import argparse
 from typing import TypedDict, Optional
-from lib.parsing import SpacyParser
+from lib.parsing import SpacyParser, JapaneseParser
 from deep_translator import (
     GoogleTranslator,
     ChatGptTranslator,
@@ -52,8 +52,11 @@ def tokeniser_handler(lang_code: str) -> dict:
     data: TokeniserRequest = request.get_json()
     text: str = data.get("text", "")
     print(f"Received text: {text}, lang_code: {lang_code}")
-    # The parser returns a dictionary representation of AnnotatedDocV2
-    return context["parser"].parse(text, lang_code)
+    # for now, we route the parsers here. TODO someday, have the handler take parser selection as arg
+    if lang_code == "ja":
+        return context["ja_parser"].parse(text, lang_code)
+    else:
+        return context["parser"].parse(text, lang_code)
 
 
 @app.route("/extern_translate", methods=["POST"])
@@ -104,4 +107,5 @@ if __name__ == "__main__":
 
     context["port"] = args.port
     context["parser"] = SpacyParser()
+    context["ja_parser"] = JapaneseParser()
     app.run(host="127.0.0.1", port=args.port)

@@ -59,6 +59,7 @@ type alias Model =
     , translation_result : Maybe String
     , popup_state : Maybe { position : { x : Float, y : Float }, content : AnnotatedText.PopupContent }
     , annotation_config : AnnotatedText.AnnotationConfig
+    , showFurigana : Bool
     }
 
 
@@ -72,6 +73,7 @@ init { documentId } () =
       , translation_result = Nothing
       , popup_state = Nothing
       , annotation_config = { topAnnotation = AnnotatedText.Definition, bottomAnnotation = AnnotatedText.Phonetic }
+      , showFurigana = False
       }
     , Effect.sendCmd (Api.GetAnnotatedDoc.get { filepath = documentId } ApiResponded)
     )
@@ -102,6 +104,8 @@ type Msg
       -- Annotation configuration...
     | SetTopAnnotation AnnotatedText.AnnotationOption
     | SetBottomAnnotation AnnotatedText.AnnotationOption
+      -- Furigana toggle...
+    | ToggleFurigana
       -- Shared
     | SharedMsg Shared.Msg.Msg
 
@@ -298,6 +302,11 @@ update msg model =
             , Effect.none
             )
 
+        ToggleFurigana ->
+            ( { model | showFurigana = not model.showFurigana }
+            , Effect.none
+            )
+
 
 
 -- SUBSCRIPTIONS
@@ -476,14 +485,26 @@ viewAnnotationSelector label currentOption onSelect =
         ]
 
 
-viewAnnotationControls : AnnotatedText.AnnotationConfig -> Html Msg
-viewAnnotationControls config =
+viewAnnotationControls : AnnotatedText.AnnotationConfig -> Bool -> Html Msg
+viewAnnotationControls config showFurigana =
     div []
         [ h3 [] [ Html.text "Annotation Display Settings" ]
         , p [] [ Html.text "Choose what to display above and below the text:" ]
         , div []
             [ viewAnnotationSelector "Top annotation" config.topAnnotation SetTopAnnotation
             , viewAnnotationSelector "Bottom annotation" config.bottomAnnotation SetBottomAnnotation
+            ]
+        , div [ style "margin-top" "10px" ]
+            [ Html.label []
+                [ Html.input
+                    [ Html.Attributes.type_ "checkbox"
+                    , Html.Attributes.checked showFurigana
+                    , Html.Events.onClick ToggleFurigana
+                    , style "margin-right" "5px"
+                    ]
+                    []
+                , Html.text "Show furigana (Japanese reading annotations)"
+                ]
             ]
         ]
 
@@ -650,6 +671,7 @@ view shared route model =
                 \x y focusMsg popupContent ->
                     CombinedMouseEnter { x = x, y = y } focusMsg popupContent
             , annotation_config = model.annotation_config
+            , showFurigana = model.showFurigana
             }
     in
     let
@@ -677,6 +699,7 @@ view shared route model =
             , on_hover_end = HidePopup
             , on_mouse_enter_with_position = \_ _ _ _ -> HidePopup
             , annotation_config = model.annotation_config
+            , showFurigana = model.showFurigana
             }
     in
     { title = "Document view"
@@ -704,7 +727,7 @@ view shared route model =
                             annotatedDocViewCtx
                             model.working_doc
                         )
-                    , viewAnnotationControls model.annotation_config
+                    , viewAnnotationControls model.annotation_config model.showFurigana
                     ]
 
         -- for debugging check focus context model

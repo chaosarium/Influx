@@ -4,6 +4,8 @@ import Html
 import Html.Attributes
 import Html.Attributes.Extra
 import Html.Extra
+import Html.Parser
+import Html.Parser.Util
 import Url
 
 
@@ -130,3 +132,13 @@ dbgToString value =
     in
     -- Debug.toString value
     "debug not enabled"
+
+
+htmlOfString : String -> List (Html.Html msg)
+htmlOfString t =
+    case Html.Parser.run t of
+        Ok nodes ->
+            Html.Parser.Util.toVirtualDom nodes
+
+        Err _ ->
+            [ unreachableHtml ("failed to parse" ++ t) ]

@@ -42,6 +42,7 @@ type alias Args msg =
     , on_hover_end : msg
     , on_mouse_enter_with_position : Float -> Float -> FocusContext.Msg -> PopupContent -> msg
     , annotation_config : AnnotationConfig
+    , showFurigana : Bool
     }
 
 
@@ -141,6 +142,20 @@ onMouseEnterWithPositionAndFocus combinedMsg focusMsg =
                 (Decode.at [ "target", "offsetHeight" ] Decode.float)
             )
         )
+
+
+getTokenContent : Bool -> Dict.Dict String String -> String -> List (Html msg)
+getTokenContent showFurigana miscAttrs text =
+    if showFurigana then
+        case Dict.get "furigana_ruby" miscAttrs of
+            Just furiganaHtml ->
+                Utils.htmlOfString furiganaHtml
+
+            Nothing ->
+                [ Html.text text ]
+
+    else
+        [ Html.text text ]
 
 
 doubleRubyC : String -> List (Html.Attribute msg) -> List (Html msg) -> String -> Html msg
@@ -319,7 +334,7 @@ viewRegisteredTkn args attrs text tkn seg =
                , Utils.classIf (args.focus_predicate seg) "tkn-focus"
                ]
         )
-        [ Html.text text ]
+        (getTokenContent args.showFurigana seg.attributes.misc text)
         bottomText
 
 
@@ -353,7 +368,17 @@ viewRegisteredPhrase args attrs phrase seg components =
                , Utils.classIf (args.focus_predicate seg) "tkn-focus"
                ]
         )
-        (List.map (viewPhraseSubsegment args) components)
+        (if args.showFurigana then
+            case Dict.get "furigana_ruby" seg.attributes.misc of
+                Just furiganaHtml ->
+                    Utils.htmlOfString furiganaHtml
+
+                Nothing ->
+                    List.map (viewPhraseSubsegment args) components
+
+         else
+            List.map (viewPhraseSubsegment args) components
+        )
         bottomText
 
 

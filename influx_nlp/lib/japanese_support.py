@@ -178,7 +178,6 @@ def add_furigana_annotations(token_text: str, reading: str) -> Dict[str, Any]:
         "furigana_bracket": format_furigana(alignment, "bracket"),
         "furigana_ruby": format_furigana(alignment, "ruby"),
         "furigana_parentheses": format_furigana(alignment, "parentheses"),
-        "furigana_alignment": alignment,
         "hiragana_reading": hiragana_reading,
     }
 
