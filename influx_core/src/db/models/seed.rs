@@ -44,8 +44,12 @@ impl DB {
                 deepl_source_lang: Some("FR".to_string()),
                 deepl_target_lang: Some("EN".to_string()),
                 parser_config: crate::db::models::lang::ParserConfig {
-                    parser_type: "base_spacy".to_string(),
-                    spacy_model: None,
+                    which_parser: "base_spacy".to_string(),
+                    parser_args: {
+                        let mut args = HashMap::new();
+                        args.insert("spacy_model".to_string(), "fr_core_news_sm".to_string());
+                        args
+                    },
                 },
             },
             LanguageEntry {
@@ -62,8 +66,12 @@ impl DB {
                 deepl_source_lang: Some("EN".to_string()),
                 deepl_target_lang: Some("DE".to_string()),
                 parser_config: crate::db::models::lang::ParserConfig {
-                    parser_type: "base_spacy".to_string(),
-                    spacy_model: None,
+                    which_parser: "base_spacy".to_string(),
+                    parser_args: {
+                        let mut args = HashMap::new();
+                        args.insert("spacy_model".to_string(), "en_core_web_sm".to_string());
+                        args
+                    },
                 },
             },
             LanguageEntry {
@@ -77,8 +85,8 @@ impl DB {
                 deepl_source_lang: Some("JA".to_string()),
                 deepl_target_lang: Some("EN".to_string()),
                 parser_config: crate::db::models::lang::ParserConfig {
-                    parser_type: "enhanced_japanese".to_string(),
-                    spacy_model: None,
+                    which_parser: "enhanced_japanese".to_string(),
+                    parser_args: HashMap::new(),
                 },
             },
             LanguageEntry {
@@ -92,8 +100,12 @@ impl DB {
                 deepl_source_lang: Some("ZH".to_string()),
                 deepl_target_lang: Some("EN".to_string()),
                 parser_config: crate::db::models::lang::ParserConfig {
-                    parser_type: "base_spacy".to_string(),
-                    spacy_model: None,
+                    which_parser: "base_spacy".to_string(),
+                    parser_args: {
+                        let mut args = HashMap::new();
+                        args.insert("spacy_model".to_string(), "zh_core_web_sm".to_string());
+                        args
+                    },
                 },
             },
         ];

@@ -7,6 +7,7 @@ import Bindings exposing (InfluxResourceId(..), LanguageEntry)
 import Components.FormElements exposing (buttonC, inputC, stringListC)
 import Components.Styles as Styles
 import Components.Topbar
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (class, selected, style, value)
@@ -242,8 +243,8 @@ update msg model =
                 (\lang ->
                     { lang
                         | parserConfig =
-                            { parserType = newValue
-                            , spacyModel = lang.parserConfig.spacyModel
+                            { whichParser = newValue
+                            , parserArgs = lang.parserConfig.parserArgs
                             }
                     }
                 )
@@ -254,13 +255,13 @@ update msg model =
                 (\lang ->
                     { lang
                         | parserConfig =
-                            { parserType = lang.parserConfig.parserType
-                            , spacyModel =
+                            { whichParser = lang.parserConfig.whichParser
+                            , parserArgs =
                                 if String.isEmpty newValue then
-                                    Nothing
+                                    Dict.remove "spacy_model" lang.parserConfig.parserArgs
 
                                 else
-                                    Just newValue
+                                    Dict.insert "spacy_model" newValue lang.parserConfig.parserArgs
                             }
                     }
                 )
@@ -430,9 +431,9 @@ viewLanguageForm { originalLanguage, workingLanguage, currentDictInput, ttsRateI
         , inputC [] "DeepL Source Language Code (e.g., EN, FR, JA)" "deeplSourceInput" UpdateDeeplSourceLang (Maybe.withDefault "" workingLanguage.deeplSourceLang)
         , inputC [] "DeepL Target Language Code (e.g., EN, DE, FR)" "deeplTargetInput" UpdateDeeplTargetLang (Maybe.withDefault "" workingLanguage.deeplTargetLang)
         , Html.h3 [] [ Html.text "Parser Configuration" ]
-        , viewParserTypeDropdown workingLanguage.parserConfig.parserType
-        , if workingLanguage.parserConfig.parserType == "base_spacy" then
-            inputC [] "Custom spaCy Model (optional)" "spacyModelInput" UpdateSpacyModel (Maybe.withDefault "" workingLanguage.parserConfig.spacyModel)
+        , viewParserDropdown workingLanguage.parserConfig.whichParser
+        , if workingLanguage.parserConfig.whichParser == "base_spacy" then
+            inputC [] "Custom spaCy Model (find at https://spacy.io/models)" "spacyModelInput" UpdateSpacyModel (Maybe.withDefault "" (Dict.get "spacy_model" workingLanguage.parserConfig.parserArgs))
 
           else
             Utils.htmlEmpty
@@ -488,22 +489,22 @@ viewVoiceDropdown selectedVoice voices =
         ]
 
 
-viewParserTypeDropdown : String -> Html Msg
-viewParserTypeDropdown selectedParserType =
+viewParserDropdown : String -> Html Msg
+viewParserDropdown selectedParser =
     Html.div []
-        [ Html.label [] [ Html.text "Parser Type" ]
+        [ Html.label [] [ Html.text "Parser" ]
         , Html.select
             [ onInput UpdateParserType
-            , value selectedParserType
+            , value selectedParser
             ]
             [ Html.option
                 [ value "base_spacy"
-                , selected (selectedParserType == "base_spacy")
+                , selected (selectedParser == "base_spacy")
                 ]
                 [ Html.text "Base (spaCy)" ]
             , Html.option
                 [ value "enhanced_japanese"
-                , selected (selectedParserType == "enhanced_japanese")
+                , selected (selectedParser == "enhanced_japanese")
                 ]
                 [ Html.text "Enhanced Japanese" ]
             ]

@@ -1,6 +1,7 @@
 #![allow(unused_imports, unused_must_use)]
 use core::panic;
 use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
+use maplit::hashmap;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use anyhow::{self, Context};
@@ -99,7 +100,7 @@ pub async fn tokenise_pipeline(
     parser_config: crate::db::models::lang::ParserConfig,
 ) -> anyhow::Result<AnnotatedDocV2> {
     let client = Client::new();
-    let url = format!("http://127.0.0.1:3001/tokeniser/{}", language_code);
+    let url = "http://127.0.0.1:3001/tokeniser".to_string();
     let payload = json!({
         "text": text,
         "parser_config": parser_config
@@ -261,7 +262,7 @@ pub fn phrase_fit_pipeline(
                                     upos: None,
                                     xpos: None,
                                     dependency: None,
-                                    misc: HashMap::new(),
+                                    misc: hashmap!{},
                                 },
                             });
 
@@ -310,8 +311,10 @@ mod tests {
             TEXT,
             "en".to_string(),
             crate::db::models::lang::ParserConfig {
-                parser_type: "base_spacy".to_string(),
-                spacy_model: None,
+                which_parser: "base_spacy".to_string(),
+                parser_args: hashmap!{
+                    "spacy_model".to_string() => "en_core_web_sm".to_string()
+                },
             },
         )
         .await;
@@ -525,8 +528,12 @@ mod tests {
             TEXT,
             "en".to_string(),
             crate::db::models::lang::ParserConfig {
-                parser_type: "base_spacy".to_string(),
-                spacy_model: None,
+                which_parser: "base_spacy".to_string(),
+                parser_args: {
+                    let mut args = HashMap::new();
+                    args.insert("spacy_model".to_string(), "en_core_web_sm".to_string());
+                    args
+                },
             },
         )
         .await;

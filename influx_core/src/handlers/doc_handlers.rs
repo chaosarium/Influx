@@ -55,9 +55,7 @@ async fn load_cached_nlp_data(
         let cached_doc: nlp::AnnotatedDocV2 = serde_json::from_value(cached_json)?;
 
         // Check if parser config matches - invalidate cache if different
-        if cached_doc.parser_config.parser_type != parser_config.parser_type
-            || cached_doc.parser_config.spacy_model != parser_config.spacy_model
-        {
+        if &(cached_doc.parser_config) != parser_config {
             info!(
                 "Parser config mismatch for document_id: {:?}, invalidating cache. Cached: {:?}, Current: {:?}",
                 document_id, cached_doc.parser_config, parser_config

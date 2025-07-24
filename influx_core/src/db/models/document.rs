@@ -2,6 +2,7 @@ use super::*;
 use crate::db::deserialize_surreal_thing_opt;
 use crate::db::InfluxResourceId;
 use chrono::{DateTime, Utc};
+use std::collections::HashMap;
 use time::OffsetDateTime;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Elm, ElmEncode, ElmDecode)]
@@ -137,8 +138,15 @@ impl DB {
                             deepl_source_lang: None, // TODO questionable
                             deepl_target_lang: None,
                             parser_config: crate::db::models::lang::ParserConfig {
-                                parser_type: "base_spacy".to_string(),
-                                spacy_model: None,
+                                which_parser: "base_spacy".to_string(),
+                                parser_args: {
+                                    let mut args = HashMap::new();
+                                    args.insert(
+                                        "spacy_model".to_string(),
+                                        "en_core_web_sm".to_string(),
+                                    );
+                                    args
+                                },
                             },
                         },
                     })

@@ -34,24 +34,24 @@ type InfluxResourceId
 
 
 type alias ParserConfig =
-    { parserType : String
-    , spacyModel : Maybe String
+    { whichParser : String
+    , parserArgs : Dict String String
     }
 
 
 parserConfigEncoder : ParserConfig -> Json.Encode.Value
 parserConfigEncoder struct =
     Json.Encode.object
-        [ ( "parser_type", Json.Encode.string struct.parserType )
-        , ( "spacy_model", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.string) struct.spacyModel )
+        [ ( "which_parser", Json.Encode.string struct.whichParser )
+        , ( "parser_args", Json.Encode.dict identity Json.Encode.string struct.parserArgs )
         ]
 
 
 parserConfigDecoder : Json.Decode.Decoder ParserConfig
 parserConfigDecoder =
     Json.Decode.succeed ParserConfig
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "parser_type" Json.Decode.string))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "spacy_model" (Json.Decode.nullable Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "which_parser" Json.Decode.string))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "parser_args" (Json.Decode.dict Json.Decode.string)))
 
 
 influxResourceIdEncoder : InfluxResourceId -> Json.Encode.Value

@@ -9,8 +9,8 @@ use surrealdb::RecordId;
     Debug, Serialize, Deserialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode, sqlx::FromRow,
 )]
 pub struct ParserConfig {
-    pub parser_type: String,         // "base_spacy" or "enhanced_japanese"
-    pub spacy_model: Option<String>, // for base_spacy parser
+    pub which_parser: String,
+    pub parser_args: HashMap<String, String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode)]
@@ -112,7 +112,7 @@ impl DB {
                 }
             }
             Postgres { pool } => {
-                let records: Vec<LanguageEntry> = sqlx::query_as!( 
+                let records: Vec<LanguageEntry> = sqlx::query_as!(
                     LanguageEntryDB,
                     r#"
                         SELECT id, code, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang, parser_config as "parser_config: sqlx::types::Json<ParserConfig>"
