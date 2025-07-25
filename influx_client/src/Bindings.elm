@@ -71,6 +71,20 @@ languageEntryEncoder struct =
         ]
 
 
+type alias ParserConfig =
+    { whichParser : String
+    , parserArgs : Dict String (String)
+    }
+
+
+parserConfigEncoder : ParserConfig -> Json.Encode.Value
+parserConfigEncoder struct =
+    Json.Encode.object
+        [ ( "which_parser", (Json.Encode.string) struct.whichParser )
+        , ( "parser_args", (Json.Encode.dict identity (Json.Encode.string)) struct.parserArgs )
+        ]
+
+
 type alias Document =
     { id : Maybe (InfluxResourceId)
     , langId : InfluxResourceId
@@ -445,6 +459,13 @@ languageEntryDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "deepl_source_lang" (Json.Decode.nullable (Json.Decode.string))))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "deepl_target_lang" (Json.Decode.nullable (Json.Decode.string))))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "parser_config" (parserConfigDecoder)))
+
+
+parserConfigDecoder : Json.Decode.Decoder ParserConfig
+parserConfigDecoder =
+    Json.Decode.succeed ParserConfig
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "which_parser" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "parser_args" (Json.Decode.dict (Json.Decode.string))))
 
 
 documentDecoder : Json.Decode.Decoder Document

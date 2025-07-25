@@ -2,125 +2,93 @@ from flask import Flask, request
 import argparse
 from typing import TypedDict, Optional
 from lib.parsing import SpacyParser, JapaneseParser
-from deep_translator import (
-    GoogleTranslator,
-    ChatGptTranslator,
-    MicrosoftTranslator,
-    PonsTranslator,
-    LingueeTranslator,
-    MyMemoryTranslator,
-    YandexTranslator,
-    PapagoTranslator,
-    DeeplTranslator,
-    QcriTranslator,
-)
+from dataclasses import dataclass
+from loguru import logger
+from lib.annotation import AnnotatedDocV2, ParserConfig
 
 
-class TokeniserRequest(TypedDict):
+
+@dataclass
+class TokeniserRequest:
     text: str
-    parser_config: dict
+    parser_config: ParserConfig
 
 
-class TranslateRequest(TypedDict):
-    text: str
-    from_lang_id: str
-    to_lang_id: str
-    provider: str
-
-
-class TranslateResponse(TypedDict):
-    translated_text: str
-
-
-class AppContext(TypedDict):
-    port: Optional[int]
-    parser: Optional[SpacyParser]
+@dataclass
+class AppContext:
+    port: int
+    base_spacy: SpacyParser
+    japanese_parser: JapaneseParser
 
 
 app = Flask(__name__)
-context: AppContext = {"port": None, "parser": None}
+context: Optional[AppContext]
 
 
 @app.route("/")
 def root_handler() -> str:
-    port: Optional[int] = context["port"]
-    return f"Hello, World! Running on port {port}"
+    logger.debug("Health check endpoint accessed")
+    return f"Influx NLP Service running on port {context.port}"
 
 
-# post is a workaroudn for large incoming data
-@app.route("/tokeniser/<lang_code>", methods=["POST"])
-def tokeniser_handler(lang_code: str) -> dict:
-    data: TokeniserRequest = request.get_json()
-    text: str = data.get("text", "")
-    parser_config: dict = data.get("parser_config", {"parser_type": "base_spacy", "spacy_model": None})
+@app.route("/tokeniser", methods=["POST"])
+def tokeniser_handler() -> dict:
+    request_data = request.get_json()
+    logger.debug("Received tokeniser request")
 
-    print(f"Received text: {text}, lang_code: {lang_code}, parser_config: {parser_config}")
+    data = TokeniserRequest(
+        text=request_data["text"],
+        parser_config=ParserConfig(
+            which_parser=request_data["parser_config"]["which_parser"],
+            parser_args=request_data["parser_config"]["parser_args"],
+        ),
+    )
 
-    # Select parser based on configuration
-    parser_type = parser_config.get("parser_type", "base_spacy")
+    logger.info(
+        "Processing tokenisation request",
+        extra={
+            "text_length": len(data.text),
+            "text_preview": data.text[:20] + "..." if len(data.text) > 20 else data.text,
+            "parser_config": data.parser_config,
+        },
+    )
 
-    if parser_type == "enhanced_japanese":
-        return context["ja_parser"].parse(text, lang_code, parser_config)
-    elif parser_type == "base_spacy":
-        # For base_spacy, we could potentially use a custom spacy model
-        spacy_model = parser_config.get("spacy_model")
-        if spacy_model:
-            # TODO: Implement custom spacy model loading
-            print(f"Custom spacy model requested: {spacy_model}, but using default for now")
-        return context["parser"].parse(text, lang_code, parser_config)
-    else:
-        # Fallback to base parser
-        print(f"Unknown parser type: {parser_type}, falling back to base_spacy")
-        return context["parser"].parse(text, lang_code, parser_config)
-
-
-@app.route("/extern_translate", methods=["POST"])
-def google_translate_handler() -> TranslateResponse:
-    data: TranslateRequest = request.get_json()
-    text: str = data.get("text")
-    from_lang_id: str = data.get("from_lang_id")
-    to_lang_id: str = data.get("to_lang_id")
-    provider: str = data.get("provider")
-    translated_text: str
-    try:
-        match provider:
-            case "google":
-                translator = GoogleTranslator(source=from_lang_id, target=to_lang_id)
-            case "chatgpt":
-                translator = ChatGptTranslator(source=from_lang_id, target=to_lang_id)
-            case "microsoft":
-                translator = MicrosoftTranslator(source=from_lang_id, target=to_lang_id)
-            case "pons":
-                translator = PonsTranslator(source=from_lang_id, target=to_lang_id)
-            case "linguee":
-                translator = LingueeTranslator(source=from_lang_id, target=to_lang_id)
-            case "mymemory":
-                translator = MyMemoryTranslator(source=from_lang_id, target=to_lang_id)
-            case "yandex":
-                translator = YandexTranslator(source=from_lang_id, target=to_lang_id)
-            case "papago":
-                translator = PapagoTranslator(source=from_lang_id, target=to_lang_id)
-            case "deepl":
-                translator = DeeplTranslator(source=from_lang_id, target=to_lang_id)
-            case "qcri":
-                translator = QcriTranslator(source=from_lang_id, target=to_lang_id)
-            case _:
-                translated_text = "Invalid provider"
-                # In a real application, you might want to return a proper error response with a status code
-                return TranslateResponse(translated_text=translated_text)
-        translated_text = translator.translate(text)
-    except Exception as e:
-        translated_text = str(e)
-    print(translated_text)
-    return TranslateResponse(translated_text=translated_text)
+    match data.parser_config.which_parser:
+        case "enhanced_japanese":
+            annotated_doc: AnnotatedDocV2 = context.japanese_parser.parse(data.text, data.parser_config)
+        case "base_spacy":
+            annotated_doc: AnnotatedDocV2 = context.base_spacy.parse(data.text, data.parser_config)
+        case _:
+            logger.error("Invalid parser specified", extra={"parser": data.parser_config.which_parser})
+            return {"error": "Invalid which_parser"}, 500
+    
+    return annotated_doc.to_dict()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Arguments for NLP server")
     parser.add_argument("--port", type=int, help="The port to run the NLP server", required=True)
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        default="DEBUG",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        help="Set the logging level",
+    )
     args = parser.parse_args()
 
-    context["port"] = args.port
-    context["parser"] = SpacyParser()
-    context["ja_parser"] = JapaneseParser()
-    app.run(host="127.0.0.1", port=args.port)
+    logger.remove()
+    logger.add(
+        lambda msg: print(msg, end=""),
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{file.name}:{line}</cyan> - <level>{message}</level> {extra}",
+        level=args.log_level,
+        colorize=True,
+    )
+
+    logger.info("Starting Influx NLP Service", extra={"port": args.port, "log_level": args.log_level})
+
+    context = AppContext(port=args.port, base_spacy=SpacyParser(), japanese_parser=JapaneseParser())
+    logger.success("Application context created")
+
+    logger.info("Starting Flask server", extra={"host": "127.0.0.1", "port": context.port})
+    app.run(host="127.0.0.1", port=context.port, debug=False)

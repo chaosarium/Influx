@@ -19,7 +19,7 @@ use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};
 use tracing::{debug, info};
 
-const USE_CACHE: bool = true;
+const USE_CACHE: bool = false;
 
 pub async fn get_docs_list(
     State(ServerState { influx_path: _, db }): State<ServerState>,

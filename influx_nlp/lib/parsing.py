@@ -2,17 +2,19 @@ import stanza
 import spacy
 import re
 from typing import List, Set
-from .annotation import (
-    AnnotatedDocV2,
-    DocSegV2,
-    DocSegSentence,
-    DocSegDocumentWhitespace,
-    SentSegV2,
-    SentSegTokenSeg,
-    SentSegWhitespaceSeg,
-    SentSegPunctuationSeg,
-    SegAttribute,
-)
+from loguru import logger
+from .annotation import *
+import spacy.cli
+
+
+def ensure_spacy_model(model_name):
+
+    try:
+        return spacy.load(model_name)
+    except OSError:
+        print(f"Model '{model_name}' not found. Auto downloading...")
+        spacy.cli.download(model_name)
+        return spacy.load(model_name)
 
 
 def recover_sentence_whitespace(text: str, segments: List[SentSegV2], sentence_start_char: int) -> List[SentSegV2]:
@@ -83,59 +85,48 @@ def recover_document_whitespace(text: str, doc_segments: List[DocSegV2]) -> List
 class BaseParser:
     def __init__(self):
         self.cache: dict = {}
+    
+    @staticmethod
+    def _dict_as_key(d: dict) -> str:
+        return frozenset((k, v) for k, v in d.items())
 
-    def _get_cache_opt(self, lang_code: str) -> dict:
-        if lang_code in self.cache:
-            return self.cache[lang_code]
+    def _get_cache_opt(self, parser_args: dict) -> dict:
+        k = self._dict_as_key(parser_args)
+        if k in self.cache:
+            return self.cache[k]
         return None
 
-    def _set_cache(self, lang_code: str, lang_pipeline) -> None:
-        self.cache[lang_code] = lang_pipeline
+    def _set_cache(self, parser_args: dict, lang_pipeline) -> None:
+        k = self._dict_as_key(parser_args)
+        self.cache[k] = lang_pipeline
 
-    def _init_for_lang(self, lang_code: str) -> any:
+    def _init_for_args(self, parser_args: dict) -> any:
         raise NotImplementedError("This method should be implemented by subclasses.")
 
-    def _parse_with_pipeline(self, text: str, lang_pipeline) -> any:
+    def _parse_with_pipeline(self, text: str, parser_config: dict, lang_pipeline) -> any:
         raise NotImplementedError("This method should be implemented by subclasses.")
 
-    def parse(self, text: str, lang_code: str, parser_config: dict = None) -> dict:
-        lang_pipeline = self._get_cache_opt(lang_code)
+    def parse(self, text: str, parser_config: ParserConfig) -> dict:
+        lang_pipeline = self._get_cache_opt(parser_config.parser_args)
         if lang_pipeline is None:
-            lang_pipeline = self._init_for_lang(lang_code)
-            self._set_cache(lang_code, lang_pipeline)
+            lang_pipeline = self._init_for_args(parser_config.parser_args)
+            self._set_cache(parser_config.parser_args, lang_pipeline)
 
-        annotated_doc: AnnotatedDocV2 = self._parse_with_pipeline(text, lang_pipeline)
+        annotated_doc: AnnotatedDocV2 = self._parse_with_pipeline(text, parser_config, lang_pipeline)
 
-        # Add parser_config to the response
-        result = annotated_doc.to_dict()
-        if parser_config is not None:
-            result["parser_config"] = parser_config
-        else:
-            # Default parser config
-            result["parser_config"] = {"parser_type": "base_spacy", "spacy_model": None}
-
-        return result
+        return annotated_doc
 
 
 class SpacyParser(BaseParser):
     def __init__(self):
         super().__init__()
 
-    def _init_for_lang(self, lang_code: str) -> spacy.Language:
-        spacy_model: str
-        match lang_code:
-            case "ja":
-                spacy_model = "ja_ginza"
-            case "en":
-                spacy_model = "en_core_web_sm"
-            case "fr":
-                spacy_model = "fr_core_news_sm"
-            case _:
-                raise ValueError("haven't figured out what model to use yet...")
-        nlp: spacy.Language = spacy.load(spacy_model)
+    def _init_for_args(self, parser_args: dict) -> spacy.Language:
+        nlp: spacy.Language = ensure_spacy_model(parser_args["spacy_model"])
+        logger.debug("spaCy model loaded successfully", extra=parser_args)
         return nlp
 
-    def _parse_with_pipeline(self, text: str, nlp: spacy.Language) -> AnnotatedDocV2:
+    def _parse_with_pipeline(self, text: str, parser_config: ParserConfig, nlp: spacy.Language) -> AnnotatedDocV2:
         doc: spacy.tokens.Doc = nlp(text)
 
         orthography_set: Set[str] = set()
@@ -199,13 +190,19 @@ class SpacyParser(BaseParser):
             segments=doc_segments,
             orthography_set=list(orthography_set),
             lemma_set=list(lemma_set),
+            parser_config=parser_config, 
         )
 
 
 class JapaneseParser(SpacyParser):
     """Japanese-specific parser that adds furigana annotations of various format to the "misc" field."""
 
-    def _parse_with_pipeline(self, text: str, nlp: spacy.Language) -> AnnotatedDocV2:
+    def _init_for_args(self, parser_args: dict) -> spacy.Language:
+        nlp: spacy.Language = spacy.load("ja_ginza")
+        logger.debug("spaCy model loaded successfully", extra=parser_args)
+        return nlp
+
+    def _parse_with_pipeline(self, text: str, parser_config: ParserConfig, nlp: spacy.Language) -> AnnotatedDocV2:
         from .japanese_support import add_furigana_annotations
 
         doc: spacy.tokens.Doc = nlp(text)
@@ -280,4 +277,5 @@ class JapaneseParser(SpacyParser):
             segments=doc_segments,
             orthography_set=list(orthography_set),
             lemma_set=list(lemma_set),
+            parser_config=parser_config, 
         )

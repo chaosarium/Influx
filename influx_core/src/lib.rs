@@ -110,6 +110,7 @@ mod tests {
             encoders: [
                 db::InfluxResourceId,
                 lang::LanguageEntry,
+                lang::ParserConfig,
                 db::models::document::Document,
                 db::models::document::DocPackage,
                 db::models::vocab::Token,
@@ -133,6 +134,7 @@ mod tests {
             decoders: [
                 db::InfluxResourceId,
                 lang::LanguageEntry,
+                lang::ParserConfig,
                 db::models::document::Document,
                 db::models::document::DocPackage,
                 db::models::vocab::Token,

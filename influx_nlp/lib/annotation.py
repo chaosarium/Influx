@@ -117,6 +117,17 @@ class DocSegV2:
             "inner": self.inner.to_dict(),
         }
 
+# Corresponds to Rust's `ParserConfig`
+@dataclass
+class ParserConfig:
+    which_parser: str
+    parser_args: dict[str, str]
+    
+    def to_dict(self):
+        return {
+            "which_parser": self.which_parser,
+            "parser_args": self.parser_args,
+        }
 
 # Corresponds to Rust's `AnnotatedDocV2`
 @dataclass
@@ -125,8 +136,7 @@ class AnnotatedDocV2:
     segments: List[DocSegV2]
     orthography_set: List[str]
     lemma_set: List[str]
-    token_dict: Optional[Dict[str, dict]] = None
-    phrase_dict: Optional[Dict[str, dict]] = None
+    parser_config: ParserConfig
 
     def to_dict(self):
         data = {
@@ -134,7 +144,7 @@ class AnnotatedDocV2:
             "segments": [s.to_dict() for s in self.segments],
             "orthography_set": self.orthography_set,
             "lemma_set": self.lemma_set,
-            "token_dict": self.token_dict,
-            "phrase_dict": self.phrase_dict,
+            "parser_config": self.parser_config.to_dict(),
         }
         return {k: v for k, v in data.items() if v is not None}
+
