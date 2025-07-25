@@ -529,10 +529,8 @@ mod tests {
             "en".to_string(),
             crate::db::models::lang::ParserConfig {
                 which_parser: "base_spacy".to_string(),
-                parser_args: {
-                    let mut args = HashMap::new();
-                    args.insert("spacy_model".to_string(), "en_core_web_sm".to_string());
-                    args
+                parser_args: hashmap!{
+                    "spacy_model".to_string() => "en_core_web_sm".to_string()
                 },
             },
         )
