@@ -132,7 +132,6 @@ def test_add_furigana_annotations():
             "furigana_bracket": "これ",
             "furigana_ruby": "これ",
             "furigana_parentheses": "これ",
-            "furigana_alignment": [("これ", None)],
             "hiragana_reading": "これ",
         }
     )
@@ -144,7 +143,6 @@ def test_add_furigana_annotations():
             "furigana_bracket": "難[むずか]しい",
             "furigana_ruby": "<ruby>難<rt>むずか</rt></ruby>しい",
             "furigana_parentheses": "難(むずか)しい",
-            "furigana_alignment": [("難", "むずか"), ("し", None), ("い", None)],
             "hiragana_reading": "むずかしい",
         }
     )
@@ -156,7 +154,6 @@ def test_add_furigana_annotations():
             "furigana_bracket": "読[よ]み書[か]き",
             "furigana_ruby": "<ruby>読<rt>よ</rt></ruby>み<ruby>書<rt>か</rt></ruby>き",
             "furigana_parentheses": "読(よ)み書(か)き",
-            "furigana_alignment": [("読", "よ"), ("み", None), ("書", "か"), ("き", None)],
             "hiragana_reading": "よみかき",
         }
     )
