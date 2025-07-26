@@ -35,3 +35,4 @@ dev = [
 [tool.black]
 line-length = 10000
 target-version = ['py312']
+skip-string-normalization = true
