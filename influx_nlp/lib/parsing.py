@@ -171,9 +171,7 @@ class SpacyParser(BaseParser):
             if sent_segments != [] and not sent.text.isspace():
                 sentence_start_char: int = min([s.start_char for s in sent_segments])
                 sentence_end_char: int = max([s.end_char for s in sent_segments])
-                recovered_sent_segments: List[SentSegV2] = recover_sentence_whitespace(
-                    text, sent_segments, sentence_start_char
-                )
+                recovered_sent_segments: List[SentSegV2] = recover_sentence_whitespace(text, sent_segments, sentence_start_char)
                 doc_sentence_segments.append(
                     DocSegV2(
                         text=text[sentence_start_char:sentence_end_char],
@@ -258,9 +256,7 @@ class JapaneseParser(SpacyParser):
             if sent_segments != [] and not sent.text.isspace():
                 sentence_start_char: int = min([s.start_char for s in sent_segments])
                 sentence_end_char: int = max([s.end_char for s in sent_segments])
-                recovered_sent_segments: List[SentSegV2] = recover_sentence_whitespace(
-                    text, sent_segments, sentence_start_char
-                )
+                recovered_sent_segments: List[SentSegV2] = recover_sentence_whitespace(text, sent_segments, sentence_start_char)
                 doc_sentence_segments.append(
                     DocSegV2(
                         text=text[sentence_start_char:sentence_end_char],

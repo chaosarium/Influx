@@ -33,5 +33,9 @@ dev = [
 ]
 
 [tool.black]
-line-length = 120
+line-length = 300
 target-version = ['py312']
+skip-string-normalization = true
+
+[tool.black.per-file-ignores]
+"lib/japanese_deinflect/derivations.py" = ["line-length"]

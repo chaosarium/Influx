@@ -1,5 +1,7 @@
 from __future__ import annotations
 from inline_snapshot import snapshot
+from lib.annotation import ParserConfig
+from lib.parsing import JapaneseParser
 from lib.japanese_support import (
     align_furigana,
     format_furigana,
@@ -63,9 +65,7 @@ def test_align_furigana_katakana_cases():
     """Test alignment with katakana input."""
     # All katakana to hiragana
     result = align_furigana("コンピューター", "こんぴゅーたー")
-    assert result == snapshot(
-        [("コ", None), ("ン", None), ("ピ", None), ("ュ", None), ("ー", None), ("タ", None), ("ー", None)]
-    )
+    assert result == snapshot([("コ", None), ("ン", None), ("ピ", None), ("ュ", None), ("ー", None), ("タ", None), ("ー", None)])
 
     result = align_furigana("データベース", "でーたべーす")
     assert result == snapshot([("デ", None), ("ー", None), ("タ", None), ("ベ", None), ("ー", None), ("ス", None)])
