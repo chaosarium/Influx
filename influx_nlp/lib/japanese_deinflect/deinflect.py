@@ -96,10 +96,7 @@ class Deinflector:
                     if i + next_derivation_offset >= len(all_derivations_taken):
                         break
                     next_derivation = all_derivations_taken[i + next_derivation_offset]
-                    if (
-                        not next_derivation
-                        or next_derivation["conjugated_word_type"] != forbidden_predecessor_sequence[g]
-                    ):
+                    if not next_derivation or next_derivation["conjugated_word_type"] != forbidden_predecessor_sequence[g]:
                         break
                     if g == 0:
                         return True
@@ -108,15 +105,11 @@ class Deinflector:
 
     def _create_derivation_sequence_output_form(self, derivation_sequence: Dict[str, Any]) -> Dict[str, Any]:
         return {
-            "derivations": [
-                d["conjugated_word_type"] for d in reversed(derivation_sequence["non_silent_derivations_taken"])
-            ],
+            "derivations": [d["conjugated_word_type"] for d in reversed(derivation_sequence["non_silent_derivations_taken"])],
             "word_form_progression": list(reversed(derivation_sequence["non_silent_word_form_progression"])),
         }
 
-    def _unconjugate_recursive(
-        self, word: str, word_type: WordType, derivation_sequence: Dict[str, Any], level: int, level_limit: int
-    ) -> List[Dict[str, Any]]:
+    def _unconjugate_recursive(self, word: str, word_type: WordType, derivation_sequence: Dict[str, Any], level: int, level_limit: int) -> List[Dict[str, Any]]:
         if self._took_invalid_derivation_path(derivation_sequence):
             return []
 
@@ -127,9 +120,7 @@ class Deinflector:
         is_dictionary_form = word_type in [WordType.GODAN_VERB, WordType.ICHIDAN_VERB, WordType.SENTENCE]
 
         if is_dictionary_form:
-            results.append(
-                {"base": word, "derivation_sequence": self._create_derivation_sequence_output_form(derivation_sequence)}
-            )
+            results.append({"base": word, "derivation_sequence": self._create_derivation_sequence_output_form(derivation_sequence)})
 
         candidate_derivations = self._get_candidate_derivations(word_type, word)
 
@@ -154,7 +145,7 @@ class Deinflector:
             )
         return results
 
-    def unconjugate(self, word: str, fuzzy: bool = False, recursion_depth_limit: int = 10) -> List[Dict[str, Any]]:
+    def unconjugate(self, word: str, fuzzy: bool = False, recursion_depth_limit: int = 100) -> List[Dict[str, Any]]:
         results = self._unconjugate_recursive(
             word,
             WordType.SENTENCE,
