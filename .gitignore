@@ -42,3 +42,4 @@ influx_nlp/main.onefile-build/**
 influx_nlp/main.dist/**
 
 external
+japanese-deinflect-references
