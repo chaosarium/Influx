@@ -85,7 +85,7 @@ def recover_document_whitespace(text: str, doc_segments: List[DocSegV2]) -> List
 class BaseParser:
     def __init__(self):
         self.cache: dict = {}
-    
+
     @staticmethod
     def _dict_as_key(d: dict) -> str:
         return frozenset((k, v) for k, v in d.items())
@@ -190,7 +190,7 @@ class SpacyParser(BaseParser):
             segments=doc_segments,
             orthography_set=list(orthography_set),
             lemma_set=list(lemma_set),
-            parser_config=parser_config, 
+            parser_config=parser_config,
         )
 
 
@@ -277,5 +277,5 @@ class JapaneseParser(SpacyParser):
             segments=doc_segments,
             orthography_set=list(orthography_set),
             lemma_set=list(lemma_set),
-            parser_config=parser_config, 
+            parser_config=parser_config,
         )

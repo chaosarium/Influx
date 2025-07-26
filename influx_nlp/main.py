@@ -7,7 +7,6 @@ from loguru import logger
 from lib.annotation import AnnotatedDocV2, ParserConfig
 
 
-
 @dataclass
 class TokeniserRequest:
     text: str
@@ -61,7 +60,7 @@ def tokeniser_handler() -> dict:
         case _:
             logger.error("Invalid parser specified", extra={"parser": data.parser_config.which_parser})
             return {"error": "Invalid which_parser"}, 500
-    
+
     return annotated_doc.to_dict()
 
 

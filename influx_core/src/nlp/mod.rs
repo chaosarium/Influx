@@ -262,7 +262,7 @@ pub fn phrase_fit_pipeline(
                                     upos: None,
                                     xpos: None,
                                     dependency: None,
-                                    misc: hashmap!{},
+                                    misc: hashmap! {},
                                 },
                             });
 
@@ -312,7 +312,7 @@ mod tests {
             "en".to_string(),
             crate::db::models::lang::ParserConfig {
                 which_parser: "base_spacy".to_string(),
-                parser_args: hashmap!{
+                parser_args: hashmap! {
                     "spacy_model".to_string() => "en_core_web_sm".to_string()
                 },
             },
@@ -515,6 +515,12 @@ mod tests {
                     "hi",
                     "world",
                 },
+                parser_config: ParserConfig {
+                    which_parser: "base_spacy",
+                    parser_args: {
+                        "spacy_model": "en_core_web_sm",
+                    },
+                },
             }
         "#]];
         expected.assert_debug_eq(&res);
@@ -529,7 +535,7 @@ mod tests {
             "en".to_string(),
             crate::db::models::lang::ParserConfig {
                 which_parser: "base_spacy".to_string(),
-                parser_args: hashmap!{
+                parser_args: hashmap! {
                     "spacy_model".to_string() => "en_core_web_sm".to_string()
                 },
             },
@@ -693,6 +699,12 @@ mod tests {
                     "go",
                     "let",
                     "us",
+                },
+                parser_config: ParserConfig {
+                    which_parser: "base_spacy",
+                    parser_args: {
+                        "spacy_model": "en_core_web_sm",
+                    },
                 },
             }
         "#]];
