@@ -5,7 +5,6 @@ from typing import List, Dict, Any, Optional, Tuple
 from .word_type import WordType
 from .derivation_attribute import DerivationAttribute
 from .derivations import rules
-from .grammar_explanations import link_for_derivation_step
 
 
 class Deinflector:

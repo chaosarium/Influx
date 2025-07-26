@@ -3,10 +3,10 @@ from inline_snapshot import snapshot
 from lib.japanese_deinflect.deinflect import Deinflector
 from lib.japanese_deinflect.word_type import WordType
 from lib.japanese_deinflect.derivations import rules
-from lib.japanese_deinflect.grammar_explanations import link_for_derivation_step
 
 
 deinflector = Deinflector()
+
 
 def get_deinflected(word_to_deconjugate):
     results = deinflector.unconjugate(word_to_deconjugate)
@@ -247,15 +247,9 @@ def analyze_word(word: str) -> str:
     current_word = results[0]["base"]
 
     for i, (derivation_type, next_word) in enumerate(zip(derivations, word_progression)):
-        explanation_link = link_for_derivation_step.get(derivation_type)
 
         output.append(f"{i+1}. {current_word} → {next_word}")
         output.append(f"   Form: {derivation_type.value}")
-
-        if explanation_link:
-            output.append(f"   Grammar guide: {explanation_link}")
-        else:
-            output.append(f"   Grammar guide: (no explanation available)")
 
         current_word = next_word
         output.append("")
@@ -283,7 +277,7 @@ def test_maximum_recursion_depth():
     assert len(results_with_limit) <= len(results_without_limit)
 
 
-def test_grammar_explanations():
+def test_analysis():
     """Test that grammar explanations are generated correctly for example words."""
     example_words = [
         "行きます",  # polite form
@@ -306,18 +300,16 @@ def test_grammar_explanations():
 
     combined_output = "\n".join(output_parts)
     assert combined_output == snapshot(
-        '''\
+        """\
 Analysis of '行きます':
 Dictionary form: 行く
 
 Derivation steps:
 1. 行く → 行き
    Form: ます Stem
-   Grammar guide: http://www.guidetojapanese.org/learn/grammar/polite#The_stem_of_verbs
 
 2. 行き → 行きます
    Form: ます Polite
-   Grammar guide: http://www.guidetojapanese.org/learn/grammar/polite#Not_being_rude_in_Japan
 
 --------------------------------------------------
 
@@ -327,11 +319,9 @@ Dictionary form: 食べる
 Derivation steps:
 1. 食べる → 食べられる
    Form: Potential Or Passive Form
-   Grammar guide: http://www.guidetojapanese.org/learn/grammar/causepass
 
 2. 食べられる → 食べられない
    Form: ない Negative
-   Grammar guide: http://www.guidetojapanese.org/learn/grammar/negativeverbs
 
 --------------------------------------------------
 
@@ -341,15 +331,12 @@ Dictionary form: 読む
 Derivation steps:
 1. 読む → 読んで
    Form: て・で Form
-   Grammar guide: http://www.guidetojapanese.org/learn/grammar/compound#Expressing_a_sequence_of_verbs_with_the_te-form
 
 2. 読んで → 読んでいる
    Form: ている・でいる Continuing State/Result
-   Grammar guide: http://www.guidetojapanese.org/learn/grammar/teform#Using_for_enduring_states
 
 3. 読んでいる → 読んでいた
    Form: Plain Past
-   Grammar guide: http://www.guidetojapanese.org/learn/grammar/past_tense
 
 --------------------------------------------------
 
@@ -359,7 +346,6 @@ Dictionary form: 書く
 Derivation steps:
 1. 書く → 書かれる
    Form: Passive Form
-   Grammar guide: http://www.guidetojapanese.org/learn/grammar/causepass
 
 --------------------------------------------------
 
@@ -369,11 +355,8 @@ Dictionary form: 飲む
 Derivation steps:
 1. 飲む → 飲み
    Form: ます Stem
-   Grammar guide: http://www.guidetojapanese.org/learn/grammar/polite#The_stem_of_verbs
 
 2. 飲み → 飲みたい
    Form: たい Want To Do
-   Grammar guide: http://www.guidetojapanese.org/learn/grammar/desire#Verbs_you_want_to_do_with
-'''
+"""
     )
-
