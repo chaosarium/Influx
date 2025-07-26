@@ -1,5 +1,7 @@
 from __future__ import annotations
 from inline_snapshot import snapshot
+from lib.annotation import ParserConfig
+from lib.parsing import JapaneseParser
 from lib.japanese_support import (
     align_furigana,
     format_furigana,
@@ -174,3 +176,561 @@ def test_edge_cases():
     # Identical strings
     result = align_furigana("同じ", "同じ")
     assert result == snapshot([("同じ", None)])
+
+
+# TODO
+def test_japanese_deinflection_1():
+    parser = JapaneseParser()
+    text = "置いていこう。"
+    result = parser.parse(text, ParserConfig(which_parser="japanese_parser", parser_args={})).to_dict()
+    result["orthography_set"].sort()
+    result["lemma_set"].sort()
+    assert result == snapshot(
+        {
+            "text": "置いていこう。",
+            "segments": [
+                {
+                    "text": "置いていこう。",
+                    "start_char": 0,
+                    "end_char": 7,
+                    "inner": {
+                        "Sentence": {
+                            "segments": [
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "置い",
+                                    "start_char": 0,
+                                    "end_char": 2,
+                                    "inner": {"TokenSeg": {"idx": 0, "orthography": "置い"}},
+                                    "attributes": {
+                                        "lemma": "置く",
+                                        "upos": "VERB",
+                                        "xpos": "動詞-非自立可能",
+                                        "dependency": (2, "advcl"),
+                                        "misc": {
+                                            "Inflection": "五段-カ行;連用形-イ音便",
+                                            "Reading": "オイ",
+                                            "furigana_bracket": "置[お]い",
+                                            "furigana_ruby": "<ruby>置<rt>お</rt></ruby>い",
+                                            "furigana_parentheses": "置(お)い",
+                                            "hiragana_reading": "おい",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "て",
+                                    "start_char": 2,
+                                    "end_char": 3,
+                                    "inner": {"TokenSeg": {"idx": 1, "orthography": "て"}},
+                                    "attributes": {
+                                        "lemma": "て",
+                                        "upos": "SCONJ",
+                                        "xpos": "助詞-接続助詞",
+                                        "dependency": (0, "mark"),
+                                        "misc": {
+                                            "Reading": "テ",
+                                            "furigana_bracket": "て",
+                                            "furigana_ruby": "て",
+                                            "furigana_parentheses": "て",
+                                            "hiragana_reading": "て",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "いこう",
+                                    "start_char": 3,
+                                    "end_char": 6,
+                                    "inner": {"TokenSeg": {"idx": 2, "orthography": "いこう"}},
+                                    "attributes": {
+                                        "lemma": "いく",
+                                        "upos": "VERB",
+                                        "xpos": "動詞-非自立可能",
+                                        "dependency": (2, "ROOT"),
+                                        "misc": {
+                                            "Inflection": "五段-カ行;意志推量形",
+                                            "Reading": "イコウ",
+                                            "furigana_bracket": "いこう",
+                                            "furigana_ruby": "いこう",
+                                            "furigana_parentheses": "いこう",
+                                            "hiragana_reading": "いこう",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "。",
+                                    "start_char": 6,
+                                    "end_char": 7,
+                                    "inner": "PunctuationSeg",
+                                    "attributes": {
+                                        "lemma": "。",
+                                        "upos": "PUNCT",
+                                        "xpos": "補助記号-句点",
+                                        "dependency": (2, "punct"),
+                                        "misc": {
+                                            "Reading": "。",
+                                            "furigana_bracket": "。",
+                                            "furigana_ruby": "。",
+                                            "furigana_parentheses": "。",
+                                            "hiragana_reading": "。",
+                                        },
+                                    },
+                                },
+                            ]
+                        }
+                    },
+                }
+            ],
+            "orthography_set": ["。", "いこう", "て", "置い"],
+            "lemma_set": ["。", "いく", "て", "置く"],
+            "parser_config": {"which_parser": "japanese_parser", "parser_args": {}},
+        }
+    )
+
+
+def test_japanese_deinflection_2():
+    parser = JapaneseParser()
+    text = "作ってくれる。"
+    result = parser.parse(text, ParserConfig(which_parser="japanese_parser", parser_args={})).to_dict()
+    result["orthography_set"].sort()
+    result["lemma_set"].sort()
+    assert result == snapshot(
+        {
+            "text": "作ってくれる。",
+            "segments": [
+                {
+                    "text": "作ってくれる。",
+                    "start_char": 0,
+                    "end_char": 7,
+                    "inner": {
+                        "Sentence": {
+                            "segments": [
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "作っ",
+                                    "start_char": 0,
+                                    "end_char": 2,
+                                    "inner": {"TokenSeg": {"idx": 0, "orthography": "作っ"}},
+                                    "attributes": {
+                                        "lemma": "作る",
+                                        "upos": "VERB",
+                                        "xpos": "動詞-一般",
+                                        "dependency": (0, "ROOT"),
+                                        "misc": {
+                                            "Inflection": "五段-ラ行;連用形-促音便",
+                                            "Reading": "ツクッ",
+                                            "furigana_bracket": "作[つく]っ",
+                                            "furigana_ruby": "<ruby>作<rt>つく</rt></ruby>っ",
+                                            "furigana_parentheses": "作(つく)っ",
+                                            "hiragana_reading": "つくっ",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "て",
+                                    "start_char": 2,
+                                    "end_char": 3,
+                                    "inner": {"TokenSeg": {"idx": 1, "orthography": "て"}},
+                                    "attributes": {
+                                        "lemma": "て",
+                                        "upos": "SCONJ",
+                                        "xpos": "助詞-接続助詞",
+                                        "dependency": (0, "mark"),
+                                        "misc": {
+                                            "Reading": "テ",
+                                            "furigana_bracket": "て",
+                                            "furigana_ruby": "て",
+                                            "furigana_parentheses": "て",
+                                            "hiragana_reading": "て",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "くれる",
+                                    "start_char": 3,
+                                    "end_char": 6,
+                                    "inner": {"TokenSeg": {"idx": 2, "orthography": "くれる"}},
+                                    "attributes": {
+                                        "lemma": "くれる",
+                                        "upos": "VERB",
+                                        "xpos": "動詞-非自立可能",
+                                        "dependency": (1, "fixed"),
+                                        "misc": {
+                                            "Inflection": "下一段-ラ行;終止形-一般",
+                                            "Reading": "クレル",
+                                            "furigana_bracket": "くれる",
+                                            "furigana_ruby": "くれる",
+                                            "furigana_parentheses": "くれる",
+                                            "hiragana_reading": "くれる",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "。",
+                                    "start_char": 6,
+                                    "end_char": 7,
+                                    "inner": "PunctuationSeg",
+                                    "attributes": {
+                                        "lemma": "。",
+                                        "upos": "PUNCT",
+                                        "xpos": "補助記号-句点",
+                                        "dependency": (0, "punct"),
+                                        "misc": {
+                                            "Reading": "。",
+                                            "furigana_bracket": "。",
+                                            "furigana_ruby": "。",
+                                            "furigana_parentheses": "。",
+                                            "hiragana_reading": "。",
+                                        },
+                                    },
+                                },
+                            ]
+                        }
+                    },
+                }
+            ],
+            "orthography_set": ["。", "くれる", "て", "作っ"],
+            "lemma_set": ["。", "くれる", "て", "作る"],
+            "parser_config": {"which_parser": "japanese_parser", "parser_args": {}},
+        }
+    )
+
+
+def test_japanese_deinflection_3():
+    parser = JapaneseParser()
+    text = "しまった。"
+    result = parser.parse(text, ParserConfig(which_parser="japanese_parser", parser_args={})).to_dict()
+    result["orthography_set"].sort()
+    result["lemma_set"].sort()
+    assert result == snapshot(
+        {
+            "text": "しまった。",
+            "segments": [
+                {
+                    "text": "しまった。",
+                    "start_char": 0,
+                    "end_char": 5,
+                    "inner": {
+                        "Sentence": {
+                            "segments": [
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "しまっ",
+                                    "start_char": 0,
+                                    "end_char": 3,
+                                    "inner": {"TokenSeg": {"idx": 0, "orthography": "しまっ"}},
+                                    "attributes": {
+                                        "lemma": "しまう",
+                                        "upos": "VERB",
+                                        "xpos": "動詞-非自立可能",
+                                        "dependency": (0, "ROOT"),
+                                        "misc": {
+                                            "Inflection": "五段-ワア行;連用形-促音便",
+                                            "Reading": "シマッ",
+                                            "furigana_bracket": "しまっ",
+                                            "furigana_ruby": "しまっ",
+                                            "furigana_parentheses": "しまっ",
+                                            "hiragana_reading": "しまっ",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "た",
+                                    "start_char": 3,
+                                    "end_char": 4,
+                                    "inner": {"TokenSeg": {"idx": 1, "orthography": "た"}},
+                                    "attributes": {
+                                        "lemma": "た",
+                                        "upos": "AUX",
+                                        "xpos": "助動詞",
+                                        "dependency": (0, "aux"),
+                                        "misc": {
+                                            "Inflection": "助動詞-タ;終止形-一般",
+                                            "Reading": "タ",
+                                            "furigana_bracket": "た",
+                                            "furigana_ruby": "た",
+                                            "furigana_parentheses": "た",
+                                            "hiragana_reading": "た",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "。",
+                                    "start_char": 4,
+                                    "end_char": 5,
+                                    "inner": "PunctuationSeg",
+                                    "attributes": {
+                                        "lemma": "。",
+                                        "upos": "PUNCT",
+                                        "xpos": "補助記号-句点",
+                                        "dependency": (0, "punct"),
+                                        "misc": {
+                                            "Reading": "。",
+                                            "furigana_bracket": "。",
+                                            "furigana_ruby": "。",
+                                            "furigana_parentheses": "。",
+                                            "hiragana_reading": "。",
+                                        },
+                                    },
+                                },
+                            ]
+                        }
+                    },
+                }
+            ],
+            "orthography_set": ["。", "しまっ", "た"],
+            "lemma_set": ["。", "しまう", "た"],
+            "parser_config": {"which_parser": "japanese_parser", "parser_args": {}},
+        }
+    )
+
+
+def test_japanese_deinflection_4():
+    parser = JapaneseParser()
+    text = "立たなかった。"
+    result = parser.parse(text, ParserConfig(which_parser="japanese_parser", parser_args={})).to_dict()
+    result["orthography_set"].sort()
+    result["lemma_set"].sort()
+    assert result == snapshot(
+        {
+            "text": "立たなかった。",
+            "segments": [
+                {
+                    "text": "立たなかった。",
+                    "start_char": 0,
+                    "end_char": 7,
+                    "inner": {
+                        "Sentence": {
+                            "segments": [
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "立た",
+                                    "start_char": 0,
+                                    "end_char": 2,
+                                    "inner": {"TokenSeg": {"idx": 0, "orthography": "立た"}},
+                                    "attributes": {
+                                        "lemma": "立つ",
+                                        "upos": "VERB",
+                                        "xpos": "動詞-一般",
+                                        "dependency": (0, "ROOT"),
+                                        "misc": {
+                                            "Inflection": "五段-タ行;未然形-一般",
+                                            "Reading": "タタ",
+                                            "furigana_bracket": "立た",
+                                            "furigana_ruby": "立た",
+                                            "furigana_parentheses": "立た",
+                                            "hiragana_reading": "たた",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "なかっ",
+                                    "start_char": 2,
+                                    "end_char": 5,
+                                    "inner": {"TokenSeg": {"idx": 1, "orthography": "なかっ"}},
+                                    "attributes": {
+                                        "lemma": "ない",
+                                        "upos": "AUX",
+                                        "xpos": "助動詞",
+                                        "dependency": (0, "aux"),
+                                        "misc": {
+                                            "Inflection": "助動詞-ナイ;連用形-促音便",
+                                            "Reading": "ナカッ",
+                                            "furigana_bracket": "なかっ",
+                                            "furigana_ruby": "なかっ",
+                                            "furigana_parentheses": "なかっ",
+                                            "hiragana_reading": "なかっ",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "た",
+                                    "start_char": 5,
+                                    "end_char": 6,
+                                    "inner": {"TokenSeg": {"idx": 2, "orthography": "た"}},
+                                    "attributes": {
+                                        "lemma": "た",
+                                        "upos": "AUX",
+                                        "xpos": "助動詞",
+                                        "dependency": (0, "aux"),
+                                        "misc": {
+                                            "Inflection": "助動詞-タ;終止形-一般",
+                                            "Reading": "タ",
+                                            "furigana_bracket": "た",
+                                            "furigana_ruby": "た",
+                                            "furigana_parentheses": "た",
+                                            "hiragana_reading": "た",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "。",
+                                    "start_char": 6,
+                                    "end_char": 7,
+                                    "inner": "PunctuationSeg",
+                                    "attributes": {
+                                        "lemma": "。",
+                                        "upos": "PUNCT",
+                                        "xpos": "補助記号-句点",
+                                        "dependency": (0, "punct"),
+                                        "misc": {
+                                            "Reading": "。",
+                                            "furigana_bracket": "。",
+                                            "furigana_ruby": "。",
+                                            "furigana_parentheses": "。",
+                                            "hiragana_reading": "。",
+                                        },
+                                    },
+                                },
+                            ]
+                        }
+                    },
+                }
+            ],
+            "orthography_set": ["。", "た", "なかっ", "立た"],
+            "lemma_set": ["。", "た", "ない", "立つ"],
+            "parser_config": {"which_parser": "japanese_parser", "parser_args": {}},
+        }
+    )
+
+
+def test_japanese_deinflection_5():
+    parser = JapaneseParser()
+    text = "なってしまった。"
+    result = parser.parse(text, ParserConfig(which_parser="japanese_parser", parser_args={})).to_dict()
+    result["orthography_set"].sort()
+    result["lemma_set"].sort()
+    assert result == snapshot(
+        {
+            "text": "なってしまった。",
+            "segments": [
+                {
+                    "text": "なってしまった。",
+                    "start_char": 0,
+                    "end_char": 8,
+                    "inner": {
+                        "Sentence": {
+                            "segments": [
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "なっ",
+                                    "start_char": 0,
+                                    "end_char": 2,
+                                    "inner": {"TokenSeg": {"idx": 0, "orthography": "なっ"}},
+                                    "attributes": {
+                                        "lemma": "なる",
+                                        "upos": "VERB",
+                                        "xpos": "動詞-非自立可能",
+                                        "dependency": (0, "ROOT"),
+                                        "misc": {
+                                            "Inflection": "五段-ラ行;連用形-促音便",
+                                            "Reading": "ナッ",
+                                            "furigana_bracket": "なっ",
+                                            "furigana_ruby": "なっ",
+                                            "furigana_parentheses": "なっ",
+                                            "hiragana_reading": "なっ",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "て",
+                                    "start_char": 2,
+                                    "end_char": 3,
+                                    "inner": {"TokenSeg": {"idx": 1, "orthography": "て"}},
+                                    "attributes": {
+                                        "lemma": "て",
+                                        "upos": "SCONJ",
+                                        "xpos": "助詞-接続助詞",
+                                        "dependency": (0, "mark"),
+                                        "misc": {
+                                            "Reading": "テ",
+                                            "furigana_bracket": "て",
+                                            "furigana_ruby": "て",
+                                            "furigana_parentheses": "て",
+                                            "hiragana_reading": "て",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "しまっ",
+                                    "start_char": 3,
+                                    "end_char": 6,
+                                    "inner": {"TokenSeg": {"idx": 2, "orthography": "しまっ"}},
+                                    "attributes": {
+                                        "lemma": "しまう",
+                                        "upos": "VERB",
+                                        "xpos": "動詞-非自立可能",
+                                        "dependency": (1, "fixed"),
+                                        "misc": {
+                                            "Inflection": "五段-ワア行;連用形-促音便",
+                                            "Reading": "シマッ",
+                                            "furigana_bracket": "しまっ",
+                                            "furigana_ruby": "しまっ",
+                                            "furigana_parentheses": "しまっ",
+                                            "hiragana_reading": "しまっ",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "た",
+                                    "start_char": 6,
+                                    "end_char": 7,
+                                    "inner": {"TokenSeg": {"idx": 3, "orthography": "た"}},
+                                    "attributes": {
+                                        "lemma": "た",
+                                        "upos": "AUX",
+                                        "xpos": "助動詞",
+                                        "dependency": (0, "aux"),
+                                        "misc": {
+                                            "Inflection": "助動詞-タ;終止形-一般",
+                                            "Reading": "タ",
+                                            "furigana_bracket": "た",
+                                            "furigana_ruby": "た",
+                                            "furigana_parentheses": "た",
+                                            "hiragana_reading": "た",
+                                        },
+                                    },
+                                },
+                                {
+                                    "sentence_idx": 0,
+                                    "text": "。",
+                                    "start_char": 7,
+                                    "end_char": 8,
+                                    "inner": "PunctuationSeg",
+                                    "attributes": {
+                                        "lemma": "。",
+                                        "upos": "PUNCT",
+                                        "xpos": "補助記号-句点",
+                                        "dependency": (0, "punct"),
+                                        "misc": {
+                                            "Reading": "。",
+                                            "furigana_bracket": "。",
+                                            "furigana_ruby": "。",
+                                            "furigana_parentheses": "。",
+                                            "hiragana_reading": "。",
+                                        },
+                                    },
+                                },
+                            ]
+                        }
+                    },
+                }
+            ],
+            "orthography_set": ["。", "しまっ", "た", "て", "なっ"],
+            "lemma_set": ["。", "しまう", "た", "て", "なる"],
+            "parser_config": {"which_parser": "japanese_parser", "parser_args": {}},
+        }
+    )

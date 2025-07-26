@@ -1,12 +1,13 @@
 from typing import List, Tuple, Dict, Any
 import wanakana
 
+
 # align_furigana("難しい", "むずかしい") -> [("難", "むずか"), ("し", None), ("い", None)]
 # align_furigana("読み書き", "よみかき") -> [("読", "よ"), ("み", None), ("書", "か"), ("き", None)]
 def align_furigana(original: str, reading: str) -> List[Tuple[str, str | None]]:
     if original == "" or reading == "" or original == reading:
         return [(original, None)]
-    
+
     def is_non_kana(char):
         return wanakana.is_kanji(char) or char == "々"
 
@@ -94,14 +95,14 @@ def align_furigana(original: str, reading: str) -> List[Tuple[str, str | None]]:
 
 def format_furigana(alignment: List[Tuple[str, str | None]], format_type: str) -> str:
     def format_one(text: str, furigana: str | None) -> str:
-        match format_type :
+        match format_type:
             case "bracket":
                 return f"{text}[{furigana}]"
             case "parentheses":
                 return f"{text}({furigana})"
             case "ruby":
                 return f"<ruby>{text}<rt>{furigana}</rt></ruby>"
-            case _: 
+            case _:
                 raise ValueError(f"Unknown format type: {format_type}")
 
     result: List[str] = []
@@ -110,9 +111,8 @@ def format_furigana(alignment: List[Tuple[str, str | None]], format_type: str) -
             result.append(format_one(text, furigana))
         else:
             result.append(text)
-            
+
     return "".join(result)
-        
 
 
 def add_furigana_annotations(token_text: str, reading: str) -> Dict[str, Any]:

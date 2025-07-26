@@ -33,5 +33,5 @@ dev = [
 ]
 
 [tool.black]
-line-length = 120
+line-length = 10000
 target-version = ['py312']

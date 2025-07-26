@@ -62,10 +62,7 @@ def test_serialization_small():
         ],
         orthography_set=["hello", "world", "!"],
         lemma_set=["hello", "world", "!"],
-        parser_config=ParserConfig(
-            which_parser="for_testing",
-            parser_args={"arg1": "value1", "arg2": "value2"}
-        ),
+        parser_config=ParserConfig(which_parser="for_testing", parser_args={"arg1": "value1", "arg2": "value2"}),
     )
 
     # Serialize to dictionary
@@ -121,5 +118,7 @@ def test_serialization_small():
                 }
             ],
             "orthography_set": ["hello", "world", "!"],
-            "lemma_set": ["hello", "world", "!"], "parser_config": {"which_parser": "for_testing", "parser_args": {"arg1": "value1", "arg2": "value2"}}}
+            "lemma_set": ["hello", "world", "!"],
+            "parser_config": {"which_parser": "for_testing", "parser_args": {"arg1": "value1", "arg2": "value2"}},
+        }
     )
