@@ -1,12 +1,13 @@
 from __future__ import annotations
 from inline_snapshot import snapshot
 from lib.parsing import SpacyParser, JapaneseParser
+from lib.annotation import ParserConfig
 
 
 def test_spacy_parser_en():
     parser = SpacyParser()
     text = "This is a test."
-    result = parser.parse(text, "en")
+    result = parser.parse(text, ParserConfig("spacy", {"spacy_model": "en_core_web_sm"})).to_dict()
     result["orthography_set"].sort()
     result["lemma_set"].sort()
     assert result == snapshot(
@@ -127,6 +128,7 @@ def test_spacy_parser_en():
             ],
             "orthography_set": [".", "a", "is", "test", "this"],
             "lemma_set": [".", "a", "be", "test", "this"],
+            "parser_config": {"which_parser": "spacy", "parser_args": {"spacy_model": "en_core_web_sm"}},
         }
     )
 
@@ -134,7 +136,7 @@ def test_spacy_parser_en():
 def test_spacy_parser_weird_whitespaces():
     parser = SpacyParser()
     text = "  \n Je connais un vampire  végétarien…   \n il suce des betteraves ! "
-    result = parser.parse(text, "fr")
+    result = parser.parse(text, ParserConfig("spacy", {"spacy_model": "fr_core_news_sm"})).to_dict()
     result["orthography_set"].sort()
     result["lemma_set"].sort()
     assert result == snapshot(
@@ -445,6 +447,7 @@ végétarien…   \n\
                 "végétarien",
                 "…",
             ],
+            "parser_config": {"which_parser": "spacy", "parser_args": {"spacy_model": "fr_core_news_sm"}},
         }
     )
 
@@ -452,7 +455,7 @@ végétarien…   \n\
 def test_spacy_parser_ja():
     parser = SpacyParser()
     text = "これはテストです。"
-    result = parser.parse(text, "ja")
+    result = parser.parse(text, ParserConfig("spacy", {"spacy_model": "ja_core_news_sm"})).to_dict()
     result["orthography_set"].sort()
     result["lemma_set"].sort()
     assert result == snapshot(
@@ -543,6 +546,7 @@ def test_spacy_parser_ja():
             ],
             "orthography_set": ["。", "これ", "です", "は", "テスト"],
             "lemma_set": ["。", "これ", "です", "は", "テスト"],
+            "parser_config": {"which_parser": "spacy", "parser_args": {"spacy_model": "ja_core_news_sm"}},
         }
     )
 
@@ -564,7 +568,7 @@ def _print_segmentation_boundaries(segments):
 def test_spacy_parser_segmentation_simple_en():
     parser = SpacyParser()
     text = "Hello world. This is a test."
-    result = parser.parse(text, "en")
+    result = parser.parse(text, ParserConfig("spacy", {"spacy_model": "en_core_web_sm"})).to_dict()
     assert _print_segmentation_boundaries(result["segments"]) == snapshot(
         """\
 Hello / world
@@ -576,7 +580,7 @@ This / is / a / test\
 def test_spacy_parser_segmentation_multiple_sentences_with_whitespace_en():
     parser = SpacyParser()
     text = "First sentence.  Second sentence.   Third sentence."
-    result = parser.parse(text, "en")
+    result = parser.parse(text, ParserConfig("spacy", {"spacy_model": "en_core_web_sm"})).to_dict()
     assert _print_segmentation_boundaries(result["segments"]) == snapshot(
         """\
 First / sentence
@@ -590,7 +594,7 @@ def test_japanese_parser_with_furigana():
     """Test JapaneseParser adds furigana annotations to misc field."""
     parser = JapaneseParser()
     text = "これはテストです。"
-    result = parser.parse(text, "ja")
+    result = parser.parse(text, ParserConfig("japanese_spacy", {"spacy_model": "ja_ginza"})).to_dict()
     result["orthography_set"].sort()
     result["lemma_set"].sort()
     assert result == snapshot(
@@ -620,7 +624,6 @@ def test_japanese_parser_with_furigana():
                                             "furigana_bracket": "これ",
                                             "furigana_ruby": "これ",
                                             "furigana_parentheses": "これ",
-                                            "furigana_alignment": [("これ", None)],
                                             "hiragana_reading": "これ",
                                         },
                                     },
@@ -641,7 +644,6 @@ def test_japanese_parser_with_furigana():
                                             "furigana_bracket": "は",
                                             "furigana_ruby": "は",
                                             "furigana_parentheses": "は",
-                                            "furigana_alignment": [("は", None)],
                                             "hiragana_reading": "は",
                                         },
                                     },
@@ -662,7 +664,6 @@ def test_japanese_parser_with_furigana():
                                             "furigana_bracket": "テスト",
                                             "furigana_ruby": "テスト",
                                             "furigana_parentheses": "テスト",
-                                            "furigana_alignment": [("テ", None), ("ス", None), ("ト", None)],
                                             "hiragana_reading": "てすと",
                                         },
                                     },
@@ -684,7 +685,6 @@ def test_japanese_parser_with_furigana():
                                             "furigana_bracket": "です",
                                             "furigana_ruby": "です",
                                             "furigana_parentheses": "です",
-                                            "furigana_alignment": [("です", None)],
                                             "hiragana_reading": "です",
                                         },
                                     },
@@ -705,7 +705,6 @@ def test_japanese_parser_with_furigana():
                                             "furigana_bracket": "。",
                                             "furigana_ruby": "。",
                                             "furigana_parentheses": "。",
-                                            "furigana_alignment": [("。", None)],
                                             "hiragana_reading": "。",
                                         },
                                     },
@@ -717,5 +716,6 @@ def test_japanese_parser_with_furigana():
             ],
             "orthography_set": ["。", "これ", "です", "は", "テスト"],
             "lemma_set": ["。", "これ", "です", "は", "テスト"],
+            "parser_config": {"which_parser": "japanese_spacy", "parser_args": {"spacy_model": "ja_ginza"}},
         }
     )
