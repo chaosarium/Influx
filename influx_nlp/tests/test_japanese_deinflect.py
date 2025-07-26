@@ -3,6 +3,7 @@ from inline_snapshot import snapshot
 from lib.japanese_deinflect.deinflect import Deinflector
 from lib.japanese_deinflect.word_type import WordType
 from lib.japanese_deinflect.derivations import rules
+from lib.japanese_deinflect.grammar_explanations import link_for_derivation_step
 
 
 deinflector = Deinflector()
@@ -224,6 +225,44 @@ def test_fuzzy_derivation():
     assert len(results) == snapshot(2)
 
 
+def analyze_word(word: str) -> str:
+    results = deinflector.unconjugate(word)
+
+    if not results:
+        return f"No results found for '{word}'"
+
+    output = []
+    output.append(f"Analysis of '{word}':")
+    output.append(f"Dictionary form: {results[0]['base']}")
+    output.append("")
+
+    derivations = results[0]["derivation_sequence"]["derivations"]
+    word_progression = results[0]["derivation_sequence"]["word_form_progression"]
+
+    if not derivations:
+        output.append("This is already in dictionary form.")
+        return "\n".join(output)
+
+    output.append("Derivation steps:")
+    current_word = results[0]["base"]
+
+    for i, (derivation_type, next_word) in enumerate(zip(derivations, word_progression)):
+        explanation_link = link_for_derivation_step.get(derivation_type)
+
+        output.append(f"{i+1}. {current_word} → {next_word}")
+        output.append(f"   Form: {derivation_type.value}")
+
+        if explanation_link:
+            output.append(f"   Grammar guide: {explanation_link}")
+        else:
+            output.append(f"   Grammar guide: (no explanation available)")
+
+        current_word = next_word
+        output.append("")
+
+    return "\n".join(output)
+
+
 # Test that all derivation rules have valid word types
 def test_word_type_validation():
     for rule in rules:
@@ -238,7 +277,103 @@ def test_maximum_recursion_depth():
     # Test with a complex conjugated form that would normally require deep recursion
     results_with_limit = deinflector.unconjugate('撫でさせられぬよね', recursion_depth_limit=3)
     results_without_limit = deinflector.unconjugate('撫でさせられぬよね', recursion_depth_limit=10)
-    
+
     # With a low recursion limit, we should get fewer or no results
     # With a higher limit, we should get more results
     assert len(results_with_limit) <= len(results_without_limit)
+
+
+def test_grammar_explanations():
+    """Test that grammar explanations are generated correctly for example words."""
+    example_words = [
+        "行きます",  # polite form
+        "食べられない",  # potential negative
+        "読んでいた",  # progressive past
+        "書かれる",  # passive
+        "飲みたい",  # want to do
+    ]
+
+    output_parts = []
+    for word in example_words:
+        analysis = analyze_word(word)
+        output_parts.append(analysis)
+        output_parts.append("-" * 50)
+        output_parts.append("")
+
+    # Remove the last separator and empty line
+    if output_parts:
+        output_parts = output_parts[:-2]
+
+    combined_output = "\n".join(output_parts)
+    assert combined_output == snapshot(
+        '''\
+Analysis of '行きます':
+Dictionary form: 行く
+
+Derivation steps:
+1. 行く → 行き
+   Form: ます Stem
+   Grammar guide: http://www.guidetojapanese.org/learn/grammar/polite#The_stem_of_verbs
+
+2. 行き → 行きます
+   Form: ます Polite
+   Grammar guide: http://www.guidetojapanese.org/learn/grammar/polite#Not_being_rude_in_Japan
+
+--------------------------------------------------
+
+Analysis of '食べられない':
+Dictionary form: 食べる
+
+Derivation steps:
+1. 食べる → 食べられる
+   Form: Potential Or Passive Form
+   Grammar guide: http://www.guidetojapanese.org/learn/grammar/causepass
+
+2. 食べられる → 食べられない
+   Form: ない Negative
+   Grammar guide: http://www.guidetojapanese.org/learn/grammar/negativeverbs
+
+--------------------------------------------------
+
+Analysis of '読んでいた':
+Dictionary form: 読む
+
+Derivation steps:
+1. 読む → 読んで
+   Form: て・で Form
+   Grammar guide: http://www.guidetojapanese.org/learn/grammar/compound#Expressing_a_sequence_of_verbs_with_the_te-form
+
+2. 読んで → 読んでいる
+   Form: ている・でいる Continuing State/Result
+   Grammar guide: http://www.guidetojapanese.org/learn/grammar/teform#Using_for_enduring_states
+
+3. 読んでいる → 読んでいた
+   Form: Plain Past
+   Grammar guide: http://www.guidetojapanese.org/learn/grammar/past_tense
+
+--------------------------------------------------
+
+Analysis of '書かれる':
+Dictionary form: 書く
+
+Derivation steps:
+1. 書く → 書かれる
+   Form: Passive Form
+   Grammar guide: http://www.guidetojapanese.org/learn/grammar/causepass
+
+--------------------------------------------------
+
+Analysis of '飲みたい':
+Dictionary form: 飲む
+
+Derivation steps:
+1. 飲む → 飲み
+   Form: ます Stem
+   Grammar guide: http://www.guidetojapanese.org/learn/grammar/polite#The_stem_of_verbs
+
+2. 飲み → 飲みたい
+   Form: たい Want To Do
+   Grammar guide: http://www.guidetojapanese.org/learn/grammar/desire#Verbs_you_want_to_do_with
+'''
+    )
+

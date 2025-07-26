@@ -23,7 +23,7 @@ def align_furigana(original: str, reading: str) -> List[Tuple[str, str | None]]:
         orig_char = original[orig_idx]
 
         if is_non_kana(orig_char):
-            
+
             kanji_start = orig_idx
             while orig_idx < len(original) and is_non_kana(original[orig_idx]):
                 orig_idx += 1
