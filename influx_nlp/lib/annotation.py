@@ -2,7 +2,6 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict, field
 from typing import List, Dict, Optional, Tuple, Union
 
-
 # Corresponds to Rust's `SegAttribute`
 @dataclass
 class SegAttribute:
@@ -149,3 +148,4 @@ class AnnotatedDocV2:
             "parser_config": self.parser_config.to_dict(),
         }
         return {k: v for k, v in data.items() if v is not None}
+

@@ -1,46 +1,16 @@
-"""
-Japanese language support for furigana alignment and annotation.
-
-This module provides functions to align original Japanese text with readings
-to determine which parts need furigana annotations.
-"""
-
 from typing import List, Tuple, Dict, Any
 import wanakana
 
-
+# align_furigana("難しい", "むずかしい") -> [("難", "むずか"), ("し", None), ("い", None)]
+# align_furigana("読み書き", "よみかき") -> [("読", "よ"), ("み", None), ("書", "か"), ("き", None)]
 def align_furigana(original: str, reading: str) -> List[Tuple[str, str | None]]:
-    """
-    Align original text with reading to determine which parts need furigana.
-    Handles mixed kanji/kana by finding multiple alignment points within the word.
-
-    Args:
-        original: Original token (may contain kanji and kana)
-        reading: Complete hiragana reading for the token
-
-    Returns:
-        List of tuples (text, furigana) where furigana is None if no annotation needed
-
-    Examples:
-        align_furigana("難しい", "むずかしい") → [("難", "むずか"), ("し", None), ("い", None)]
-        align_furigana("読み書き", "よみかき") → [("読", "よ"), ("み", None), ("書", "か"), ("き", None)]
-        align_furigana("漢字", "かんじ") → [("漢字", "かんじ")]
-        align_furigana("所々", "ところどころ") → [("所々", "ところどころ")]
-    """
-    if original == "" or reading == "":
+    if original == "" or reading == "" or original == reading:
         return [(original, None)]
-
-    if original == reading:
-        return [(original, None)]
-
-    # Check if this is an all-kanji compound word with no kana
-    # Include iteration mark "々" as kanji-like for this purpose
-    def is_kanji_or_iteration(char):
+    
+    def is_non_kana(char):
         return wanakana.is_kanji(char) or char == "々"
 
-    if all(is_kanji_or_iteration(char) for char in original):
-        # For all-kanji words, don't split unless we can find clear boundaries
-        # This handles cases like "所々", "漢字", "図書館" etc.
+    if all(is_non_kana(char) for char in original):
         return [(original, reading)]
 
     result = []
@@ -116,77 +86,41 @@ def align_furigana(original: str, reading: str) -> List[Tuple[str, str | None]]:
             result.append((orig_char, None))
             orig_idx += 1
 
-    # Handle any remaining characters
     if orig_idx < len(original):
         result.append((original[orig_idx:], None))
 
     return result
 
 
-def format_furigana(alignment: List[Tuple[str, str | None]], format_type: str = "bracket") -> str:
-    """
-    Format the alignment result into various furigana notations.
+def format_furigana(alignment: List[Tuple[str, str | None]], format_type: str) -> str:
+    def format_one(text: str, furigana: str | None) -> str:
+        match format_type :
+            case "bracket":
+                return f"{text}[{furigana}]"
+            case "parentheses":
+                return f"{text}({furigana})"
+            case "ruby":
+                return f"<ruby>{text}<rt>{furigana}</rt></ruby>"
+            case _: 
+                raise ValueError(f"Unknown format type: {format_type}")
 
-    Args:
-        alignment: Result from align_furigana functions
-        format_type: "bracket", "ruby", or "parentheses"
-
-    Returns:
-        Formatted string with furigana annotations
-    """
-    if format_type == "bracket":
-        result = ""
-        for text, furigana in alignment:
-            if furigana:
-                result += f"{text}[{furigana}]"
-            else:
-                result += text
-        return result
-
-    elif format_type == "ruby":
-        result = ""
-        for text, furigana in alignment:
-            if furigana:
-                result += f"<ruby>{text}<rt>{furigana}</rt></ruby>"
-            else:
-                result += text
-        return result
-
-    elif format_type == "parentheses":
-        result = ""
-        for text, furigana in alignment:
-            if furigana:
-                result += f"{text}({furigana})"
-            else:
-                result += text
-        return result
-
-    return str(alignment)
+    result: List[str] = []
+    for text, furigana in alignment:
+        if furigana:
+            result.append(format_one(text, furigana))
+        else:
+            result.append(text)
+            
+    return "".join(result)
+        
 
 
 def add_furigana_annotations(token_text: str, reading: str) -> Dict[str, Any]:
-    """
-    Generate furigana annotations for a token and add them to misc field.
-
-    Args:
-        token_text: Original token text
-        reading: Katakana reading from spacy
-
-    Returns:
-        Dictionary with furigana annotations to add to misc field
-    """
-    # Convert katakana reading to hiragana
     hiragana_reading = wanakana.to_hiragana(reading)
-
-    # Generate alignment
     alignment = align_furigana(token_text, hiragana_reading)
-
-    # Format in different styles
-    annotations = {
+    return {
         "furigana_bracket": format_furigana(alignment, "bracket"),
         "furigana_ruby": format_furigana(alignment, "ruby"),
         "furigana_parentheses": format_furigana(alignment, "parentheses"),
         "hiragana_reading": hiragana_reading,
     }
-
-    return annotations
