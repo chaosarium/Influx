@@ -184,6 +184,25 @@ class JapaneseConjugationAnalyzer:
                     start_char = token_sequence[0].start_char
                     end_char = token_sequence[-1].end_char
 
+                    # Merge the misc attributes from all tokens in the sequence
+                    merged_misc = {}
+                    combined_reading = ""
+
+                    # Combine misc attributes and collect Reading fields
+                    for token in token_sequence:
+                        merged_misc.update(token.attributes.misc)
+                        if "Reading" in token.attributes.misc:
+                            combined_reading += token.attributes.misc["Reading"]
+
+                    # Add the combined reading to misc if we found any readings
+                    if combined_reading:
+                        merged_misc["Reading"] = combined_reading
+
+                    # TODO maybe we threw out too much info here
+
+                    # Add conjugation-specific attributes
+                    merged_misc.update({"conjugation_base": best_candidate["base"], "conjugation_sequence_length": len(token_sequence), "conjugation_combined_text": combined_text})
+
                     # Use the lemma from the best candidate as the base form
                     merged_segment = SentSegV2(
                         sentence_idx=segment.sentence_idx,
@@ -196,7 +215,7 @@ class JapaneseConjugationAnalyzer:
                             upos=segment.attributes.upos,  # Keep the original verb's POS
                             xpos=segment.attributes.xpos,
                             dependency=segment.attributes.dependency,
-                            misc={**segment.attributes.misc, "conjugation_base": best_candidate["base"], "conjugation_sequence_length": len(token_sequence), "conjugation_combined_text": combined_text},
+                            misc=merged_misc,
                             conjugation_chain=conjugation_chain,
                         ),
                     )
@@ -214,6 +233,10 @@ class JapaneseConjugationAnalyzer:
                         intermediate_orthographies.add(step.result.lower())
 
                     if conjugation_chain:
+                        # Preserve original misc attributes including Reading field
+                        merged_misc = {**segment.attributes.misc}
+                        merged_misc.update({"conjugation_base": best_candidate["base"], "conjugation_sequence_length": len(token_sequence), "conjugation_combined_text": combined_text})
+
                         modified_segment = SentSegV2(
                             sentence_idx=segment.sentence_idx,
                             text=segment.text,
@@ -225,7 +248,7 @@ class JapaneseConjugationAnalyzer:
                                 upos=segment.attributes.upos,
                                 xpos=segment.attributes.xpos,
                                 dependency=segment.attributes.dependency,
-                                misc={**segment.attributes.misc, "conjugation_base": best_candidate["base"], "conjugation_sequence_length": len(token_sequence), "conjugation_combined_text": combined_text},
+                                misc=merged_misc,
                                 conjugation_chain=conjugation_chain,
                             ),
                         )

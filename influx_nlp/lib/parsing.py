@@ -223,14 +223,8 @@ class JapaneseParser(SpacyParser):
                 orthography_set.add(orthography)
                 lemma_set.add(lemma)
 
-                # Start with base misc attributes from spacy
+                # Start with base misc attributes from spacy (including Reading field)
                 misc_attrs = token.morph.to_dict()
-
-                # Add furigana annotations if reading is available
-                if "Reading" in misc_attrs:
-                    reading = misc_attrs["Reading"]
-                    furigana_annotations = add_furigana_annotations(token.text, reading)
-                    misc_attrs.update(furigana_annotations)
 
                 attributes: SegAttribute = SegAttribute(
                     lemma=lemma,
@@ -258,7 +252,7 @@ class JapaneseParser(SpacyParser):
                 )
 
             if sent_segments != [] and not sent.text.isspace():
-                # Analyze conjugations in the sentence segments if enabled
+                # First: Analyze conjugations in the sentence segments if enabled
                 enable_conjugation_analysis = parser_config.parser_args.get("enable_conjugation_analysis", True)
                 if enable_conjugation_analysis:
                     analyzed_segments, intermediate_orthographies = conjugation_analyzer.analyze_conjugations(sent_segments)
@@ -267,9 +261,39 @@ class JapaneseParser(SpacyParser):
                 else:
                     analyzed_segments = sent_segments
 
-                sentence_start_char: int = min([s.start_char for s in analyzed_segments])
-                sentence_end_char: int = max([s.end_char for s in analyzed_segments])
-                recovered_sent_segments: List[SentSegV2] = recover_sentence_whitespace(text, analyzed_segments, sentence_start_char)
+                # Second: Add furigana annotations to segments (including merged conjugated tokens)
+                furigana_segments = []
+                for segment in analyzed_segments:
+                    if hasattr(segment, 'attributes') and segment.attributes and segment.attributes.misc and "Reading" in segment.attributes.misc:
+                        reading = segment.attributes.misc["Reading"]
+                        furigana_annotations = add_furigana_annotations(segment.text, reading)
+                        # Update misc with furigana annotations
+                        updated_misc = {**segment.attributes.misc}
+                        updated_misc.update(furigana_annotations)
+
+                        # Create new segment with updated misc
+                        furigana_segment = SentSegV2(
+                            sentence_idx=segment.sentence_idx,
+                            text=segment.text,
+                            start_char=segment.start_char,
+                            end_char=segment.end_char,
+                            inner=segment.inner,
+                            attributes=SegAttribute(
+                                lemma=segment.attributes.lemma,
+                                upos=segment.attributes.upos,
+                                xpos=segment.attributes.xpos,
+                                dependency=segment.attributes.dependency,
+                                misc=updated_misc,
+                                conjugation_chain=segment.attributes.conjugation_chain,
+                            ),
+                        )
+                        furigana_segments.append(furigana_segment)
+                    else:
+                        furigana_segments.append(segment)
+
+                sentence_start_char: int = min([s.start_char for s in furigana_segments])
+                sentence_end_char: int = max([s.end_char for s in furigana_segments])
+                recovered_sent_segments: List[SentSegV2] = recover_sentence_whitespace(text, furigana_segments, sentence_start_char)
                 doc_sentence_segments.append(
                     DocSegV2(
                         text=text[sentence_start_char:sentence_end_char],
