@@ -14,17 +14,26 @@ No. Not yet. It technically has a functioning database and text reader, but the 
 
 - Phase I dev log [here](https://chaosarium.xyz/influx-dev-log-phase-i/)
 - Continuous dev log [here](https://chaosarium.xyz/influx-dev-log/)
-- Proposal [here](https://chaosarium.xyz/2022-07-18-towards-an-integrated-content-based-language-learning-environment-an-exploratory-proposal/)
-
+- The concept [here](https://chaosarium.xyz/2022-07-18-towards-an-integrated-content-based-language-learning-environment-an-exploratory-proposal/)
 
 ## Features
 
-- [x] multilingual text segmentation/tokenization
-- [x] tracking known/learning terms, including phrases
+- [x] language-agnostic nlp 
+    - [x] text segmentation & tokenization
+    - [x] lemmatization
+    - [x] pos tagging
+    - [x] dependency parsing
+    - [x] arbitrary additional morphological features
+- [x] tracking known/learning terms
+- [x] phrase tracking and detection
 - [x] translation integration
+- [x] annotated text reader
 - [ ] dictionary integration
 - [ ] reasonable UI
 - [ ] SRS
+- [ ] language-specific nlp
+    - [x] japanese — auto furigana
+    - [x] japanese — inflection derivation chain
 
 ## Development notes
 
@@ -36,10 +45,11 @@ No. Not yet. It technically has a functioning database and text reader, but the 
 
 ### Key issues to decide / address
 
-- how to handle lemmatization? should Stanza's lemma be used as default? how does user manually assign lemma? should lemma and reflexes be separate entries? how to relate them in the database?
+- how to handle lemmatization? should lemma be used as default? how does user manually assign lemma? should lemma and reflexes be separate entries? how to relate them in the database?
+    - some ideas [here](https://chaosarium.xyz/influx-dev-log-phase-i/#lemma-vs-inflection-learners-perspective)
 - how to integrate user-provided dictionaries?
 - how to allow extensions? should there be support for custom nlp scripts?
 
 ## Running development server
 
-See `justfile`s.
+See the `justfile`s.
