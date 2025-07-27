@@ -1,6 +1,6 @@
 module Components.TtsEmitter exposing (view)
 
-import Bindings exposing (LanguageEntry)
+import Bindings exposing (Language)
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (disabled, style)
@@ -12,7 +12,7 @@ Takes a text string and language entry, and provides start/stop TTS buttons.
 -}
 view :
     { text : String
-    , language : LanguageEntry
+    , language : Language
     , onStartTts : msg
     , onStopTts : msg
     }

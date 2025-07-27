@@ -2,7 +2,7 @@ module Pages.Langs exposing (Model, Msg, page)
 
 import Api
 import Api.GetLanguages
-import Bindings exposing (InfluxResourceId(..), LanguageEntry)
+import Bindings exposing (InfluxResourceId(..), Language)
 import BindingsUtils
 import Components.Topbar
 import Dict
@@ -32,7 +32,7 @@ page shared route =
 
 
 type alias Model =
-    { langData : Api.Data (List LanguageEntry) }
+    { langData : Api.Data (List Language) }
 
 
 init : () -> ( Model, Effect Msg )
@@ -47,7 +47,7 @@ init () =
 
 
 type Msg
-    = ApiResponded (Result Http.Error (List LanguageEntry))
+    = ApiResponded (Result Http.Error (List Language))
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -73,13 +73,12 @@ subscriptions model =
 -- VIEW
 
 
-viewLanguagesTable : List LanguageEntry -> Html msg
+viewLanguagesTable : List Language -> Html msg
 viewLanguagesTable languages =
     table [ style "border-collapse" "collapse", style "width" "100%" ]
         [ thead []
             [ tr []
                 [ th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Name" ]
-                , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Code" ]
                 , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Dictionary URLs" ]
                 , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Actions" ]
                 ]
@@ -90,8 +89,6 @@ viewLanguagesTable languages =
                     tr [ style "border" "1px solid #ddd" ]
                         [ td [ style "border" "1px solid #ddd", style "padding" "8px" ]
                             [ text language.name ]
-                        , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ text language.code ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
                             [ text (String.join ", " language.dicts) ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]

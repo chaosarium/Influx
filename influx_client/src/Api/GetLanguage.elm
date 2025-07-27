@@ -7,7 +7,7 @@ import Json.Decode
 
 get :
     { langId : String }
-    -> (Result Http.Error (Maybe LanguageEntry) -> msg)
+    -> (Result Http.Error (Maybe Language) -> msg)
     -> Cmd msg
 get { langId } onResponse =
     let
@@ -16,5 +16,5 @@ get { langId } onResponse =
     in
     Http.get
         { url = url
-        , expect = Http.expectJson onResponse (Json.Decode.nullable languageEntryDecoder)
+        , expect = Http.expectJson onResponse (Json.Decode.nullable languageDecoder)
         }

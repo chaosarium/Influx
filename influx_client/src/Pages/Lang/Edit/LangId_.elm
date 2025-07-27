@@ -3,7 +3,7 @@ module Pages.Lang.Edit.LangId_ exposing (Model, Msg, page)
 import Api
 import Api.GetLanguage
 import Api.LangEdit
-import Bindings exposing (InfluxResourceId(..), LanguageEntry)
+import Bindings exposing (InfluxResourceId(..), Language)
 import Components.FormElements exposing (buttonC, inputC, stringListC)
 import Components.Styles as Styles
 import Components.Topbar
@@ -51,7 +51,7 @@ type alias Voice =
 
 type alias Model =
     { languageId : InfluxResourceId
-    , languageData : Api.Data LanguageEntry
+    , languageData : Api.Data Language
     , formModel : FormModel
     , isSubmitting : Bool
     , availableVoices : List Voice
@@ -65,8 +65,8 @@ type FormModel
 
 
 type alias LanguageFormModel =
-    { originalLanguage : LanguageEntry
-    , workingLanguage : LanguageEntry
+    { originalLanguage : Language
+    , workingLanguage : Language
     , currentDictInput : String
     , ttsRateInput : String
     , ttsPitchInput : String
@@ -102,8 +102,7 @@ init { languageId } () =
 
 
 type Msg
-    = LanguageDataResponded (Result Http.Error (Maybe LanguageEntry))
-    | UpdateCodeInput String
+    = LanguageDataResponded (Result Http.Error (Maybe Language))
     | UpdateNameInput String
     | UpdateDictsList (List String)
     | UpdateDictInput String
@@ -116,7 +115,7 @@ type Msg
     | UpdateSpacyModel String
     | SubmitForm
     | CancelEdit
-    | LanguageEditResponded (Result Http.Error LanguageEntry)
+    | LanguageEditResponded (Result Http.Error Language)
     | VoicesReceived (Maybe D.Value)
     | SharedMsg Shared.Msg.Msg
 
@@ -157,9 +156,6 @@ update msg model =
               }
             , Effect.none
             )
-
-        UpdateCodeInput value ->
-            updateWorkingLanguage (\lang -> { lang | code = value }) model
 
         UpdateNameInput value ->
             updateWorkingLanguage (\lang -> { lang | name = value }) model
@@ -318,7 +314,7 @@ update msg model =
             )
 
 
-updateWorkingLanguage : (LanguageEntry -> LanguageEntry) -> Model -> ( Model, Effect Msg )
+updateWorkingLanguage : (Language -> Language) -> Model -> ( Model, Effect Msg )
 updateWorkingLanguage updateFn model =
     case model.formModel of
         EditingLanguage formModel ->
@@ -420,8 +416,7 @@ viewLanguageForm { originalLanguage, workingLanguage, currentDictInput, ttsRateI
             originalLanguage /= workingLanguage
     in
     Html.form [ Html.Events.onSubmit SubmitForm ]
-        [ inputC [] "Language Code" "codeInput" UpdateCodeInput workingLanguage.code
-        , inputC [] "Language Name" "nameInput" UpdateNameInput workingLanguage.name
+        [ inputC [] "Language Name" "nameInput" UpdateNameInput workingLanguage.name
         , stringListC "Dictionary URLs" "dictsInput" UpdateDictsList UpdateDictInput workingLanguage.dicts currentDictInput
         , Html.h3 [] [ Html.text "Text-to-Speech Settings" ]
         , inputC [] "TTS Rate (0.1-10.0)" "ttsRateInput" UpdateTtsRateInput ttsRateInput

@@ -5,8 +5,8 @@ import Http
 
 
 edit :
-    LanguageEntry
-    -> (Result Http.Error LanguageEntry -> msg)
+    Language
+    -> (Result Http.Error Language -> msg)
     -> Cmd msg
 edit language onResponse =
     let
@@ -15,6 +15,6 @@ edit language onResponse =
     in
     Http.post
         { url = url
-        , body = Http.jsonBody (languageEntryEncoder language)
-        , expect = Http.expectJson onResponse languageEntryDecoder
+        , body = Http.jsonBody (languageEncoder language)
+        , expect = Http.expectJson onResponse languageDecoder
         }

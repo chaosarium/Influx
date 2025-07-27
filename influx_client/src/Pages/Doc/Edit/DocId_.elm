@@ -4,7 +4,7 @@ import Api
 import Api.DocEdit
 import Api.GetAnnotatedDoc
 import Api.GetLanguages
-import Bindings exposing (Document, InfluxResourceId(..), LanguageEntry)
+import Bindings exposing (Document, InfluxResourceId(..), Language)
 import Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC, stringListC, textboxC)
 import Components.Styles as Styles
 import Components.Topbar
@@ -44,7 +44,7 @@ type alias ThisRoute =
 type alias Model =
     { documentId : InfluxResourceId
     , documentData : Api.Data Document
-    , languagesData : Api.Data (List LanguageEntry)
+    , languagesData : Api.Data (List Language)
     , formModel : FormModel
     , isSubmitting : Bool
     }
@@ -93,7 +93,7 @@ init { documentId } () =
 
 type Msg
     = DocumentDataResponded (Result Http.Error Bindings.GetDocResponse)
-    | LanguagesDataResponded (Result Http.Error (List LanguageEntry))
+    | LanguagesDataResponded (Result Http.Error (List Language))
     | UpdateTitleInput String
     | UpdateContentInput String
     | UpdateDocTypeInput String
@@ -244,7 +244,7 @@ subscriptions model =
 -- VIEW
 
 
-languageOptions : List LanguageEntry -> List SelectCOption
+languageOptions : List Language -> List SelectCOption
 languageOptions languages =
     List.map
         (\lang ->
@@ -284,7 +284,7 @@ view shared route model =
     }
 
 
-viewDocumentForm : DocumentFormModel -> Api.Data (List LanguageEntry) -> Bool -> Html Msg
+viewDocumentForm : DocumentFormModel -> Api.Data (List Language) -> Bool -> Html Msg
 viewDocumentForm { originalDocument, workingDocument, currentTagInput } languagesData isSubmitting =
     let
         hasChanges =

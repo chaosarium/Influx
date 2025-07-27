@@ -144,6 +144,7 @@ hasLemma seg =
 createLemmaSegment : SentSegV2 -> String -> SentSegV2
 createLemmaSegment originalSeg lemmaText =
     case originalSeg.inner of
+        -- TODO might want to ship more lemma data over from server
         TokenSeg token ->
             { originalSeg
                 | text = lemmaText
@@ -453,9 +454,6 @@ viewDocumentInfo response =
         , p []
             [ text "Language: "
             , text language.name
-            , text " ("
-            , text language.code
-            , text ")"
             ]
         , p []
             [ text "Type: "
