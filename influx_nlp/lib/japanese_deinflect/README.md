@@ -1,4 +1,4 @@
-This module, along with `test_japanese_deinflect.py`, are largely based on github.com/mistval/jp-verb-deconjugator by mistval. The original work is licensed under the MIT License, which is included below:
+This module, along with `test_japanese_deinflect_1.py`, are largely based on github.com/mistval/jp-verb-deconjugator by mistval. The original work is licensed under the MIT License, which is included below:
 
 ```
 MIT License

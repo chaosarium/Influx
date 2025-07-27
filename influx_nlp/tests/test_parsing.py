@@ -594,7 +594,7 @@ def test_japanese_parser_with_furigana():
     """Test JapaneseParser adds furigana annotations to misc field."""
     parser = JapaneseParser()
     text = "これはテストです。"
-    result = parser.parse(text, ParserConfig("japanese_spacy", {"spacy_model": "ja_ginza"})).to_dict()
+    result = parser.parse(text, ParserConfig("enhanced_japanese", {})).to_dict()
     result["orthography_set"].sort()
     result["lemma_set"].sort()
     assert result == snapshot(
@@ -716,6 +716,6 @@ def test_japanese_parser_with_furigana():
             ],
             "orthography_set": ["。", "これ", "です", "は", "テスト"],
             "lemma_set": ["。", "これ", "です", "は", "テスト"],
-            "parser_config": {"which_parser": "japanese_spacy", "parser_args": {"spacy_model": "ja_ginza"}},
+            "parser_config": {"which_parser": 'enhanced_japanese', "parser_args": {}},
         }
     )

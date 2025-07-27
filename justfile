@@ -14,3 +14,11 @@ fmt:
     cd influx_core && just fmt
     cd influx_nlp && just fmt
     cd influx_client && just fmt
+
+push:
+    jj bookmark set dev -r @-
+    jj git push --all
+
+push-main:
+    jj bookmark set main -r @-
+    jj git push --all
