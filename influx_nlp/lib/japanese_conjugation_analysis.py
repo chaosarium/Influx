@@ -4,8 +4,8 @@ after tokenization using the deinflect module.
 """
 
 from __future__ import annotations
-from typing import List, Dict, Any, Optional, Tuple
-from .annotation import SentSegV2, SentSegTokenSeg, SegAttribute
+from typing import List, Dict, Any, Optional, Tuple, Set
+from .annotation import SentSegV2, SentSegTokenSeg, SegAttribute, ConjugationStep
 from .japanese_deinflect.deinflect import Deinflector
 from .japanese_deinflect.word_type import WordType
 
@@ -114,34 +114,38 @@ class JapaneseConjugationAnalyzer:
 
         return filtered_candidates
 
-    def _create_conjugation_chain_description(self, derivation_sequence: Dict[str, Any]) -> List[Dict[str, str]]:
+    def _create_conjugation_chain_description(self, derivation_sequence: Dict[str, Any], base_form: str) -> List[ConjugationStep]:
         """
         Create a human-readable conjugation chain from the derivation sequence.
+        The chain includes the base form as step 0, followed by each derivation step.
         """
         derivations = derivation_sequence.get("derivations", [])
         word_progression = derivation_sequence.get("word_form_progression", [])
 
-        if not derivations:
-            return []
-
         chain = []
 
-        # The progression shows the forms in reverse order (from conjugated back to base)
-        # We need to reverse it to show base -> conjugated
-        reversed_derivations = list(reversed(derivations))
-        reversed_progression = list(reversed(word_progression))
+        # Add the base form as step 0
+        if base_form:
+            chain.append(ConjugationStep(step=0, form="base", result=base_form))
 
-        for i, (derivation_type, word_form) in enumerate(zip(reversed_derivations, reversed_progression)):
-            step = {"step": i + 1, "form": derivation_type.value if hasattr(derivation_type, 'value') else str(derivation_type), "result": word_form}
+        if not derivations:
+            return chain
+
+        # The deinflector returns derivations and progression in forward order (base -> final)
+        # So we use them directly without reversing
+        for i, (derivation_type, word_form) in enumerate(zip(derivations, word_progression)):
+            step = ConjugationStep(step=i + 1, form=derivation_type.value if hasattr(derivation_type, 'value') else str(derivation_type), result=word_form)
             chain.append(step)
 
         return chain
 
-    def analyze_conjugations(self, sentence_segments: List[SentSegV2]) -> List[SentSegV2]:
+    def analyze_conjugations(self, sentence_segments: List[SentSegV2]) -> Tuple[List[SentSegV2], Set[str]]:
         """
         Analyze conjugations in a sentence and merge conjugated tokens into single segments.
-        Returns modified segments with conjugated forms merged and auxiliary tokens removed.
+        Returns modified segments with conjugated forms merged and auxiliary tokens removed,
+        plus a set of intermediate orthographies discovered during analysis.
         """
+        intermediate_orthographies: Set[str] = set()
         modified_segments = []
         i = 0
 
@@ -170,7 +174,11 @@ class JapaneseConjugationAnalyzer:
                     best_candidate = filtered_candidates[0]  # Take the most likely one
 
                     # Create conjugation chain description
-                    conjugation_chain = self._create_conjugation_chain_description(best_candidate["derivation_sequence"])
+                    conjugation_chain = self._create_conjugation_chain_description(best_candidate["derivation_sequence"], best_candidate["base"])
+
+                    # Add all forms in the conjugation chain to intermediate orthographies
+                    for step in conjugation_chain:
+                        intermediate_orthographies.add(step.result.lower())
 
                     # Create a merged token that spans the entire conjugated sequence
                     start_char = token_sequence[0].start_char
@@ -188,7 +196,8 @@ class JapaneseConjugationAnalyzer:
                             upos=segment.attributes.upos,  # Keep the original verb's POS
                             xpos=segment.attributes.xpos,
                             dependency=segment.attributes.dependency,
-                            misc={**segment.attributes.misc, "conjugation_base": best_candidate["base"], "conjugation_chain": conjugation_chain, "conjugation_sequence_length": len(token_sequence), "conjugation_combined_text": combined_text},
+                            misc={**segment.attributes.misc, "conjugation_base": best_candidate["base"], "conjugation_sequence_length": len(token_sequence), "conjugation_combined_text": combined_text},
+                            conjugation_chain=conjugation_chain,
                         ),
                     )
                     modified_segments.append(merged_segment)
@@ -198,7 +207,11 @@ class JapaneseConjugationAnalyzer:
                 elif filtered_candidates and len(token_sequence) == 1:
                     # Single token with conjugation info but no merging needed
                     best_candidate = filtered_candidates[0]
-                    conjugation_chain = self._create_conjugation_chain_description(best_candidate["derivation_sequence"])
+                    conjugation_chain = self._create_conjugation_chain_description(best_candidate["derivation_sequence"], best_candidate["base"])
+
+                    # Add all forms in the conjugation chain to intermediate orthographies
+                    for step in conjugation_chain:
+                        intermediate_orthographies.add(step.result.lower())
 
                     if conjugation_chain:
                         modified_segment = SentSegV2(
@@ -212,7 +225,8 @@ class JapaneseConjugationAnalyzer:
                                 upos=segment.attributes.upos,
                                 xpos=segment.attributes.xpos,
                                 dependency=segment.attributes.dependency,
-                                misc={**segment.attributes.misc, "conjugation_base": best_candidate["base"], "conjugation_chain": conjugation_chain, "conjugation_sequence_length": len(token_sequence), "conjugation_combined_text": combined_text},
+                                misc={**segment.attributes.misc, "conjugation_base": best_candidate["base"], "conjugation_sequence_length": len(token_sequence), "conjugation_combined_text": combined_text},
+                                conjugation_chain=conjugation_chain,
                             ),
                         )
                         modified_segments.append(modified_segment)
@@ -227,4 +241,4 @@ class JapaneseConjugationAnalyzer:
                 modified_segments.append(segment)
                 i += 1
 
-        return modified_segments
+        return modified_segments, intermediate_orthographies

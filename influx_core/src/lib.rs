@@ -130,6 +130,7 @@ mod tests {
                 nlp::SentSegV2,
                 nlp::SentSegVariants,
                 nlp::SegAttribute,
+                nlp::ConjugationStep,
             ],
             decoders: [
                 db::InfluxResourceId,
@@ -154,6 +155,7 @@ mod tests {
                 nlp::SentSegV2,
                 nlp::SentSegVariants,
                 nlp::SegAttribute,
+                nlp::ConjugationStep,
             ],
             queries: [],
             query_fields: [],

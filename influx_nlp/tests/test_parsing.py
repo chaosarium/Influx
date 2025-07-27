@@ -27,13 +27,7 @@ def test_spacy_parser_en():
                                     "start_char": 0,
                                     "end_char": 4,
                                     "inner": {"TokenSeg": {"idx": 0, "orthography": "this"}},
-                                    "attributes": {
-                                        "lemma": "this",
-                                        "upos": "PRON",
-                                        "xpos": "DT",
-                                        "dependency": (1, "nsubj"),
-                                        "misc": {"Number": "Sing", "PronType": "Dem"},
-                                    },
+                                    "attributes": {"lemma": "this", "upos": "PRON", "xpos": "DT", "dependency": (1, "nsubj"), "misc": {"Number": "Sing", "PronType": "Dem"}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -41,7 +35,7 @@ def test_spacy_parser_en():
                                     "start_char": 4,
                                     "end_char": 5,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {"misc": {}},
+                                    "attributes": {'lemma': None, 'upos': None, 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -61,6 +55,7 @@ def test_spacy_parser_en():
                                             "Tense": "Pres",
                                             "VerbForm": "Fin",
                                         },
+                                        'conjugation_chain': None,
                                     },
                                 },
                                 {
@@ -69,7 +64,7 @@ def test_spacy_parser_en():
                                     "start_char": 7,
                                     "end_char": 8,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {"misc": {}},
+                                    "attributes": {'lemma': None, 'upos': None, 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -77,13 +72,7 @@ def test_spacy_parser_en():
                                     "start_char": 8,
                                     "end_char": 9,
                                     "inner": {"TokenSeg": {"idx": 2, "orthography": "a"}},
-                                    "attributes": {
-                                        "lemma": "a",
-                                        "upos": "DET",
-                                        "xpos": "DT",
-                                        "dependency": (3, "det"),
-                                        "misc": {"Definite": "Ind", "PronType": "Art"},
-                                    },
+                                    "attributes": {"lemma": "a", "upos": "DET", "xpos": "DT", "dependency": (3, "det"), "misc": {"Definite": "Ind", "PronType": "Art"}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -91,7 +80,7 @@ def test_spacy_parser_en():
                                     "start_char": 9,
                                     "end_char": 10,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {"misc": {}},
+                                    "attributes": {'lemma': None, 'upos': None, 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -99,13 +88,7 @@ def test_spacy_parser_en():
                                     "start_char": 10,
                                     "end_char": 14,
                                     "inner": {"TokenSeg": {"idx": 3, "orthography": "test"}},
-                                    "attributes": {
-                                        "lemma": "test",
-                                        "upos": "NOUN",
-                                        "xpos": "NN",
-                                        "dependency": (1, "attr"),
-                                        "misc": {"Number": "Sing"},
-                                    },
+                                    "attributes": {"lemma": "test", "upos": "NOUN", "xpos": "NN", "dependency": (1, "attr"), "misc": {"Number": "Sing"}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -113,13 +96,7 @@ def test_spacy_parser_en():
                                     "start_char": 14,
                                     "end_char": 15,
                                     "inner": "PunctuationSeg",
-                                    "attributes": {
-                                        "lemma": ".",
-                                        "upos": "PUNCT",
-                                        "xpos": ".",
-                                        "dependency": (1, "punct"),
-                                        "misc": {"PunctType": "Peri"},
-                                    },
+                                    "attributes": {"lemma": ".", "upos": "PUNCT", "xpos": ".", "dependency": (1, "punct"), "misc": {"PunctType": "Peri"}, 'conjugation_chain': None},
                                 },
                             ]
                         }
@@ -169,13 +146,7 @@ def test_spacy_parser_weird_whitespaces():
                                     "start_char": 4,
                                     "end_char": 6,
                                     "inner": {"TokenSeg": {"idx": 1, "orthography": "je"}},
-                                    "attributes": {
-                                        "lemma": "je",
-                                        "upos": "PRON",
-                                        "xpos": "PRON",
-                                        "dependency": (2, "nsubj"),
-                                        "misc": {"Number": "Sing", "Person": "1"},
-                                    },
+                                    "attributes": {"lemma": "je", "upos": "PRON", "xpos": "PRON", "dependency": (2, "nsubj"), "misc": {"Number": "Sing", "Person": "1"}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 1,
@@ -183,7 +154,7 @@ def test_spacy_parser_weird_whitespaces():
                                     "start_char": 6,
                                     "end_char": 7,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {"misc": {}},
+                                    "attributes": {'lemma': None, 'upos': None, 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 1,
@@ -203,6 +174,7 @@ def test_spacy_parser_weird_whitespaces():
                                             "Tense": "Pres",
                                             "VerbForm": "Fin",
                                         },
+                                        'conjugation_chain': None,
                                     },
                                 },
                                 {
@@ -211,7 +183,7 @@ def test_spacy_parser_weird_whitespaces():
                                     "start_char": 14,
                                     "end_char": 15,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {"misc": {}},
+                                    "attributes": {'lemma': None, 'upos': None, 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 1,
@@ -230,6 +202,7 @@ def test_spacy_parser_weird_whitespaces():
                                             "Number": "Sing",
                                             "PronType": "Art",
                                         },
+                                        'conjugation_chain': None,
                                     },
                                 },
                                 {
@@ -238,7 +211,7 @@ def test_spacy_parser_weird_whitespaces():
                                     "start_char": 17,
                                     "end_char": 18,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {"misc": {}},
+                                    "attributes": {'lemma': None, 'upos': None, 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 1,
@@ -246,13 +219,7 @@ def test_spacy_parser_weird_whitespaces():
                                     "start_char": 18,
                                     "end_char": 25,
                                     "inner": {"TokenSeg": {"idx": 4, "orthography": "vampire"}},
-                                    "attributes": {
-                                        "lemma": "vampire",
-                                        "upos": "NOUN",
-                                        "xpos": "NOUN",
-                                        "dependency": (2, "obj"),
-                                        "misc": {"Gender": "Fem", "Number": "Sing"},
-                                    },
+                                    "attributes": {"lemma": "vampire", "upos": "NOUN", "xpos": "NOUN", "dependency": (2, "obj"), "misc": {"Gender": "Fem", "Number": "Sing"}, 'conjugation_chain': None},
                                 },
                             ]
                         }
@@ -275,13 +242,7 @@ végétarien…   \n\
                                     "start_char": 27,
                                     "end_char": 37,
                                     "inner": {"TokenSeg": {"idx": 6, "orthography": "végétarien"}},
-                                    "attributes": {
-                                        "lemma": "végétarien",
-                                        "upos": "ADV",
-                                        "xpos": "ADV",
-                                        "dependency": (7, "punct"),
-                                        "misc": {"PronType": "Int"},
-                                    },
+                                    "attributes": {"lemma": "végétarien", "upos": "ADV", "xpos": "ADV", "dependency": (7, "punct"), "misc": {"PronType": "Int"}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 2,
@@ -289,13 +250,7 @@ végétarien…   \n\
                                     "start_char": 37,
                                     "end_char": 38,
                                     "inner": "PunctuationSeg",
-                                    "attributes": {
-                                        "lemma": "…",
-                                        "upos": "PUNCT",
-                                        "xpos": "PUNCT",
-                                        "dependency": (7, "ROOT"),
-                                        "misc": {},
-                                    },
+                                    "attributes": {"lemma": "…", "upos": "PUNCT", "xpos": "PUNCT", "dependency": (7, "ROOT"), "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 2,
@@ -306,7 +261,7 @@ végétarien…   \n\
                                     "start_char": 38,
                                     "end_char": 43,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {"misc": {}},
+                                    "attributes": {'lemma': None, 'upos': None, 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 2,
@@ -314,13 +269,7 @@ végétarien…   \n\
                                     "start_char": 43,
                                     "end_char": 45,
                                     "inner": {"TokenSeg": {"idx": 9, "orthography": "il"}},
-                                    "attributes": {
-                                        "lemma": "il",
-                                        "upos": "PRON",
-                                        "xpos": "PRON",
-                                        "dependency": (10, "nsubj"),
-                                        "misc": {"Gender": "Masc", "Number": "Sing", "Person": "3"},
-                                    },
+                                    "attributes": {"lemma": "il", "upos": "PRON", "xpos": "PRON", "dependency": (10, "nsubj"), "misc": {"Gender": "Masc", "Number": "Sing", "Person": "3"}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 2,
@@ -328,7 +277,7 @@ végétarien…   \n\
                                     "start_char": 45,
                                     "end_char": 46,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {"misc": {}},
+                                    "attributes": {'lemma': None, 'upos': None, 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 2,
@@ -348,6 +297,7 @@ végétarien…   \n\
                                             "Tense": "Pres",
                                             "VerbForm": "Fin",
                                         },
+                                        'conjugation_chain': None,
                                     },
                                 },
                                 {
@@ -356,7 +306,7 @@ végétarien…   \n\
                                     "start_char": 50,
                                     "end_char": 51,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {"misc": {}},
+                                    "attributes": {'lemma': None, 'upos': None, 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 2,
@@ -364,13 +314,7 @@ végétarien…   \n\
                                     "start_char": 51,
                                     "end_char": 54,
                                     "inner": {"TokenSeg": {"idx": 11, "orthography": "des"}},
-                                    "attributes": {
-                                        "lemma": "un",
-                                        "upos": "DET",
-                                        "xpos": "DET",
-                                        "dependency": (12, "det"),
-                                        "misc": {"Definite": "Ind", "Number": "Plur", "PronType": "Art"},
-                                    },
+                                    "attributes": {"lemma": "un", "upos": "DET", "xpos": "DET", "dependency": (12, "det"), "misc": {"Definite": "Ind", "Number": "Plur", "PronType": "Art"}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 2,
@@ -378,7 +322,7 @@ végétarien…   \n\
                                     "start_char": 54,
                                     "end_char": 55,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {"misc": {}},
+                                    "attributes": {'lemma': None, 'upos': None, 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 2,
@@ -386,13 +330,7 @@ végétarien…   \n\
                                     "start_char": 55,
                                     "end_char": 65,
                                     "inner": {"TokenSeg": {"idx": 12, "orthography": "betteraves"}},
-                                    "attributes": {
-                                        "lemma": "betterave",
-                                        "upos": "NOUN",
-                                        "xpos": "NOUN",
-                                        "dependency": (10, "obj"),
-                                        "misc": {"Gender": "Fem", "Number": "Plur"},
-                                    },
+                                    "attributes": {"lemma": "betterave", "upos": "NOUN", "xpos": "NOUN", "dependency": (10, "obj"), "misc": {"Gender": "Fem", "Number": "Plur"}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 2,
@@ -400,7 +338,7 @@ végétarien…   \n\
                                     "start_char": 65,
                                     "end_char": 66,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {"misc": {}},
+                                    "attributes": {'lemma': None, 'upos': None, 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 2,
@@ -408,13 +346,7 @@ végétarien…   \n\
                                     "start_char": 66,
                                     "end_char": 67,
                                     "inner": "PunctuationSeg",
-                                    "attributes": {
-                                        "lemma": "!",
-                                        "upos": "PUNCT",
-                                        "xpos": "PUNCT",
-                                        "dependency": (7, "punct"),
-                                        "misc": {},
-                                    },
+                                    "attributes": {"lemma": "!", "upos": "PUNCT", "xpos": "PUNCT", "dependency": (7, "punct"), "misc": {}, 'conjugation_chain': None},
                                 },
                             ]
                         }
@@ -475,13 +407,7 @@ def test_spacy_parser_ja():
                                     "start_char": 0,
                                     "end_char": 2,
                                     "inner": {"TokenSeg": {"idx": 0, "orthography": "これ"}},
-                                    "attributes": {
-                                        "lemma": "これ",
-                                        "upos": "PRON",
-                                        "xpos": "代名詞",
-                                        "dependency": (2, "nsubj"),
-                                        "misc": {"Reading": "コレ"},
-                                    },
+                                    "attributes": {"lemma": "これ", "upos": "PRON", "xpos": "代名詞", "dependency": (2, "nsubj"), "misc": {"Reading": "コレ"}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -489,13 +415,7 @@ def test_spacy_parser_ja():
                                     "start_char": 2,
                                     "end_char": 3,
                                     "inner": {"TokenSeg": {"idx": 1, "orthography": "は"}},
-                                    "attributes": {
-                                        "lemma": "は",
-                                        "upos": "ADP",
-                                        "xpos": "助詞-係助詞",
-                                        "dependency": (0, "case"),
-                                        "misc": {"Reading": "ハ"},
-                                    },
+                                    "attributes": {"lemma": "は", "upos": "ADP", "xpos": "助詞-係助詞", "dependency": (0, "case"), "misc": {"Reading": "ハ"}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -503,13 +423,7 @@ def test_spacy_parser_ja():
                                     "start_char": 3,
                                     "end_char": 6,
                                     "inner": {"TokenSeg": {"idx": 2, "orthography": "テスト"}},
-                                    "attributes": {
-                                        "lemma": "テスト",
-                                        "upos": "NOUN",
-                                        "xpos": "名詞-普通名詞-サ変可能",
-                                        "dependency": (2, "ROOT"),
-                                        "misc": {"Reading": "テスト"},
-                                    },
+                                    "attributes": {"lemma": "テスト", "upos": "NOUN", "xpos": "名詞-普通名詞-サ変可能", "dependency": (2, "ROOT"), "misc": {"Reading": "テスト"}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -517,13 +431,7 @@ def test_spacy_parser_ja():
                                     "start_char": 6,
                                     "end_char": 8,
                                     "inner": {"TokenSeg": {"idx": 3, "orthography": "です"}},
-                                    "attributes": {
-                                        "lemma": "です",
-                                        "upos": "AUX",
-                                        "xpos": "助動詞",
-                                        "dependency": (2, "cop"),
-                                        "misc": {"Inflection": "助動詞-デス;終止形-一般", "Reading": "デス"},
-                                    },
+                                    "attributes": {"lemma": "です", "upos": "AUX", "xpos": "助動詞", "dependency": (2, "cop"), "misc": {"Inflection": "助動詞-デス;終止形-一般", "Reading": "デス"}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -531,13 +439,7 @@ def test_spacy_parser_ja():
                                     "start_char": 8,
                                     "end_char": 9,
                                     "inner": "PunctuationSeg",
-                                    "attributes": {
-                                        "lemma": "。",
-                                        "upos": "PUNCT",
-                                        "xpos": "補助記号-句点",
-                                        "dependency": (2, "punct"),
-                                        "misc": {"Reading": "。"},
-                                    },
+                                    "attributes": {"lemma": "。", "upos": "PUNCT", "xpos": "補助記号-句点", "dependency": (2, "punct"), "misc": {"Reading": "。"}, 'conjugation_chain': None},
                                 },
                             ]
                         }
@@ -626,6 +528,7 @@ def test_japanese_parser_with_furigana():
                                             "furigana_parentheses": "これ",
                                             "hiragana_reading": "これ",
                                         },
+                                        'conjugation_chain': None,
                                     },
                                 },
                                 {
@@ -646,6 +549,7 @@ def test_japanese_parser_with_furigana():
                                             "furigana_parentheses": "は",
                                             "hiragana_reading": "は",
                                         },
+                                        'conjugation_chain': None,
                                     },
                                 },
                                 {
@@ -666,6 +570,7 @@ def test_japanese_parser_with_furigana():
                                             "furigana_parentheses": "テスト",
                                             "hiragana_reading": "てすと",
                                         },
+                                        'conjugation_chain': None,
                                     },
                                 },
                                 {
@@ -686,7 +591,11 @@ def test_japanese_parser_with_furigana():
                                             "furigana_ruby": "です",
                                             "furigana_parentheses": "です",
                                             "hiragana_reading": "です",
+                                            'conjugation_base': 'です',
+                                            'conjugation_sequence_length': 1,
+                                            'conjugation_combined_text': 'です',
                                         },
+                                        'conjugation_chain': [{'step': 0, 'form': 'base', 'result': 'です'}],
                                     },
                                 },
                                 {
@@ -707,6 +616,7 @@ def test_japanese_parser_with_furigana():
                                             "furigana_parentheses": "。",
                                             "hiragana_reading": "。",
                                         },
+                                        'conjugation_chain': None,
                                     },
                                 },
                             ]

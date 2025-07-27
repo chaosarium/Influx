@@ -148,10 +148,10 @@ def test_ambiguity_resolution_1():
                                     'furigana_parentheses': '殺(ころ)さ',
                                     'hiragana_reading': 'ころさ',
                                     'conjugation_base': '殺す',
-                                    'conjugation_chain': [{'step': 1, 'form': 'な Negative Command (Do Not Do)', 'result': '殺されるな'}, {'step': 2, 'form': 'Passive Form', 'result': '殺される'}],
                                     'conjugation_sequence_length': 3,
                                     'conjugation_combined_text': '殺されるな',
                                 },
+                                conjugation_chain=[ConjugationStep(step=0, form='base', result='殺す'), ConjugationStep(step=1, form='Passive Form', result='殺される'), ConjugationStep(step=2, form='な Negative Command (Do Not Do)', result='殺されるな')],
                             ),
                         )
                     ]
@@ -231,10 +231,10 @@ def test_ambiguity_resolution_2():
                                     'furigana_parentheses': 'いっ',
                                     'hiragana_reading': 'いっ',
                                     'conjugation_base': 'いう',
-                                    'conjugation_chain': [{'step': 1, 'form': 'Plain Past', 'result': 'いった'}],
                                     'conjugation_sequence_length': 2,
                                     'conjugation_combined_text': 'いった',
                                 },
+                                conjugation_chain=[ConjugationStep(step=0, form='base', result='いう'), ConjugationStep(step=1, form='Plain Past', result='いった')],
                             ),
                         ),
                         SentSegV2(
@@ -323,10 +323,10 @@ def test_ambiguity_resolution_2():
                                     'furigana_parentheses': 'いっ',
                                     'hiragana_reading': 'いっ',
                                     'conjugation_base': 'いう',
-                                    'conjugation_chain': [{'step': 1, 'form': 'Plain Past', 'result': 'いった'}],
                                     'conjugation_sequence_length': 2,
                                     'conjugation_combined_text': 'いった',
                                 },
+                                conjugation_chain=[ConjugationStep(step=0, form='base', result='いう'), ConjugationStep(step=1, form='Plain Past', result='いった')],
                             ),
                         ),
                         SentSegV2(
@@ -558,19 +558,20 @@ def test_conjugation_chain_description():
 
     # Test with the best candidate (first one)
     best_candidate = candidates[0]
-    chain = conjugation_analyzer._create_conjugation_chain_description(best_candidate["derivation_sequence"])
+    chain = conjugation_analyzer._create_conjugation_chain_description(best_candidate["derivation_sequence"], best_candidate["base"])
 
     # Snapshot the actual conjugation chain description showing all steps and structure
     assert chain == snapshot(
         [
-            {'form': 'Volitional Form', 'result': '置いていこう', 'step': 1},
-            {'form': 'ていく・でいく Gradual Change (Away From Speaker)', 'result': '置いていく', 'step': 2},
-            {'form': 'て・で Form', 'result': '置いて', 'step': 3},
+            ConjugationStep(step=0, form='base', result='置く'),
+            ConjugationStep(step=1, form='て・で Form', result='置いて'),
+            ConjugationStep(step=2, form='ていく・でいく Gradual Change (Away From Speaker)', result='置いていく'),
+            ConjugationStep(step=3, form='Volitional Form', result='置いていこう'),
         ]
     )
 
     # Snapshot chain length to make the count assertion explicit
-    assert len(chain) == snapshot(3)
+    assert len(chain) == snapshot(4)
 
 
 def test_japanese_parser_with_conjugation_analysis():
@@ -588,10 +589,10 @@ def test_japanese_parser_with_conjugation_analysis():
                 if isinstance(sent_seg.inner, SentSegTokenSeg):
                     misc = sent_seg.attributes.misc
                     if "conjugation_base" in misc:
-                        conjugation_info.append({"token": sent_seg.text, "base": misc["conjugation_base"], "chain": misc["conjugation_chain"], "combined_text": misc["conjugation_combined_text"]})
+                        conjugation_info.append({"token": sent_seg.text, "base": misc["conjugation_base"], "chain": sent_seg.attributes.conjugation_chain, "combined_text": misc["conjugation_combined_text"]})
 
     # Snapshot the conjugation analysis results
-    assert conjugation_info == snapshot([{'token': 'しまった', 'base': 'しまう', 'chain': [{'step': 1, 'form': 'Plain Past', 'result': 'しまった'}], 'combined_text': 'しまった'}])
+    assert conjugation_info == snapshot([{'token': 'しまった', 'base': 'しまう', 'chain': [ConjugationStep(step=0, form='base', result='しまう'), ConjugationStep(step=1, form='Plain Past', result='しまった')], 'combined_text': 'しまった'}])
 
 
 def test_japanese_parser_complex_conjugation():
@@ -617,8 +618,7 @@ def test_japanese_parser_complex_conjugation():
                     if isinstance(sent_seg.inner, SentSegTokenSeg):
                         misc = sent_seg.attributes.misc
                         if "conjugation_base" in misc:
-                            conjugation_info.append({"token": sent_seg.text, "base": misc["conjugation_base"], "chain": misc["conjugation_chain"], "combined_text": misc["conjugation_combined_text"]})
-
+                            conjugation_info.append({"token": sent_seg.text, "base": misc["conjugation_base"], "chain": sent_seg.attributes.conjugation_chain, "combined_text": misc["conjugation_combined_text"]})
         all_conjugation_results[text] = conjugation_info
 
     # Snapshot all conjugation analysis results
@@ -628,17 +628,36 @@ def test_japanese_parser_complex_conjugation():
                 {
                     'token': '置いていこう',
                     'base': '置く',
-                    'chain': [{'step': 1, 'form': 'Volitional Form', 'result': '置いていこう'}, {'step': 2, 'form': 'ていく・でいく Gradual Change (Away From Speaker)', 'result': '置いていく'}, {'step': 3, 'form': 'て・で Form', 'result': '置いて'}],
+                    'chain': [
+                        ConjugationStep(step=0, form='base', result='置く'),
+                        ConjugationStep(step=1, form='て・で Form', result='置いて'),
+                        ConjugationStep(step=2, form='ていく・でいく Gradual Change (Away From Speaker)', result='置いていく'),
+                        ConjugationStep(step=3, form='Volitional Form', result='置いていこう'),
+                    ],
                     'combined_text': '置いていこう',
                 }
             ],
-            '作ってくれる': [{'token': '作ってくれる', 'base': '作る', 'chain': [{'step': 1, 'form': 'くれる To Give (Toward Speaker)', 'result': '作ってくれる'}, {'step': 2, 'form': 'て・で Form', 'result': '作って'}], 'combined_text': '作ってくれる'}],
-            '立たなかった': [{'token': '立たなかった', 'base': '立つ', 'chain': [{'step': 1, 'form': 'Plain Past', 'result': '立たなかった'}, {'step': 2, 'form': 'ない Negative', 'result': '立たない'}], 'combined_text': '立たなかった'}],
+            '作ってくれる': [
+                {
+                    'token': '作ってくれる',
+                    'base': '作る',
+                    'chain': [ConjugationStep(step=0, form='base', result='作る'), ConjugationStep(step=1, form='て・で Form', result='作って'), ConjugationStep(step=2, form='くれる To Give (Toward Speaker)', result='作ってくれる')],
+                    'combined_text': '作ってくれる',
+                }
+            ],
+            '立たなかった': [
+                {'token': '立たなかった', 'base': '立つ', 'chain': [ConjugationStep(step=0, form='base', result='立つ'), ConjugationStep(step=1, form='ない Negative', result='立たない'), ConjugationStep(step=2, form='Plain Past', result='立たなかった')], 'combined_text': '立たなかった'}
+            ],
             'なってしまった': [
                 {
                     'token': 'なってしまった',
                     'base': 'なる',
-                    'chain': [{'step': 1, 'form': 'Plain Past', 'result': 'なってしまった'}, {'step': 2, 'form': 'しまう To Do Unfortunately ・ To Do Completely', 'result': 'なってしまう'}, {'step': 3, 'form': 'て・で Form', 'result': 'なって'}],
+                    'chain': [
+                        ConjugationStep(step=0, form='base', result='なる'),
+                        ConjugationStep(step=1, form='て・で Form', result='なって'),
+                        ConjugationStep(step=2, form='しまう To Do Unfortunately ・ To Do Completely', result='なってしまう'),
+                        ConjugationStep(step=3, form='Plain Past', result='なってしまった'),
+                    ],
                     'combined_text': 'なってしまった',
                 }
             ],

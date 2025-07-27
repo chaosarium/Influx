@@ -61,7 +61,7 @@ def tokeniser_handler() -> dict:
             logger.error("Invalid parser specified", extra={"parser": data.parser_config.which_parser})
             return {"error": "Invalid which_parser"}, 500
 
-    return annotated_doc.to_dict()
+    return annotated_doc.to_rust_dict()
 
 
 if __name__ == "__main__":

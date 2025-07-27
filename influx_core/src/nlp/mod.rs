@@ -22,6 +22,14 @@ use reqwest::Client;
 use serde_json::json;
 use serde_json::value::Value;
 
+/// Conjugation chain step
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+pub struct ConjugationStep {
+    step: u32,
+    form: String,
+    result: String,
+}
+
 /// Segment attribute
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
 pub struct SegAttribute {
@@ -31,6 +39,7 @@ pub struct SegAttribute {
     xpos: Option<String>,
     dependency: Option<(usize, String)>, // (parent idx, relation)
     misc: HashMap<String, String>,
+    conjugation_chain: Option<Vec<ConjugationStep>>,
 }
 
 /// Document segment variants.
@@ -115,10 +124,9 @@ pub async fn tokenise_pipeline(
 
     if response.status().is_success() {
         debug!("Request to NLP server succeeded");
-        let res_json: AnnotatedDocV2 = response
-            .json::<AnnotatedDocV2>()
-            .await
-            .context("failed to decode NLP server response")?;
+        let response_text = response.text().await?;
+        let res_json: AnnotatedDocV2 = serde_json::from_str(&response_text)
+            .with_context(|| format!("failed to decode NLP server response:\n{}", response_text))?;
         debug!("NLP server response decode succeeded");
         debug!(
             segments_count = res_json.segments.len(),
@@ -263,6 +271,7 @@ pub fn phrase_fit_pipeline(
                                     xpos: None,
                                     dependency: None,
                                     misc: hashmap! {},
+                                    conjugation_chain: None,
                                 },
                             });
 
@@ -356,6 +365,7 @@ mod tests {
                                             ),
                                         ),
                                         misc: {},
+                                        conjugation_chain: None,
                                     },
                                 },
                                 SentSegV2 {
@@ -370,6 +380,7 @@ mod tests {
                                         xpos: None,
                                         dependency: None,
                                         misc: {},
+                                        conjugation_chain: None,
                                     },
                                 },
                                 SentSegV2 {
@@ -400,6 +411,7 @@ mod tests {
                                         misc: {
                                             "Number": "Sing",
                                         },
+                                        conjugation_chain: None,
                                     },
                                 },
                                 SentSegV2 {
@@ -427,6 +439,7 @@ mod tests {
                                         misc: {
                                             "PunctType": "Peri",
                                         },
+                                        conjugation_chain: None,
                                     },
                                 },
                             ],
@@ -470,6 +483,7 @@ mod tests {
                                             ),
                                         ),
                                         misc: {},
+                                        conjugation_chain: None,
                                     },
                                 },
                                 SentSegV2 {
@@ -497,6 +511,7 @@ mod tests {
                                         misc: {
                                             "PunctType": "Peri",
                                         },
+                                        conjugation_chain: None,
                                     },
                                 },
                             ],
@@ -581,6 +596,7 @@ mod tests {
                                         misc: {
                                             "VerbForm": "Inf",
                                         },
+                                        conjugation_chain: None,
                                     },
                                 },
                                 SentSegV2 {
@@ -611,6 +627,7 @@ mod tests {
                                         misc: {
                                             "PronType": "Prs",
                                         },
+                                        conjugation_chain: None,
                                     },
                                 },
                                 SentSegV2 {
@@ -625,6 +642,7 @@ mod tests {
                                         xpos: None,
                                         dependency: None,
                                         misc: {},
+                                        conjugation_chain: None,
                                     },
                                 },
                                 SentSegV2 {
@@ -655,6 +673,7 @@ mod tests {
                                         misc: {
                                             "VerbForm": "Inf",
                                         },
+                                        conjugation_chain: None,
                                     },
                                 },
                                 SentSegV2 {
@@ -682,6 +701,7 @@ mod tests {
                                         misc: {
                                             "PunctType": "Peri",
                                         },
+                                        conjugation_chain: None,
                                     },
                                 },
                             ],
@@ -709,6 +729,242 @@ mod tests {
             }
         "#]];
         expected.assert_debug_eq(&res);
+    }
+
+    #[tokio::test]
+    async fn test_tokenise_pipeline_small3() {
+        const TEXT: &str = "行った。";
+
+        let res = tokenise_pipeline(
+            TEXT,
+            "ja".to_string(),
+            crate::db::models::lang::ParserConfig {
+                which_parser: "enhanced_japanese".to_string(),
+                parser_args: hashmap! {
+                    "enable_conjugation_analysis".to_string() => "true".to_string()
+                },
+            },
+        )
+        .await;
+        assert!(res.is_ok());
+        let res = res.unwrap();
+        let expected = expect![[r#"
+            AnnotatedDocV2 {
+                text: "行った。",
+                segments: [
+                    DocSegV2 {
+                        text: "行った。",
+                        start_char: 0,
+                        end_char: 4,
+                        inner: Sentence {
+                            segments: [
+                                SentSegV2 {
+                                    sentence_idx: 0,
+                                    text: "行った",
+                                    start_char: 0,
+                                    end_char: 3,
+                                    inner: TokenSeg {
+                                        idx: 0,
+                                        orthography: "行った",
+                                    },
+                                    attributes: SegAttribute {
+                                        lemma: Some(
+                                            "行う",
+                                        ),
+                                        upos: Some(
+                                            "VERB",
+                                        ),
+                                        xpos: Some(
+                                            "動詞-非自立可能",
+                                        ),
+                                        dependency: Some(
+                                            (
+                                                0,
+                                                "ROOT",
+                                            ),
+                                        ),
+                                        misc: {
+                                            "conjugation_combined_text": "行った",
+                                            "hiragana_reading": "いっ",
+                                            "conjugation_base": "行う",
+                                            "furigana_ruby": "<ruby>行<rt>い</rt></ruby>っ",
+                                            "Reading": "イッ",
+                                            "Inflection": "五段-カ行;連用形-促音便",
+                                            "furigana_bracket": "行[い]っ",
+                                            "furigana_parentheses": "行(い)っ",
+                                        },
+                                        conjugation_chain: Some(
+                                            [
+                                                ConjugationStep {
+                                                    step: 0,
+                                                    form: "base",
+                                                    result: "行う",
+                                                },
+                                                ConjugationStep {
+                                                    step: 1,
+                                                    form: "Plain Past",
+                                                    result: "行った",
+                                                },
+                                            ],
+                                        ),
+                                    },
+                                },
+                                SentSegV2 {
+                                    sentence_idx: 0,
+                                    text: "。",
+                                    start_char: 3,
+                                    end_char: 4,
+                                    inner: PunctuationSeg,
+                                    attributes: SegAttribute {
+                                        lemma: Some(
+                                            "。",
+                                        ),
+                                        upos: Some(
+                                            "PUNCT",
+                                        ),
+                                        xpos: Some(
+                                            "補助記号-句点",
+                                        ),
+                                        dependency: Some(
+                                            (
+                                                0,
+                                                "punct",
+                                            ),
+                                        ),
+                                        misc: {
+                                            "furigana_bracket": "。",
+                                            "Reading": "。",
+                                            "furigana_ruby": "。",
+                                            "hiragana_reading": "。",
+                                            "furigana_parentheses": "。",
+                                        },
+                                        conjugation_chain: None,
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+                orthography_set: {
+                    "。",
+                    "た",
+                    "行う",
+                    "行っ",
+                    "行った",
+                },
+                lemma_set: {
+                    "。",
+                    "た",
+                    "行く",
+                },
+                parser_config: ParserConfig {
+                    which_parser: "enhanced_japanese",
+                    parser_args: {
+                        "enable_conjugation_analysis": "true",
+                    },
+                },
+            }
+        "#]];
+        expected.assert_debug_eq(&res);
+    }
+
+    #[test]
+    fn test_deserialize_japanese_conjugation_json() {
+        let json_str = r#"{
+  "text": "行った。",
+  "segments": [
+    {
+      "text": "行った。",
+      "start_char": 0,
+      "end_char": 4,
+      "inner": {
+        "Sentence": {
+          "segments": [
+            {
+              "sentence_idx": 0,
+              "text": "行った",
+              "start_char": 0,
+              "end_char": 3,
+              "inner": {
+                "TokenSeg": {
+                  "idx": 0,
+                  "orthography": "行った"
+                }
+              },
+              "attributes": {
+                "lemma": "行う",
+                "upos": "VERB",
+                "xpos": "動詞-非自立可能",
+                "dependency": [0, "ROOT"],
+                "misc": {
+                  "Inflection": "五段-カ行;連用形-促音便",
+                  "Reading": "イッ"
+                },
+                "conjugation_chain": [
+                  {
+                    "step": 1,
+                    "form": "Plain Past",
+                    "result": "行った"
+                  }
+                ]
+              }
+            },
+            {
+              "sentence_idx": 0,
+              "text": "。",
+              "start_char": 3,
+              "end_char": 4,
+              "inner": "PunctuationSeg",
+              "attributes": {
+                "lemma": "。",
+                "upos": "PUNCT",
+                "xpos": "補助記号-句点",
+                "dependency": [0, "punct"],
+                "misc": {
+                  "Reading": "。"
+                },
+                "conjugation_chain": null
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "orthography_set": ["行っ", "。", "た"],
+  "lemma_set": ["行く", "。", "た"],
+  "parser_config": {
+    "which_parser": "enhanced_japanese",
+    "parser_args": {
+      "enable_conjugation_analysis": "true"
+    }
+  }
+}"#;
+
+        let result: Result<AnnotatedDocV2, _> = serde_json::from_str(json_str);
+        assert!(
+            result.is_ok(),
+            "Failed to deserialize Japanese conjugation JSON: {:?}",
+            result.err()
+        );
+
+        let doc = result.unwrap();
+        assert_eq!(doc.text, "行った。");
+
+        // Check conjugation chain is properly deserialized
+        if let DocSegVariants::Sentence { segments } = &doc.segments[0].inner {
+            let token_seg = &segments[0];
+            assert!(token_seg.attributes.conjugation_chain.is_some());
+            let chain = token_seg.attributes.conjugation_chain.as_ref().unwrap();
+            assert_eq!(chain.len(), 1);
+            assert_eq!(chain[0].step, 1);
+            assert_eq!(chain[0].form, "Plain Past");
+            assert_eq!(chain[0].result, "行った");
+
+            // Check punctuation segment has no conjugation chain
+            let punct_seg = &segments[1];
+            assert!(punct_seg.attributes.conjugation_chain.is_none());
+        }
     }
 
     // TODO phrase fitting tests

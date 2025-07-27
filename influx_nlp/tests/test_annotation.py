@@ -66,7 +66,7 @@ def test_serialization_small():
     )
 
     # Serialize to dictionary
-    doc_dict = doc.to_dict()
+    doc_dict = doc.to_rust_dict()
 
     # Snapshot test
     assert doc_dict == snapshot(
@@ -86,7 +86,7 @@ def test_serialization_small():
                                     "start_char": 0,
                                     "end_char": 5,
                                     "inner": {"TokenSeg": {"idx": 0, "orthography": "hello"}},
-                                    "attributes": {"lemma": "hello", "upos": "INTJ", "misc": {}},
+                                    "attributes": {"lemma": "hello", "upos": "INTJ", 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -94,7 +94,7 @@ def test_serialization_small():
                                     "start_char": 5,
                                     "end_char": 6,
                                     "inner": "WhitespaceSeg",
-                                    "attributes": {"misc": {}},
+                                    "attributes": {'lemma': None, 'upos': None, 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -102,7 +102,7 @@ def test_serialization_small():
                                     "start_char": 6,
                                     "end_char": 11,
                                     "inner": {"TokenSeg": {"idx": 1, "orthography": "world"}},
-                                    "attributes": {"lemma": "world", "upos": "NOUN", "misc": {}},
+                                    "attributes": {"lemma": "world", "upos": "NOUN", 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                                 {
                                     "sentence_idx": 0,
@@ -110,7 +110,7 @@ def test_serialization_small():
                                     "start_char": 11,
                                     "end_char": 12,
                                     "inner": "PunctuationSeg",
-                                    "attributes": {"lemma": "!", "upos": "PUNCT", "misc": {}},
+                                    "attributes": {"lemma": "!", "upos": "PUNCT", 'xpos': None, 'dependency': None, "misc": {}, 'conjugation_chain': None},
                                 },
                             ]
                         }

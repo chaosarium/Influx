@@ -150,6 +150,7 @@ class SpacyParser(BaseParser):
                     xpos=token.tag_,
                     dependency=(token.head.i, token.dep_),
                     misc=token.morph.to_dict(),
+                    conjugation_chain=None,
                 )
 
                 if token.is_punct:
@@ -237,6 +238,7 @@ class JapaneseParser(SpacyParser):
                     xpos=token.tag_,
                     dependency=(token.head.i, token.dep_),
                     misc=misc_attrs,
+                    conjugation_chain=None,
                 )
 
                 if token.is_punct:
@@ -259,7 +261,9 @@ class JapaneseParser(SpacyParser):
                 # Analyze conjugations in the sentence segments if enabled
                 enable_conjugation_analysis = parser_config.parser_args.get("enable_conjugation_analysis", True)
                 if enable_conjugation_analysis:
-                    analyzed_segments = conjugation_analyzer.analyze_conjugations(sent_segments)
+                    analyzed_segments, intermediate_orthographies = conjugation_analyzer.analyze_conjugations(sent_segments)
+                    # Add intermediate orthographies discovered during conjugation analysis
+                    orthography_set.update(intermediate_orthographies)
                 else:
                     analyzed_segments = sent_segments
 
