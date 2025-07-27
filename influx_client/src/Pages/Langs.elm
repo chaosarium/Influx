@@ -5,12 +5,14 @@ import Api.GetLanguages
 import Bindings exposing (InfluxResourceId(..), LanguageEntry)
 import BindingsUtils
 import Components.Topbar
+import Dict
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (href, style)
 import Http
 import Page exposing (Page)
 import Route exposing (Route)
+import Route.Path
 import Shared
 import View exposing (View)
 
@@ -95,9 +97,20 @@ viewLanguagesTable languages =
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
                             [ case language.id of
                                 Just langId ->
-                                    a
-                                        [ href ("/lang/edit/" ++ BindingsUtils.influxResourceIdToString langId) ]
-                                        [ text "Edit" ]
+                                    div []
+                                        [ a
+                                            [ href ("/lang/edit/" ++ BindingsUtils.influxResourceIdToString langId) ]
+                                            [ text "Edit" ]
+                                        , text " | "
+                                        , a
+                                            [ Route.href
+                                                { path = Route.Path.Docs
+                                                , query = Dict.fromList [ ( "lang", BindingsUtils.influxResourceIdToString langId ) ]
+                                                , hash = Nothing
+                                                }
+                                            ]
+                                            [ text "View Docs" ]
+                                        ]
 
                                 Nothing ->
                                     text "No ID"

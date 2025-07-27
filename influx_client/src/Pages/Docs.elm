@@ -6,6 +6,7 @@ import Bindings exposing (DocPackage, InfluxResourceId(..))
 import BindingsUtils
 import Components.DbgDisplay
 import Components.Topbar
+import Dict
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (href, style)
@@ -20,7 +21,7 @@ import View exposing (View)
 page : Shared.Model -> Route () -> Page Model Msg
 page shared route =
     Page.new
-        { init = init
+        { init = init route
         , update = update
         , subscriptions = subscriptions
         , view = view route
@@ -39,10 +40,24 @@ type alias Model =
     { docData : Api.Data (List DocPackage) }
 
 
-init : () -> ( Model, Effect Msg )
-init () =
+init : Route () -> () -> ( Model, Effect Msg )
+init route () =
+    let
+        languageId =
+            case Dict.get "lang" route.query of
+                Just langIdString ->
+                    case String.toInt langIdString of
+                        Just intId ->
+                            Just (SerialId intId)
+
+                        Nothing ->
+                            Nothing
+
+                Nothing ->
+                    Nothing
+    in
     ( { docData = Api.Loading }
-    , Effect.sendCmd (Api.GetDocuments.get { languageId = Nothing } ApiResponded)
+    , Effect.sendCmd (Api.GetDocuments.get { languageId = languageId } ApiResponded)
     )
 
 
