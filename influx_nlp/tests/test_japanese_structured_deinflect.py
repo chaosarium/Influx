@@ -15,102 +15,81 @@ def test_ambiguous_deinflections():
     """Test cases with ambiguous deinflections that return multiple possibilities."""
 
     results_itte = deinflector.unconjugate('いって')
-    assert len(results_itte) == snapshot(13)
+    assert len(results_itte) == snapshot(8)
     assert results_itte == snapshot(
         [
-            {'base': 'いう', 'derivation_sequence': {'derivations': [WordType.TE_FORM], 'word_form_progression': ['いって']}},
-            {'base': 'いつ', 'derivation_sequence': {'derivations': [WordType.TE_FORM], 'word_form_progression': ['いって']}},
-            {'base': 'いる', 'derivation_sequence': {'derivations': [WordType.TE_FORM], 'word_form_progression': ['いって']}},
             {'base': 'いう', 'derivation_sequence': {'derivations': [WordType.TE_FORM], 'word_form_progression': ['いって']}},
             {'base': 'いつ', 'derivation_sequence': {'derivations': [WordType.TE_FORM], 'word_form_progression': ['いって']}},
             {'base': 'いる', 'derivation_sequence': {'derivations': [WordType.TE_FORM], 'word_form_progression': ['いって']}},
             {'base': 'いって', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
             {'base': 'いっる', 'derivation_sequence': {'derivations': [WordType.TE_FORM], 'word_form_progression': ['いって']}},
             {'base': 'いっつ', 'derivation_sequence': {'derivations': [WordType.IMPERATIVE], 'word_form_progression': ['いって']}},
-            {'base': 'いっつ', 'derivation_sequence': {'derivations': [WordType.IMPERATIVE], 'word_form_progression': ['いって']}},
-            {'base': 'いっる', 'derivation_sequence': {'derivations': [WordType.TE_FORM], 'word_form_progression': ['いって']}},
             {'base': 'いっつ', 'derivation_sequence': {'derivations': [WordType.POTENTIAL, WordType.MASU_STEM], 'word_form_progression': ['いってる', 'いって']}},
             {'base': 'いってる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM], 'word_form_progression': ['いって']}},
         ]
     )
 
     results_shita = deinflector.unconjugate('した')
-    assert len(results_shita) == snapshot(8)
+    assert len(results_shita) == snapshot(5)
     assert results_shita == snapshot(
         [
             {'base': 'する', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['した']}},
-            {'base': 'する', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['した']}},
-            {'base': 'す', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['した']}},
             {'base': 'す', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['した']}},
             {'base': 'した', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
-            {'base': 'しる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['した']}},
             {'base': 'しる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['した']}},
             {'base': 'したる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM], 'word_form_progression': ['した']}},
         ]
     )
 
     results_aru = deinflector.unconjugate('ある')
-    assert len(results_aru) == snapshot(4)
+    assert len(results_aru) == snapshot(2)
     assert results_aru == snapshot(
         [
-            {'base': 'ある', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
-            {'base': 'ある', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
             {'base': 'ある', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
             {'base': 'あるる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM], 'word_form_progression': ['ある']}},
         ]
     )
 
     results_iru = deinflector.unconjugate('いる')
-    assert len(results_iru) == snapshot(4)
+    assert len(results_iru) == snapshot(2)
     assert results_iru == snapshot(
         [
-            {'base': 'いる', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
-            {'base': 'いる', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
             {'base': 'いる', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
             {'base': 'いるる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM], 'word_form_progression': ['いる']}},
         ]
     )
 
     results_kita = deinflector.unconjugate('きた')
-    assert len(results_kita) == snapshot(4)
+    assert len(results_kita) == snapshot(3)
     assert results_kita == snapshot(
         [
             {'base': 'きた', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
-            {'base': 'きる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['きた']}},
             {'base': 'きる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['きた']}},
             {'base': 'きたる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM], 'word_form_progression': ['きた']}},
         ]
     )
 
     results_katta = deinflector.unconjugate('かった')
-    assert len(results_katta) == snapshot(10)
+    assert len(results_katta) == snapshot(6)
     assert results_katta == snapshot(
         [
             {'base': 'かう', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['かった']}},
             {'base': 'かつ', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['かった']}},
             {'base': 'かる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['かった']}},
-            {'base': 'かう', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['かった']}},
-            {'base': 'かつ', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['かった']}},
-            {'base': 'かる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['かった']}},
             {'base': 'かった', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
-            {'base': 'かっる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['かった']}},
             {'base': 'かっる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['かった']}},
             {'base': 'かったる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM], 'word_form_progression': ['かった']}},
         ]
     )
 
     results_totta = deinflector.unconjugate('取った')
-    assert len(results_totta) == snapshot(10)
+    assert len(results_totta) == snapshot(6)
     assert results_totta == snapshot(
         [
             {'base': '取る', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['取った']}},
-            {'base': '取る', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['取った']}},
-            {'base': '取う', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['取った']}},
-            {'base': '取つ', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['取った']}},
             {'base': '取う', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['取った']}},
             {'base': '取つ', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['取った']}},
             {'base': '取った', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
-            {'base': '取っる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['取った']}},
             {'base': '取っる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['取った']}},
             {'base': '取ったる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM], 'word_form_progression': ['取った']}},
         ]
@@ -120,29 +99,18 @@ def test_ambiguous_deinflections():
 def test_some_future_test():
     """Deinflection filters by what spacy thinks."""
     result = deinflector.unconjugate('殺されるな')
-    assert len(result) == snapshot(22)
+    assert len(result) == snapshot(11)
     assert result == snapshot(
         [
             {'base': '殺す', 'derivation_sequence': {'derivations': [WordType.PASSIVE, WordType.NA_COMMAND], 'word_form_progression': ['殺される', '殺されるな']}},
-            {'base': '殺す', 'derivation_sequence': {'derivations': [WordType.PASSIVE, WordType.NA_COMMAND], 'word_form_progression': ['殺される', '殺されるな']}},
             {'base': '殺す', 'derivation_sequence': {'derivations': [WordType.PASSIVE, WordType.NA_PARTICLE], 'word_form_progression': ['殺される', '殺されるな']}},
-            {'base': '殺する', 'derivation_sequence': {'derivations': [WordType.PASSIVE, WordType.NA_COMMAND], 'word_form_progression': ['殺される', '殺されるな']}},
             {'base': '殺する', 'derivation_sequence': {'derivations': [WordType.PASSIVE, WordType.NA_COMMAND], 'word_form_progression': ['殺される', '殺されるな']}},
             {'base': '殺する', 'derivation_sequence': {'derivations': [WordType.PASSIVE, WordType.NA_PARTICLE], 'word_form_progression': ['殺される', '殺されるな']}},
             {'base': '殺さる', 'derivation_sequence': {'derivations': [WordType.POTENTIAL, WordType.NA_COMMAND], 'word_form_progression': ['殺される', '殺されるな']}},
-            {'base': '殺さる', 'derivation_sequence': {'derivations': [WordType.POTENTIAL, WordType.NA_COMMAND], 'word_form_progression': ['殺される', '殺されるな']}},
-            {'base': '殺さる', 'derivation_sequence': {'derivations': [WordType.POTENTIAL, WordType.NA_COMMAND], 'word_form_progression': ['殺される', '殺されるな']}},
-            {'base': '殺さる', 'derivation_sequence': {'derivations': [WordType.POTENTIAL, WordType.NA_COMMAND], 'word_form_progression': ['殺される', '殺されるな']}},
-            {'base': '殺さる', 'derivation_sequence': {'derivations': [WordType.POTENTIAL, WordType.NA_PARTICLE], 'word_form_progression': ['殺される', '殺されるな']}},
             {'base': '殺さる', 'derivation_sequence': {'derivations': [WordType.POTENTIAL, WordType.NA_PARTICLE], 'word_form_progression': ['殺される', '殺されるな']}},
             {'base': '殺される', 'derivation_sequence': {'derivations': [WordType.NA_COMMAND], 'word_form_progression': ['殺されるな']}},
-            {'base': '殺される', 'derivation_sequence': {'derivations': [WordType.NA_COMMAND], 'word_form_progression': ['殺されるな']}},
-            {'base': '殺される', 'derivation_sequence': {'derivations': [WordType.NA_COMMAND], 'word_form_progression': ['殺されるな']}},
-            {'base': '殺される', 'derivation_sequence': {'derivations': [WordType.NA_COMMAND], 'word_form_progression': ['殺されるな']}},
-            {'base': '殺される', 'derivation_sequence': {'derivations': [WordType.NA_PARTICLE], 'word_form_progression': ['殺されるな']}},
             {'base': '殺される', 'derivation_sequence': {'derivations': [WordType.NA_PARTICLE], 'word_form_progression': ['殺されるな']}},
             {'base': '殺されるな', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
-            {'base': '殺されるる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM, WordType.NASAI], 'word_form_progression': ['殺される', '殺されるな']}},
             {'base': '殺されるる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM, WordType.NASAI], 'word_form_progression': ['殺される', '殺されるな']}},
             {'base': '殺されるなる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM], 'word_form_progression': ['殺されるな']}},
         ]

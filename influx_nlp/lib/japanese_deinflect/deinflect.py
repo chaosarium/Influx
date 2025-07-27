@@ -142,9 +142,20 @@ class Deinflector:
                     level_limit,
                 )
             )
-        return results
+        
+        # Deduplicate results based on base and derivation_sequence
+        seen = set()
+        deduplicated_results = []
+        for result in results:
+            # Create a hashable key from base and derivation_sequence
+            key = (result["base"], str(result["derivation_sequence"]))
+            if key not in seen:
+                seen.add(key)
+                deduplicated_results.append(result)
+        
+        return deduplicated_results
 
-    def unconjugate(self, word: str, fuzzy: bool = False, recursion_depth_limit: int = 100) -> List[Dict[str, Any]]:
+    def unconjugate(self, word: str, fuzzy: bool = False, recursion_depth_limit: int = 42) -> List[Dict[str, Any]]:
         results = self._unconjugate_recursive(
             word,
             WordType.SENTENCE,
