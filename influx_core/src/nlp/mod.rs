@@ -1,7 +1,7 @@
 #![allow(unused_imports, unused_must_use)]
 use core::panic;
 use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
-use maplit::hashmap;
+use maplit::{btreemap, hashmap};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use anyhow::{self, Context};
@@ -38,7 +38,7 @@ pub struct SegAttribute {
     upos: Option<String>,
     xpos: Option<String>,
     dependency: Option<(usize, String)>, // (parent idx, relation)
-    misc: HashMap<String, String>,
+    misc: BTreeMap<String, String>,
     conjugation_chain: Option<Vec<ConjugationStep>>,
 }
 
@@ -270,7 +270,7 @@ pub fn phrase_fit_pipeline(
                                     upos: None,
                                     xpos: None,
                                     dependency: None,
-                                    misc: hashmap! {},
+                                    misc: btreemap! {},
                                     conjugation_chain: None,
                                 },
                             });
@@ -784,14 +784,14 @@ mod tests {
                                             ),
                                         ),
                                         misc: {
-                                            "conjugation_combined_text": "行った",
-                                            "hiragana_reading": "いっ",
+                                            "Inflection": "助動詞-タ;終止形-一般",
+                                            "Reading": "イッタ",
                                             "conjugation_base": "行う",
-                                            "furigana_ruby": "<ruby>行<rt>い</rt></ruby>っ",
-                                            "Reading": "イッ",
-                                            "Inflection": "五段-カ行;連用形-促音便",
-                                            "furigana_bracket": "行[い]っ",
-                                            "furigana_parentheses": "行(い)っ",
+                                            "conjugation_combined_text": "行った",
+                                            "furigana_bracket": "行[い]った",
+                                            "furigana_parentheses": "行(い)った",
+                                            "furigana_ruby": "<ruby>行<rt>い</rt></ruby>った",
+                                            "hiragana_reading": "いった",
                                         },
                                         conjugation_chain: Some(
                                             [
@@ -832,11 +832,11 @@ mod tests {
                                             ),
                                         ),
                                         misc: {
-                                            "furigana_bracket": "。",
                                             "Reading": "。",
+                                            "furigana_bracket": "。",
+                                            "furigana_parentheses": "。",
                                             "furigana_ruby": "。",
                                             "hiragana_reading": "。",
-                                            "furigana_parentheses": "。",
                                         },
                                         conjugation_chain: None,
                                     },
