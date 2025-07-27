@@ -596,6 +596,30 @@ viewTermDetails dict maybeSeg =
 
                         Nothing ->
                             li [] [ Html.text "Dependency: (none)" ]
+                    , case seg.attributes.conjugationChain of
+                        Just conjugationSteps ->
+                            li []
+                                [ Html.text "Conjugation Chain: "
+                                , ol []
+                                    (List.map
+                                        (\step ->
+                                            li []
+                                                [ Html.text
+                                                    ("Step "
+                                                        ++ String.fromInt step.step
+                                                        ++ ": "
+                                                        ++ step.form
+                                                        ++ " → "
+                                                        ++ step.result
+                                                    )
+                                                ]
+                                        )
+                                        conjugationSteps
+                                    )
+                                ]
+
+                        Nothing ->
+                            li [] [ Html.text "Conjugation Chain: (none)" ]
                     , li []
                         [ Html.text "Misc: "
                         , if Dict.isEmpty seg.attributes.misc then
