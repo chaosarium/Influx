@@ -11,7 +11,6 @@ use std::collections::VecDeque;
 use std::env;
 use std::path::PathBuf;
 use tracing::{debug, error, info, warn};
-use ts_rs::TS;
 
 use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
