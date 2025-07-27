@@ -4,13 +4,11 @@ use axum::{
     Router,
 };
 use clap::{Parser, ValueEnum};
-use std::path::PathBuf;
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 
 pub mod db;
-pub(crate) mod doc_store;
 mod handlers;
 mod integration;
 mod nlp;
@@ -38,16 +36,11 @@ pub struct InfluxCoreArgs {
     /// Whether to seed database
     #[arg(short, long, default_value_t = false)]
     pub seed: bool,
-
-    /// path to content directory
-    #[arg(short, long, default_value = "../toy_content")]
-    pub influx_path: String,
 }
 
 #[derive(Clone)]
 pub struct ServerState {
     db: DB,
-    influx_path: PathBuf,
 }
 
 pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
@@ -80,10 +73,7 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
             post(handlers::integration_handlers::extern_translate),
         )
         .layer(CorsLayer::permissive())
-        .with_state(ServerState {
-            db,
-            influx_path: args.influx_path.into(),
-        });
+        .with_state(ServerState { db });
 
     let listener = TcpListener::bind("127.0.0.1:3000").await?;
     info!(
@@ -109,7 +99,7 @@ mod tests {
         elm_rs::export!("Bindings", &mut out_buf, {
             encoders: [
                 db::InfluxResourceId,
-                lang::LanguageEntry,
+                lang::Language,
                 lang::ParserConfig,
                 db::models::document::Document,
                 db::models::document::DocPackage,
@@ -134,7 +124,7 @@ mod tests {
             ],
             decoders: [
                 db::InfluxResourceId,
-                lang::LanguageEntry,
+                lang::Language,
                 lang::ParserConfig,
                 db::models::document::Document,
                 db::models::document::DocPackage,

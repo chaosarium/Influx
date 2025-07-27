@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Ok(current_dir) = env::current_dir() {
         info!(directory = ?current_dir, "Starting Influx Core");
     }
-    info!(content_path = %args.influx_path, db_choice = ?args.db_choice, seed = args.seed, "Configuration loaded");
+    info!(db_choice = ?args.db_choice, seed = args.seed, "Configuration loaded");
 
     if let Err(e) = influx_core::launch(args).await {
         error!(error = %e, "Failed to launch Influx Core");

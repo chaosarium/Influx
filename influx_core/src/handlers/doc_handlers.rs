@@ -22,7 +22,7 @@ use tracing::{debug, info};
 const USE_CACHE: bool = false;
 
 pub async fn get_docs_list(
-    State(ServerState { influx_path: _, db }): State<ServerState>,
+    State(ServerState { db }): State<ServerState>,
     Json(request): Json<GetDocsRequest>,
 ) -> Response {
     match db.get_documents(request.language_id).await {
@@ -92,7 +92,16 @@ pub(crate) async fn get_annotated_doc_logic(
         .id
         .clone()
         .ok_or_else(|| ServerError(anyhow::anyhow!("Language entry missing ID")))?;
-    let lang_code = lang_entry.code.clone();
+
+    // Derive language code from name for tokenisation pipeline
+    let lang_code = match lang_entry.name.as_str() {
+        "French" => "fr",
+        "English" => "en",
+        "Japanese" => "ja",
+        "Mandarin" => "zh-hant",
+        _ => "en", // fallback to English
+    }
+    .to_string();
 
     let text = document.content.clone();
 

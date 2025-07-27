@@ -14,9 +14,8 @@ pub struct ParserConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode)]
-pub struct LanguageEntry {
+pub struct Language {
     pub id: Option<InfluxResourceId>,
-    pub code: String,
     pub name: String,
     pub dicts: Vec<String>,
     pub tts_rate: Option<f64>,
@@ -28,9 +27,8 @@ pub struct LanguageEntry {
 }
 
 #[derive(sqlx::FromRow, Serialize, Deserialize, PartialEq)]
-pub struct LanguageEntryDB {
+pub struct LanguageInDB {
     pub id: InfluxResourceId,
-    pub code: String,
     pub name: String,
     pub dicts: Vec<String>,
     pub tts_rate: Option<f64>,
@@ -41,11 +39,10 @@ pub struct LanguageEntryDB {
     pub parser_config: sqlx::types::Json<ParserConfig>,
 }
 
-impl From<LanguageEntryDB> for LanguageEntry {
-    fn from(db_entry: LanguageEntryDB) -> Self {
-        LanguageEntry {
+impl From<LanguageInDB> for Language {
+    fn from(db_entry: LanguageInDB) -> Self {
+        Language {
             id: Some(db_entry.id),
-            code: db_entry.code,
             name: db_entry.name,
             dicts: db_entry.dicts,
             tts_rate: db_entry.tts_rate,
@@ -61,11 +58,11 @@ impl From<LanguageEntryDB> for LanguageEntry {
 use DB::*;
 
 impl DB {
-    pub async fn create_language(&self, language: LanguageEntry) -> Result<LanguageEntry> {
+    pub async fn create_language(&self, language: Language) -> Result<Language> {
         assert!(language.id.is_none());
         match self {
             Surreal { engine } => {
-                let created: Result<Option<LanguageEntry>, surrealdb::Error> =
+                let created: Result<Option<Language>, surrealdb::Error> =
                     engine.create("language").content(language).await;
 
                 match created {
@@ -76,13 +73,12 @@ impl DB {
             }
             Postgres { pool } => {
                 let record = sqlx::query_as!(
-                    LanguageEntryDB,
+                    LanguageInDB,
                     r#"
-                        INSERT INTO language (code, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang, parser_config )
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                        RETURNING id, code, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang, parser_config as "parser_config: sqlx::types::Json<ParserConfig>"
+                        INSERT INTO language (name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang, parser_config )
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                        RETURNING id, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang, parser_config as "parser_config: sqlx::types::Json<ParserConfig>"
                     "#,
-                    language.code,
                     language.name,
                     &language.dicts,
                     language.tts_rate,
@@ -100,10 +96,10 @@ impl DB {
         }
     }
 
-    pub async fn get_languages_vec(&self) -> Result<Vec<LanguageEntry>> {
+    pub async fn get_languages_vec(&self) -> Result<Vec<Language>> {
         match self {
             Surreal { engine } => {
-                let languages: Result<Vec<LanguageEntry>, surrealdb::Error> =
+                let languages: Result<Vec<Language>, surrealdb::Error> =
                     engine.select("language").await;
 
                 match languages {
@@ -112,10 +108,10 @@ impl DB {
                 }
             }
             Postgres { pool } => {
-                let records: Vec<LanguageEntry> = sqlx::query_as!(
-                    LanguageEntryDB,
+                let records: Vec<Language> = sqlx::query_as!(
+                    LanguageInDB,
                     r#"
-                        SELECT id, code, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang, parser_config as "parser_config: sqlx::types::Json<ParserConfig>"
+                        SELECT id, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang, parser_config as "parser_config: sqlx::types::Json<ParserConfig>"
                         FROM language
                     "#
                 )
@@ -127,10 +123,10 @@ impl DB {
         }
     }
 
-    pub async fn get_language(&self, id: InfluxResourceId) -> Result<Option<LanguageEntry>> {
+    pub async fn get_language(&self, id: InfluxResourceId) -> Result<Option<Language>> {
         match self {
             Surreal { engine } => {
-                let language: Result<Option<LanguageEntry>, surrealdb::Error> =
+                let language: Result<Option<Language>, surrealdb::Error> =
                     engine.select(("language", id)).await;
 
                 match language {
@@ -140,9 +136,9 @@ impl DB {
             }
             Postgres { pool } => {
                 let record = sqlx::query_as!(
-                    LanguageEntryDB,
+                    LanguageInDB,
                     r#"
-                        SELECT id, code, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang, parser_config as "parser_config: sqlx::types::Json<ParserConfig>"
+                        SELECT id, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang, parser_config as "parser_config: sqlx::types::Json<ParserConfig>"
                         FROM language
                         WHERE id = $1;
                     "#,
@@ -156,7 +152,7 @@ impl DB {
         }
     }
 
-    pub async fn update_language(&self, language: LanguageEntry) -> Result<LanguageEntry> {
+    pub async fn update_language(&self, language: Language) -> Result<Language> {
         let id = language
             .id
             .as_ref()
@@ -164,7 +160,7 @@ impl DB {
 
         match self {
             Surreal { engine } => {
-                let updated: Result<Option<LanguageEntry>, surrealdb::Error> =
+                let updated: Result<Option<Language>, surrealdb::Error> =
                     engine.update(("language", id)).content(language).await;
 
                 match updated {
@@ -175,15 +171,14 @@ impl DB {
             }
             Postgres { pool } => {
                 let record = sqlx::query_as!(
-                    LanguageEntryDB,
+                    LanguageInDB,
                     r#"
                         UPDATE language 
-                        SET code = $2, name = $3, dicts = $4, tts_rate = $5, tts_pitch = $6, tts_voice = $7, deepl_source_lang = $8, deepl_target_lang = $9, parser_config = $10
+                        SET name = $2, dicts = $3, tts_rate = $4, tts_pitch = $5, tts_voice = $6, deepl_source_lang = $7, deepl_target_lang = $8, parser_config = $9
                         WHERE id = $1
-                        RETURNING id, code, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang, parser_config as "parser_config: sqlx::types::Json<ParserConfig>"
+                        RETURNING id, name, dicts, tts_rate, tts_pitch, tts_voice, deepl_source_lang, deepl_target_lang, parser_config as "parser_config: sqlx::types::Json<ParserConfig>"
                     "#,
                     id.as_i64()?,
-                    language.code,
                     language.name,
                     &language.dicts,
                     language.tts_rate,

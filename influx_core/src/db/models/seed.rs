@@ -2,7 +2,7 @@ use super::document::Document;
 use super::phrase::Phrase;
 use super::vocab::{Token, TokenStatus};
 use super::DB;
-use crate::db::models::lang::LanguageEntry;
+use crate::db::models::lang::Language;
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
@@ -30,94 +30,101 @@ fn create_document(
 impl DB {
     pub async fn seed_lang_table(&self) -> Result<HashMap<String, crate::db::InfluxResourceId>> {
         let languages = vec![
-            LanguageEntry {
-                id: None,
-                code: "fr".to_string(),
-                name: "French".to_string(),
-                dicts: vec![
-                    "dict:///###".to_string(),
-                    "http://www.wordreference.com/fren/###".to_string(),
-                ],
-                tts_rate: None,
-                tts_pitch: None,
-                tts_voice: None,
-                deepl_source_lang: Some("FR".to_string()),
-                deepl_target_lang: Some("EN".to_string()),
-                parser_config: crate::db::models::lang::ParserConfig {
-                    which_parser: "base_spacy".to_string(),
-                    parser_args: {
-                        let mut args = HashMap::new();
-                        args.insert("spacy_model".to_string(), "fr_core_news_sm".to_string());
-                        args
+            (
+                "fr",
+                Language {
+                    id: None,
+                    name: "French".to_string(),
+                    dicts: vec![
+                        "dict:///###".to_string(),
+                        "http://www.wordreference.com/fren/###".to_string(),
+                    ],
+                    tts_rate: None,
+                    tts_pitch: None,
+                    tts_voice: None,
+                    deepl_source_lang: Some("FR".to_string()),
+                    deepl_target_lang: Some("EN".to_string()),
+                    parser_config: crate::db::models::lang::ParserConfig {
+                        which_parser: "base_spacy".to_string(),
+                        parser_args: {
+                            let mut args = HashMap::new();
+                            args.insert("spacy_model".to_string(), "fr_core_news_sm".to_string());
+                            args
+                        },
                     },
                 },
-            },
-            LanguageEntry {
-                id: None,
-                code: "en".to_string(),
-                name: "English".to_string(),
-                dicts: vec![
-                    "dict:///###".to_string(),
-                    "http://www.wordreference.com/enfr/###".to_string(),
-                ],
-                tts_rate: None,
-                tts_pitch: None,
-                tts_voice: None,
-                deepl_source_lang: Some("EN".to_string()),
-                deepl_target_lang: Some("DE".to_string()),
-                parser_config: crate::db::models::lang::ParserConfig {
-                    which_parser: "base_spacy".to_string(),
-                    parser_args: {
-                        let mut args = HashMap::new();
-                        args.insert("spacy_model".to_string(), "en_core_web_sm".to_string());
-                        args
+            ),
+            (
+                "en",
+                Language {
+                    id: None,
+                    name: "English".to_string(),
+                    dicts: vec![
+                        "dict:///###".to_string(),
+                        "http://www.wordreference.com/enfr/###".to_string(),
+                    ],
+                    tts_rate: None,
+                    tts_pitch: None,
+                    tts_voice: None,
+                    deepl_source_lang: Some("EN".to_string()),
+                    deepl_target_lang: Some("DE".to_string()),
+                    parser_config: crate::db::models::lang::ParserConfig {
+                        which_parser: "base_spacy".to_string(),
+                        parser_args: {
+                            let mut args = HashMap::new();
+                            args.insert("spacy_model".to_string(), "en_core_web_sm".to_string());
+                            args
+                        },
                     },
                 },
-            },
-            LanguageEntry {
-                id: None,
-                code: "ja".to_string(),
-                name: "Japanese".to_string(),
-                dicts: vec!["dict:///###".to_string()],
-                tts_rate: None,
-                tts_pitch: None,
-                tts_voice: None,
-                deepl_source_lang: Some("JA".to_string()),
-                deepl_target_lang: Some("EN".to_string()),
-                parser_config: crate::db::models::lang::ParserConfig {
-                    which_parser: "enhanced_japanese".to_string(),
-                    parser_args: HashMap::new(),
-                },
-            },
-            LanguageEntry {
-                id: None,
-                code: "zh-hant".to_string(),
-                name: "Mandarin".to_string(),
-                dicts: vec!["dict:///###".to_string()],
-                tts_rate: None,
-                tts_pitch: None,
-                tts_voice: None,
-                deepl_source_lang: Some("ZH".to_string()),
-                deepl_target_lang: Some("EN".to_string()),
-                parser_config: crate::db::models::lang::ParserConfig {
-                    which_parser: "base_spacy".to_string(),
-                    parser_args: {
-                        let mut args = HashMap::new();
-                        args.insert("spacy_model".to_string(), "zh_core_web_sm".to_string());
-                        args
+            ),
+            (
+                "ja",
+                Language {
+                    id: None,
+                    name: "Japanese".to_string(),
+                    dicts: vec!["dict:///###".to_string()],
+                    tts_rate: None,
+                    tts_pitch: None,
+                    tts_voice: None,
+                    deepl_source_lang: Some("JA".to_string()),
+                    deepl_target_lang: Some("EN".to_string()),
+                    parser_config: crate::db::models::lang::ParserConfig {
+                        which_parser: "enhanced_japanese".to_string(),
+                        parser_args: HashMap::new(),
                     },
                 },
-            },
+            ),
+            (
+                "zh-hant",
+                Language {
+                    id: None,
+                    name: "Mandarin".to_string(),
+                    dicts: vec!["dict:///###".to_string()],
+                    tts_rate: None,
+                    tts_pitch: None,
+                    tts_voice: None,
+                    deepl_source_lang: Some("ZH".to_string()),
+                    deepl_target_lang: Some("EN".to_string()),
+                    parser_config: crate::db::models::lang::ParserConfig {
+                        which_parser: "base_spacy".to_string(),
+                        parser_args: {
+                            let mut args = HashMap::new();
+                            args.insert("spacy_model".to_string(), "zh_core_web_sm".to_string());
+                            args
+                        },
+                    },
+                },
+            ),
         ];
 
         let mut lang_map = HashMap::new();
 
-        for language in languages {
-            debug!(code = %language.code, name = %language.name, "Creating language");
-            let code = language.code.clone();
+        for (code, language) in languages {
+            debug!(code = %code, name = %language.name, "Creating language");
             let created_language = self.create_language(language).await?;
             let lang_id = created_language.id.unwrap();
-            lang_map.insert(code, lang_id);
+            lang_map.insert(code.to_string(), lang_id);
         }
 
         Ok(lang_map)

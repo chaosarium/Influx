@@ -43,9 +43,8 @@ influxResourceIdEncoder enum =
             Json.Encode.object [ ( "StringId", Json.Encode.string inner ) ]
 
 
-type alias LanguageEntry =
+type alias Language =
     { id : Maybe InfluxResourceId
-    , code : String
     , name : String
     , dicts : List String
     , ttsRate : Maybe Float
@@ -57,11 +56,10 @@ type alias LanguageEntry =
     }
 
 
-languageEntryEncoder : LanguageEntry -> Json.Encode.Value
-languageEntryEncoder struct =
+languageEncoder : Language -> Json.Encode.Value
+languageEncoder struct =
     Json.Encode.object
         [ ( "id", (Maybe.withDefault Json.Encode.null << Maybe.map influxResourceIdEncoder) struct.id )
-        , ( "code", Json.Encode.string struct.code )
         , ( "name", Json.Encode.string struct.name )
         , ( "dicts", Json.Encode.list Json.Encode.string struct.dicts )
         , ( "tts_rate", (Maybe.withDefault Json.Encode.null << Maybe.map Json.Encode.float) struct.ttsRate )
@@ -117,7 +115,7 @@ type alias DocPackage =
     { documentId : InfluxResourceId
     , languageId : InfluxResourceId
     , document : Document
-    , language : LanguageEntry
+    , language : Language
     }
 
 
@@ -127,7 +125,7 @@ docPackageEncoder struct =
         [ ( "document_id", influxResourceIdEncoder struct.documentId )
         , ( "language_id", influxResourceIdEncoder struct.languageId )
         , ( "document", documentEncoder struct.document )
-        , ( "language", languageEntryEncoder struct.language )
+        , ( "language", languageEncoder struct.language )
         ]
 
 
@@ -486,11 +484,10 @@ influxResourceIdDecoder =
         ]
 
 
-languageEntryDecoder : Json.Decode.Decoder LanguageEntry
-languageEntryDecoder =
-    Json.Decode.succeed LanguageEntry
+languageDecoder : Json.Decode.Decoder Language
+languageDecoder =
+    Json.Decode.succeed Language
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" (Json.Decode.nullable influxResourceIdDecoder)))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "code" Json.Decode.string))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "name" Json.Decode.string))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "dicts" (Json.Decode.list Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "tts_rate" (Json.Decode.nullable Json.Decode.float)))
@@ -527,7 +524,7 @@ docPackageDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "document_id" influxResourceIdDecoder))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "language_id" influxResourceIdDecoder))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "document" documentDecoder))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "language" languageEntryDecoder))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "language" languageDecoder))
 
 
 tokenDecoder : Json.Decode.Decoder Token

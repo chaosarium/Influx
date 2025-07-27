@@ -22,7 +22,7 @@ pub struct DocPackage {
     pub document_id: InfluxResourceId,
     pub language_id: InfluxResourceId,
     pub document: Document,
-    pub language: crate::db::models::lang::LanguageEntry,
+    pub language: crate::db::models::lang::Language,
 }
 
 use DB::*;
@@ -92,7 +92,7 @@ impl DB {
                     r#"
                         SELECT 
                             d.id, d.lang_id, d.title, d.content, d.doc_type, d.tags, d.created_ts, d.updated_ts,
-                            l.code as lang_code, l.name as lang_name, l.dicts as lang_dicts,
+                            l.name as lang_name, l.dicts as lang_dicts,
                             l.tts_rate as lang_tts_rate, l.tts_pitch as lang_tts_pitch, l.tts_voice as lang_tts_voice
                         FROM document d
                         JOIN language l ON d.lang_id = l.id
@@ -127,9 +127,8 @@ impl DB {
                             )
                             .unwrap(),
                         },
-                        language: crate::db::models::lang::LanguageEntry {
+                        language: crate::db::models::lang::Language {
                             id: Some(InfluxResourceId::SerialId(record.lang_id)),
-                            code: record.lang_code,
                             name: record.lang_name,
                             dicts: record.lang_dicts,
                             tts_rate: record.lang_tts_rate,

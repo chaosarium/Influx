@@ -3,7 +3,6 @@
 CREATE TABLE IF NOT EXISTS language (
     id BIGSERIAL PRIMARY KEY,
 
-    code TEXT NOT NULL,
     dicts TEXT[] NOT NULL,
     name TEXT NOT NULL,
     tts_rate DOUBLE PRECISION,
