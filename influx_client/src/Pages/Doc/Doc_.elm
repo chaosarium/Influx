@@ -50,6 +50,11 @@ type alias ThisRoute =
 -- INIT
 
 
+type LemmaEditingMode
+    = EditingInflectedToken
+    | EditingLemma
+
+
 type alias Model =
     { get_doc_api_res : Api.Data GetDocResponse
     , working_doc : DocContext.T
@@ -60,6 +65,7 @@ type alias Model =
     , popup_state : Maybe { position : { x : Float, y : Float }, content : AnnotatedText.PopupContent }
     , annotation_config : AnnotatedText.AnnotationConfig
     , showFurigana : Bool
+    , lemma_editing_mode : LemmaEditingMode
     }
 
 
@@ -74,6 +80,7 @@ init { documentId } () =
       , popup_state = Nothing
       , annotation_config = { topAnnotation = AnnotatedText.Definition, bottomAnnotation = AnnotatedText.Phonetic }
       , showFurigana = False
+      , lemma_editing_mode = EditingInflectedToken
       }
     , Effect.sendCmd (Api.GetAnnotatedDoc.get { filepath = documentId } ApiResponded)
     )
@@ -92,6 +99,9 @@ type Msg
     | CombinedMouseEnter { x : Float, y : Float } FocusContext.Msg AnnotatedText.PopupContent -- handles both focus and popup
       -- Term editor...
     | TermEditorEvent TermEditForm.Msg
+      -- Lemma editing selection...
+    | SwitchToLemmaEditing
+    | SwitchToInflectedTokenEditing
       -- TTS controls...
     | StartTts
     | StopTts
@@ -108,6 +118,77 @@ type Msg
     | ToggleFurigana
       -- Shared
     | SharedMsg Shared.Msg.Msg
+
+
+getLemmaFromSeg : SentSegV2 -> Maybe String
+getLemmaFromSeg seg =
+    seg.attributes.lemma
+
+
+hasLemma : SentSegV2 -> Bool
+hasLemma seg =
+    case seg.attributes.lemma of
+        Just lemma ->
+            -- Only show lemma selection if lemma differs from the token's orthography
+            case seg.inner of
+                TokenSeg token ->
+                    lemma /= token.orthography
+
+                _ ->
+                    True
+
+        Nothing ->
+            False
+
+
+createLemmaSegment : SentSegV2 -> String -> SentSegV2
+createLemmaSegment originalSeg lemmaText =
+    case originalSeg.inner of
+        TokenSeg token ->
+            { originalSeg
+                | text = lemmaText
+                , inner = TokenSeg { token | orthography = lemmaText }
+            }
+
+        _ ->
+            originalSeg
+
+
+getCurrentEditingSeg : Model -> Maybe SentSegV2
+getCurrentEditingSeg model =
+    case ( model.focus_ctx.segment_selection, model.lemma_editing_mode ) of
+        ( Just seg, EditingLemma ) ->
+            case getLemmaFromSeg seg of
+                Just lemma ->
+                    Just (createLemmaSegment seg lemma)
+
+                Nothing ->
+                    Just seg
+
+        ( Just seg, EditingInflectedToken ) ->
+            Just seg
+
+        _ ->
+            Nothing
+
+
+updateFormBasedOnSelection : DictContext.T -> Model -> ( TermEditForm.Model, Effect TermEditForm.Msg )
+updateFormBasedOnSelection dict_ctx model =
+    let
+        currentSeg =
+            getCurrentEditingSeg model
+
+        segSlice =
+            case model.lemma_editing_mode of
+                EditingInflectedToken ->
+                    model.focus_ctx.segment_slice
+
+                EditingLemma ->
+                    Nothing
+
+        -- Don't allow phrase selection when editing lemma
+    in
+    TermEditForm.update dict_ctx (TermEditForm.EditingSegUpdated segSlice currentSeg) model.form_model
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -134,10 +215,35 @@ update msg model =
                     FocusContext.update model.working_doc m model.focus_ctx
 
                 ( form_model, _ ) =
-                    TermEditForm.update model.working_dict (TermEditForm.EditingSegUpdated focus_ctx.segment_slice focus_ctx.segment_selection) model.form_model
+                    updateFormBasedOnSelection model.working_dict { model | focus_ctx = focus_ctx }
             in
             ( { model
                 | focus_ctx = focus_ctx
+                , form_model = form_model
+                , lemma_editing_mode = EditingInflectedToken -- Reset to inflected when new selection
+              }
+            , Effect.none
+            )
+
+        SwitchToLemmaEditing ->
+            let
+                ( form_model, _ ) =
+                    updateFormBasedOnSelection model.working_dict { model | lemma_editing_mode = EditingLemma }
+            in
+            ( { model
+                | lemma_editing_mode = EditingLemma
+                , form_model = form_model
+              }
+            , Effect.none
+            )
+
+        SwitchToInflectedTokenEditing ->
+            let
+                ( form_model, _ ) =
+                    updateFormBasedOnSelection model.working_dict { model | lemma_editing_mode = EditingInflectedToken }
+            in
+            ( { model
+                | lemma_editing_mode = EditingInflectedToken
                 , form_model = form_model
               }
             , Effect.none
@@ -197,12 +303,13 @@ update msg model =
                     FocusContext.update model.working_doc focusMsg model.focus_ctx
 
                 ( form_model, _ ) =
-                    TermEditForm.update model.working_dict (TermEditForm.EditingSegUpdated focus_ctx.segment_slice focus_ctx.segment_selection) model.form_model
+                    updateFormBasedOnSelection model.working_dict { model | focus_ctx = focus_ctx }
             in
             ( { model
                 | focus_ctx = focus_ctx
                 , form_model = form_model
                 , popup_state = Just { position = position, content = popupContent }
+                , lemma_editing_mode = EditingInflectedToken -- Reset to inflected when new selection
               }
             , Effect.none
             )
@@ -509,6 +616,71 @@ viewAnnotationControls config showFurigana =
         ]
 
 
+viewLemmaDisplay :
+    SentSegV2
+    -> LemmaEditingMode
+    -> DictContext.T
+    -> AnnotatedText.AnnotationConfig
+    -> Bool
+    -> Html Msg
+viewLemmaDisplay seg editingMode dict annotation_config showFurigana =
+    case getLemmaFromSeg seg of
+        Nothing ->
+            Html.text ""
+
+        Just lemma ->
+            let
+                lemmaSegment =
+                    createLemmaSegment seg lemma
+
+                inflectedSegment =
+                    seg
+
+                -- Use NoopMouseEvent to avoid affecting focus context
+                lemmaViewCtx =
+                    { dict = dict
+                    , modifier_state = { alt = False, ctrl = False, shift = False, meta = False }
+                    , mouse_handler = NoopMouseEvent
+                    , focus_predicate = \_ -> editingMode == EditingLemma
+                    , seg_display_predicate = \_ -> True
+                    , doc_seg_display_predicate = \_ -> True
+                    , popup_state = Nothing
+                    , on_hover_start = \_ _ -> HidePopup
+                    , on_hover_end = HidePopup
+                    , on_mouse_enter_with_position = \_ _ _ _ -> HidePopup
+                    , annotation_config = annotation_config
+                    , showFurigana = showFurigana
+                    }
+
+                inflectedViewCtx =
+                    { lemmaViewCtx
+                        | focus_predicate = \_ -> editingMode == EditingInflectedToken
+                    }
+
+                lemmaView =
+                    Maybe.withDefault (Html.text lemma) (AnnotatedText.viewSentenceSegment lemmaViewCtx lemmaSegment)
+
+                inflectedView =
+                    Maybe.withDefault (Html.text seg.text) (AnnotatedText.viewSentenceSegment inflectedViewCtx inflectedSegment)
+            in
+            Html.div []
+                [ Html.span []
+                    [ Html.text "inflection: " ]
+                , Html.span
+                    [ Html.Attributes.style "cursor" "pointer"
+                    , Html.Events.onClick SwitchToLemmaEditing
+                    ]
+                    [ lemmaView ]
+                , Html.span []
+                    [ Html.text " → " ]
+                , Html.span
+                    [ Html.Attributes.style "cursor" "pointer"
+                    , Html.Events.onClick SwitchToInflectedTokenEditing
+                    ]
+                    [ inflectedView ]
+                ]
+
+
 viewTermDetails : DictContext.T -> Maybe SentSegV2 -> Html msg
 viewTermDetails dict maybeSeg =
     case maybeSeg of
@@ -809,6 +981,18 @@ view shared route model =
                 (Maybe.andThen (AnnotatedText.viewSentenceSegment selectedSegViewCtx) model.focus_ctx.segment_selection)
             , Html.Extra.viewMaybe (\seg -> viewSegExtraInfo model.working_dict seg) model.focus_ctx.segment_selection
             ]
+
+        -- lemma display for selected segment (if it has a lemma)
+        , case model.focus_ctx.segment_selection of
+            Just seg ->
+                if hasLemma seg then
+                    viewLemmaDisplay seg model.lemma_editing_mode model.working_dict model.annotation_config model.showFurigana
+
+                else
+                    Html.text ""
+
+            Nothing ->
+                Html.text ""
         , TermEditForm.view model.form_model
             TermEditorEvent
             { dict = model.working_dict
