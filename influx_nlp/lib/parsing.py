@@ -256,8 +256,12 @@ class JapaneseParser(SpacyParser):
                 )
 
             if sent_segments != [] and not sent.text.isspace():
-                # Analyze conjugations in the sentence segments
-                analyzed_segments = conjugation_analyzer.analyze_conjugations(sent_segments)
+                # Analyze conjugations in the sentence segments if enabled
+                enable_conjugation_analysis = parser_config.parser_args.get("enable_conjugation_analysis", True)
+                if enable_conjugation_analysis:
+                    analyzed_segments = conjugation_analyzer.analyze_conjugations(sent_segments)
+                else:
+                    analyzed_segments = sent_segments
 
                 sentence_start_char: int = min([s.start_char for s in analyzed_segments])
                 sentence_end_char: int = max([s.end_char for s in analyzed_segments])

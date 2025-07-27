@@ -139,8 +139,8 @@ class JapaneseConjugationAnalyzer:
 
     def analyze_conjugations(self, sentence_segments: List[SentSegV2]) -> List[SentSegV2]:
         """
-        Analyze conjugations in a sentence and add conjugation chain information to misc fields.
-        Returns modified segments with conjugation information added.
+        Analyze conjugations in a sentence and merge conjugated tokens into single segments.
+        Returns modified segments with conjugated forms merged and auxiliary tokens removed.
         """
         modified_segments = []
         i = 0
@@ -165,14 +165,41 @@ class JapaneseConjugationAnalyzer:
                 # Filter candidates based on tokenization
                 filtered_candidates = self._filter_candidates_by_tokenization(candidates, token_sequence)
 
-                # If we have good candidates, add conjugation information
-                if filtered_candidates:
+                # If we have good candidates and multiple tokens to combine, merge them
+                if filtered_candidates and len(token_sequence) > 1:
                     best_candidate = filtered_candidates[0]  # Take the most likely one
 
                     # Create conjugation chain description
                     conjugation_chain = self._create_conjugation_chain_description(best_candidate["derivation_sequence"])
 
-                    # Add conjugation information to the first token's misc field
+                    # Create a merged token that spans the entire conjugated sequence
+                    start_char = token_sequence[0].start_char
+                    end_char = token_sequence[-1].end_char
+
+                    # Use the lemma from the best candidate as the base form
+                    merged_segment = SentSegV2(
+                        sentence_idx=segment.sentence_idx,
+                        text=combined_text,
+                        start_char=start_char,
+                        end_char=end_char,
+                        inner=SentSegTokenSeg(idx=segment.inner.idx, orthography=combined_text.lower()),
+                        attributes=SegAttribute(
+                            lemma=best_candidate["base"],
+                            upos=segment.attributes.upos,  # Keep the original verb's POS
+                            xpos=segment.attributes.xpos,
+                            dependency=segment.attributes.dependency,
+                            misc={**segment.attributes.misc, "conjugation_base": best_candidate["base"], "conjugation_chain": conjugation_chain, "conjugation_sequence_length": len(token_sequence), "conjugation_combined_text": combined_text},
+                        ),
+                    )
+                    modified_segments.append(merged_segment)
+
+                    # Skip ahead past the processed sequence (all tokens are now merged)
+                    i += len(token_sequence)
+                elif filtered_candidates and len(token_sequence) == 1:
+                    # Single token with conjugation info but no merging needed
+                    best_candidate = filtered_candidates[0]
+                    conjugation_chain = self._create_conjugation_chain_description(best_candidate["derivation_sequence"])
+
                     if conjugation_chain:
                         modified_segment = SentSegV2(
                             sentence_idx=segment.sentence_idx,
@@ -191,14 +218,9 @@ class JapaneseConjugationAnalyzer:
                         modified_segments.append(modified_segment)
                     else:
                         modified_segments.append(segment)
-
-                    # Add the remaining segments in the sequence (without modification)
-                    for j in range(1, len(token_sequence)):
-                        modified_segments.append(token_sequence[j])
-
-                    # Skip ahead past the processed sequence
-                    i += len(token_sequence)
+                    i += 1
                 else:
+                    # No good candidates, keep original tokens
                     modified_segments.append(segment)
                     i += 1
             else:

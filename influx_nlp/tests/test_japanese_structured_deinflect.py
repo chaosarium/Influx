@@ -131,34 +131,29 @@ def test_ambiguity_resolution_1():
                     segments=[
                         SentSegV2(
                             sentence_idx=0,
-                            text='殺さ',
+                            text='殺されるな',
                             start_char=0,
-                            end_char=2,
-                            inner=SentSegTokenSeg(idx=0, orthography='殺さ'),
+                            end_char=5,
+                            inner=SentSegTokenSeg(idx=0, orthography='殺されるな'),
                             attributes=SegAttribute(
                                 lemma='殺す',
                                 upos='VERB',
                                 xpos='動詞-一般',
                                 dependency=(0, 'ROOT'),
-                                misc={'Inflection': '五段-サ行;未然形-一般', 'Reading': 'コロサ', 'furigana_bracket': '殺[ころ]さ', 'furigana_ruby': '<ruby>殺<rt>ころ</rt></ruby>さ', 'furigana_parentheses': '殺(ころ)さ', 'hiragana_reading': 'ころさ'},
+                                misc={
+                                    'Inflection': '五段-サ行;未然形-一般',
+                                    'Reading': 'コロサ',
+                                    'furigana_bracket': '殺[ころ]さ',
+                                    'furigana_ruby': '<ruby>殺<rt>ころ</rt></ruby>さ',
+                                    'furigana_parentheses': '殺(ころ)さ',
+                                    'hiragana_reading': 'ころさ',
+                                    'conjugation_base': '殺す',
+                                    'conjugation_chain': [{'step': 1, 'form': 'な Negative Command (Do Not Do)', 'result': '殺されるな'}, {'step': 2, 'form': 'Passive Form', 'result': '殺される'}],
+                                    'conjugation_sequence_length': 3,
+                                    'conjugation_combined_text': '殺されるな',
+                                },
                             ),
-                        ),
-                        SentSegV2(
-                            sentence_idx=0,
-                            text='れる',
-                            start_char=2,
-                            end_char=4,
-                            inner=SentSegTokenSeg(idx=1, orthography='れる'),
-                            attributes=SegAttribute(lemma='れる', upos='AUX', xpos='助動詞', dependency=(0, 'aux'), misc={'Inflection': '助動詞-レル;終止形-一般', 'Reading': 'レル', 'furigana_bracket': 'れる', 'furigana_ruby': 'れる', 'furigana_parentheses': 'れる', 'hiragana_reading': 'れる'}),
-                        ),
-                        SentSegV2(
-                            sentence_idx=0,
-                            text='な',
-                            start_char=4,
-                            end_char=5,
-                            inner=SentSegTokenSeg(idx=2, orthography='な'),
-                            attributes=SegAttribute(lemma='な', upos='PART', xpos='助詞-終助詞', dependency=(0, 'mark'), misc={'Reading': 'ナ', 'furigana_bracket': 'な', 'furigana_ruby': 'な', 'furigana_parentheses': 'な', 'hiragana_reading': 'な'}),
-                        ),
+                        )
                     ]
                 ),
             )
@@ -186,7 +181,7 @@ def test_ambiguity_resolution_2():
     )
 
     # result = SpacyParser().parse(text, ParserConfig("spacy", {"spacy_model": "ja_core_news_sm"})).segments
-    result = parser.parse(text, ParserConfig("testing", {})).segments
+    result = parser.parse(text, ParserConfig(which_parser="testing", parser_args={})).segments
     assert result == snapshot(
         [
             DocSegV2(
@@ -219,21 +214,28 @@ def test_ambiguity_resolution_2():
                         ),
                         SentSegV2(
                             sentence_idx=0,
-                            text='いっ',
+                            text='いった',
                             start_char=3,
-                            end_char=5,
-                            inner=SentSegTokenSeg(idx=2, orthography='いっ'),
-                            attributes=SegAttribute(
-                                lemma='いく', upos='VERB', xpos='動詞-非自立可能', dependency=(2, 'ROOT'), misc={'Inflection': '五段-カ行;連用形-促音便', 'Reading': 'イッ', 'furigana_bracket': 'いっ', 'furigana_ruby': 'いっ', 'furigana_parentheses': 'いっ', 'hiragana_reading': 'いっ'}
-                            ),
-                        ),
-                        SentSegV2(
-                            sentence_idx=0,
-                            text='た',
-                            start_char=5,
                             end_char=6,
-                            inner=SentSegTokenSeg(idx=3, orthography='た'),
-                            attributes=SegAttribute(lemma='た', upos='AUX', xpos='助動詞', dependency=(2, 'aux'), misc={'Inflection': '助動詞-タ;終止形-一般', 'Reading': 'タ', 'furigana_bracket': 'た', 'furigana_ruby': 'た', 'furigana_parentheses': 'た', 'hiragana_reading': 'た'}),
+                            inner=SentSegTokenSeg(idx=2, orthography='いった'),
+                            attributes=SegAttribute(
+                                lemma='いう',
+                                upos='VERB',
+                                xpos='動詞-非自立可能',
+                                dependency=(2, 'ROOT'),
+                                misc={
+                                    'Inflection': '五段-カ行;連用形-促音便',
+                                    'Reading': 'イッ',
+                                    'furigana_bracket': 'いっ',
+                                    'furigana_ruby': 'いっ',
+                                    'furigana_parentheses': 'いっ',
+                                    'hiragana_reading': 'いっ',
+                                    'conjugation_base': 'いう',
+                                    'conjugation_chain': [{'step': 1, 'form': 'Plain Past', 'result': 'いった'}],
+                                    'conjugation_sequence_length': 2,
+                                    'conjugation_combined_text': 'いった',
+                                },
+                            ),
                         ),
                         SentSegV2(
                             sentence_idx=0,
@@ -304,21 +306,28 @@ def test_ambiguity_resolution_2():
                         ),
                         SentSegV2(
                             sentence_idx=0,
-                            text='いっ',
+                            text='いった',
                             start_char=5,
-                            end_char=7,
-                            inner=SentSegTokenSeg(idx=3, orthography='いっ'),
-                            attributes=SegAttribute(
-                                lemma='いう', upos='VERB', xpos='動詞-一般', dependency=(3, 'ROOT'), misc={'Inflection': '五段-ワア行;連用形-促音便', 'Reading': 'イッ', 'furigana_bracket': 'いっ', 'furigana_ruby': 'いっ', 'furigana_parentheses': 'いっ', 'hiragana_reading': 'いっ'}
-                            ),
-                        ),
-                        SentSegV2(
-                            sentence_idx=0,
-                            text='た',
-                            start_char=7,
                             end_char=8,
-                            inner=SentSegTokenSeg(idx=4, orthography='た'),
-                            attributes=SegAttribute(lemma='た', upos='AUX', xpos='助動詞', dependency=(3, 'aux'), misc={'Inflection': '助動詞-タ;終止形-一般', 'Reading': 'タ', 'furigana_bracket': 'た', 'furigana_ruby': 'た', 'furigana_parentheses': 'た', 'hiragana_reading': 'た'}),
+                            inner=SentSegTokenSeg(idx=3, orthography='いった'),
+                            attributes=SegAttribute(
+                                lemma='いう',
+                                upos='VERB',
+                                xpos='動詞-一般',
+                                dependency=(3, 'ROOT'),
+                                misc={
+                                    'Inflection': '五段-ワア行;連用形-促音便',
+                                    'Reading': 'イッ',
+                                    'furigana_bracket': 'いっ',
+                                    'furigana_ruby': 'いっ',
+                                    'furigana_parentheses': 'いっ',
+                                    'hiragana_reading': 'いっ',
+                                    'conjugation_base': 'いう',
+                                    'conjugation_chain': [{'step': 1, 'form': 'Plain Past', 'result': 'いった'}],
+                                    'conjugation_sequence_length': 2,
+                                    'conjugation_combined_text': 'いった',
+                                },
+                            ),
                         ),
                         SentSegV2(
                             sentence_idx=0,
@@ -455,9 +464,9 @@ def test_conjugation_analyzer_filter_candidates():
     """Test that the conjugation analyzer can filter candidates based on tokenization."""
     # Test with ambiguous した - should filter based on tokenization context
 
-    # Parse the text to get real tokenization results
+    # Parse the text to get real tokenization results (with conjugation analysis disabled)
     text = "した"
-    result = parser.parse(text, ParserConfig("enhanced_japanese", {}))
+    result = parser.parse(text, ParserConfig("enhanced_japanese", {"enable_conjugation_analysis": False}))
 
     # Extract token segments from parsed result
     token_segments = []
@@ -474,22 +483,38 @@ def test_conjugation_analyzer_filter_candidates():
     # Get all candidates for した
     candidates = deinflector.unconjugate("した")
 
+    # Snapshot original candidates for comparison
+    assert candidates == snapshot(
+        [
+            {'base': 'する', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['した']}},
+            {'base': 'す', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['した']}},
+            {'base': 'した', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
+            {'base': 'しる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['した']}},
+            {'base': 'したる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM], 'word_form_progression': ['した']}},
+        ]
+    )
+
     # Filter based on tokenization (should prefer する over other candidates)
     filtered = conjugation_analyzer._filter_candidates_by_tokenization(candidates, token_segments)
 
-    # Should have fewer or equal candidates
-    assert len(filtered) <= len(candidates)
+    # Snapshot filtered results showing which candidates were kept
+    assert filtered == snapshot(
+        [
+            {'base': 'する', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['した']}},
+        ]
+    )
 
-    # Check that we have candidates with する as base
-    suru_candidates = [c for c in filtered if c["base"] == "する"]
-    assert len(suru_candidates) > 0
+    # Snapshot the length comparison to show filtering effectiveness
+    candidate_count = {"original_candidates": len(candidates), "filtered_candidates": len(filtered)}
+    assert candidate_count == snapshot({"original_candidates": 5, "filtered_candidates": 1})
 
 
 def test_conjugation_analyzer_collect_sequence():
     """Test collecting conjugation sequences from tokenized segments."""
     # Test with "置いていこう" (let's leave it there)
     text = "置いていこう"
-    result = parser.parse(text, ParserConfig("enhanced_japanese", {}))
+    # Parse with conjugation analysis disabled to get original separate tokens
+    result = parser.parse(text, ParserConfig("enhanced_japanese", {"enable_conjugation_analysis": False}))
 
     # Extract token segments from parsed result
     token_segments = []
@@ -499,14 +524,14 @@ def test_conjugation_analyzer_collect_sequence():
                 if isinstance(sent_seg.inner, SentSegTokenSeg):
                     token_segments.append(sent_seg)
 
-    # Snapshot the tokenization result for verification
+    # Snapshot the tokenization result for verification (should have separate tokens)
     tokenization_result = [(seg.text, seg.attributes.lemma, seg.attributes.upos, seg.attributes.xpos) for seg in token_segments]
     assert tokenization_result == snapshot([('置い', '置く', 'VERB', '動詞-非自立可能'), ('て', 'て', 'SCONJ', '助詞-接続助詞'), ('いこう', 'いく', 'VERB', '動詞-非自立可能')])
 
     # Collect sequence starting from the first verb
     sequence, combined_text = conjugation_analyzer._collect_conjugation_sequence(token_segments, 0)
 
-    # Should collect the verb and the て particle
+    # Should collect the verb and the auxiliary tokens
     assert len(sequence) >= 1
     assert sequence[0].text == "置い"
 
@@ -520,18 +545,32 @@ def test_conjugation_chain_description():
     # Test with a known conjugation
     candidates = deinflector.unconjugate("置いていこう")
 
-    if candidates:
-        best_candidate = candidates[0]
-        chain = conjugation_analyzer._create_conjugation_chain_description(best_candidate["derivation_sequence"])
+    # Snapshot all candidates to show what we're working with
+    assert candidates == snapshot(
+        [
+            {'base': '置く', 'derivation_sequence': {'derivations': [WordType.TE_FORM, WordType.TE_IKU, WordType.VOLITIONAL], 'word_form_progression': ['置いて', '置いていく', '置いていこう']}},
+            {'base': '置いる', 'derivation_sequence': {'derivations': [WordType.TE_FORM, WordType.TE_IKU, WordType.VOLITIONAL], 'word_form_progression': ['置いて', '置いていく', '置いていこう']}},
+            {'base': '置いていく', 'derivation_sequence': {'derivations': [WordType.VOLITIONAL], 'word_form_progression': ['置いていこう']}},
+            {'base': '置いていこう', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
+            {'base': '置いていこうる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM], 'word_form_progression': ['置いていこう']}},
+        ]
+    )
 
-        # Should have multiple steps
-        assert len(chain) > 0
+    # Test with the best candidate (first one)
+    best_candidate = candidates[0]
+    chain = conjugation_analyzer._create_conjugation_chain_description(best_candidate["derivation_sequence"])
 
-        # Each step should have required fields
-        for step in chain:
-            assert "step" in step
-            assert "form" in step
-            assert "result" in step
+    # Snapshot the actual conjugation chain description showing all steps and structure
+    assert chain == snapshot(
+        [
+            {'form': 'Volitional Form', 'result': '置いていこう', 'step': 1},
+            {'form': 'ていく・でいく Gradual Change (Away From Speaker)', 'result': '置いていく', 'step': 2},
+            {'form': 'て・で Form', 'result': '置いて', 'step': 3},
+        ]
+    )
+
+    # Snapshot chain length to make the count assertion explicit
+    assert len(chain) == snapshot(3)
 
 
 def test_japanese_parser_with_conjugation_analysis():
@@ -552,7 +591,7 @@ def test_japanese_parser_with_conjugation_analysis():
                         conjugation_info.append({"token": sent_seg.text, "base": misc["conjugation_base"], "chain": misc["conjugation_chain"], "combined_text": misc["conjugation_combined_text"]})
 
     # Snapshot the conjugation analysis results
-    assert conjugation_info == snapshot([{'token': 'しまっ', 'base': 'しまう', 'chain': [{'step': 1, 'form': 'Plain Past', 'result': 'しまった'}], 'combined_text': 'しまった'}])
+    assert conjugation_info == snapshot([{'token': 'しまった', 'base': 'しまう', 'chain': [{'step': 1, 'form': 'Plain Past', 'result': 'しまった'}], 'combined_text': 'しまった'}])
 
 
 def test_japanese_parser_complex_conjugation():
@@ -587,17 +626,17 @@ def test_japanese_parser_complex_conjugation():
         {
             '置いていこう': [
                 {
-                    'token': '置い',
+                    'token': '置いていこう',
                     'base': '置く',
                     'chain': [{'step': 1, 'form': 'Volitional Form', 'result': '置いていこう'}, {'step': 2, 'form': 'ていく・でいく Gradual Change (Away From Speaker)', 'result': '置いていく'}, {'step': 3, 'form': 'て・で Form', 'result': '置いて'}],
                     'combined_text': '置いていこう',
                 }
             ],
-            '作ってくれる': [{'token': '作っ', 'base': '作る', 'chain': [{'step': 1, 'form': 'くれる To Give (Toward Speaker)', 'result': '作ってくれる'}, {'step': 2, 'form': 'て・で Form', 'result': '作って'}], 'combined_text': '作ってくれる'}],
-            '立たなかった': [{'token': '立た', 'base': '立つ', 'chain': [{'step': 1, 'form': 'Plain Past', 'result': '立たなかった'}, {'step': 2, 'form': 'ない Negative', 'result': '立たない'}], 'combined_text': '立たなかった'}],
+            '作ってくれる': [{'token': '作ってくれる', 'base': '作る', 'chain': [{'step': 1, 'form': 'くれる To Give (Toward Speaker)', 'result': '作ってくれる'}, {'step': 2, 'form': 'て・で Form', 'result': '作って'}], 'combined_text': '作ってくれる'}],
+            '立たなかった': [{'token': '立たなかった', 'base': '立つ', 'chain': [{'step': 1, 'form': 'Plain Past', 'result': '立たなかった'}, {'step': 2, 'form': 'ない Negative', 'result': '立たない'}], 'combined_text': '立たなかった'}],
             'なってしまった': [
                 {
-                    'token': 'なっ',
+                    'token': 'なってしまった',
                     'base': 'なる',
                     'chain': [{'step': 1, 'form': 'Plain Past', 'result': 'なってしまった'}, {'step': 2, 'form': 'しまう To Do Unfortunately ・ To Do Completely', 'result': 'なってしまう'}, {'step': 3, 'form': 'て・で Form', 'result': 'なって'}],
                     'combined_text': 'なってしまった',
