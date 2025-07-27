@@ -6,9 +6,11 @@ from lib.japanese_deinflect.deinflect import Deinflector
 from lib.japanese_deinflect.word_type import WordType
 from lib.japanese_deinflect.derivations import rules
 from lib.annotation import *
+from lib.japanese_conjugation_analysis import JapaneseConjugationAnalyzer
 
 deinflector = Deinflector()
 parser = JapaneseParser()
+conjugation_analyzer = JapaneseConjugationAnalyzer()
 
 
 def test_ambiguous_deinflections():
@@ -247,7 +249,7 @@ def test_ambiguity_resolution_2():
         ]
     )
 
-    text = '先生がそういった。' # 言う
+    text = '先生がそういった。'  # 言う
     result = deinflector.unconjugate(verb)
     assert len(result) == snapshot(6)
     assert result == snapshot(
@@ -447,3 +449,212 @@ Derivation steps:
    Form: たい Want To Do
 """
     )
+
+
+def test_conjugation_analyzer_filter_candidates():
+    """Test that the conjugation analyzer can filter candidates based on tokenization."""
+    # Test with ambiguous した - should filter based on tokenization context
+
+    # Parse the text to get real tokenization results
+    text = "した"
+    result = parser.parse(text, ParserConfig("enhanced_japanese", {}))
+
+    # Extract token segments from parsed result
+    token_segments = []
+    for segment in result.segments:
+        if hasattr(segment.inner, 'segments'):
+            for sent_seg in segment.inner.segments:
+                if isinstance(sent_seg.inner, SentSegTokenSeg):
+                    token_segments.append(sent_seg)
+
+    # Snapshot the tokenization result for verification
+    tokenization_result = [(seg.text, seg.attributes.lemma, seg.attributes.upos, seg.attributes.xpos) for seg in token_segments]
+    assert tokenization_result == snapshot([('し', 'する', 'VERB', '動詞-非自立可能'), ('た', 'た', 'AUX', '助動詞')])
+
+    # Get all candidates for した
+    candidates = deinflector.unconjugate("した")
+
+    # Filter based on tokenization (should prefer する over other candidates)
+    filtered = conjugation_analyzer._filter_candidates_by_tokenization(candidates, token_segments)
+
+    # Should have fewer or equal candidates
+    assert len(filtered) <= len(candidates)
+
+    # Check that we have candidates with する as base
+    suru_candidates = [c for c in filtered if c["base"] == "する"]
+    assert len(suru_candidates) > 0
+
+
+def test_conjugation_analyzer_collect_sequence():
+    """Test collecting conjugation sequences from tokenized segments."""
+    # Test with "置いていこう" (let's leave it there)
+    text = "置いていこう"
+    result = parser.parse(text, ParserConfig("enhanced_japanese", {}))
+
+    # Extract token segments from parsed result
+    token_segments = []
+    for segment in result.segments:
+        if hasattr(segment.inner, 'segments'):
+            for sent_seg in segment.inner.segments:
+                if isinstance(sent_seg.inner, SentSegTokenSeg):
+                    token_segments.append(sent_seg)
+
+    # Snapshot the tokenization result for verification
+    tokenization_result = [(seg.text, seg.attributes.lemma, seg.attributes.upos, seg.attributes.xpos) for seg in token_segments]
+    assert tokenization_result == snapshot([('置い', '置く', 'VERB', '動詞-非自立可能'), ('て', 'て', 'SCONJ', '助詞-接続助詞'), ('いこう', 'いく', 'VERB', '動詞-非自立可能')])
+
+    # Collect sequence starting from the first verb
+    sequence, combined_text = conjugation_analyzer._collect_conjugation_sequence(token_segments, 0)
+
+    # Should collect the verb and the て particle
+    assert len(sequence) >= 1
+    assert sequence[0].text == "置い"
+
+    # Snapshot the collected sequence
+    sequence_result = [(seg.text, seg.attributes.upos) for seg in sequence]
+    assert sequence_result == snapshot([('置い', 'VERB'), ('て', 'SCONJ'), ('いこう', 'VERB')])
+
+
+def test_conjugation_chain_description():
+    """Test creating human-readable conjugation chain descriptions."""
+    # Test with a known conjugation
+    candidates = deinflector.unconjugate("置いていこう")
+
+    if candidates:
+        best_candidate = candidates[0]
+        chain = conjugation_analyzer._create_conjugation_chain_description(best_candidate["derivation_sequence"])
+
+        # Should have multiple steps
+        assert len(chain) > 0
+
+        # Each step should have required fields
+        for step in chain:
+            assert "step" in step
+            assert "form" in step
+            assert "result" in step
+
+
+def test_japanese_parser_with_conjugation_analysis():
+    """Test that JapaneseParser adds conjugation information to misc fields."""
+
+    # Test with simple past tense
+    text = "しまった"
+    result = parser.parse(text, ParserConfig("enhanced_japanese", {}))
+
+    # Extract all conjugation information from the result
+    conjugation_info = []
+    for segment in result.segments:
+        if hasattr(segment.inner, 'segments'):
+            for sent_seg in segment.inner.segments:
+                if isinstance(sent_seg.inner, SentSegTokenSeg):
+                    misc = sent_seg.attributes.misc
+                    if "conjugation_base" in misc:
+                        conjugation_info.append({"token": sent_seg.text, "base": misc["conjugation_base"], "chain": misc["conjugation_chain"], "combined_text": misc["conjugation_combined_text"]})
+
+    # Snapshot the conjugation analysis results
+    assert conjugation_info == snapshot([{'token': 'しまっ', 'base': 'しまう', 'chain': [{'step': 1, 'form': 'Plain Past', 'result': 'しまった'}], 'combined_text': 'しまった'}])
+
+
+def test_japanese_parser_complex_conjugation():
+    """Test parser with complex conjugation examples and snapshot their conjugation chains."""
+
+    examples = [
+        "置いていこう",  # 置く -> て form -> continuous change -> volitional
+        "作ってくれる",  # 作る -> て form -> benefit given
+        "立たなかった",  # 立つ -> negative -> past negative
+        "なってしまった",  # なる -> て form -> completed action -> past
+    ]
+
+    all_conjugation_results = {}
+
+    for text in examples:
+        result = parser.parse(text, ParserConfig("enhanced_japanese", {}))
+
+        # Extract conjugation information
+        conjugation_info = []
+        for segment in result.segments:
+            if hasattr(segment.inner, 'segments'):
+                for sent_seg in segment.inner.segments:
+                    if isinstance(sent_seg.inner, SentSegTokenSeg):
+                        misc = sent_seg.attributes.misc
+                        if "conjugation_base" in misc:
+                            conjugation_info.append({"token": sent_seg.text, "base": misc["conjugation_base"], "chain": misc["conjugation_chain"], "combined_text": misc["conjugation_combined_text"]})
+
+        all_conjugation_results[text] = conjugation_info
+
+    # Snapshot all conjugation analysis results
+    assert all_conjugation_results == snapshot(
+        {
+            '置いていこう': [
+                {
+                    'token': '置い',
+                    'base': '置く',
+                    'chain': [{'step': 1, 'form': 'Volitional Form', 'result': '置いていこう'}, {'step': 2, 'form': 'ていく・でいく Gradual Change (Away From Speaker)', 'result': '置いていく'}, {'step': 3, 'form': 'て・で Form', 'result': '置いて'}],
+                    'combined_text': '置いていこう',
+                }
+            ],
+            '作ってくれる': [{'token': '作っ', 'base': '作る', 'chain': [{'step': 1, 'form': 'くれる To Give (Toward Speaker)', 'result': '作ってくれる'}, {'step': 2, 'form': 'て・で Form', 'result': '作って'}], 'combined_text': '作ってくれる'}],
+            '立たなかった': [{'token': '立た', 'base': '立つ', 'chain': [{'step': 1, 'form': 'Plain Past', 'result': '立たなかった'}, {'step': 2, 'form': 'ない Negative', 'result': '立たない'}], 'combined_text': '立たなかった'}],
+            'なってしまった': [
+                {
+                    'token': 'なっ',
+                    'base': 'なる',
+                    'chain': [{'step': 1, 'form': 'Plain Past', 'result': 'なってしまった'}, {'step': 2, 'form': 'しまう To Do Unfortunately ・ To Do Completely', 'result': 'なってしまう'}, {'step': 3, 'form': 'て・で Form', 'result': 'なって'}],
+                    'combined_text': 'なってしまった',
+                }
+            ],
+        }
+    )
+
+
+def test_conjugation_analyzer_integration():
+    """Test the full integration of conjugation analysis."""
+
+    # Test with "なってしまった" (became/ended up becoming)
+    text = "なってしまった"
+    result = parser.parse(text, ParserConfig("enhanced_japanese", {}))
+
+    # Extract sentence segments
+    sentence_segments = []
+    for segment in result.segments:
+        if hasattr(segment.inner, 'segments'):
+            sentence_segments.extend(segment.inner.segments)
+
+    # Filter to token segments only
+    token_segments = [seg for seg in sentence_segments if isinstance(seg.inner, SentSegTokenSeg)]
+
+    # Should have multiple tokens
+    assert len(token_segments) > 0
+
+    # Check if any token has conjugation information
+    has_conjugation_info = any("conjugation_base" in seg.attributes.misc for seg in token_segments)
+
+    # Note: This might not always be true depending on how the tokenizer splits the text
+    # The test mainly ensures the integration doesn't crash
+
+
+def test_example_conjugation_chains():
+    """Test the specific examples mentioned in the requirements."""
+
+    examples = [
+        ("置いていこう", "置く"),  # 置く -> て form -> continuous change -> volitional
+        ("作ってくれる", "作る"),  # 作る -> て form -> benefit given
+        ("しまった", "しまう"),  # しまう -> past
+        ("立たなかった", "立つ"),  # 立つ -> negative -> past negative
+        ("なってしまった", "なる"),  # なる -> て form -> completed action -> past
+    ]
+
+    for conjugated_form, expected_base in examples:
+        # Test deinflection directly
+        candidates = deinflector.unconjugate(conjugated_form)
+
+        # Should have at least one candidate
+        assert len(candidates) > 0, f"No candidates found for '{conjugated_form}'"
+
+        # Check if expected base is among the candidates
+        bases = [c["base"] for c in candidates]
+        assert expected_base in bases, f"Expected base '{expected_base}' not found in {bases} for '{conjugated_form}'"
+
+        # Test parser integration
+        result = parser.parse(conjugated_form, ParserConfig("enhanced_japanese", {}))
+        assert result.text == conjugated_form

@@ -193,7 +193,7 @@ class SpacyParser(BaseParser):
 
 
 class JapaneseParser(SpacyParser):
-    """Japanese-specific parser that adds furigana annotations of various format to the "misc" field."""
+    """Japanese-specific parser that adds furigana annotations and conjugation analysis to the "misc" field."""
 
     def _init_for_args(self, parser_args: dict) -> spacy.Language:
         nlp: spacy.Language = spacy.load("ja_ginza")
@@ -202,8 +202,10 @@ class JapaneseParser(SpacyParser):
 
     def _parse_with_pipeline(self, text: str, parser_config: ParserConfig, nlp: spacy.Language) -> AnnotatedDocV2:
         from .japanese_support import add_furigana_annotations
+        from .japanese_conjugation_analysis import JapaneseConjugationAnalyzer
 
         doc: spacy.tokens.Doc = nlp(text)
+        conjugation_analyzer = JapaneseConjugationAnalyzer()
 
         orthography_set: Set[str] = set()
         lemma_set: Set[str] = set()
@@ -254,9 +256,12 @@ class JapaneseParser(SpacyParser):
                 )
 
             if sent_segments != [] and not sent.text.isspace():
-                sentence_start_char: int = min([s.start_char for s in sent_segments])
-                sentence_end_char: int = max([s.end_char for s in sent_segments])
-                recovered_sent_segments: List[SentSegV2] = recover_sentence_whitespace(text, sent_segments, sentence_start_char)
+                # Analyze conjugations in the sentence segments
+                analyzed_segments = conjugation_analyzer.analyze_conjugations(sent_segments)
+
+                sentence_start_char: int = min([s.start_char for s in analyzed_segments])
+                sentence_end_char: int = max([s.end_char for s in analyzed_segments])
+                recovered_sent_segments: List[SentSegV2] = recover_sentence_whitespace(text, analyzed_segments, sentence_start_char)
                 doc_sentence_segments.append(
                     DocSegV2(
                         text=text[sentence_start_char:sentence_end_char],
