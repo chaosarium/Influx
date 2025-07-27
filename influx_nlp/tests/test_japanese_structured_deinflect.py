@@ -1,7 +1,7 @@
 from __future__ import annotations
 from inline_snapshot import snapshot
 from lib.annotation import ParserConfig
-from lib.parsing import JapaneseParser
+from lib.parsing import JapaneseParser, SpacyParser
 from lib.japanese_deinflect.deinflect import Deinflector
 from lib.japanese_deinflect.word_type import WordType
 from lib.japanese_deinflect.derivations import rules
@@ -96,8 +96,9 @@ def test_ambiguous_deinflections():
     )
 
 
-def test_some_future_test():
+def test_ambiguity_resolution_1():
     """Deinflection filters by what spacy thinks."""
+    # TODO test WIP
     result = deinflector.unconjugate('殺されるな')
     assert len(result) == snapshot(11)
     assert result == snapshot(
@@ -155,6 +156,175 @@ def test_some_future_test():
                             end_char=5,
                             inner=SentSegTokenSeg(idx=2, orthography='な'),
                             attributes=SegAttribute(lemma='な', upos='PART', xpos='助詞-終助詞', dependency=(0, 'mark'), misc={'Reading': 'ナ', 'furigana_bracket': 'な', 'furigana_ruby': 'な', 'furigana_parentheses': 'な', 'hiragana_reading': 'な'}),
+                        ),
+                    ]
+                ),
+            )
+        ]
+    )
+
+
+def test_ambiguity_resolution_2():
+    """Deinflection filters by what spacy thinks."""
+    # TODO test WIP
+    text = '学校にいった。'
+    verb = 'いった'
+    result = deinflector.unconjugate(verb)
+    assert len(result) == snapshot(6)
+    # BUG doesn't even include 行く (𖦹﹏𖦹;)
+    assert result == snapshot(
+        [
+            {'base': 'いう', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['いった']}},
+            {'base': 'いつ', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['いった']}},
+            {'base': 'いる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['いった']}},
+            {'base': 'いった', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
+            {'base': 'いっる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['いった']}},
+            {'base': 'いったる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM], 'word_form_progression': ['いった']}},
+        ]
+    )
+
+    # result = SpacyParser().parse(text, ParserConfig("spacy", {"spacy_model": "ja_core_news_sm"})).segments
+    result = parser.parse(text, ParserConfig("testing", {})).segments
+    assert result == snapshot(
+        [
+            DocSegV2(
+                text='学校にいった。',
+                start_char=0,
+                end_char=7,
+                inner=DocSegSentence(
+                    segments=[
+                        SentSegV2(
+                            sentence_idx=0,
+                            text='学校',
+                            start_char=0,
+                            end_char=2,
+                            inner=SentSegTokenSeg(idx=0, orthography='学校'),
+                            attributes=SegAttribute(
+                                lemma='学校',
+                                upos='NOUN',
+                                xpos='名詞-普通名詞-一般',
+                                dependency=(2, 'obl'),
+                                misc={'Reading': 'ガッコウ', 'furigana_bracket': '学校[がっこう]', 'furigana_ruby': '<ruby>学校<rt>がっこう</rt></ruby>', 'furigana_parentheses': '学校(がっこう)', 'hiragana_reading': 'がっこう'},
+                            ),
+                        ),
+                        SentSegV2(
+                            sentence_idx=0,
+                            text='に',
+                            start_char=2,
+                            end_char=3,
+                            inner=SentSegTokenSeg(idx=1, orthography='に'),
+                            attributes=SegAttribute(lemma='に', upos='ADP', xpos='助詞-格助詞', dependency=(0, 'case'), misc={'Reading': 'ニ', 'furigana_bracket': 'に', 'furigana_ruby': 'に', 'furigana_parentheses': 'に', 'hiragana_reading': 'に'}),
+                        ),
+                        SentSegV2(
+                            sentence_idx=0,
+                            text='いっ',
+                            start_char=3,
+                            end_char=5,
+                            inner=SentSegTokenSeg(idx=2, orthography='いっ'),
+                            attributes=SegAttribute(
+                                lemma='いく', upos='VERB', xpos='動詞-非自立可能', dependency=(2, 'ROOT'), misc={'Inflection': '五段-カ行;連用形-促音便', 'Reading': 'イッ', 'furigana_bracket': 'いっ', 'furigana_ruby': 'いっ', 'furigana_parentheses': 'いっ', 'hiragana_reading': 'いっ'}
+                            ),
+                        ),
+                        SentSegV2(
+                            sentence_idx=0,
+                            text='た',
+                            start_char=5,
+                            end_char=6,
+                            inner=SentSegTokenSeg(idx=3, orthography='た'),
+                            attributes=SegAttribute(lemma='た', upos='AUX', xpos='助動詞', dependency=(2, 'aux'), misc={'Inflection': '助動詞-タ;終止形-一般', 'Reading': 'タ', 'furigana_bracket': 'た', 'furigana_ruby': 'た', 'furigana_parentheses': 'た', 'hiragana_reading': 'た'}),
+                        ),
+                        SentSegV2(
+                            sentence_idx=0,
+                            text='。',
+                            start_char=6,
+                            end_char=7,
+                            inner=SentSegPunctuationSeg(),
+                            attributes=SegAttribute(lemma='。', upos='PUNCT', xpos='補助記号-句点', dependency=(2, 'punct'), misc={'Reading': '。', 'furigana_bracket': '。', 'furigana_ruby': '。', 'furigana_parentheses': '。', 'hiragana_reading': '。'}),
+                        ),
+                    ]
+                ),
+            )
+        ]
+    )
+
+    text = '先生がそういった。' # 言う
+    result = deinflector.unconjugate(verb)
+    assert len(result) == snapshot(6)
+    assert result == snapshot(
+        [
+            {'base': 'いう', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['いった']}},
+            {'base': 'いつ', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['いった']}},
+            {'base': 'いる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['いった']}},
+            {'base': 'いった', 'derivation_sequence': {'derivations': [], 'word_form_progression': []}},
+            {'base': 'いっる', 'derivation_sequence': {'derivations': [WordType.PLAIN_PAST], 'word_form_progression': ['いった']}},
+            {'base': 'いったる', 'derivation_sequence': {'derivations': [WordType.MASU_STEM], 'word_form_progression': ['いった']}},
+        ]
+    )
+
+    result = parser.parse(text, ParserConfig("testing", {})).segments
+    assert result == snapshot(
+        [
+            DocSegV2(
+                text='先生がそういった。',
+                start_char=0,
+                end_char=9,
+                inner=DocSegSentence(
+                    segments=[
+                        SentSegV2(
+                            sentence_idx=0,
+                            text='先生',
+                            start_char=0,
+                            end_char=2,
+                            inner=SentSegTokenSeg(idx=0, orthography='先生'),
+                            attributes=SegAttribute(
+                                lemma='先生',
+                                upos='NOUN',
+                                xpos='名詞-普通名詞-一般',
+                                dependency=(3, 'nsubj'),
+                                misc={'Reading': 'センセイ', 'furigana_bracket': '先生[せんせい]', 'furigana_ruby': '<ruby>先生<rt>せんせい</rt></ruby>', 'furigana_parentheses': '先生(せんせい)', 'hiragana_reading': 'せんせい'},
+                            ),
+                        ),
+                        SentSegV2(
+                            sentence_idx=0,
+                            text='が',
+                            start_char=2,
+                            end_char=3,
+                            inner=SentSegTokenSeg(idx=1, orthography='が'),
+                            attributes=SegAttribute(lemma='が', upos='ADP', xpos='助詞-格助詞', dependency=(0, 'case'), misc={'Reading': 'ガ', 'furigana_bracket': 'が', 'furigana_ruby': 'が', 'furigana_parentheses': 'が', 'hiragana_reading': 'が'}),
+                        ),
+                        SentSegV2(
+                            sentence_idx=0,
+                            text='そう',
+                            start_char=3,
+                            end_char=5,
+                            inner=SentSegTokenSeg(idx=2, orthography='そう'),
+                            attributes=SegAttribute(lemma='そう', upos='ADV', xpos='副詞', dependency=(3, 'advmod'), misc={'Reading': 'ソウ', 'furigana_bracket': 'そう', 'furigana_ruby': 'そう', 'furigana_parentheses': 'そう', 'hiragana_reading': 'そう'}),
+                        ),
+                        SentSegV2(
+                            sentence_idx=0,
+                            text='いっ',
+                            start_char=5,
+                            end_char=7,
+                            inner=SentSegTokenSeg(idx=3, orthography='いっ'),
+                            attributes=SegAttribute(
+                                lemma='いう', upos='VERB', xpos='動詞-一般', dependency=(3, 'ROOT'), misc={'Inflection': '五段-ワア行;連用形-促音便', 'Reading': 'イッ', 'furigana_bracket': 'いっ', 'furigana_ruby': 'いっ', 'furigana_parentheses': 'いっ', 'hiragana_reading': 'いっ'}
+                            ),
+                        ),
+                        SentSegV2(
+                            sentence_idx=0,
+                            text='た',
+                            start_char=7,
+                            end_char=8,
+                            inner=SentSegTokenSeg(idx=4, orthography='た'),
+                            attributes=SegAttribute(lemma='た', upos='AUX', xpos='助動詞', dependency=(3, 'aux'), misc={'Inflection': '助動詞-タ;終止形-一般', 'Reading': 'タ', 'furigana_bracket': 'た', 'furigana_ruby': 'た', 'furigana_parentheses': 'た', 'hiragana_reading': 'た'}),
+                        ),
+                        SentSegV2(
+                            sentence_idx=0,
+                            text='。',
+                            start_char=8,
+                            end_char=9,
+                            inner=SentSegPunctuationSeg(),
+                            attributes=SegAttribute(lemma='。', upos='PUNCT', xpos='補助記号-句点', dependency=(3, 'punct'), misc={'Reading': '。', 'furigana_bracket': '。', 'furigana_ruby': '。', 'furigana_parentheses': '。', 'hiragana_reading': '。'}),
                         ),
                     ]
                 ),
