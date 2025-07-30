@@ -2,18 +2,50 @@ use super::document::Document;
 use super::phrase::Phrase;
 use super::vocab::{Token, TokenStatus};
 use super::DB;
-use crate::db::models::lang::Language;
-use chrono::{DateTime, Utc};
+use crate::db::models::lang::{Language, ParserConfig};
+use crate::db::InfluxResourceId;
+use chrono::Utc;
 use std::collections::HashMap;
 
-use anyhow::{Context, Result};
-use tracing::{debug, error, info};
+use anyhow::Result;
+use tracing::{debug, info};
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+fn create_language(
+    name: &str,
+    deepl_source_lang: &str,
+    spacy_model: Option<&str>,
+    parser: &str,
+) -> Language {
+    let mut parser_args = HashMap::new();
+    if let Some(model) = spacy_model {
+        parser_args.insert("spacy_model".to_string(), model.to_string());
+    }
+
+    Language {
+        id: None,
+        name: name.to_string(),
+        dicts: vec!["dict:///###".to_string()],
+        tts_rate: None,
+        tts_pitch: None,
+        tts_voice: None,
+        deepl_source_lang: Some(deepl_source_lang.to_uppercase()),
+        deepl_target_lang: Some("EN".to_string()),
+        parser_config: ParserConfig {
+            which_parser: parser.to_string(),
+            parser_args,
+        },
+    }
+}
 
 fn create_document(
-    lang_id: crate::db::InfluxResourceId,
+    lang_id: InfluxResourceId,
     title: &str,
     content: &str,
-    tags: Vec<String>,
+    tags: Vec<&str>,
 ) -> Document {
     Document {
         id: None,
@@ -21,304 +53,458 @@ fn create_document(
         title: title.to_string(),
         content: content.to_string(),
         doc_type: "Text".to_string(),
-        tags,
+        tags: tags.iter().map(|s| s.to_string()).collect(),
         created_ts: Utc::now(),
         updated_ts: Utc::now(),
     }
 }
 
+fn create_token(
+    lang_id: InfluxResourceId,
+    orthography: &str,
+    definition: &str,
+    notes: &str,
+    status: TokenStatus,
+) -> Token {
+    Token::fancier_token(lang_id, orthography, definition, notes, status)
+}
+
+fn create_phrase(
+    lang_id: InfluxResourceId,
+    words: Vec<&str>,
+    definition: &str,
+    notes: &str,
+    context: &str,
+    status: TokenStatus,
+) -> Phrase {
+    Phrase {
+        id: None,
+        lang_id,
+        orthography_seq: words.iter().map(|s| s.to_string()).collect(),
+        definition: definition.to_string(),
+        notes: notes.to_string(),
+        original_context: context.to_string(),
+        status,
+    }
+}
+
+// =============================================================================
+// MAIN SEED FUNCTION
+// =============================================================================
+
 impl DB {
-    pub async fn seed_lang_table(&self) -> Result<HashMap<String, crate::db::InfluxResourceId>> {
-        let languages = vec![
-            (
-                "fr",
-                Language {
-                    id: None,
-                    name: "French".to_string(),
-                    dicts: vec![
-                        "dict:///###".to_string(),
-                        "http://www.wordreference.com/fren/###".to_string(),
-                    ],
-                    tts_rate: None,
-                    tts_pitch: None,
-                    tts_voice: None,
-                    deepl_source_lang: Some("FR".to_string()),
-                    deepl_target_lang: Some("EN".to_string()),
-                    parser_config: crate::db::models::lang::ParserConfig {
-                        which_parser: "base_spacy".to_string(),
-                        parser_args: {
-                            let mut args = HashMap::new();
-                            args.insert("spacy_model".to_string(), "fr_core_news_sm".to_string());
-                            args
-                        },
-                    },
-                },
-            ),
-            (
-                "en",
-                Language {
-                    id: None,
-                    name: "English".to_string(),
-                    dicts: vec![
-                        "dict:///###".to_string(),
-                        "http://www.wordreference.com/enfr/###".to_string(),
-                    ],
-                    tts_rate: None,
-                    tts_pitch: None,
-                    tts_voice: None,
-                    deepl_source_lang: Some("EN".to_string()),
-                    deepl_target_lang: Some("DE".to_string()),
-                    parser_config: crate::db::models::lang::ParserConfig {
-                        which_parser: "base_spacy".to_string(),
-                        parser_args: {
-                            let mut args = HashMap::new();
-                            args.insert("spacy_model".to_string(), "en_core_web_sm".to_string());
-                            args
-                        },
-                    },
-                },
-            ),
-            (
-                "ja",
-                Language {
-                    id: None,
-                    name: "Japanese".to_string(),
-                    dicts: vec!["dict:///###".to_string()],
-                    tts_rate: None,
-                    tts_pitch: None,
-                    tts_voice: None,
-                    deepl_source_lang: Some("JA".to_string()),
-                    deepl_target_lang: Some("EN".to_string()),
-                    parser_config: crate::db::models::lang::ParserConfig {
-                        which_parser: "enhanced_japanese".to_string(),
-                        parser_args: HashMap::new(),
-                    },
-                },
-            ),
-            (
-                "zh-hant",
-                Language {
-                    id: None,
-                    name: "Mandarin".to_string(),
-                    dicts: vec!["dict:///###".to_string()],
-                    tts_rate: None,
-                    tts_pitch: None,
-                    tts_voice: None,
-                    deepl_source_lang: Some("ZH".to_string()),
-                    deepl_target_lang: Some("EN".to_string()),
-                    parser_config: crate::db::models::lang::ParserConfig {
-                        which_parser: "base_spacy".to_string(),
-                        parser_args: {
-                            let mut args = HashMap::new();
-                            args.insert("spacy_model".to_string(), "zh_core_web_sm".to_string());
-                            args
-                        },
-                    },
-                },
-            ),
-        ];
+    pub async fn seed_all_tables(&self) -> Result<()> {
+        info!("🌱 Starting database seeding process");
 
-        let mut lang_map = HashMap::new();
+        // =============================================================================
+        // LANGUAGES
+        // =============================================================================
+        info!("📚 Seeding languages table");
 
-        for (code, language) in languages {
-            debug!(code = %code, name = %language.name, "Creating language");
-            let created_language = self.create_language(language).await?;
-            let lang_id = created_language.id.unwrap();
-            lang_map.insert(code.to_string(), lang_id);
-        }
+        let en_lang = self
+            .create_language(create_language(
+                "English",
+                "EN",
+                Some("en_core_web_sm"),
+                "base_spacy",
+            ))
+            .await?;
+        let fr_lang = self
+            .create_language(create_language(
+                "French",
+                "FR",
+                Some("fr_core_news_sm"),
+                "base_spacy",
+            ))
+            .await?;
+        let ja_lang = self
+            .create_language(create_language("Japanese", "JA", None, "enhanced_japanese"))
+            .await?;
+        let zh_lang = self
+            .create_language(create_language(
+                "Mandarin",
+                "ZH",
+                Some("zh_core_web_sm"),
+                "base_spacy",
+            ))
+            .await?;
 
-        Ok(lang_map)
-    }
+        let en_id = en_lang.id.unwrap();
+        let fr_id = fr_lang.id.unwrap();
+        let ja_id = ja_lang.id.unwrap();
+        let zh_id = zh_lang.id.unwrap();
 
-    pub async fn seed_vocab_table(
-        &self,
-        lang_map: &HashMap<String, crate::db::InfluxResourceId>,
-    ) -> Result<()> {
-        let en_lang_id = lang_map.get("en").unwrap().clone();
-        let fr_lang_id = lang_map.get("fr").unwrap().clone();
+        // =============================================================================
+        // DOCUMENTS
+        // =============================================================================
+        info!("📄 Seeding documents table");
 
-        let tokens = vec![
-            Token::fancier_token(en_lang_id, "first", "1st", "ehh", TokenStatus::L5),
-            Token::fancier_token(fr_lang_id.clone(), "voix", "voice", "vwa", TokenStatus::L5),
-            Token::fancier_token(fr_lang_id.clone(), "parler", "speak", "", TokenStatus::L5),
-            Token::fancier_token(
-                fr_lang_id.clone(),
-                "parlerez",
-                "speak",
-                "inflection of parler",
-                TokenStatus::L5,
-            ),
-            Token::fancier_token(
-                fr_lang_id.clone(),
-                "habitaient",
-                "lived",
-                "inflection of habiter",
-                TokenStatus::L5,
-            ),
-            Token::fancier_token(fr_lang_id.clone(), "cœur", "heart", "kœʀ", TokenStatus::L4),
-            Token::fancier_token(fr_lang_id.clone(), "qui", "谁", "", TokenStatus::L3),
-            Token::fancier_token(fr_lang_id.clone(), "au", "= à le, or", "", TokenStatus::L2),
-            Token::fancier_token(
-                fr_lang_id.clone(),
-                "kiwis",
-                "kiwi plural",
-                "kiwi",
-                TokenStatus::L1,
-            ),
-            Token::fancier_token(fr_lang_id, "les", "le -> les", "", TokenStatus::IGNORED),
-        ];
-
-        for token in tokens {
-            self.create_token(token).await?;
-        }
-
-        Ok(())
-    }
-
-    pub async fn seed_phrase_table(
-        &self,
-        lang_map: &HashMap<String, crate::db::InfluxResourceId>,
-    ) -> Result<()> {
-        let en_lang_id = lang_map.get("en").unwrap().clone();
-
-        let phrases = vec![
-            Phrase {
-                id: None,
-                lang_id: en_lang_id.clone(),
-                orthography_seq: vec!["hello".to_string(), "world".to_string()],
-                definition: "placeholder".to_string(),
-                notes: "a very familiar phrase! (for programmers)".to_string(),
-                original_context: "".to_string(),
-                status: TokenStatus::L5,
-            },
-            Phrase {
-                id: None,
-                lang_id: en_lang_id,
-                orthography_seq: vec!["world".to_string(), "wide".to_string(), "web".to_string()],
-                definition: "placeholder".to_string(),
-                notes: "I wonder what this is".to_string(),
-                original_context: "".to_string(),
-                status: TokenStatus::L3,
-            },
-        ];
-
-        for phrase in phrases {
-            self.create_phrase(phrase).await?;
-        }
-
-        Ok(())
-    }
-
-    pub async fn seed_document_table(
-        &self,
-        lang_map: &HashMap<String, crate::db::InfluxResourceId>,
-    ) -> Result<()> {
-        let en_lang_id = lang_map.get("en").unwrap().clone();
-        let fr_lang_id = lang_map.get("fr").unwrap().clone();
-        let ja_lang_id = lang_map.get("ja").unwrap().clone();
-        let zh_lang_id = lang_map.get("zh-hant").unwrap().clone();
-
-        let mut documents = vec![
-            // Original seed documents
-            create_document(
-                en_lang_id.clone(),
-                "Toy Document Seed",
+        let documents = vec![
+            // Simple demo documents
+            create_document(en_id.clone(), "Toy Document Seed", 
                 "This is a simple toy document for testing purposes. It contains some basic English text that can be used to test the language learning features.",
-                vec!["demo".to_string(), "english".to_string(), "seed".to_string()],
-            ),
-            create_document(
-                fr_lang_id.clone(),
-                "Document Français Seed",
+                vec!["demo", "english", "seed"]),
+            create_document(fr_id.clone(), "Document Français Seed",
                 "Ceci est un document de démonstration en français. Il contient du texte simple pour tester les fonctionnalités d'apprentissage des langues. Bonjour le monde!",
-                vec!["demo".to_string(), "français".to_string(), "seed".to_string()],
-            ),
-            create_document(
-                ja_lang_id.clone(),
-                "日本語の文書 Seed",
+                vec!["demo", "français", "seed"]),
+            create_document(ja_id.clone(), "日本語の文書 Seed",
                 "これは日本語のデモ文書です。言語学習機能をテストするための簡単なテキストが含まれています。こんにちは世界！",
-                vec!["demo".to_string(), "日本語".to_string(), "seed".to_string()],
-            ),
-        ];
+                vec!["demo", "日本語", "seed"]),
 
-        // Add documents from seed_content files
-        documents.extend(vec![
-            // English documents
-            create_document(
-                en_lang_id.clone(),
-                "Toy Example",
-                include_str!("seed_content/en_demo/toy.txt"),
-                vec!["demo".to_string(), "english".to_string()],
-            ),
-            create_document(
-                en_lang_id.clone(),
-                "Macbeth Excerpt",
-                include_str!("seed_content/en_demo/macbeth_excerpt.txt"),
-                vec!["literature".to_string(), "shakespeare".to_string()],
-            ),
-            create_document(
-                en_lang_id.clone(),
-                "Long Document",
-                include_str!("seed_content/en_demo/long.txt"),
-                vec!["demo".to_string(), "long".to_string()],
-            ),
-            create_document(
-                en_lang_id.clone(),
-                "Phrase Test",
-                include_str!("seed_content/en_demo/phrase_test.txt"),
-                vec!["demo".to_string(), "test".to_string()],
-            ),
-            // French documents
-            create_document(
-                fr_lang_id.clone(),
-                "Exemple Jouet",
-                include_str!("seed_content/fr_demo/toy.txt"),
-                vec!["demo".to_string(), "français".to_string()],
-            ),
-            create_document(
-                fr_lang_id.clone(),
-                "Les Misérables Excerpt",
-                include_str!("seed_content/fr_demo/les_miserables_excerpt.txt"),
-                vec!["literature".to_string(), "hugo".to_string()],
-            ),
-            create_document(
-                fr_lang_id.clone(),
-                "Inflection Lemma Test",
-                include_str!("seed_content/fr_demo/inflection_lemma_test.txt"),
-                vec![
-                    "demo".to_string(),
-                    "test".to_string(),
-                    "grammar".to_string(),
-                ],
-            ),
-            // Japanese documents
-            create_document(
-                ja_lang_id.clone(),
-                "羅生門",
-                include_str!("seed_content/ja_demo/rashonmon_1.txt"),
-                vec!["literature".to_string(), "akutagawa".to_string()],
-            ),
-            // Chinese documents
-            create_document(
-                zh_lang_id.clone(),
-                "狂人日記",
-                include_str!("seed_content/zh-hant_demo/diary_of_a_madman.txt"),
-                vec!["literature".to_string(), "lu_xun".to_string()],
-            ),
-        ]);
+            // Documents from seed content files
+            create_document(en_id.clone(), "Toy Example", include_str!("seed_content/en_demo/toy.txt"), vec!["demo", "english"]),
+            create_document(en_id.clone(), "Macbeth Excerpt", include_str!("seed_content/en_demo/macbeth_excerpt.txt"), vec!["literature", "shakespeare"]),
+            create_document(en_id.clone(), "Long Document", include_str!("seed_content/en_demo/long.txt"), vec!["demo", "long"]),
+            create_document(en_id.clone(), "Phrase Test", include_str!("seed_content/en_demo/phrase_test.txt"), vec!["demo", "test"]),
+
+            create_document(fr_id.clone(), "Exemple Jouet", include_str!("seed_content/fr_demo/toy.txt"), vec!["demo", "français"]),
+            create_document(fr_id.clone(), "Les Misérables Excerpt", include_str!("seed_content/fr_demo/les_miserables_excerpt.txt"), vec!["literature", "hugo"]),
+            create_document(fr_id.clone(), "Inflection Lemma Test", include_str!("seed_content/fr_demo/inflection_lemma_test.txt"), vec!["demo", "test", "grammar"]),
+
+            create_document(ja_id.clone(), "羅生門", include_str!("seed_content/ja_demo/rashonmon_1.txt"), vec!["literature", "akutagawa"]),
+            create_document(zh_id.clone(), "狂人日記", include_str!("seed_content/zh-hant_demo/diary_of_a_madman.txt"), vec!["literature", "lu_xun"]),
+        ];
 
         for document in documents {
             debug!(title = %document.title, lang_id = ?document.lang_id, "Creating document");
             self.create_document(document).await?;
         }
 
-        Ok(())
-    }
+        // =============================================================================
+        // VOCABULARY (TOKENS)
+        // =============================================================================
+        info!("📝 Seeding vocabulary table");
 
-    pub async fn seed_all_tables(&self) -> Result<()> {
-        let lang_map = self.seed_lang_table().await?;
-        self.seed_vocab_table(&lang_map).await?;
-        self.seed_phrase_table(&lang_map).await?;
-        self.seed_document_table(&lang_map).await?;
+        let tokens = vec![
+            // English tokens from documents
+            create_token(
+                en_id.clone(),
+                "hello",
+                "greeting",
+                "common greeting",
+                TokenStatus::L5,
+            ),
+            create_token(en_id.clone(), "world", "the earth", "", TokenStatus::L5),
+            create_token(en_id.clone(), "quick", "fast", "", TokenStatus::L4),
+            create_token(
+                en_id.clone(),
+                "brown",
+                "color",
+                "dark orange",
+                TokenStatus::L4,
+            ),
+            create_token(
+                en_id.clone(),
+                "fox",
+                "animal",
+                "small mammal",
+                TokenStatus::L3,
+            ),
+            create_token(
+                en_id.clone(),
+                "jumps",
+                "verb",
+                "leaps over",
+                TokenStatus::L3,
+            ),
+            create_token(
+                en_id.clone(),
+                "lazy",
+                "adjective",
+                "not active",
+                TokenStatus::L3,
+            ),
+            create_token(
+                en_id.clone(),
+                "dog",
+                "animal",
+                "domestic animal",
+                TokenStatus::L5,
+            ),
+            create_token(en_id.clone(), "programme", "", "", TokenStatus::L2),
+            create_token(
+                en_id.clone(),
+                "wrote",
+                "write",
+                "past tense of write",
+                TokenStatus::L4,
+            ),
+            create_token(
+                en_id.clone(),
+                "first",
+                "1st",
+                "ordinal number",
+                TokenStatus::L5,
+            ),
+            create_token(
+                en_id.clone(),
+                "wide",
+                "broad",
+                "having great width",
+                TokenStatus::L4,
+            ),
+            create_token(
+                en_id.clone(),
+                "web",
+                "network",
+                "interconnected system",
+                TokenStatus::L3,
+            ),
+            create_token(
+                en_id.clone(),
+                "road",
+                "street",
+                "path for vehicles",
+                TokenStatus::L4,
+            ),
+            create_token(
+                en_id.clone(),
+                "longer",
+                "more long",
+                "comparative of long",
+                TokenStatus::L3,
+            ),
+            // French tokens from documents
+            create_token(fr_id.clone(), "voix", "voice", "vwa", TokenStatus::L5),
+            create_token(fr_id.clone(), "ambiguë", "ambiguous", "", TokenStatus::L2),
+            create_token(fr_id.clone(), "cœur", "heart", "kœʀ", TokenStatus::L4),
+            create_token(
+                fr_id.clone(),
+                "zéphyr",
+                "zephyr",
+                "gentle breeze",
+                TokenStatus::L1,
+            ),
+            create_token(
+                fr_id.clone(),
+                "préfère",
+                "prefers",
+                "3rd person singular",
+                TokenStatus::L3,
+            ),
+            create_token(fr_id.clone(), "jattes", "bowls", "", TokenStatus::L1),
+            create_token(fr_id.clone(), "kiwis", "kiwis", "plural", TokenStatus::L2),
+            create_token(fr_id.clone(), "comme", "like/as", "", TokenStatus::L5),
+            create_token(fr_id.clone(), "même", "same/even", "", TokenStatus::L4),
+            create_token(fr_id.clone(), "monde", "world", "le monde", TokenStatus::L5),
+            create_token(fr_id.clone(), "omelette", "omelet", "", TokenStatus::L3),
+            create_token(fr_id.clone(), "rendre", "to render", "", TokenStatus::L3),
+            create_token(
+                fr_id.clone(),
+                "croissant",
+                "croissant",
+                "pastry",
+                TokenStatus::L4,
+            ),
+            create_token(
+                fr_id.clone(),
+                "pouvoir",
+                "power/can",
+                "noun or verb",
+                TokenStatus::L4,
+            ),
+            create_token(
+                fr_id.clone(),
+                "grève",
+                "strike",
+                "labor strike",
+                TokenStatus::L2,
+            ),
+            create_token(
+                fr_id.clone(),
+                "meilleur",
+                "better/best",
+                "comparative",
+                TokenStatus::L3,
+            ),
+            create_token(
+                fr_id.clone(),
+                "baguette",
+                "baguette",
+                "French bread",
+                TokenStatus::L4,
+            ),
+            create_token(
+                fr_id.clone(),
+                "révolution",
+                "revolution",
+                "political change",
+                TokenStatus::L3,
+            ),
+            create_token(
+                fr_id.clone(),
+                "saucisson",
+                "sausage",
+                "dry sausage",
+                TokenStatus::L2,
+            ),
+            create_token(
+                fr_id.clone(),
+                "manger",
+                "to eat",
+                "infinitive verb",
+                TokenStatus::L5,
+            ),
+            create_token(
+                fr_id.clone(),
+                "très",
+                "very",
+                "adverb intensifier",
+                TokenStatus::L5,
+            ),
+            // Basic particles and common words
+            create_token(
+                fr_id.clone(),
+                "qui",
+                "who/which",
+                "relative pronoun",
+                TokenStatus::L5,
+            ),
+            create_token(
+                fr_id.clone(),
+                "au",
+                "= à le",
+                "contraction",
+                TokenStatus::L5,
+            ),
+            create_token(
+                fr_id.clone(),
+                "les",
+                "the (plural)",
+                "definite article",
+                TokenStatus::L5,
+            ),
+            create_token(
+                fr_id.clone(),
+                "du",
+                "= de le",
+                "contraction",
+                TokenStatus::L5,
+            ),
+            create_token(fr_id.clone(), "à", "to/at", "preposition", TokenStatus::L5),
+            create_token(
+                fr_id.clone(),
+                "la",
+                "the (fem)",
+                "definite article",
+                TokenStatus::L5,
+            ),
+            create_token(
+                fr_id.clone(),
+                "le",
+                "the (masc)",
+                "definite article",
+                TokenStatus::L5,
+            ),
+        ];
+
+        for token in tokens {
+            self.create_token(token).await?;
+        }
+
+        // =============================================================================
+        // PHRASES
+        // =============================================================================
+        info!("🔗 Seeding phrases table");
+
+        let phrases = vec![
+            // English phrases from documents
+            create_phrase(
+                en_id.clone(),
+                vec!["hello", "world"],
+                "common greeting phrase",
+                "very familiar phrase for programmers",
+                "Hello world.",
+                TokenStatus::L5,
+            ),
+            create_phrase(
+                en_id.clone(),
+                vec!["world", "wide", "web"],
+                "the internet",
+                "global information system",
+                "world wide web",
+                TokenStatus::L3,
+            ),
+            create_phrase(
+                en_id.clone(),
+                vec!["quick", "brown", "fox"],
+                "pangram animal",
+                "from typing practice sentence",
+                "The quick brown fox",
+                TokenStatus::L2,
+            ),
+            create_phrase(
+                en_id.clone(),
+                vec!["lazy", "dog"],
+                "inactive canine",
+                "from pangram sentence",
+                "the lazy dog",
+                TokenStatus::L3,
+            ),
+            create_phrase(
+                en_id.clone(),
+                vec!["test", "result"],
+                "outcome of testing",
+                "common in programming",
+                "test result: ok",
+                TokenStatus::L4,
+            ),
+            create_phrase(
+                en_id.clone(),
+                vec!["wide", "road"],
+                "broad street",
+                "describing road width",
+                "A wide road",
+                TokenStatus::L3,
+            ),
+            // French phrases from documents
+            create_phrase(
+                fr_id.clone(),
+                vec!["voix", "ambiguë"],
+                "ambiguous voice",
+                "unclear speech",
+                "voix ambiguë",
+                TokenStatus::L2,
+            ),
+            create_phrase(
+                fr_id.clone(),
+                vec!["jattes", "de", "kiwis"],
+                "bowls of kiwis",
+                "fruit containers",
+                "les jattes de kiwis",
+                TokenStatus::L1,
+            ),
+            create_phrase(
+                fr_id.clone(),
+                vec!["comme", "même"],
+                "like even/anyway",
+                "common colloquial expression",
+                "Comme même",
+                TokenStatus::L3,
+            ),
+            create_phrase(
+                fr_id.clone(),
+                vec!["très", "manger"],
+                "eat a lot",
+                "eating intensively",
+                "très manger",
+                TokenStatus::L4,
+            ),
+            create_phrase(
+                fr_id.clone(),
+                vec!["baguette", "du"],
+                "baguette of the",
+                "bread reference",
+                "baguette du",
+                TokenStatus::L3,
+            ),
+        ];
+
+        for phrase in phrases {
+            self.create_phrase(phrase).await?;
+        }
+
+        info!("✅ Database seeding completed successfully");
         Ok(())
     }
 }

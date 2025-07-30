@@ -1,15 +1,13 @@
-#[cfg(test)]
 use crate::embedded_db::EmbeddedDb;
-#[cfg(test)]
+use crate::ServerState;
 use anyhow::Result;
+use axum::Router;
 
-#[cfg(test)]
 pub struct TestDb {
     pub db: crate::db::DB,
     _embedded_db: EmbeddedDb,
 }
 
-#[cfg(test)]
 impl TestDb {
     pub async fn new() -> Result<Self> {
         let embedded_db = EmbeddedDb::new().await?;
@@ -20,4 +18,8 @@ impl TestDb {
             _embedded_db: embedded_db,
         })
     }
+}
+
+pub fn create_test_app(state: ServerState) -> Router {
+    crate::create_app_router(state)
 }

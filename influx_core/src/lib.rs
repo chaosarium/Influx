@@ -16,7 +16,6 @@ mod nlp;
 mod prelude;
 mod utils;
 
-#[cfg(test)]
 pub mod test_utils;
 
 use db::DB;
@@ -45,19 +44,11 @@ pub struct InfluxCoreArgs {
 
 #[derive(Clone)]
 pub struct ServerState {
-    db: DB,
+    pub db: DB,
 }
 
-pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
-    info!("Whether to seed: {}", args.seed);
-
-    let db = DB::create_db(args.db_choice).await?;
-
-    if args.seed {
-        let _ = db.seed_all_tables().await;
-    }
-
-    let app = Router::new()
+pub fn create_app_router(state: ServerState) -> Router {
+    Router::new()
         .route("/connection_test", get(handlers::connection_test))
         .route("/docs", post(handlers::doc_handlers::get_docs_list))
         .route("/doc/{id}", get(handlers::doc_handlers::get_doc))
@@ -78,7 +69,19 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
             post(handlers::integration_handlers::extern_translate),
         )
         .layer(CorsLayer::permissive())
-        .with_state(ServerState { db });
+        .with_state(state)
+}
+
+pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
+    info!("Whether to seed: {}", args.seed);
+
+    let db = DB::create_db(args.db_choice).await?;
+
+    if args.seed {
+        let _ = db.seed_all_tables().await;
+    }
+
+    let app = create_app_router(ServerState { db });
 
     let listener = TcpListener::bind("127.0.0.1:3000").await?;
     info!(
