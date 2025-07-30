@@ -113,7 +113,7 @@ impl DB {
                     Err(e) => Err(anyhow::anyhow!("Error querying token: {:?}", e)),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query!(
                     r#"
                         SELECT id FROM token WHERE orthography = LOWER($1) AND lang_id = $2;
@@ -156,7 +156,7 @@ impl DB {
                     Err(e) => Err(anyhow::anyhow!("Error creating token: {:?}", e)),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Token,
                     r#"
@@ -217,7 +217,7 @@ impl DB {
                     Err(e) => Err(anyhow::anyhow!("Error querying token: {:?}", e)),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Token,
                     r#"
@@ -254,7 +254,7 @@ impl DB {
                     Err(e) => Err(anyhow::anyhow!("Error querying token: {:?}", e)),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Token,
                     r#"
@@ -298,7 +298,7 @@ impl DB {
                     _ => Err(anyhow::anyhow!("Error querying token")),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let orthography_vec: Vec<String> = orthography_set.iter().cloned().collect();
                 let records = sqlx::query_as!(
                     Token,
@@ -331,7 +331,7 @@ impl DB {
                     Err(e) => Err(anyhow::anyhow!("Error deleting token: {:?}", e)),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Token,
                     r#"
@@ -463,7 +463,7 @@ impl DB {
                     None => Err(anyhow::anyhow!("Error updating token")),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Token,
                     r#"

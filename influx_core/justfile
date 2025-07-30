@@ -4,8 +4,14 @@ runpg:
 runpg-with-seed:
     cargo run -- --db-choice postgres-server --seed
 
+runembpg:
+    cargo run -- --db-choice postgres-embedded --seed
+
 elm-bindings:
     cargo test generate_elm_bindings
 
 fmt:
     cargo fmt
+
+test:
+    cargo test

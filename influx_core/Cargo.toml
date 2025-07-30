@@ -10,7 +10,7 @@ readme = "../README.md"
 
 [dependencies]
 axum = "0.8.1"
-tokio = { version = "1.42.0", features = ["full"] }
+tokio = { version = "1.42.0", features = ["rt-multi-thread", "net", "macros"] }
 tower = { version = "0.5.2", features = ["util", "timeout"] }
 tower-http = { version = "0.6.2", features = [
     "add-extension",
@@ -50,11 +50,16 @@ sqlx = { version = "0.8.3", features = [
 ] }
 time = { version = "0.3", features = ["serde"] }
 dotenvy = "0.15.7"
+postgresql_embedded = "0.19.0"
+tempfile = "3.8"
+dirs = "5.0"
 
 [dev-dependencies]
 insta = "1.43.1"
 expect-test = "1.5.1"
-
+tokio-test = "0.4"
+tracing-test = "0.2.5"
+tabled = "0.20.0"
 
 # [profile.dev]
 # opt-level = 0

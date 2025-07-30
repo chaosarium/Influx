@@ -56,6 +56,12 @@ When updating the database schema, you should just do `cargo sqlx database reset
 - **Elm:**
   - Component functions end in uppercase `C`, e.g. `textboxC` for some textbox component used in HTML forms.
 
+## Testing
+
+- Prefer snapshot tests in Python and Rust
+- Test should clearly show what the expected output is. The snapshot should focus on important parts of the output.
+- No testing in Elm
+
 ## Security/Authentication/Validation
 
 Disregard these for now as the app is intended to run locally and we want to move quickly.

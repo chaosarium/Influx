@@ -9,11 +9,15 @@ use tower_http::cors::CorsLayer;
 use tracing::info;
 
 pub mod db;
+pub mod embedded_db;
 mod handlers;
 mod integration;
 mod nlp;
 mod prelude;
 mod utils;
+
+#[cfg(test)]
+pub mod test_utils;
 
 use db::DB;
 
@@ -23,6 +27,7 @@ pub enum DBChoice {
     SurrealDisk,
     SurrealServer,
     PostgresServer,
+    PostgresEmbedded,
     // IDEA might be able to embed DuckDB
 }
 
@@ -30,7 +35,7 @@ pub enum DBChoice {
 #[command(author, version, about, long_about = None)]
 pub struct InfluxCoreArgs {
     /// what database backend to use
-    #[arg(short, long, default_value = "surreal-server")]
+    #[arg(short, long, default_value = "postgres-embedded")]
     pub db_choice: DBChoice,
 
     /// Whether to seed database

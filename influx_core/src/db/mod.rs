@@ -28,6 +28,10 @@ pub enum DB {
     Postgres {
         pool: Arc<Pool<Postgres>>,
     },
+    EmbeddedPostgres {
+        pool: Arc<Pool<Postgres>>,
+        _embedded_db: Arc<crate::embedded_db::EmbeddedDb>,
+    },
 }
 
 pub enum DBLocation {
@@ -70,6 +74,27 @@ impl DB {
                 let pool = PgPool::connect(&env::var("DATABASE_URL")?).await?;
                 DB::Postgres {
                     pool: Arc::new(pool),
+                }
+            }
+            DBChoice::PostgresEmbedded => {
+                use crate::embedded_db::EmbeddedDb;
+                let embedded_db = Arc::new(EmbeddedDb::new().await?);
+                tracing::info!(
+                    "Started embedded PostgreSQL at: {}",
+                    embedded_db.connection_info()
+                );
+
+                // Extract the pool from the embedded database but keep the embedded_db alive
+                match &embedded_db.db {
+                    DB::Postgres { pool } => DB::EmbeddedPostgres {
+                        pool: pool.clone(),
+                        _embedded_db: embedded_db,
+                    },
+                    _ => {
+                        return Err(anyhow::anyhow!(
+                            "Expected PostgreSQL pool from embedded database"
+                        ))
+                    }
                 }
             }
         })
@@ -133,6 +158,15 @@ impl DB {
 pub enum InfluxResourceId {
     SerialId(i64),
     StringId(String),
+}
+
+impl std::fmt::Display for InfluxResourceId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InfluxResourceId::SerialId(id) => write!(f, "InfluxResourceId({})", id),
+            InfluxResourceId::StringId(id) => write!(f, "InfluxResourceId({})", id),
+        }
+    }
 }
 
 // === surrealdb support ===
@@ -238,22 +272,4 @@ impl<'q> Encode<'q, Postgres> for InfluxResourceId {
             InfluxResourceId::StringId(s) => <String as Encode<Postgres>>::size_hint(s),
         }
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use axum::extract::Path;
-
-    // #[tokio::test]
-    // async fn db_create_mem() {
-    //     let db = DB::create_db(DBLocation::Mem).await;
-    //     let todos = db.get_todos_sql().await.unwrap();
-    //     assert_eq!(todos.len(), 0);
-    // }
-
-    // #[tokio::test]
-    // async fn db_create_disk() {
-    //     let db = DB::create_db(DBLocation::Disk(PathBuf::from("./").canonicalize().unwrap().join("tmp_database.db"))).await;
-    // }
 }

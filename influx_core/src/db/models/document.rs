@@ -35,7 +35,7 @@ impl DB {
                 // SurrealDB is deprecated, skip implementation
                 Err(anyhow::anyhow!("SurrealDB is deprecated"))
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query!(
                     r#"
                         INSERT INTO document (lang_id, title, content, doc_type, tags)
@@ -82,7 +82,7 @@ impl DB {
                 // SurrealDB is deprecated, skip implementation
                 Err(anyhow::anyhow!("SurrealDB is deprecated"))
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let lang_id_i64 = match &lang_id {
                     Some(id) => Some(id.as_i64()?),
                     None => None,
@@ -162,7 +162,7 @@ impl DB {
                 // SurrealDB is deprecated, skip implementation
                 Err(anyhow::anyhow!("SurrealDB is deprecated"))
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query!(
                     r#"
                         SELECT id, lang_id, title, content, doc_type, tags, created_ts, updated_ts
@@ -197,7 +197,7 @@ impl DB {
                 // SurrealDB is deprecated, skip implementation
                 Err(anyhow::anyhow!("SurrealDB is deprecated"))
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query!(
                     r#"
                         UPDATE document 
@@ -243,7 +243,7 @@ impl DB {
                 // SurrealDB is deprecated, skip implementation
                 Err(anyhow::anyhow!("SurrealDB is deprecated"))
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 sqlx::query!(
                     r#"
                         DELETE FROM document WHERE id = $1
@@ -268,7 +268,7 @@ impl DB {
                 // SurrealDB is deprecated, skip implementation
                 Err(anyhow::anyhow!("SurrealDB is deprecated"))
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query!(
                     r#"
                         SELECT cached_data
@@ -297,7 +297,7 @@ impl DB {
                 // SurrealDB is deprecated, skip implementation
                 Err(anyhow::anyhow!("SurrealDB is deprecated"))
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 sqlx::query!(
                     r#"
                         INSERT INTO annotated_document_cache (document_id, text_checksum, cached_data)

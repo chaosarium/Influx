@@ -71,7 +71,7 @@ impl DB {
                     Err(e) => Err(anyhow::anyhow!("Error creating language: {}", e)),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     LanguageInDB,
                     r#"
@@ -107,7 +107,7 @@ impl DB {
                     Err(e) => Err(anyhow::anyhow!("Error getting languages: {}", e)),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let records: Vec<Language> = sqlx::query_as!(
                     LanguageInDB,
                     r#"
@@ -134,7 +134,7 @@ impl DB {
                     Err(e) => Err(anyhow::anyhow!("Error getting language: {}", e)),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     LanguageInDB,
                     r#"
@@ -169,7 +169,7 @@ impl DB {
                     Err(e) => Err(anyhow::anyhow!("Error updating language: {}", e)),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     LanguageInDB,
                     r#"
@@ -194,5 +194,158 @@ impl DB {
                 Ok(record.into())
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::TestDb;
+    use expect_test::expect;
+    use std::collections::HashMap;
+    use tabled::{settings::Style, Table, Tabled};
+
+    #[derive(Tabled)]
+    struct LanguageTableRow {
+        id: String,
+        name: String,
+        dicts: String,
+        tts_rate: String,
+        parser: String,
+    }
+
+    impl From<&Language> for LanguageTableRow {
+        fn from(lang: &Language) -> Self {
+            Self {
+                id: lang
+                    .id
+                    .as_ref()
+                    .map(|id| format!("{}", id))
+                    .unwrap_or_else(|| "None".to_string()),
+                name: lang.name.clone(),
+                dicts: format!("{:?}", lang.dicts),
+                tts_rate: lang
+                    .tts_rate
+                    .map(|r| r.to_string())
+                    .unwrap_or_else(|| "None".to_string()),
+                parser: lang.parser_config.which_parser.clone(),
+            }
+        }
+    }
+
+    fn create_test_language(name: &str) -> Language {
+        let mut parser_args = HashMap::new();
+        parser_args.insert("spacy_model".to_string(), "en_core_web_sm".to_string());
+
+        Language {
+            id: None,
+            name: name.to_string(),
+            dicts: vec!["dict1".to_string(), "dict2".to_string()],
+            tts_rate: Some(1.0),
+            tts_pitch: Some(0.5),
+            tts_voice: Some("en-US".to_string()),
+            deepl_source_lang: Some("EN".to_string()),
+            deepl_target_lang: Some("ES".to_string()),
+            parser_config: ParserConfig {
+                which_parser: "base_spacy".to_string(),
+                parser_args,
+            },
+        }
+    }
+
+    #[tokio::test]
+    #[tracing_test::traced_test]
+    async fn test_language_crud_operations() {
+        let test_db = TestDb::new().await.unwrap();
+
+        // Check initial empty state
+        let languages = test_db.db.get_languages_vec().await.unwrap();
+        let table_rows: Vec<LanguageTableRow> = languages.iter().map(Into::into).collect();
+        let table = Table::new(table_rows).with(Style::rounded()).to_string();
+
+        expect![[r#"
+            ╭────┬──────┬───────┬──────────┬────────╮
+            │ id │ name │ dicts │ tts_rate │ parser │
+            ├────┼──────┼───────┼──────────┼────────┤"#]]
+        .assert_eq(&table);
+
+        // Create first language
+        let lang1 = create_test_language("Japanese");
+        let created1 = test_db.db.create_language(lang1.clone()).await.unwrap();
+
+        let languages = test_db.db.get_languages_vec().await.unwrap();
+        let table_rows: Vec<LanguageTableRow> = languages.iter().map(Into::into).collect();
+        let table = Table::new(table_rows).with(Style::rounded()).to_string();
+
+        expect![[r#"
+            ╭─────────────────────┬──────────┬────────────────────┬──────────┬────────────╮
+            │ id                  │ name     │ dicts              │ tts_rate │ parser     │
+            ├─────────────────────┼──────────┼────────────────────┼──────────┼────────────┤
+            │ InfluxResourceId(1) │ Japanese │ ["dict1", "dict2"] │ 1        │ base_spacy │
+            ╰─────────────────────┴──────────┴────────────────────┴──────────┴────────────╯"#]]
+        .assert_eq(&table);
+
+        // Create second language
+        let lang2 = create_test_language("Chinese");
+        let created2 = test_db.db.create_language(lang2.clone()).await.unwrap();
+
+        let languages = test_db.db.get_languages_vec().await.unwrap();
+        let table_rows: Vec<LanguageTableRow> = languages.iter().map(Into::into).collect();
+        let table = Table::new(table_rows).with(Style::rounded()).to_string();
+
+        expect![[r#"
+            ╭─────────────────────┬──────────┬────────────────────┬──────────┬────────────╮
+            │ id                  │ name     │ dicts              │ tts_rate │ parser     │
+            ├─────────────────────┼──────────┼────────────────────┼──────────┼────────────┤
+            │ InfluxResourceId(1) │ Japanese │ ["dict1", "dict2"] │ 1        │ base_spacy │
+            │ InfluxResourceId(2) │ Chinese  │ ["dict1", "dict2"] │ 1        │ base_spacy │
+            ╰─────────────────────┴──────────┴────────────────────┴──────────┴────────────╯"#]]
+        .assert_eq(&table);
+
+        // Test getting language by ID
+        let retrieved = test_db
+            .db
+            .get_language(created1.id.as_ref().unwrap().clone())
+            .await
+            .unwrap();
+        assert!(retrieved.is_some());
+        let retrieved_lang = retrieved.unwrap();
+        assert_eq!(retrieved_lang.name, "Japanese");
+
+        // Test getting nonexistent language
+        let result = test_db
+            .db
+            .get_language(InfluxResourceId::SerialId(999))
+            .await
+            .unwrap();
+        assert!(result.is_none());
+
+        // Test updating language
+        let mut updated_language = created1.clone();
+        updated_language.name = "日本語".to_string();
+        updated_language.tts_rate = Some(1.5);
+
+        let result = test_db
+            .db
+            .update_language(updated_language.clone())
+            .await
+            .unwrap();
+
+        assert_eq!(result.name, "日本語");
+        assert_eq!(result.tts_rate, Some(1.5));
+
+        // Check final state after update
+        let languages = test_db.db.get_languages_vec().await.unwrap();
+        let table_rows: Vec<LanguageTableRow> = languages.iter().map(Into::into).collect();
+        let table = Table::new(table_rows).with(Style::rounded()).to_string();
+
+        expect![[r#"
+            ╭─────────────────────┬─────────┬────────────────────┬──────────┬────────────╮
+            │ id                  │ name    │ dicts              │ tts_rate │ parser     │
+            ├─────────────────────┼─────────┼────────────────────┼──────────┼────────────┤
+            │ InfluxResourceId(2) │ Chinese │ ["dict1", "dict2"] │ 1        │ base_spacy │
+            │ InfluxResourceId(1) │ 日本語  │ ["dict1", "dict2"] │ 1.5      │ base_spacy │
+            ╰─────────────────────┴─────────┴────────────────────┴──────────┴────────────╯"#]]
+        .assert_eq(&table);
     }
 }

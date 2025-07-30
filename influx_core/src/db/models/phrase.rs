@@ -75,7 +75,7 @@ impl DB {
                     _ => Err(anyhow::anyhow!("Error querying phrase")),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
                     r#"
@@ -121,7 +121,7 @@ impl DB {
                     Err(e) => Err(anyhow::anyhow!("Error creating phrase: {:?}", e)),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
                     r#"
@@ -154,7 +154,7 @@ impl DB {
                     Err(e) => Err(anyhow::anyhow!("Error querying phrase: {:?}", e)),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
                     r#"
@@ -196,7 +196,7 @@ impl DB {
                     _ => Err(anyhow::anyhow!("Error querying phrase")),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
                     r#"
@@ -235,7 +235,7 @@ impl DB {
                     _ => Err(anyhow::anyhow!("Error querying phrase")),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
                     r#"
@@ -317,7 +317,7 @@ impl DB {
                     None => Err(anyhow::anyhow!("Error updating phrase")),
                 }
             }
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
                     r#"
@@ -352,7 +352,7 @@ impl DB {
                     "Error deleting phrase, was it even in the database?"
                 )),
             },
-            Postgres { pool } => {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
                     r#"
