@@ -1,16 +1,16 @@
 ///! a phrase is a user-defined multi-word token. phrases shall be added during a second pass tokenization process
 use super::*;
-use crate::db::{deserialize_surreal_thing, deserialize_surreal_thing_opt};
+// use crate::db::{deserialize_surreal_thing, deserialize_surreal_thing_opt};
 use crate::{db::InfluxResourceId, prelude::*, utils::trie::Trie};
 use elm_rs::{Elm, ElmDecode, ElmEncode, ElmQuery, ElmQueryField};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use vocab::TokenStatus;
 use DB::*;
 
-const TABLE: &str = "phrase";
-pub fn mk_phrase_thing(id: String) -> Thing {
-    Thing::from((TABLE.to_string(), id))
-}
+// const TABLE: &str = "phrase";
+// pub fn mk_phrase_thing(id: String) -> Thing {
+//     Thing::from((TABLE.to_string(), id))
+// }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
 pub struct Phrase {
@@ -62,19 +62,19 @@ impl DB {
         assert!(orthography_seq.iter().all(|s| s.to_lowercase() == *s));
 
         match self {
-            Surreal { engine } => {
-                let sql = format!("SELECT * FROM phrase WHERE orthography_seq = $orthography_seq AND lang_id = $lang_id;");
-                let mut res: Response = engine
-                    .query(sql)
-                    .bind(("orthography_seq", orthography_seq))
-                    .bind(("lang_id", lang_id))
-                    .await?;
+            // Surreal { engine } => {
+            //     let sql = format!("SELECT * FROM phrase WHERE orthography_seq = $orthography_seq AND lang_id = $lang_id;");
+            //     let mut res: Response = engine
+            //         .query(sql)
+            //         .bind(("orthography_seq", orthography_seq))
+            //         .bind(("lang_id", lang_id))
+            //         .await?;
 
-                match res.take(0) {
-                    Ok::<Vec<Phrase>, _>(v) => Ok(v.len() > 0),
-                    _ => Err(anyhow::anyhow!("Error querying phrase")),
-                }
-            }
+            //     match res.take(0) {
+            //         Ok::<Vec<Phrase>, _>(v) => Ok(v.len() > 0),
+            //         _ => Err(anyhow::anyhow!("Error querying phrase")),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
@@ -109,18 +109,18 @@ impl DB {
         );
 
         match self {
-            Surreal { engine } => {
-                let sql = format!("CREATE {TABLE} CONTENT $phrase");
-                let mut res: Response = engine.query(sql).bind(("phrase", phrase)).await?;
+            // Surreal { engine } => {
+            //     let sql = format!("CREATE {TABLE} CONTENT $phrase");
+            //     let mut res: Response = engine.query(sql).bind(("phrase", phrase)).await?;
 
-                match res.take(0) {
-                    Ok(Some::<Phrase>(v)) => Ok(v),
-                    Ok(None) => Err(anyhow::anyhow!(
-                        "sql didn't fail but no phrase was returned"
-                    )),
-                    Err(e) => Err(anyhow::anyhow!("Error creating phrase: {:?}", e)),
-                }
-            }
+            //     match res.take(0) {
+            //         Ok(Some::<Phrase>(v)) => Ok(v),
+            //         Ok(None) => Err(anyhow::anyhow!(
+            //             "sql didn't fail but no phrase was returned"
+            //         )),
+            //         Err(e) => Err(anyhow::anyhow!("Error creating phrase: {:?}", e)),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
@@ -146,14 +146,14 @@ impl DB {
 
     pub async fn query_phrase_by_id(&self, id: InfluxResourceId) -> Result<Option<Phrase>> {
         match self {
-            Surreal { engine } => {
-                let res = engine.select((TABLE, id)).await;
-                match res {
-                    Ok(Some::<Phrase>(v)) => Ok(Some(v)),
-                    Ok(None) => Ok(None),
-                    Err(e) => Err(anyhow::anyhow!("Error querying phrase: {:?}", e)),
-                }
-            }
+            // Surreal { engine } => {
+            //     let res = engine.select((TABLE, id)).await;
+            //     match res {
+            //         Ok(Some::<Phrase>(v)) => Ok(Some(v)),
+            //         Ok(None) => Ok(None),
+            //         Err(e) => Err(anyhow::anyhow!("Error querying phrase: {:?}", e)),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
@@ -178,24 +178,24 @@ impl DB {
         onset_orthography_set: BTreeSet<String>,
     ) -> Result<Vec<Phrase>> {
         match self {
-            Surreal { engine } => {
-                let sql = format!("SELECT * FROM phrase WHERE array::first(orthography_seq) INSIDE $onsets AND lang_id = $lang_id;");
-                let mut res: Response = engine
-                    .query(sql)
-                    .bind((
-                        "onsets",
-                        onset_orthography_set
-                            .iter()
-                            .cloned()
-                            .collect::<Vec<String>>(),
-                    ))
-                    .bind(("lang_id", lang_id))
-                    .await?;
-                match res.take(0) {
-                    Ok::<Vec<Phrase>, _>(v) => Ok(v),
-                    _ => Err(anyhow::anyhow!("Error querying phrase")),
-                }
-            }
+            // Surreal { engine } => {
+            //     let sql = format!("SELECT * FROM phrase WHERE array::first(orthography_seq) INSIDE $onsets AND lang_id = $lang_id;");
+            //     let mut res: Response = engine
+            //         .query(sql)
+            //         .bind((
+            //             "onsets",
+            //             onset_orthography_set
+            //                 .iter()
+            //                 .cloned()
+            //                 .collect::<Vec<String>>(),
+            //         ))
+            //         .bind(("lang_id", lang_id))
+            //         .await?;
+            //     match res.take(0) {
+            //         Ok::<Vec<Phrase>, _>(v) => Ok(v),
+            //         _ => Err(anyhow::anyhow!("Error querying phrase")),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
@@ -222,19 +222,19 @@ impl DB {
         orthography_seq: Vec<String>,
     ) -> Result<Vec<Phrase>> {
         match self {
-            Surreal { engine } => {
-                let sql = format!("SELECT * FROM phrase WHERE orthography_seq = $orthography_seq AND lang_id = $lang_id;");
-                let mut res: Response = engine
-                    .query(sql)
-                    .bind(("orthography_seq", orthography_seq))
-                    .bind(("lang_id", lang_id))
-                    .await?;
+            // Surreal { engine } => {
+            //     let sql = format!("SELECT * FROM phrase WHERE orthography_seq = $orthography_seq AND lang_id = $lang_id;");
+            //     let mut res: Response = engine
+            //         .query(sql)
+            //         .bind(("orthography_seq", orthography_seq))
+            //         .bind(("lang_id", lang_id))
+            //         .await?;
 
-                match res.take(0) {
-                    Ok::<Vec<Phrase>, _>(v) => Ok(v),
-                    _ => Err(anyhow::anyhow!("Error querying phrase")),
-                }
-            }
+            //     match res.take(0) {
+            //         Ok::<Vec<Phrase>, _>(v) => Ok(v),
+            //         _ => Err(anyhow::anyhow!("Error querying phrase")),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
@@ -310,13 +310,13 @@ impl DB {
         }
 
         match self {
-            Surreal { engine } => {
-                let updated: Option<Phrase> = engine.update(("phrase", id)).content(phrase).await?;
-                match updated {
-                    Some(v) => Ok(v),
-                    None => Err(anyhow::anyhow!("Error updating phrase")),
-                }
-            }
+            // Surreal { engine } => {
+            //     let updated: Option<Phrase> = engine.update(("phrase", id)).content(phrase).await?;
+            //     match updated {
+            //         Some(v) => Ok(v),
+            //         None => Err(anyhow::anyhow!("Error updating phrase")),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,
@@ -346,12 +346,12 @@ impl DB {
         let id = phrase.id.ok_or(anyhow::anyhow!("cannot delete if no id"))?;
 
         match self {
-            Surreal { engine } => match engine.delete((TABLE, id)).await? {
-                Some::<Phrase>(v) => Ok(v),
-                None => Err(anyhow::anyhow!(
-                    "Error deleting phrase, was it even in the database?"
-                )),
-            },
+            // Surreal { engine } => match engine.delete((TABLE, id)).await? {
+            //     Some::<Phrase>(v) => Ok(v),
+            //     None => Err(anyhow::anyhow!(
+            //         "Error deleting phrase, was it even in the database?"
+            //     )),
+            // },
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Phrase,

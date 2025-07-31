@@ -22,12 +22,12 @@ use db::DB;
 
 #[derive(Debug, ValueEnum, Clone, Copy)]
 pub enum DBChoice {
-    SurrealMemory,
-    SurrealDisk,
-    SurrealServer,
+    // SurrealMemory,
+    // SurrealDisk,
+    // SurrealServer,
     PostgresServer,
     PostgresEmbedded,
-    // IDEA might be able to embed DuckDB
+    // IDEA: might be able to embed DuckDB
 }
 
 #[derive(Parser, Debug)]

@@ -1,5 +1,5 @@
 use super::*;
-use crate::db::{deserialize_surreal_thing, deserialize_surreal_thing_opt};
+// use crate::db::{deserialize_surreal_thing, deserialize_surreal_thing_opt};
 
 use crate::{db::InfluxResourceId, prelude::*};
 use anyhow::Result;
@@ -25,9 +25,7 @@ pub enum TokenStatus {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
 pub struct Token {
-    // #[serde(deserialize_with = "deserialize_surreal_thing_opt")]
     pub id: Option<InfluxResourceId>,
-    // #[serde(deserialize_with = "deserialize_surreal_thing")]
     pub lang_id: InfluxResourceId,
 
     pub orthography: String,
@@ -95,24 +93,24 @@ impl DB {
     ) -> Result<bool> {
         debug_assert!(orthography.to_lowercase() == orthography);
         match self {
-            Surreal { engine } => {
-                let sql = format!(
-                    "SELECT * FROM token WHERE orthography = $orthography AND lang_id = $lang_id"
-                );
-                let mut res: Response = engine
-                    .query(sql)
-                    .bind(("orthography", orthography))
-                    .bind(("lang_id", lang_id))
-                    .await?;
+            // Surreal { engine } => {
+            //     let sql = format!(
+            //         "SELECT * FROM token WHERE orthography = $orthography AND lang_id = $lang_id"
+            //     );
+            //     let mut res: Response = engine
+            //         .query(sql)
+            //         .bind(("orthography", orthography))
+            //         .bind(("lang_id", lang_id))
+            //         .await?;
 
-                match res.take(0) {
-                    Ok(v) => Ok({
-                        let tkns: Vec<Token> = v;
-                        tkns.len() != 0
-                    }),
-                    Err(e) => Err(anyhow::anyhow!("Error querying token: {:?}", e)),
-                }
-            }
+            //     match res.take(0) {
+            //         Ok(v) => Ok({
+            //             let tkns: Vec<Token> = v;
+            //             tkns.len() != 0
+            //         }),
+            //         Err(e) => Err(anyhow::anyhow!("Error querying token: {:?}", e)),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query!(
                     r#"
@@ -145,17 +143,17 @@ impl DB {
         };
 
         match self {
-            Surreal { engine } => {
-                let sql = format!("CREATE vocab CONTENT $tkn");
-                let mut res: Response = engine.query(sql).bind(("tkn", token)).await?;
+            // Surreal { engine } => {
+            //     let sql = format!("CREATE vocab CONTENT $tkn");
+            //     let mut res: Response = engine.query(sql).bind(("tkn", token)).await?;
 
-                // dbg!(&res);
-                match res.take(0) {
-                    Ok(Some::<Token>(v)) => Ok(v),
-                    Ok(None) => Err(anyhow::anyhow!("sql didn't fail but no token was returned")),
-                    Err(e) => Err(anyhow::anyhow!("Error creating token: {:?}", e)),
-                }
-            }
+            //     // dbg!(&res);
+            //     match res.take(0) {
+            //         Ok(Some::<Token>(v)) => Ok(v),
+            //         Ok(None) => Err(anyhow::anyhow!("sql didn't fail but no token was returned")),
+            //         Err(e) => Err(anyhow::anyhow!("Error creating token: {:?}", e)),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Token,
@@ -189,34 +187,34 @@ impl DB {
         debug_assert!(orthography.to_lowercase() == orthography);
 
         match self {
-            Surreal { engine } => {
-                let sql = format!(
-                    "SELECT * FROM vocab WHERE orthography = $orthography AND lang_id = $lang_id"
-                );
-                let mut res: Response = engine
-                    .query(sql)
-                    .bind(("orthography", orthography))
-                    .bind(("lang_id", lang_id))
-                    .await?;
+            // Surreal { engine } => {
+            //     let sql = format!(
+            //         "SELECT * FROM vocab WHERE orthography = $orthography AND lang_id = $lang_id"
+            //     );
+            //     let mut res: Response = engine
+            //         .query(sql)
+            //         .bind(("orthography", orthography))
+            //         .bind(("lang_id", lang_id))
+            //         .await?;
 
-                dbg!(&res);
-                match res.take(0) {
-                    // Ok(Some::<Token>(v)) => Ok(Some(v)),
-                    // Ok(None) => Ok(None),
-                    Ok(v) => Ok({
-                        let tkns: Vec<Token> = v;
-                        if tkns.len() == 0 {
-                            None
-                        } else if tkns.len() == 1 {
-                            Some(tkns[0].clone())
-                        } else {
-                            warn!("More than one token returned for query_token_by_orthography, returning first token");
-                            Some(tkns[0].clone())
-                        }
-                    }),
-                    Err(e) => Err(anyhow::anyhow!("Error querying token: {:?}", e)),
-                }
-            }
+            //     dbg!(&res);
+            //     match res.take(0) {
+            //         // Ok(Some::<Token>(v)) => Ok(Some(v)),
+            //         // Ok(None) => Ok(None),
+            //         Ok(v) => Ok({
+            //             let tkns: Vec<Token> = v;
+            //             if tkns.len() == 0 {
+            //                 None
+            //             } else if tkns.len() == 1 {
+            //                 Some(tkns[0].clone())
+            //             } else {
+            //                 warn!("More than one token returned for query_token_by_orthography, returning first token");
+            //                 Some(tkns[0].clone())
+            //             }
+            //         }),
+            //         Err(e) => Err(anyhow::anyhow!("Error querying token: {:?}", e)),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Token,
@@ -246,14 +244,14 @@ impl DB {
 
     pub async fn query_token_by_id(&self, id: InfluxResourceId) -> Result<Option<Token>> {
         match self {
-            Surreal { engine } => {
-                let res = engine.select(("token", id)).await;
-                match res {
-                    Ok(Some::<Token>(v)) => Ok(Some(v)),
-                    Ok(None) => Ok(None),
-                    Err(e) => Err(anyhow::anyhow!("Error querying token: {:?}", e)),
-                }
-            }
+            // Surreal { engine } => {
+            //     let res = engine.select(("token", id)).await;
+            //     match res {
+            //         Ok(Some::<Token>(v)) => Ok(Some(v)),
+            //         Ok(None) => Ok(None),
+            //         Err(e) => Err(anyhow::anyhow!("Error querying token: {:?}", e)),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Token,
@@ -283,21 +281,21 @@ impl DB {
             .for_each(|orthography| debug_assert!(orthography.to_lowercase() == *orthography));
 
         match self {
-            Surreal { engine } => {
-                let sql = format!("SELECT * FROM vocab WHERE orthography INSIDE $orthography AND lang_id = $lang_id");
-                let mut res: Response = engine
-                    .query(sql)
-                    .bind(("lang_id", lang_id))
-                    .bind((
-                        "orthography",
-                        orthography_set.iter().cloned().collect::<Vec<String>>(),
-                    ))
-                    .await?;
-                match res.take(0) {
-                    Ok::<Vec<Token>, _>(v) => Ok(v),
-                    _ => Err(anyhow::anyhow!("Error querying token")),
-                }
-            }
+            // Surreal { engine } => {
+            //     let sql = format!("SELECT * FROM vocab WHERE orthography INSIDE $orthography AND lang_id = $lang_id");
+            //     let mut res: Response = engine
+            //         .query(sql)
+            //         .bind(("lang_id", lang_id))
+            //         .bind((
+            //             "orthography",
+            //             orthography_set.iter().cloned().collect::<Vec<String>>(),
+            //         ))
+            //         .await?;
+            //     match res.take(0) {
+            //         Ok::<Vec<Token>, _>(v) => Ok(v),
+            //         _ => Err(anyhow::anyhow!("Error querying token")),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let orthography_vec: Vec<String> = orthography_set.iter().cloned().collect();
                 let records = sqlx::query_as!(
@@ -321,16 +319,16 @@ impl DB {
         let id = token.id.ok_or(anyhow::anyhow!("cannot delete if no id"))?;
 
         match self {
-            Surreal { engine } => {
-                let res = engine.delete(("token", id)).await;
-                match res {
-                    Ok(Some::<Token>(v)) => Ok(v),
-                    Ok(None) => Err(anyhow::anyhow!(
-                        "Error deleting token, was it even in the database?"
-                    )),
-                    Err(e) => Err(anyhow::anyhow!("Error deleting token: {:?}", e)),
-                }
-            }
+            // Surreal { engine } => {
+            //     let res = engine.delete(("token", id)).await;
+            //     match res {
+            //         Ok(Some::<Token>(v)) => Ok(v),
+            //         Ok(None) => Err(anyhow::anyhow!(
+            //             "Error deleting token, was it even in the database?"
+            //         )),
+            //         Err(e) => Err(anyhow::anyhow!("Error deleting token: {:?}", e)),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Token,
@@ -455,14 +453,14 @@ impl DB {
         }
 
         match self {
-            Surreal { engine } => {
-                let updated: Option<Token> = engine.update(("token", id)).content(token).await?;
+            // Surreal { engine } => {
+            //     let updated: Option<Token> = engine.update(("token", id)).content(token).await?;
 
-                match updated {
-                    Some(v) => Ok(v),
-                    None => Err(anyhow::anyhow!("Error updating token")),
-                }
-            }
+            //     match updated {
+            //         Some(v) => Ok(v),
+            //         None => Err(anyhow::anyhow!("Error updating token")),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     Token,

@@ -31,10 +31,10 @@ chrono = { version = "0.4.39", features = ["serde"] }
 maplit = "1.0.2"
 serde_json = "1.0.134"
 reqwest = { version = "0.12.12", features = ["json"] }
-surrealdb = { version = "2.1.4", features = [
-    'kv-mem',
-    # 'kv-rocksdb'
-] }
+# SurrealDB is deprecated - commenting out dependency
+# surrealdb = { version = "2.1.4", features = [
+#     'kv-mem',
+# ] }
 # pyo3 = { version="0.20.0", features = ['auto-initialize'] }
 indoc = "2.0.5"
 open = "5.3.1"

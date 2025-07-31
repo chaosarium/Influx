@@ -1,5 +1,6 @@
 use super::*;
-use crate::db::deserialize_surreal_thing_opt;
+// SurrealDB is deprecated - commenting out import
+// use crate::db::deserialize_surreal_thing_opt;
 use crate::db::InfluxResourceId;
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
@@ -31,10 +32,10 @@ impl DB {
     pub async fn create_document(&self, document: Document) -> Result<Document> {
         assert!(document.id.is_none());
         match self {
-            Surreal { engine: _ } => {
-                // SurrealDB is deprecated, skip implementation
-                Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            }
+            // Surreal { engine: _ } => {
+            //     // SurrealDB is deprecated, skip implementation
+            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query!(
                     r#"
@@ -78,10 +79,10 @@ impl DB {
         lang_id: Option<InfluxResourceId>,
     ) -> Result<Vec<DocPackage>> {
         match self {
-            Surreal { engine: _ } => {
-                // SurrealDB is deprecated, skip implementation
-                Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            }
+            // Surreal { engine: _ } => {
+            //     // SurrealDB is deprecated, skip implementation
+            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let lang_id_i64 = match &lang_id {
                     Some(id) => Some(id.as_i64()?),
@@ -158,10 +159,10 @@ impl DB {
 
     pub async fn get_document_by_id(&self, id: InfluxResourceId) -> Result<Option<Document>> {
         match self {
-            Surreal { engine: _ } => {
-                // SurrealDB is deprecated, skip implementation
-                Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            }
+            // Surreal { engine: _ } => {
+            //     // SurrealDB is deprecated, skip implementation
+            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query!(
                     r#"
@@ -193,10 +194,10 @@ impl DB {
     pub async fn update_document(&self, document: Document) -> Result<Document> {
         assert!(document.id.is_some());
         match self {
-            Surreal { engine: _ } => {
-                // SurrealDB is deprecated, skip implementation
-                Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            }
+            // Surreal { engine: _ } => {
+            //     // SurrealDB is deprecated, skip implementation
+            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query!(
                     r#"
@@ -239,10 +240,10 @@ impl DB {
 
     pub async fn delete_document(&self, id: InfluxResourceId) -> Result<()> {
         match self {
-            Surreal { engine: _ } => {
-                // SurrealDB is deprecated, skip implementation
-                Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            }
+            // Surreal { engine: _ } => {
+            //     // SurrealDB is deprecated, skip implementation
+            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 sqlx::query!(
                     r#"
@@ -264,10 +265,10 @@ impl DB {
         text_checksum: &str,
     ) -> Result<Option<serde_json::Value>> {
         match self {
-            Surreal { engine: _ } => {
-                // SurrealDB is deprecated, skip implementation
-                Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            }
+            // Surreal { engine: _ } => {
+            //     // SurrealDB is deprecated, skip implementation
+            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query!(
                     r#"
@@ -293,10 +294,10 @@ impl DB {
         cached_data: &serde_json::Value,
     ) -> Result<()> {
         match self {
-            Surreal { engine: _ } => {
-                // SurrealDB is deprecated, skip implementation
-                Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            }
+            // Surreal { engine: _ } => {
+            //     // SurrealDB is deprecated, skip implementation
+            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 sqlx::query!(
                     r#"

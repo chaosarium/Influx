@@ -1,9 +1,9 @@
 use crate::db::InfluxResourceId;
 
 use super::*;
-use crate::db::deserialize_surreal_thing_opt;
+// use crate::db::deserialize_surreal_thing_opt;
+// use surrealdb::RecordId;
 use std::collections::HashMap;
-use surrealdb::RecordId;
 
 #[derive(
     Debug, Serialize, Deserialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode, sqlx::FromRow,
@@ -61,16 +61,16 @@ impl DB {
     pub async fn create_language(&self, language: Language) -> Result<Language> {
         assert!(language.id.is_none());
         match self {
-            Surreal { engine } => {
-                let created: Result<Option<Language>, surrealdb::Error> =
-                    engine.create("language").content(language).await;
+            // Surreal { engine } => {
+            //     let created: Result<Option<Language>, surrealdb::Error> =
+            //         engine.create("language").content(language).await;
 
-                match created {
-                    Ok(Some(entry)) => Ok(entry),
-                    Ok(None) => Err(anyhow::anyhow!("somehow got none")),
-                    Err(e) => Err(anyhow::anyhow!("Error creating language: {}", e)),
-                }
-            }
+            //     match created {
+            //         Ok(Some(entry)) => Ok(entry),
+            //         Ok(None) => Err(anyhow::anyhow!("somehow got none")),
+            //         Err(e) => Err(anyhow::anyhow!("Error creating language: {}", e)),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     LanguageInDB,
@@ -98,15 +98,15 @@ impl DB {
 
     pub async fn get_languages_vec(&self) -> Result<Vec<Language>> {
         match self {
-            Surreal { engine } => {
-                let languages: Result<Vec<Language>, surrealdb::Error> =
-                    engine.select("language").await;
+            // Surreal { engine } => {
+            //     let languages: Result<Vec<Language>, surrealdb::Error> =
+            //         engine.select("language").await;
 
-                match languages {
-                    Ok(v) => Ok(v),
-                    Err(e) => Err(anyhow::anyhow!("Error getting languages: {}", e)),
-                }
-            }
+            //     match languages {
+            //         Ok(v) => Ok(v),
+            //         Err(e) => Err(anyhow::anyhow!("Error getting languages: {}", e)),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let records: Vec<Language> = sqlx::query_as!(
                     LanguageInDB,
@@ -125,15 +125,15 @@ impl DB {
 
     pub async fn get_language(&self, id: InfluxResourceId) -> Result<Option<Language>> {
         match self {
-            Surreal { engine } => {
-                let language: Result<Option<Language>, surrealdb::Error> =
-                    engine.select(("language", id)).await;
+            // Surreal { engine } => {
+            //     let language: Result<Option<Language>, surrealdb::Error> =
+            //         engine.select(("language", id)).await;
 
-                match language {
-                    Ok(v) => Ok(v),
-                    Err(e) => Err(anyhow::anyhow!("Error getting language: {}", e)),
-                }
-            }
+            //     match language {
+            //         Ok(v) => Ok(v),
+            //         Err(e) => Err(anyhow::anyhow!("Error getting language: {}", e)),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     LanguageInDB,
@@ -159,16 +159,16 @@ impl DB {
             .ok_or_else(|| anyhow::anyhow!("Language ID is required for update"))?;
 
         match self {
-            Surreal { engine } => {
-                let updated: Result<Option<Language>, surrealdb::Error> =
-                    engine.update(("language", id)).content(language).await;
+            // Surreal { engine } => {
+            //     let updated: Result<Option<Language>, surrealdb::Error> =
+            //         engine.update(("language", id)).content(language).await;
 
-                match updated {
-                    Ok(Some(entry)) => Ok(entry),
-                    Ok(None) => Err(anyhow::anyhow!("Language not found for update")),
-                    Err(e) => Err(anyhow::anyhow!("Error updating language: {}", e)),
-                }
-            }
+            //     match updated {
+            //         Ok(Some(entry)) => Ok(entry),
+            //         Ok(None) => Err(anyhow::anyhow!("Language not found for update")),
+            //         Err(e) => Err(anyhow::anyhow!("Error updating language: {}", e)),
+            //     }
+            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
                     LanguageInDB,
