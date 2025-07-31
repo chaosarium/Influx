@@ -6,7 +6,16 @@ use super::*;
 use std::collections::HashMap;
 
 #[derive(
-    Debug, Serialize, Deserialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode, sqlx::FromRow,
+    Debug,
+    Serialize,
+    Deserialize,
+    Clone,
+    PartialEq,
+    Elm,
+    ElmEncode,
+    ElmDecode,
+    sqlx::FromRow,
+    Default,
 )]
 pub struct ParserConfig {
     pub which_parser: String,
@@ -261,12 +270,12 @@ mod tests {
         // Check initial empty state
         let languages = test_db.db.get_languages_vec().await.unwrap();
         let table_rows: Vec<LanguageTableRow> = languages.iter().map(Into::into).collect();
-        let table = Table::new(table_rows).with(Style::rounded()).to_string();
+        let table = Table::new(table_rows).to_string();
 
         expect![[r#"
-            ╭────┬──────┬───────┬──────────┬────────╮
-            │ id │ name │ dicts │ tts_rate │ parser │
-            ├────┼──────┼───────┼──────────┼────────┤"#]]
+            +----+------+-------+----------+--------+
+            | id | name | dicts | tts_rate | parser |
+            +----+------+-------+----------+--------+"#]]
         .assert_eq(&table);
 
         // Create first language
@@ -275,14 +284,14 @@ mod tests {
 
         let languages = test_db.db.get_languages_vec().await.unwrap();
         let table_rows: Vec<LanguageTableRow> = languages.iter().map(Into::into).collect();
-        let table = Table::new(table_rows).with(Style::rounded()).to_string();
+        let table = Table::new(table_rows).to_string();
 
         expect![[r#"
-            ╭─────────────────────┬──────────┬────────────────────┬──────────┬────────────╮
-            │ id                  │ name     │ dicts              │ tts_rate │ parser     │
-            ├─────────────────────┼──────────┼────────────────────┼──────────┼────────────┤
-            │ InfluxResourceId(1) │ Japanese │ ["dict1", "dict2"] │ 1        │ base_spacy │
-            ╰─────────────────────┴──────────┴────────────────────┴──────────┴────────────╯"#]]
+            +---------------------+----------+--------------------+----------+------------+
+            | id                  | name     | dicts              | tts_rate | parser     |
+            +---------------------+----------+--------------------+----------+------------+
+            | InfluxResourceId(1) | Japanese | ["dict1", "dict2"] | 1        | base_spacy |
+            +---------------------+----------+--------------------+----------+------------+"#]]
         .assert_eq(&table);
 
         // Create second language
@@ -291,15 +300,16 @@ mod tests {
 
         let languages = test_db.db.get_languages_vec().await.unwrap();
         let table_rows: Vec<LanguageTableRow> = languages.iter().map(Into::into).collect();
-        let table = Table::new(table_rows).with(Style::rounded()).to_string();
+        let table = Table::new(table_rows).to_string();
 
         expect![[r#"
-            ╭─────────────────────┬──────────┬────────────────────┬──────────┬────────────╮
-            │ id                  │ name     │ dicts              │ tts_rate │ parser     │
-            ├─────────────────────┼──────────┼────────────────────┼──────────┼────────────┤
-            │ InfluxResourceId(1) │ Japanese │ ["dict1", "dict2"] │ 1        │ base_spacy │
-            │ InfluxResourceId(2) │ Chinese  │ ["dict1", "dict2"] │ 1        │ base_spacy │
-            ╰─────────────────────┴──────────┴────────────────────┴──────────┴────────────╯"#]]
+            +---------------------+----------+--------------------+----------+------------+
+            | id                  | name     | dicts              | tts_rate | parser     |
+            +---------------------+----------+--------------------+----------+------------+
+            | InfluxResourceId(1) | Japanese | ["dict1", "dict2"] | 1        | base_spacy |
+            +---------------------+----------+--------------------+----------+------------+
+            | InfluxResourceId(2) | Chinese  | ["dict1", "dict2"] | 1        | base_spacy |
+            +---------------------+----------+--------------------+----------+------------+"#]]
         .assert_eq(&table);
 
         // Test getting language by ID
@@ -337,15 +347,16 @@ mod tests {
         // Check final state after update
         let languages = test_db.db.get_languages_vec().await.unwrap();
         let table_rows: Vec<LanguageTableRow> = languages.iter().map(Into::into).collect();
-        let table = Table::new(table_rows).with(Style::rounded()).to_string();
+        let table = Table::new(table_rows).to_string();
 
         expect![[r#"
-            ╭─────────────────────┬─────────┬────────────────────┬──────────┬────────────╮
-            │ id                  │ name    │ dicts              │ tts_rate │ parser     │
-            ├─────────────────────┼─────────┼────────────────────┼──────────┼────────────┤
-            │ InfluxResourceId(2) │ Chinese │ ["dict1", "dict2"] │ 1        │ base_spacy │
-            │ InfluxResourceId(1) │ 日本語  │ ["dict1", "dict2"] │ 1.5      │ base_spacy │
-            ╰─────────────────────┴─────────┴────────────────────┴──────────┴────────────╯"#]]
+            +---------------------+---------+--------------------+----------+------------+
+            | id                  | name    | dicts              | tts_rate | parser     |
+            +---------------------+---------+--------------------+----------+------------+
+            | InfluxResourceId(2) | Chinese | ["dict1", "dict2"] | 1        | base_spacy |
+            +---------------------+---------+--------------------+----------+------------+
+            | InfluxResourceId(1) | 日本語  | ["dict1", "dict2"] | 1.5      | base_spacy |
+            +---------------------+---------+--------------------+----------+------------+"#]]
         .assert_eq(&table);
     }
 }

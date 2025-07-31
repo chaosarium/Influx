@@ -78,12 +78,12 @@ async fn test_get_empty_language_list() {
 
     // Snapshot test for empty response
     let table_rows: Vec<LanguageApiResponseRow> = languages.iter().map(Into::into).collect();
-    let table = Table::new(table_rows).with(Style::rounded()).to_string();
+    let table = Table::new(table_rows).to_string();
 
     expect![[r#"
-        ╭────┬──────┬───────┬──────────┬────────╮
-        │ id │ name │ dicts │ tts_rate │ parser │
-        ├────┼──────┼───────┼──────────┼────────┤"#]]
+        +----+------+-------+----------+--------+
+        | id | name | dicts | tts_rate | parser |
+        +----+------+-------+----------+--------+"#]]
     .assert_eq(&table);
 }
 
@@ -106,15 +106,16 @@ async fn test_get_language_list_with_data() {
 
     // Snapshot test for populated response
     let table_rows: Vec<LanguageApiResponseRow> = languages.iter().map(Into::into).collect();
-    let table = Table::new(table_rows).with(Style::rounded()).to_string();
+    let table = Table::new(table_rows).to_string();
 
     expect![[r#"
-        ╭─────────────────────┬──────────┬────────────────────┬──────────┬────────────╮
-        │ id                  │ name     │ dicts              │ tts_rate │ parser     │
-        ├─────────────────────┼──────────┼────────────────────┼──────────┼────────────┤
-        │ InfluxResourceId(1) │ Japanese │ ["dict1", "dict2"] │ 1        │ base_spacy │
-        │ InfluxResourceId(2) │ Chinese  │ ["dict1", "dict2"] │ 1        │ base_spacy │
-        ╰─────────────────────┴──────────┴────────────────────┴──────────┴────────────╯"#]]
+        +---------------------+----------+--------------------+----------+------------+
+        | id                  | name     | dicts              | tts_rate | parser     |
+        +---------------------+----------+--------------------+----------+------------+
+        | InfluxResourceId(1) | Japanese | ["dict1", "dict2"] | 1        | base_spacy |
+        +---------------------+----------+--------------------+----------+------------+
+        | InfluxResourceId(2) | Chinese  | ["dict1", "dict2"] | 1        | base_spacy |
+        +---------------------+----------+--------------------+----------+------------+"#]]
     .assert_eq(&table);
 }
 
@@ -140,14 +141,14 @@ async fn test_get_language_by_id_success() {
 
     // Snapshot test for single language response
     let table_rows = vec![LanguageApiResponseRow::from(&language)];
-    let table = Table::new(table_rows).with(Style::rounded()).to_string();
+    let table = Table::new(table_rows).to_string();
 
     expect![[r#"
-        ╭─────────────────────┬──────────┬────────────────────┬──────────┬────────────╮
-        │ id                  │ name     │ dicts              │ tts_rate │ parser     │
-        ├─────────────────────┼──────────┼────────────────────┼──────────┼────────────┤
-        │ InfluxResourceId(1) │ Japanese │ ["dict1", "dict2"] │ 1        │ base_spacy │
-        ╰─────────────────────┴──────────┴────────────────────┴──────────┴────────────╯"#]]
+        +---------------------+----------+--------------------+----------+------------+
+        | id                  | name     | dicts              | tts_rate | parser     |
+        +---------------------+----------+--------------------+----------+------------+
+        | InfluxResourceId(1) | Japanese | ["dict1", "dict2"] | 1        | base_spacy |
+        +---------------------+----------+--------------------+----------+------------+"#]]
     .assert_eq(&table);
 }
 
@@ -197,14 +198,14 @@ async fn test_update_language_success() {
 
     // Snapshot test for update response
     let table_rows = vec![LanguageApiResponseRow::from(&result_language)];
-    let table = Table::new(table_rows).with(Style::rounded()).to_string();
+    let table = Table::new(table_rows).to_string();
 
     expect![[r#"
-        ╭─────────────────────┬────────┬────────────────────┬──────────┬────────────╮
-        │ id                  │ name   │ dicts              │ tts_rate │ parser     │
-        ├─────────────────────┼────────┼────────────────────┼──────────┼────────────┤
-        │ InfluxResourceId(1) │ 日本語 │ ["dict1", "dict2"] │ 1.5      │ base_spacy │
-        ╰─────────────────────┴────────┴────────────────────┴──────────┴────────────╯"#]]
+        +---------------------+--------+--------------------+----------+------------+
+        | id                  | name   | dicts              | tts_rate | parser     |
+        +---------------------+--------+--------------------+----------+------------+
+        | InfluxResourceId(1) | 日本語 | ["dict1", "dict2"] | 1.5      | base_spacy |
+        +---------------------+--------+--------------------+----------+------------+"#]]
     .assert_eq(&table);
 
     // Verify the change persisted in database
@@ -297,14 +298,15 @@ async fn test_complete_language_api_workflow() {
     let languages: Vec<Language> = response.json();
 
     let table_rows: Vec<LanguageApiResponseRow> = languages.iter().map(Into::into).collect();
-    let table = Table::new(table_rows).with(Style::rounded()).to_string();
+    let table = Table::new(table_rows).to_string();
 
     expect![[r#"
-        ╭─────────────────────┬─────────┬────────────────────┬──────────┬────────────╮
-        │ id                  │ name    │ dicts              │ tts_rate │ parser     │
-        ├─────────────────────┼─────────┼────────────────────┼──────────┼────────────┤
-        │ InfluxResourceId(2) │ Chinese │ ["dict1", "dict2"] │ 1        │ base_spacy │
-        │ InfluxResourceId(1) │ 日本語  │ ["dict1", "dict2"] │ 2        │ base_spacy │
-        ╰─────────────────────┴─────────┴────────────────────┴──────────┴────────────╯"#]]
+        +---------------------+---------+--------------------+----------+------------+
+        | id                  | name    | dicts              | tts_rate | parser     |
+        +---------------------+---------+--------------------+----------+------------+
+        | InfluxResourceId(2) | Chinese | ["dict1", "dict2"] | 1        | base_spacy |
+        +---------------------+---------+--------------------+----------+------------+
+        | InfluxResourceId(1) | 日本語  | ["dict1", "dict2"] | 2        | base_spacy |
+        +---------------------+---------+--------------------+----------+------------+"#]]
     .assert_eq(&table);
 }

@@ -171,12 +171,12 @@ async fn test_language_crud_operations() {
     // Test operations with snapshot assertions
     let languages = test_db.db.get_languages_vec().await.unwrap();
     let table_rows: Vec<LanguageTableRow> = languages.iter().map(Into::into).collect();
-    let table = Table::new(table_rows).with(Style::rounded()).to_string();
+    let table = Table::new(table_rows).to_string();
     
     expect![[r#"
-        ╭────┬──────┬───────┬──────────┬────────╮
-        │ id │ name │ dicts │ tts_rate │ parser │
-        ├────┼──────┼───────┼──────────┼────────┤"#]]
+        +----+------+-------+----------+--------+
+        | id | name | dicts | tts_rate | parser |
+        +----+------+-------+----------+--------+"#]]
     .assert_eq(&table);
 }
 ```

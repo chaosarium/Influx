@@ -53,6 +53,7 @@ dotenvy = "0.15.7"
 postgresql_embedded = "0.19.0"
 tempfile = "3.8"
 dirs = "5.0"
+fsrs = "5.0"
 
 [dev-dependencies]
 insta = "1.43.1"

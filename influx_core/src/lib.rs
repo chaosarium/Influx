@@ -10,6 +10,7 @@ use tracing::info;
 
 pub mod db;
 pub mod embedded_db;
+pub mod fsrs_scheduler;
 mod handlers;
 mod integration;
 mod nlp;
@@ -102,6 +103,7 @@ mod tests {
     #[test]
     fn generate_elm_bindings() -> anyhow::Result<()> {
         use crate::db::models::lang;
+        use crate::fsrs_scheduler;
 
         let mut out_buf = vec![];
         elm_rs::export!("Bindings", &mut out_buf, {
@@ -114,6 +116,12 @@ mod tests {
                 db::models::vocab::Token,
                 db::models::vocab::TokenStatus,
                 db::models::phrase::Phrase,
+                db::models::fsrs::CardType,
+                db::models::fsrs::CardState,
+                db::models::fsrs::FSRSLanguageConfig,
+                db::models::fsrs::Card,
+                db::models::fsrs::ReviewLog,
+                fsrs_scheduler::SerializableMemoryState,
                 handlers::Term,
                 handlers::TermEditAction,
                 handlers::GetDocResponse,
@@ -139,6 +147,12 @@ mod tests {
                 db::models::vocab::Token,
                 db::models::vocab::TokenStatus,
                 db::models::phrase::Phrase,
+                db::models::fsrs::CardType,
+                db::models::fsrs::CardState,
+                db::models::fsrs::FSRSLanguageConfig,
+                db::models::fsrs::Card,
+                db::models::fsrs::ReviewLog,
+                fsrs_scheduler::SerializableMemoryState,
                 handlers::Term,
                 handlers::TermEditAction,
                 handlers::GetDocResponse,

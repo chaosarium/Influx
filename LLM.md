@@ -58,7 +58,7 @@ When updating the database schema, you should just do `cargo sqlx database reset
 
 ## Testing
 
-- Prefer snapshot tests in Python and Rust
+- Prefer snapshot tests in Python and Rust, and prefer tests that show a sequence of operations followed by a snapshot on the state after each notable operation.
 - Test should clearly show what the expected output is. The snapshot should focus on important parts of the output.
 - No testing in Elm
 
