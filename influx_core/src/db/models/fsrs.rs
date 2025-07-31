@@ -46,22 +46,11 @@ pub struct FSRSLanguageConfigInDB {
     pub desired_retention: f64,
     pub maximum_interval: i32,
     pub request_retention: Option<f64>,
-    pub enabled_card_types: Vec<String>, // card_type[] from postgres
+    pub enabled_card_types: Vec<CardType>, // card_type[] from postgres
 }
 
 impl From<FSRSLanguageConfigInDB> for FSRSLanguageConfig {
     fn from(db_entry: FSRSLanguageConfigInDB) -> Self {
-        let enabled_card_types = db_entry
-            .enabled_card_types
-            .iter()
-            .filter_map(|ct| match ct.as_str() {
-                "RECOGNITION" => Some(CardType::RECOGNITION),
-                "PRODUCTION" => Some(CardType::PRODUCTION),
-                "CLOZE" => Some(CardType::CLOZE),
-                _ => None,
-            })
-            .collect();
-
         FSRSLanguageConfig {
             id: Some(db_entry.id),
             lang_id: db_entry.lang_id,
@@ -69,7 +58,7 @@ impl From<FSRSLanguageConfigInDB> for FSRSLanguageConfig {
             desired_retention: db_entry.desired_retention,
             maximum_interval: db_entry.maximum_interval,
             request_retention: db_entry.request_retention,
-            enabled_card_types,
+            enabled_card_types: db_entry.enabled_card_types,
         }
     }
 }
@@ -210,29 +199,19 @@ impl DB {
         assert!(config.id.is_none());
         match self {
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
-                let enabled_card_types_str: Vec<String> = config
-                    .enabled_card_types
-                    .iter()
-                    .map(|ct| match ct {
-                        CardType::RECOGNITION => "RECOGNITION".to_string(),
-                        CardType::PRODUCTION => "PRODUCTION".to_string(),
-                        CardType::CLOZE => "CLOZE".to_string(),
-                    })
-                    .collect();
-
                 let record = sqlx::query_as!(
                     FSRSLanguageConfigInDB,
                     r#"
                         INSERT INTO fsrs_language_config (lang_id, fsrs_weights, desired_retention, maximum_interval, request_retention, enabled_card_types)
                         VALUES ($1, $2, $3, $4, $5, $6::card_type[])
-                        RETURNING id, lang_id, fsrs_weights as "fsrs_weights: sqlx::types::Json<Vec<f64>>", desired_retention, maximum_interval, request_retention, enabled_card_types as "enabled_card_types: Vec<String>"
+                        RETURNING id, lang_id, fsrs_weights as "fsrs_weights: sqlx::types::Json<Vec<f64>>", desired_retention, maximum_interval, request_retention, enabled_card_types as "enabled_card_types: Vec<CardType>"
                     "#,
                     config.lang_id.as_i64()?,
                     serde_json::to_value(&config.fsrs_weights)?,
                     config.desired_retention,
                     config.maximum_interval,
                     config.request_retention,
-                    &enabled_card_types_str as &[String]
+                    &config.enabled_card_types as &[CardType]
                 )
                 .fetch_one(pool.as_ref())
                 .await?;
@@ -251,7 +230,7 @@ impl DB {
                 let record = sqlx::query_as!(
                     FSRSLanguageConfigInDB,
                     r#"
-                        SELECT id, lang_id, fsrs_weights as "fsrs_weights: sqlx::types::Json<Vec<f64>>", desired_retention, maximum_interval, request_retention, enabled_card_types as "enabled_card_types: Vec<String>"
+                        SELECT id, lang_id, fsrs_weights as "fsrs_weights: sqlx::types::Json<Vec<f64>>", desired_retention, maximum_interval, request_retention, enabled_card_types as "enabled_card_types: Vec<CardType>"
                         FROM fsrs_language_config
                         WHERE lang_id = $1
                     "#,

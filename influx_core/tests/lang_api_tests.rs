@@ -6,7 +6,7 @@ use influx_core::db::InfluxResourceId;
 use influx_core::test_utils::{create_test_app, TestDb};
 use influx_core::ServerState;
 use std::collections::HashMap;
-use tabled::{settings::Style, Table, Tabled};
+use tabled::{Table, Tabled};
 
 #[derive(Tabled)]
 struct LanguageApiResponseRow {
