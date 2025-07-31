@@ -5,6 +5,19 @@ from lib.parsing import SpacyParser, JapaneseParser
 from dataclasses import dataclass
 from loguru import logger
 from lib.annotation import AnnotatedDocV2, ParserConfig
+import logging
+
+
+class LoguruHandler(logging.Handler):
+    """Custom logging handler that routes all log records to loguru."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        logger.opt(depth=6, exception=record.exc_info).log(level, record.getMessage())
 
 
 @dataclass
@@ -85,6 +98,12 @@ if __name__ == "__main__":
     )
 
     logger.info("Starting Influx NLP Service", extra={"port": args.port, "log_level": args.log_level})
+
+    # Configure Flask logging to use loguru
+    logging.basicConfig(handlers=[LoguruHandler()], level=0, force=True)
+    # Also set werkzeug (Flask's WSGI server) to use loguru
+    logging.getLogger("werkzeug").handlers = [LoguruHandler()]
+    logging.getLogger("werkzeug").setLevel(logging.DEBUG)
 
     context = AppContext(port=args.port, base_spacy=SpacyParser(), japanese_parser=JapaneseParser())
     logger.success("Application context created")
