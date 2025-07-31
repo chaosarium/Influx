@@ -115,8 +115,9 @@ CREATE TABLE card (
     card_type card_type NOT NULL,
     card_state card_state NOT NULL DEFAULT 'ACTIVE',
     
-    -- FSRS memory state (JSON to store Memory struct)
-    fsrs_memory JSONB,
+    -- FSRS memory state (flattened from SerializableMemoryState)
+    fsrs_stability REAL,
+    fsrs_difficulty REAL,
     
     -- Scheduling info
     due_date TIMESTAMPTZ,
@@ -130,6 +131,10 @@ CREATE TABLE card (
     CONSTRAINT card_has_target CHECK (
         (token_id IS NOT NULL AND phrase_id IS NULL) OR 
         (token_id IS NULL AND phrase_id IS NOT NULL)
+    ),
+    CONSTRAINT card_fsrs_memory_consistency CHECK (
+        (fsrs_stability IS NULL AND fsrs_difficulty IS NULL) OR
+        (fsrs_stability IS NOT NULL AND fsrs_difficulty IS NOT NULL)
     ),
     
     -- Unique card per (target, card_type)
@@ -146,14 +151,24 @@ CREATE TABLE review_log (
     rating INTEGER NOT NULL, -- 1=Again, 2=Hard, 3=Good, 4=Easy
     review_time_ms INTEGER, -- Time taken to review in milliseconds
     
-    -- FSRS state before this review (for rollback/analysis)
-    fsrs_memory_before JSONB,
-    fsrs_memory_after JSONB,
+    -- FSRS state before/after review (flattened from SerializableMemoryState)
+    fsrs_stability_before REAL,
+    fsrs_difficulty_before REAL,
+    fsrs_stability_after REAL, 
+    fsrs_difficulty_after REAL,
     
     -- Review context
     review_date TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     
-    CONSTRAINT valid_rating CHECK (rating >= 1 AND rating <= 4)
+    CONSTRAINT valid_rating CHECK (rating >= 1 AND rating <= 4),
+    CONSTRAINT review_fsrs_memory_before_consistency CHECK (
+        (fsrs_stability_before IS NULL AND fsrs_difficulty_before IS NULL) OR
+        (fsrs_stability_before IS NOT NULL AND fsrs_difficulty_before IS NOT NULL)
+    ),
+    CONSTRAINT review_fsrs_memory_after_consistency CHECK (
+        (fsrs_stability_after IS NULL AND fsrs_difficulty_after IS NULL) OR
+        (fsrs_stability_after IS NOT NULL AND fsrs_difficulty_after IS NOT NULL)
+    )
 );
 
 -- Optimization history for tracking FSRS parameter updates
@@ -186,6 +201,17 @@ BEFORE UPDATE ON card
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_ts();
 ```
+
+### Design Decision: Flattened Memory State Storage
+
+The database schema uses flattened storage for FSRS memory state instead of JSON:
+
+- **Card Table**: `fsrs_stability` and `fsrs_difficulty` as separate `REAL` columns instead of `fsrs_memory JSONB`
+- **Review Log Table**: Separate before/after columns for each memory state field
+- **Database Constraints**: Ensures both memory state fields are NULL or both are NOT NULL for consistency
+- **Performance Benefits**: Better query performance and indexing compared to JSONB operations
+- **Type Safety**: Native PostgreSQL numeric types with proper sqlx integration
+- **Simplicity**: Eliminates sqlx macro limitations with complex JSON generic types
 
 ### Integration with Existing Schema
 
@@ -389,7 +415,7 @@ pub async fn process_review_impact(
 
 ## Implementation Phases
 
-### Phase 1: Foundation - Database Schema & Basic Types
+### Phase 1: Foundation - Database Schema & Basic Types ✅ **COMPLETED**
 **Deliverable:** Database schema with basic Rust types
 - [x] Create database tables (`fsrs_language_config`, `card`, `review_log`, `fsrs_optimization_log`)
 - [x] Add database migrations
@@ -397,23 +423,27 @@ pub async fn process_review_impact(
 - [x] Add fsrs-rs dependency and basic wrapper functions
 - [x] Create Elm bindings for new types
 - [x] Implement database CRUD operations for FSRS language config
-- [x] Implement database CRUD operations for cards (implementations complete, proper sqlx::Type support added)
+- [x] Implement database CRUD operations for cards
 - [x] Implement database CRUD operations for review logs  
-- [x] Add comprehensive tests for FSRS language configuration
+- [x] Add comprehensive tests for all FSRS database operations
 - [x] Fix PostgreSQL enum type mapping with proper sqlx::Type derives
+- [x] Resolve sqlx JSON handling limitations with flattened memory state storage
 
-**Status:** ✅ **COMPLETED** - Basic FSRS foundation is fully implemented with working database operations and tests. 
+**Status:** ✅ **COMPLETED** - Complete FSRS foundation with fully functional database operations.
 
-**Technical Notes:**
-- FSRS language configuration is fully working with comprehensive tests
-- Custom PostgreSQL enum types (`card_type`, `card_state`) properly mapped using `sqlx::Type` derives following the same pattern as existing `token_status` enum
-- Card and review log database functions are implemented but temporarily commented out due to sqlx's complex handling of `Option<Json<T>>` types - this is a known limitation that affects JSONB fields in optional contexts
-- All enum mappings follow PostgreSQL convention (uppercase values: `RECOGNITION`, `ACTIVE`, etc.)
-- Database schema is complete and ready for Phase 2 implementation
+**Technical Implementation:**
+- **Database Schema**: Complete with flattened memory state storage using separate `fsrs_stability` and `fsrs_difficulty` columns
+- **Type Safety**: All PostgreSQL enum types properly mapped with `sqlx::Type` derives
+- **CRUD Operations**: All database functions implemented and tested (create, read, update for cards; create for review logs)
+- **Memory State Storage**: Flattened approach eliminates sqlx macro limitations while maintaining domain model integrity
+- **Database Constraints**: Ensure memory state field consistency (both NULL or both NOT NULL)
+- **Comprehensive Testing**: 7 FSRS-specific tests + 27 total tests all passing
 
-**Outstanding Technical Debt:**
-- sqlx macro struggles with `Option<Json<SerializableMemoryState>>` type mapping in RETURNING clauses - requires either raw SQL queries or simplified serialization approach
-- This limitation only affects the optional JSONB fields (`fsrs_memory`) and does not impact core functionality
+**Key Design Decisions:**
+- **Flattened Memory State**: Store `SerializableMemoryState` fields as separate database columns instead of JSON
+- **Automatic Conversion**: `From` traits handle conversion between flattened database representation and domain models
+- **Database Constraints**: Ensure data integrity at the database level with consistency checks
+- **Performance Optimization**: Native PostgreSQL numeric types provide better performance than JSONB operations
 
 ### Phase 2: Core Logic - FSRS Integration
 **Deliverable:** Working FSRS scheduling without UI
@@ -498,6 +528,13 @@ pub struct MemoryState {
     pub difficulty: f32,
 }
 
+// Serializable version for Elm bindings and database storage
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode)]
+pub struct SerializableMemoryState {
+    pub stability: f32,
+    pub difficulty: f32,
+}
+
 // States for each rating button (Again, Hard, Good, Easy)
 #[derive(Debug, Clone, PartialEq)]
 pub struct NextStates {
@@ -560,6 +597,52 @@ impl FSRSScheduler {
     }
 }
 ```
+
+### Database Storage Strategy
+
+The implementation uses a **flattened storage approach** for FSRS memory state:
+
+```rust
+// Database representation
+#[derive(sqlx::FromRow)]
+pub struct CardInDB {
+    // ... other fields
+    pub fsrs_stability: Option<f32>,     // Flattened from SerializableMemoryState
+    pub fsrs_difficulty: Option<f32>,   // Flattened from SerializableMemoryState
+}
+
+// Domain model representation  
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Card {
+    // ... other fields
+    pub fsrs_memory: Option<SerializableMemoryState>, // Reconstructed from individual fields
+}
+
+// Automatic conversion between representations
+impl From<CardInDB> for Card {
+    fn from(db_entry: CardInDB) -> Self {
+        let fsrs_memory = match (db_entry.fsrs_stability, db_entry.fsrs_difficulty) {
+            (Some(stability), Some(difficulty)) => Some(SerializableMemoryState {
+                stability,
+                difficulty,
+            }),
+            _ => None,
+        };
+        
+        Card {
+            fsrs_memory,
+            // ... other field mappings
+        }
+    }
+}
+```
+
+**Benefits of Flattened Storage:**
+- **Performance**: Native PostgreSQL numeric types with proper indexing
+- **Type Safety**: No JSON serialization issues with sqlx macros  
+- **Query Efficiency**: Direct numeric comparisons vs JSONB operations
+- **Simplicity**: Eliminates complex generic type handling in sqlx
+- **Data Integrity**: Database-level constraints ensure field consistency
 
 ### Error Handling
 

@@ -178,8 +178,9 @@ CREATE TABLE IF NOT EXISTS card (
     card_type card_type NOT NULL,
     card_state card_state NOT NULL DEFAULT 'ACTIVE',
     
-    -- FSRS memory state (JSON to store Memory struct)
-    fsrs_memory JSONB,
+    -- FSRS memory state (flattened fields from SerializableMemoryState)
+    fsrs_stability REAL,
+    fsrs_difficulty REAL,
     
     -- Scheduling info
     due_date TIMESTAMPTZ,
@@ -193,6 +194,10 @@ CREATE TABLE IF NOT EXISTS card (
     CONSTRAINT card_has_target CHECK (
         (token_id IS NOT NULL AND phrase_id IS NULL) OR 
         (token_id IS NULL AND phrase_id IS NOT NULL)
+    ),
+    CONSTRAINT card_fsrs_memory_consistency CHECK (
+        (fsrs_stability IS NULL AND fsrs_difficulty IS NULL) OR
+        (fsrs_stability IS NOT NULL AND fsrs_difficulty IS NOT NULL)
     )
 );
 
@@ -209,14 +214,24 @@ CREATE TABLE IF NOT EXISTS review_log (
     rating INTEGER NOT NULL, -- 1=Again, 2=Hard, 3=Good, 4=Easy
     review_time_ms INTEGER, -- Time taken to review in milliseconds
     
-    -- FSRS state before this review (for rollback/analysis)
-    fsrs_memory_before JSONB,
-    fsrs_memory_after JSONB,
+    -- FSRS state before this review (flattened fields from SerializableMemoryState)
+    fsrs_stability_before REAL,
+    fsrs_difficulty_before REAL,
+    fsrs_stability_after REAL, 
+    fsrs_difficulty_after REAL,
     
     -- Review context
     review_date TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     
-    CONSTRAINT valid_rating CHECK (rating >= 1 AND rating <= 4)
+    CONSTRAINT valid_rating CHECK (rating >= 1 AND rating <= 4),
+    CONSTRAINT review_fsrs_memory_before_consistency CHECK (
+        (fsrs_stability_before IS NULL AND fsrs_difficulty_before IS NULL) OR
+        (fsrs_stability_before IS NOT NULL AND fsrs_difficulty_before IS NOT NULL)
+    ),
+    CONSTRAINT review_fsrs_memory_after_consistency CHECK (
+        (fsrs_stability_after IS NULL AND fsrs_difficulty_after IS NULL) OR
+        (fsrs_stability_after IS NOT NULL AND fsrs_difficulty_after IS NOT NULL)
+    )
 );
 
 -- Optimization history for tracking FSRS parameter updates

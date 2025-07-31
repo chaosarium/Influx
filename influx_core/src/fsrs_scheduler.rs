@@ -56,6 +56,7 @@ impl FSRSScheduler {
     }
 }
 
+// Wrapper around fsrs::MemoryState that implements Elm and Serde traits for frontend bindings
 #[derive(
     Debug,
     Serialize,
@@ -89,16 +90,6 @@ impl From<SerializableMemoryState> for MemoryState {
     }
 }
 
-pub fn memory_state_to_json(memory_state: MemoryState) -> Result<serde_json::Value> {
-    let serializable = SerializableMemoryState::from(memory_state);
-    Ok(serde_json::to_value(serializable)?)
-}
-
-pub fn memory_state_from_json(json: serde_json::Value) -> Result<MemoryState> {
-    let serializable: SerializableMemoryState = serde_json::from_value(json)?;
-    Ok(MemoryState::from(serializable))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -119,11 +110,13 @@ mod tests {
             difficulty: 5.0,
         };
 
-        let json = memory_state_to_json(memory_state).unwrap();
-        let deserialized = memory_state_from_json(json).unwrap();
+        let serializable = SerializableMemoryState::from(memory_state);
+        let json = serde_json::to_value(&serializable).unwrap();
+        let deserialized: SerializableMemoryState = serde_json::from_value(json).unwrap();
+        let converted_back = MemoryState::from(deserialized);
 
-        assert_eq!(memory_state.stability, deserialized.stability);
-        assert_eq!(memory_state.difficulty, deserialized.difficulty);
+        assert_eq!(memory_state.stability, converted_back.stability);
+        assert_eq!(memory_state.difficulty, converted_back.difficulty);
     }
 
     #[test]

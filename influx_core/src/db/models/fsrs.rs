@@ -93,20 +93,29 @@ pub struct CardInDB {
     pub phrase_id: Option<i64>,
     pub card_type: CardType,
     pub card_state: CardState,
-    pub fsrs_memory: Option<sqlx::types::Json<SerializableMemoryState>>,
+    pub fsrs_stability: Option<f32>,
+    pub fsrs_difficulty: Option<f32>,
     pub due_date: Option<time::OffsetDateTime>,
     pub last_review: Option<time::OffsetDateTime>,
 }
 
 impl From<CardInDB> for Card {
     fn from(db_entry: CardInDB) -> Self {
+        let fsrs_memory = match (db_entry.fsrs_stability, db_entry.fsrs_difficulty) {
+            (Some(stability), Some(difficulty)) => Some(SerializableMemoryState {
+                stability,
+                difficulty,
+            }),
+            _ => None,
+        };
+
         Card {
             id: Some(db_entry.id),
             token_id: db_entry.token_id.map(InfluxResourceId::SerialId),
             phrase_id: db_entry.phrase_id.map(InfluxResourceId::SerialId),
             card_type: db_entry.card_type,
             card_state: db_entry.card_state,
-            fsrs_memory: db_entry.fsrs_memory.map(|j| j.0),
+            fsrs_memory,
             due_date: db_entry
                 .due_date
                 .map(|dt| chrono::DateTime::from_timestamp(dt.unix_timestamp(), 0).unwrap()),
@@ -134,20 +143,44 @@ pub struct ReviewLogInDB {
     pub card_id: InfluxResourceId,
     pub rating: i32,
     pub review_time_ms: Option<i32>,
-    pub fsrs_memory_before: Option<sqlx::types::Json<SerializableMemoryState>>,
-    pub fsrs_memory_after: Option<sqlx::types::Json<SerializableMemoryState>>,
+    pub fsrs_stability_before: Option<f32>,
+    pub fsrs_difficulty_before: Option<f32>,
+    pub fsrs_stability_after: Option<f32>,
+    pub fsrs_difficulty_after: Option<f32>,
     pub review_date: time::OffsetDateTime,
 }
 
 impl From<ReviewLogInDB> for ReviewLog {
     fn from(db_entry: ReviewLogInDB) -> Self {
+        let fsrs_memory_before = match (
+            db_entry.fsrs_stability_before,
+            db_entry.fsrs_difficulty_before,
+        ) {
+            (Some(stability), Some(difficulty)) => Some(SerializableMemoryState {
+                stability,
+                difficulty,
+            }),
+            _ => None,
+        };
+
+        let fsrs_memory_after = match (
+            db_entry.fsrs_stability_after,
+            db_entry.fsrs_difficulty_after,
+        ) {
+            (Some(stability), Some(difficulty)) => Some(SerializableMemoryState {
+                stability,
+                difficulty,
+            }),
+            _ => None,
+        };
+
         ReviewLog {
             id: Some(db_entry.id),
             card_id: db_entry.card_id,
             rating: db_entry.rating,
             review_time_ms: db_entry.review_time_ms,
-            fsrs_memory_before: db_entry.fsrs_memory_before.map(|j| j.0),
-            fsrs_memory_after: db_entry.fsrs_memory_after.map(|j| j.0),
+            fsrs_memory_before,
+            fsrs_memory_after,
             review_date: chrono::DateTime::from_timestamp(db_entry.review_date.unix_timestamp(), 0)
                 .unwrap(),
         }
@@ -232,29 +265,34 @@ impl DB {
         }
     }
 
-    // TODO: DONE - Fixed card database functions but need to resolve SQLX Json type mapping
-    // Temporarily commented out due to sqlx Json<> double-wrapping issues
-    /*
     pub async fn create_card(&self, card: Card) -> Result<Card> {
         assert!(card.id.is_none());
         match self {
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
-                let fsrs_memory_json = card.fsrs_memory.as_ref().map(|m| serde_json::to_value(m)).transpose()?;
-                let due_date_offset = card.due_date.map(|dt| time::OffsetDateTime::from_unix_timestamp(dt.timestamp()).unwrap());
-                let last_review_offset = card.last_review.map(|dt| time::OffsetDateTime::from_unix_timestamp(dt.timestamp()).unwrap());
+                let (fsrs_stability, fsrs_difficulty) = match &card.fsrs_memory {
+                    Some(memory) => (Some(memory.stability), Some(memory.difficulty)),
+                    None => (None, None),
+                };
+                let due_date_offset = card
+                    .due_date
+                    .map(|dt| time::OffsetDateTime::from_unix_timestamp(dt.timestamp()).unwrap());
+                let last_review_offset = card
+                    .last_review
+                    .map(|dt| time::OffsetDateTime::from_unix_timestamp(dt.timestamp()).unwrap());
 
                 let record = sqlx::query_as!(
                     CardInDB,
                     r#"
-                        INSERT INTO card (token_id, phrase_id, card_type, card_state, fsrs_memory, due_date, last_review)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7)
-                        RETURNING id, token_id, phrase_id, card_type as "card_type: CardType", card_state as "card_state: CardState", fsrs_memory as "fsrs_memory: Option<sqlx::types::Json<SerializableMemoryState>>", due_date, last_review
+                        INSERT INTO card (token_id, phrase_id, card_type, card_state, fsrs_stability, fsrs_difficulty, due_date, last_review)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                        RETURNING id, token_id, phrase_id, card_type as "card_type: CardType", card_state as "card_state: CardState", fsrs_stability, fsrs_difficulty, due_date, last_review
                     "#,
                     card.token_id.map(|id| id.as_i64()).transpose()?,
                     card.phrase_id.map(|id| id.as_i64()).transpose()?,
                     card.card_type as CardType,
                     card.card_state as CardState,
-                    fsrs_memory_json,
+                    fsrs_stability,
+                    fsrs_difficulty,
                     due_date_offset,
                     last_review_offset
                 )
@@ -272,7 +310,7 @@ impl DB {
                 let record = sqlx::query_as!(
                     CardInDB,
                     r#"
-                        SELECT id, token_id, phrase_id, card_type as "card_type: CardType", card_state as "card_state: CardState", fsrs_memory as "fsrs_memory: Option<sqlx::types::Json<SerializableMemoryState>>", due_date, last_review
+                        SELECT id, token_id, phrase_id, card_type as "card_type: CardType", card_state as "card_state: CardState", fsrs_stability, fsrs_difficulty, due_date, last_review
                         FROM card
                         WHERE id = $1
                     "#,
@@ -290,24 +328,32 @@ impl DB {
         assert!(card.id.is_some());
         match self {
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
-                let fsrs_memory_json = card.fsrs_memory.as_ref().map(|m| serde_json::to_value(m)).transpose()?;
-                let due_date_offset = card.due_date.map(|dt| time::OffsetDateTime::from_unix_timestamp(dt.timestamp()).unwrap());
-                let last_review_offset = card.last_review.map(|dt| time::OffsetDateTime::from_unix_timestamp(dt.timestamp()).unwrap());
+                let (fsrs_stability, fsrs_difficulty) = match &card.fsrs_memory {
+                    Some(memory) => (Some(memory.stability), Some(memory.difficulty)),
+                    None => (None, None),
+                };
+                let due_date_offset = card
+                    .due_date
+                    .map(|dt| time::OffsetDateTime::from_unix_timestamp(dt.timestamp()).unwrap());
+                let last_review_offset = card
+                    .last_review
+                    .map(|dt| time::OffsetDateTime::from_unix_timestamp(dt.timestamp()).unwrap());
 
                 let record = sqlx::query_as!(
                     CardInDB,
                     r#"
                         UPDATE card
-                        SET token_id = $2, phrase_id = $3, card_type = $4, card_state = $5, fsrs_memory = $6, due_date = $7, last_review = $8
+                        SET token_id = $2, phrase_id = $3, card_type = $4, card_state = $5, fsrs_stability = $6, fsrs_difficulty = $7, due_date = $8, last_review = $9
                         WHERE id = $1
-                        RETURNING id, token_id, phrase_id, card_type as "card_type: CardType", card_state as "card_state: CardState", fsrs_memory as "fsrs_memory: Option<sqlx::types::Json<SerializableMemoryState>>", due_date, last_review
+                        RETURNING id, token_id, phrase_id, card_type as "card_type: CardType", card_state as "card_state: CardState", fsrs_stability, fsrs_difficulty, due_date, last_review
                     "#,
                     card.id.unwrap().as_i64()?,
                     card.token_id.map(|id| id.as_i64()).transpose()?,
                     card.phrase_id.map(|id| id.as_i64()).transpose()?,
                     card.card_type as CardType,
                     card.card_state as CardState,
-                    fsrs_memory_json,
+                    fsrs_stability,
+                    fsrs_difficulty,
                     due_date_offset,
                     last_review_offset
                 )
@@ -323,25 +369,34 @@ impl DB {
         assert!(review.id.is_none());
         match self {
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
-                let fsrs_memory_before_json = review.fsrs_memory_before.as_ref().map(|m| serde_json::to_value(m)).transpose()?;
-                let fsrs_memory_after_json = review.fsrs_memory_after.as_ref().map(|m| serde_json::to_value(m)).transpose()?;
-                let review_date_offset = time::OffsetDateTime::from_unix_timestamp(review.review_date.timestamp()).unwrap();
+                let (fsrs_stability_before, fsrs_difficulty_before) =
+                    match &review.fsrs_memory_before {
+                        Some(memory) => (Some(memory.stability), Some(memory.difficulty)),
+                        None => (None, None),
+                    };
+                let (fsrs_stability_after, fsrs_difficulty_after) = match &review.fsrs_memory_after
+                {
+                    Some(memory) => (Some(memory.stability), Some(memory.difficulty)),
+                    None => (None, None),
+                };
+                let review_date_offset =
+                    time::OffsetDateTime::from_unix_timestamp(review.review_date.timestamp())
+                        .unwrap();
 
                 let record = sqlx::query_as!(
                     ReviewLogInDB,
                     r#"
-                        INSERT INTO review_log (card_id, rating, review_time_ms, fsrs_memory_before, fsrs_memory_after, review_date)
-                        VALUES ($1, $2, $3, $4, $5, $6)
-                        RETURNING id, card_id, rating, review_time_ms,
-                        fsrs_memory_before as "fsrs_memory_before: Option<sqlx::types::Json<SerializableMemoryState>>",
-                        fsrs_memory_after as "fsrs_memory_after: Option<sqlx::types::Json<SerializableMemoryState>>",
-                        review_date
+                        INSERT INTO review_log (card_id, rating, review_time_ms, fsrs_stability_before, fsrs_difficulty_before, fsrs_stability_after, fsrs_difficulty_after, review_date)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                        RETURNING id, card_id, rating, review_time_ms, fsrs_stability_before, fsrs_difficulty_before, fsrs_stability_after, fsrs_difficulty_after, review_date
                     "#,
                     review.card_id.as_i64()?,
                     review.rating,
                     review.review_time_ms,
-                    fsrs_memory_before_json,
-                    fsrs_memory_after_json,
+                    fsrs_stability_before,
+                    fsrs_difficulty_before,
+                    fsrs_stability_after,
+                    fsrs_difficulty_after,
                     review_date_offset
                 )
                 .fetch_one(pool.as_ref())
@@ -351,7 +406,6 @@ impl DB {
             }
         }
     }
-    */
 }
 
 #[cfg(test)]
@@ -420,8 +474,7 @@ mod tests {
     }
 
     // TODO: DONE - Implemented basic FSRS language config test
-    // TODO: Card tests are commented out due to sqlx Json<> double-wrapping issues
-    /*
+    // Card tests now work with fixed sqlx Json handling
     #[tokio::test]
     #[tracing_test::traced_test]
     async fn test_card_crud_operations() {
@@ -560,13 +613,22 @@ mod tests {
             review_date: chrono::Utc::now(),
         };
 
-        let created_review = test_db.db.create_review_log(review_log.clone()).await.unwrap();
+        let created_review = test_db
+            .db
+            .create_review_log(review_log.clone())
+            .await
+            .unwrap();
         assert!(created_review.id.is_some());
         assert_eq!(created_review.card_id, review_log.card_id);
         assert_eq!(created_review.rating, review_log.rating);
         assert_eq!(created_review.review_time_ms, review_log.review_time_ms);
-        assert_eq!(created_review.fsrs_memory_before, review_log.fsrs_memory_before);
-        assert_eq!(created_review.fsrs_memory_after, review_log.fsrs_memory_after);
+        assert_eq!(
+            created_review.fsrs_memory_before,
+            review_log.fsrs_memory_before
+        );
+        assert_eq!(
+            created_review.fsrs_memory_after,
+            review_log.fsrs_memory_after
+        );
     }
-    */
 }
