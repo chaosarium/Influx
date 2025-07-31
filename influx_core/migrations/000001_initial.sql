@@ -122,3 +122,130 @@ BEFORE UPDATE ON annotated_document_cache
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_ts();
 
+-- FSRS Integration Tables
+
+-- Card types enumeration
+CREATE TYPE card_type AS ENUM (
+    'RECOGNITION',    -- Form → Meaning
+    'PRODUCTION',     -- Meaning → Form  
+    'CLOZE'           -- Context → Fill blank
+);
+
+-- Card state for lifecycle management
+CREATE TYPE card_state AS ENUM (
+    'ACTIVE',         -- Normal card in rotation
+    'SUSPENDED',      -- Temporarily paused
+    'ARCHIVED',       -- Permanently disabled but kept for history
+    'DISABLED'        -- User-disabled, can be re-enabled
+);
+
+-- FSRS scheduler configuration per language
+CREATE TABLE IF NOT EXISTS fsrs_language_config (
+    id BIGSERIAL PRIMARY KEY,
+    lang_id BIGINT NOT NULL REFERENCES language (id) ON DELETE CASCADE,
+    
+    -- FSRS Parameters (21 weights as JSON array)
+    fsrs_weights JSONB NOT NULL DEFAULT '[0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001, 1.8722, 0.1666, 0.796, 1.4835, 0.0614, 0.2629, 1.6483, 0.6014, 1.8729, 0.5425, 0.0912, 0.0658, 0.1542]',
+    
+    -- Desired retention rate (0.0-1.0)
+    desired_retention DOUBLE PRECISION NOT NULL DEFAULT 0.9,
+    
+    -- Maximum interval in days
+    maximum_interval INTEGER NOT NULL DEFAULT 36500, -- ~100 years
+    
+    -- Request retention for optimization
+    request_retention DOUBLE PRECISION DEFAULT NULL,
+    
+    -- Which card types are enabled for this language (acts as filter)
+    enabled_card_types card_type[] NOT NULL DEFAULT ARRAY['RECOGNITION'::card_type],
+    
+    -- Metadata
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+    
+    UNIQUE(lang_id)
+);
+
+-- Cards table - links tokens/phrases to FSRS scheduling
+CREATE TABLE IF NOT EXISTS card (
+    id BIGSERIAL PRIMARY KEY,
+    
+    -- Link to either token or phrase (but not both)
+    token_id BIGINT REFERENCES token (id) ON DELETE CASCADE,
+    phrase_id BIGINT REFERENCES phrase (id) ON DELETE CASCADE,
+    
+    -- Card configuration
+    card_type card_type NOT NULL,
+    card_state card_state NOT NULL DEFAULT 'ACTIVE',
+    
+    -- FSRS memory state (JSON to store Memory struct)
+    fsrs_memory JSONB,
+    
+    -- Scheduling info
+    due_date TIMESTAMPTZ,
+    last_review TIMESTAMPTZ,
+    
+    -- Metadata
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+    
+    -- Constraints
+    CONSTRAINT card_has_target CHECK (
+        (token_id IS NOT NULL AND phrase_id IS NULL) OR 
+        (token_id IS NULL AND phrase_id IS NOT NULL)
+    )
+);
+
+-- Unique indexes for card per (target, card_type)
+CREATE UNIQUE INDEX idx_card_token_type ON card (token_id, card_type) WHERE token_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_card_phrase_type ON card (phrase_id, card_type) WHERE phrase_id IS NOT NULL;
+
+-- Review history for FSRS optimization 
+CREATE TABLE IF NOT EXISTS review_log (
+    id BIGSERIAL PRIMARY KEY,
+    card_id BIGINT NOT NULL REFERENCES card (id) ON DELETE CASCADE,
+    
+    -- Review details
+    rating INTEGER NOT NULL, -- 1=Again, 2=Hard, 3=Good, 4=Easy
+    review_time_ms INTEGER, -- Time taken to review in milliseconds
+    
+    -- FSRS state before this review (for rollback/analysis)
+    fsrs_memory_before JSONB,
+    fsrs_memory_after JSONB,
+    
+    -- Review context
+    review_date TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+    
+    CONSTRAINT valid_rating CHECK (rating >= 1 AND rating <= 4)
+);
+
+-- Optimization history for tracking FSRS parameter updates
+CREATE TABLE IF NOT EXISTS fsrs_optimization_log (
+    id BIGSERIAL PRIMARY KEY,
+    lang_id BIGINT NOT NULL REFERENCES language (id) ON DELETE CASCADE,
+    
+    -- Parameters before and after optimization
+    weights_before JSONB NOT NULL,
+    weights_after JSONB NOT NULL,
+    
+    -- Optimization metrics
+    log_loss_before DOUBLE PRECISION,
+    log_loss_after DOUBLE PRECISION,
+    review_count INTEGER,
+    
+    -- Optimization details
+    optimization_date TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+    notes TEXT DEFAULT ''
+);
+
+-- Triggers for updating timestamps
+CREATE TRIGGER set_updated_ts_fsrs_language_config
+BEFORE UPDATE ON fsrs_language_config
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_ts();
+
+CREATE TRIGGER set_updated_ts_card
+BEFORE UPDATE ON card
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_ts();
+

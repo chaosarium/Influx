@@ -208,6 +208,129 @@ phraseEncoder struct =
         ]
 
 
+type CardType
+    = Recognition
+    | Production
+    | Cloze
+
+
+cardTypeEncoder : CardType -> Json.Encode.Value
+cardTypeEncoder enum =
+    case enum of
+        Recognition ->
+            Json.Encode.string "RECOGNITION"
+        Production ->
+            Json.Encode.string "PRODUCTION"
+        Cloze ->
+            Json.Encode.string "CLOZE"
+
+type CardState
+    = Active
+    | Suspended
+    | Archived
+    | Disabled
+
+
+cardStateEncoder : CardState -> Json.Encode.Value
+cardStateEncoder enum =
+    case enum of
+        Active ->
+            Json.Encode.string "ACTIVE"
+        Suspended ->
+            Json.Encode.string "SUSPENDED"
+        Archived ->
+            Json.Encode.string "ARCHIVED"
+        Disabled ->
+            Json.Encode.string "DISABLED"
+
+type alias FsrsLanguageConfig =
+    { id : Maybe (InfluxResourceId)
+    , langId : InfluxResourceId
+    , fsrsWeights : List (Float)
+    , desiredRetention : Float
+    , maximumInterval : Int
+    , requestRetention : Maybe (Float)
+    , enabledCardTypes : List (CardType)
+    }
+
+
+fsrsLanguageConfigEncoder : FsrsLanguageConfig -> Json.Encode.Value
+fsrsLanguageConfigEncoder struct =
+    Json.Encode.object
+        [ ( "id", (Maybe.withDefault Json.Encode.null << Maybe.map (influxResourceIdEncoder)) struct.id )
+        , ( "lang_id", (influxResourceIdEncoder) struct.langId )
+        , ( "fsrs_weights", (Json.Encode.list (Json.Encode.float)) struct.fsrsWeights )
+        , ( "desired_retention", (Json.Encode.float) struct.desiredRetention )
+        , ( "maximum_interval", (Json.Encode.int) struct.maximumInterval )
+        , ( "request_retention", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.float)) struct.requestRetention )
+        , ( "enabled_card_types", (Json.Encode.list (cardTypeEncoder)) struct.enabledCardTypes )
+        ]
+
+
+type alias Card =
+    { id : Maybe (InfluxResourceId)
+    , tokenId : Maybe (InfluxResourceId)
+    , phraseId : Maybe (InfluxResourceId)
+    , cardType : CardType
+    , cardState : CardState
+    , fsrsMemory : Maybe (SerializableMemoryState)
+    , dueDate : Maybe (String)
+    , lastReview : Maybe (String)
+    }
+
+
+cardEncoder : Card -> Json.Encode.Value
+cardEncoder struct =
+    Json.Encode.object
+        [ ( "id", (Maybe.withDefault Json.Encode.null << Maybe.map (influxResourceIdEncoder)) struct.id )
+        , ( "token_id", (Maybe.withDefault Json.Encode.null << Maybe.map (influxResourceIdEncoder)) struct.tokenId )
+        , ( "phrase_id", (Maybe.withDefault Json.Encode.null << Maybe.map (influxResourceIdEncoder)) struct.phraseId )
+        , ( "card_type", (cardTypeEncoder) struct.cardType )
+        , ( "card_state", (cardStateEncoder) struct.cardState )
+        , ( "fsrs_memory", (Maybe.withDefault Json.Encode.null << Maybe.map (serializableMemoryStateEncoder)) struct.fsrsMemory )
+        , ( "due_date", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.string)) struct.dueDate )
+        , ( "last_review", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.string)) struct.lastReview )
+        ]
+
+
+type alias ReviewLog =
+    { id : Maybe (InfluxResourceId)
+    , cardId : InfluxResourceId
+    , rating : Int
+    , reviewTimeMs : Maybe (Int)
+    , fsrsMemoryBefore : Maybe (SerializableMemoryState)
+    , fsrsMemoryAfter : Maybe (SerializableMemoryState)
+    , reviewDate : String
+    }
+
+
+reviewLogEncoder : ReviewLog -> Json.Encode.Value
+reviewLogEncoder struct =
+    Json.Encode.object
+        [ ( "id", (Maybe.withDefault Json.Encode.null << Maybe.map (influxResourceIdEncoder)) struct.id )
+        , ( "card_id", (influxResourceIdEncoder) struct.cardId )
+        , ( "rating", (Json.Encode.int) struct.rating )
+        , ( "review_time_ms", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.int)) struct.reviewTimeMs )
+        , ( "fsrs_memory_before", (Maybe.withDefault Json.Encode.null << Maybe.map (serializableMemoryStateEncoder)) struct.fsrsMemoryBefore )
+        , ( "fsrs_memory_after", (Maybe.withDefault Json.Encode.null << Maybe.map (serializableMemoryStateEncoder)) struct.fsrsMemoryAfter )
+        , ( "review_date", (Json.Encode.string) struct.reviewDate )
+        ]
+
+
+type alias SerializableMemoryState =
+    { stability : Float
+    , difficulty : Float
+    }
+
+
+serializableMemoryStateEncoder : SerializableMemoryState -> Json.Encode.Value
+serializableMemoryStateEncoder struct =
+    Json.Encode.object
+        [ ( "stability", (Json.Encode.float) struct.stability )
+        , ( "difficulty", (Json.Encode.float) struct.difficulty )
+        ]
+
+
 type Term
     = TokenTerm (Token)
     | PhraseTerm (Phrase)
@@ -605,6 +728,123 @@ phraseDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "notes" (Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "original_context" (Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "status" (tokenStatusDecoder)))
+
+
+cardTypeDecoder : Json.Decode.Decoder CardType
+cardTypeDecoder = 
+    Json.Decode.oneOf
+        [ Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "RECOGNITION" ->
+                            Json.Decode.succeed Recognition
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "PRODUCTION" ->
+                            Json.Decode.succeed Production
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "CLOZE" ->
+                            Json.Decode.succeed Cloze
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        ]
+
+cardStateDecoder : Json.Decode.Decoder CardState
+cardStateDecoder = 
+    Json.Decode.oneOf
+        [ Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "ACTIVE" ->
+                            Json.Decode.succeed Active
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "SUSPENDED" ->
+                            Json.Decode.succeed Suspended
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "ARCHIVED" ->
+                            Json.Decode.succeed Archived
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "DISABLED" ->
+                            Json.Decode.succeed Disabled
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        ]
+
+fsrsLanguageConfigDecoder : Json.Decode.Decoder FsrsLanguageConfig
+fsrsLanguageConfigDecoder =
+    Json.Decode.succeed FsrsLanguageConfig
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" (Json.Decode.nullable (influxResourceIdDecoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lang_id" (influxResourceIdDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "fsrs_weights" (Json.Decode.list (Json.Decode.float))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "desired_retention" (Json.Decode.float)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "maximum_interval" (Json.Decode.int)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "request_retention" (Json.Decode.nullable (Json.Decode.float))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "enabled_card_types" (Json.Decode.list (cardTypeDecoder))))
+
+
+cardDecoder : Json.Decode.Decoder Card
+cardDecoder =
+    Json.Decode.succeed Card
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" (Json.Decode.nullable (influxResourceIdDecoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "token_id" (Json.Decode.nullable (influxResourceIdDecoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "phrase_id" (Json.Decode.nullable (influxResourceIdDecoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "card_type" (cardTypeDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "card_state" (cardStateDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "fsrs_memory" (Json.Decode.nullable (serializableMemoryStateDecoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "due_date" (Json.Decode.nullable (Json.Decode.string))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "last_review" (Json.Decode.nullable (Json.Decode.string))))
+
+
+reviewLogDecoder : Json.Decode.Decoder ReviewLog
+reviewLogDecoder =
+    Json.Decode.succeed ReviewLog
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "id" (Json.Decode.nullable (influxResourceIdDecoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "card_id" (influxResourceIdDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "rating" (Json.Decode.int)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "review_time_ms" (Json.Decode.nullable (Json.Decode.int))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "fsrs_memory_before" (Json.Decode.nullable (serializableMemoryStateDecoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "fsrs_memory_after" (Json.Decode.nullable (serializableMemoryStateDecoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "review_date" (Json.Decode.string)))
+
+
+serializableMemoryStateDecoder : Json.Decode.Decoder SerializableMemoryState
+serializableMemoryStateDecoder =
+    Json.Decode.succeed SerializableMemoryState
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "stability" (Json.Decode.float)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "difficulty" (Json.Decode.float)))
 
 
 termDecoder : Json.Decode.Decoder Term
