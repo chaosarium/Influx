@@ -2,9 +2,8 @@ use super::*;
 // SurrealDB is deprecated - commenting out import
 // use crate::db::deserialize_surreal_thing_opt;
 use crate::db::InfluxResourceId;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Offset, Utc};
 use std::collections::HashMap;
-use time::OffsetDateTime;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Elm, ElmEncode, ElmDecode)]
 pub struct Document {
@@ -16,6 +15,33 @@ pub struct Document {
     pub tags: Vec<String>,
     pub created_ts: DateTime<Utc>,
     pub updated_ts: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DocumentInDB {
+    pub id: InfluxResourceId,
+    pub lang_id: InfluxResourceId,
+    pub title: String,
+    pub content: String,
+    pub doc_type: String,
+    pub tags: Vec<String>,
+    pub created_ts: DateTime<Utc>,
+    pub updated_ts: DateTime<Utc>,
+}
+
+impl From<DocumentInDB> for Document {
+    fn from(doc: DocumentInDB) -> Self {
+        Self {
+            id: Some(doc.id),
+            lang_id: doc.lang_id,
+            title: doc.title,
+            content: doc.content,
+            doc_type: doc.doc_type,
+            tags: doc.tags,
+            created_ts: doc.created_ts,
+            updated_ts: doc.updated_ts,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
@@ -32,12 +58,9 @@ impl DB {
     pub async fn create_document(&self, document: Document) -> Result<Document> {
         assert!(document.id.is_none());
         match self {
-            // Surreal { engine: _ } => {
-            //     // SurrealDB is deprecated, skip implementation
-            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
-                let record = sqlx::query!(
+                let record = sqlx::query_as!(
+                    DocumentInDB,
                     r#"
                         INSERT INTO document (lang_id, title, content, doc_type, tags)
                         VALUES ($1, $2, $3, $4, $5)
@@ -52,24 +75,7 @@ impl DB {
                 .fetch_one(pool.as_ref())
                 .await?;
 
-                Ok(Document {
-                    id: Some(InfluxResourceId::SerialId(record.id)),
-                    lang_id: InfluxResourceId::SerialId(record.lang_id),
-                    title: record.title,
-                    content: record.content,
-                    doc_type: record.doc_type,
-                    tags: record.tags,
-                    created_ts: DateTime::<Utc>::from_timestamp(
-                        record.created_ts.unix_timestamp(),
-                        0,
-                    )
-                    .unwrap(),
-                    updated_ts: DateTime::<Utc>::from_timestamp(
-                        record.updated_ts.unix_timestamp(),
-                        0,
-                    )
-                    .unwrap(),
-                })
+                Ok(record.into())
             }
         }
     }
@@ -79,10 +85,6 @@ impl DB {
         lang_id: Option<InfluxResourceId>,
     ) -> Result<Vec<DocPackage>> {
         match self {
-            // Surreal { engine: _ } => {
-            //     // SurrealDB is deprecated, skip implementation
-            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let lang_id_i64 = match &lang_id {
                     Some(id) => Some(id.as_i64()?),
@@ -117,16 +119,8 @@ impl DB {
                             content: record.content,
                             doc_type: record.doc_type,
                             tags: record.tags,
-                            created_ts: DateTime::<Utc>::from_timestamp(
-                                record.created_ts.unix_timestamp(),
-                                0,
-                            )
-                            .unwrap(),
-                            updated_ts: DateTime::<Utc>::from_timestamp(
-                                record.updated_ts.unix_timestamp(),
-                                0,
-                            )
-                            .unwrap(),
+                            created_ts: record.created_ts,
+                            updated_ts: record.updated_ts,
                         },
                         language: crate::db::models::lang::Language {
                             id: Some(InfluxResourceId::SerialId(record.lang_id)),
@@ -159,12 +153,9 @@ impl DB {
 
     pub async fn get_document_by_id(&self, id: InfluxResourceId) -> Result<Option<Document>> {
         match self {
-            // Surreal { engine: _ } => {
-            //     // SurrealDB is deprecated, skip implementation
-            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
-                let record = sqlx::query!(
+                let record = sqlx::query_as!(
+                    DocumentInDB,
                     r#"
                         SELECT id, lang_id, title, content, doc_type, tags, created_ts, updated_ts
                         FROM document
@@ -175,18 +166,7 @@ impl DB {
                 .fetch_optional(pool.as_ref())
                 .await?;
 
-                Ok(record.map(|r| Document {
-                    id: Some(InfluxResourceId::SerialId(r.id)),
-                    lang_id: InfluxResourceId::SerialId(r.lang_id),
-                    title: r.title,
-                    content: r.content,
-                    doc_type: r.doc_type,
-                    tags: r.tags,
-                    created_ts: DateTime::<Utc>::from_timestamp(r.created_ts.unix_timestamp(), 0)
-                        .unwrap(),
-                    updated_ts: DateTime::<Utc>::from_timestamp(r.updated_ts.unix_timestamp(), 0)
-                        .unwrap(),
-                }))
+                Ok(record.map(|r| r.into()))
             }
         }
     }
@@ -194,12 +174,9 @@ impl DB {
     pub async fn update_document(&self, document: Document) -> Result<Document> {
         assert!(document.id.is_some());
         match self {
-            // Surreal { engine: _ } => {
-            //     // SurrealDB is deprecated, skip implementation
-            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
-                let record = sqlx::query!(
+                let record = sqlx::query_as!(
+                    DocumentInDB,
                     r#"
                         UPDATE document 
                         SET title = $2, content = $3, doc_type = $4, tags = $5, lang_id = $6
@@ -216,34 +193,13 @@ impl DB {
                 .fetch_one(pool.as_ref())
                 .await?;
 
-                Ok(Document {
-                    id: Some(InfluxResourceId::SerialId(record.id)),
-                    lang_id: InfluxResourceId::SerialId(record.lang_id),
-                    title: record.title,
-                    content: record.content,
-                    doc_type: record.doc_type,
-                    tags: record.tags,
-                    created_ts: DateTime::<Utc>::from_timestamp(
-                        record.created_ts.unix_timestamp(),
-                        0,
-                    )
-                    .unwrap(),
-                    updated_ts: DateTime::<Utc>::from_timestamp(
-                        record.updated_ts.unix_timestamp(),
-                        0,
-                    )
-                    .unwrap(),
-                })
+                Ok(record.into())
             }
         }
     }
 
     pub async fn delete_document(&self, id: InfluxResourceId) -> Result<()> {
         match self {
-            // Surreal { engine: _ } => {
-            //     // SurrealDB is deprecated, skip implementation
-            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 sqlx::query!(
                     r#"
@@ -265,10 +221,6 @@ impl DB {
         text_checksum: &str,
     ) -> Result<Option<serde_json::Value>> {
         match self {
-            // Surreal { engine: _ } => {
-            //     // SurrealDB is deprecated, skip implementation
-            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query!(
                     r#"
@@ -294,10 +246,6 @@ impl DB {
         cached_data: &serde_json::Value,
     ) -> Result<()> {
         match self {
-            // Surreal { engine: _ } => {
-            //     // SurrealDB is deprecated, skip implementation
-            //     Err(anyhow::anyhow!("SurrealDB is deprecated"))
-            // }
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 sqlx::query!(
                     r#"

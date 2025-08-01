@@ -23,6 +23,14 @@ serde = { version = "1.0.217", features = ["derive"] }
 uuid = { version = "1.11.0", features = ["serde", "v4"] }
 tracing = "0.1.41"
 
+elm_rs = { version = "0.2.2", features = [
+    'derive',
+    'serde',
+    'chrono',
+    'time',
+    'uuid',
+] }
+indoc = "2.0.5"
 thiserror = "2.0.9"
 anyhow = "1.0.95"
 clap = { version = "4.5.23", features = ["derive"] }
@@ -36,19 +44,18 @@ reqwest = { version = "0.12.12", features = ["json"] }
 #     'kv-mem',
 # ] }
 # pyo3 = { version="0.20.0", features = ['auto-initialize'] }
-indoc = "2.0.5"
 open = "5.3.1"
 async-trait = "0.1.84"
 google_translator = "0.2.3"
 md5 = "0.7.0"
-elm_rs = { version = "0.2.2", features = ['chrono'] }
 sqlx = { version = "0.8.3", features = [
     "postgres",
     "runtime-tokio",
     "tls-native-tls",
-    "time",
+    # "time",
+    "chrono",
 ] }
-time = { version = "0.3", features = ["serde"] }
+time = { version = "0.3.41", features = ["serde"] }
 dotenvy = "0.15.7"
 postgresql_embedded = "0.19.0"
 tempfile = "3.8"

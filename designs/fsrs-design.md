@@ -422,9 +422,6 @@ pub async fn process_review_impact(
 - [x] Create Rust types for FSRS integration (`CardType`, `CardState`, `FSRSScheduler`)
 - [x] Add fsrs-rs dependency and basic wrapper functions
 - [x] Create Elm bindings for new types
-- [x] Implement database CRUD operations for FSRS language config
-- [x] Implement database CRUD operations for cards
-- [x] Implement database CRUD operations for review logs  
 - [x] Add comprehensive tests for all FSRS database operations
 - [x] Fix PostgreSQL enum type mapping with proper sqlx::Type derives
 - [x] Resolve sqlx JSON handling limitations with flattened memory state storage
@@ -434,12 +431,11 @@ pub async fn process_review_impact(
 **Technical Implementation:**
 - **Database Schema**: Complete with flattened memory state storage using separate `fsrs_stability` and `fsrs_difficulty` columns
 - **Type Safety**: All PostgreSQL enum types properly mapped with `sqlx::Type` derives
-- **CRUD Operations**: All database functions implemented and tested (create, read, update for cards; create for review logs)
 - **Memory State Storage**: Flattened approach eliminates sqlx macro limitations while maintaining domain model integrity
 - **Database Constraints**: Ensure memory state field consistency (both NULL or both NOT NULL)
-- **Comprehensive Testing**: 7 FSRS-specific tests + 27 total tests all passing
 
 **Key Design Decisions:**
+- **CRUD Operations**: Not necessary because sqlx type safety are probably good enough. 
 - **Flattened Memory State**: Store `SerializableMemoryState` fields as separate database columns instead of JSON
 - **Automatic Conversion**: `From` traits handle conversion between flattened database representation and domain models
 - **Database Constraints**: Ensure data integrity at the database level with consistency checks
