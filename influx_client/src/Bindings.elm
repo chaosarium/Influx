@@ -420,6 +420,150 @@ getDocsRequestEncoder struct =
         ]
 
 
+type ReviewableCardId
+    = ExistingCard (InfluxResourceId)
+    | NewTokenCard { tokenId : InfluxResourceId, cardType : CardType }
+    | NewPhraseCard { phraseId : InfluxResourceId, cardType : CardType }
+
+
+reviewableCardIdEncoder : ReviewableCardId -> Json.Encode.Value
+reviewableCardIdEncoder enum =
+    case enum of
+        ExistingCard inner ->
+            Json.Encode.object [ ( "ExistingCard", influxResourceIdEncoder inner ) ]
+        NewTokenCard { tokenId, cardType } ->
+            Json.Encode.object [ ( "NewTokenCard", Json.Encode.object [ ( "token_id", (influxResourceIdEncoder) tokenId ), ( "card_type", (cardTypeEncoder) cardType ) ] ) ]
+        NewPhraseCard { phraseId, cardType } ->
+            Json.Encode.object [ ( "NewPhraseCard", Json.Encode.object [ ( "phrase_id", (influxResourceIdEncoder) phraseId ), ( "card_type", (cardTypeEncoder) cardType ) ] ) ]
+
+type alias CardWithTerm =
+    { card : Card
+    , term : Term
+    , isNewCard : Bool
+    }
+
+
+cardWithTermEncoder : CardWithTerm -> Json.Encode.Value
+cardWithTermEncoder struct =
+    Json.Encode.object
+        [ ( "card", (cardEncoder) struct.card )
+        , ( "term", (termEncoder) struct.term )
+        , ( "is_new_card", (Json.Encode.bool) struct.isNewCard )
+        ]
+
+
+type alias GetNextDueCardRequest =
+    { langId : InfluxResourceId
+    , cardTypes : Maybe (List (CardType))
+    }
+
+
+getNextDueCardRequestEncoder : GetNextDueCardRequest -> Json.Encode.Value
+getNextDueCardRequestEncoder struct =
+    Json.Encode.object
+        [ ( "lang_id", (influxResourceIdEncoder) struct.langId )
+        , ( "card_types", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.list (cardTypeEncoder))) struct.cardTypes )
+        ]
+
+
+type alias GetNextDueCardResponse =
+    { card : Maybe (CardWithTerm)
+    , remainingDueCount : Int
+    }
+
+
+getNextDueCardResponseEncoder : GetNextDueCardResponse -> Json.Encode.Value
+getNextDueCardResponseEncoder struct =
+    Json.Encode.object
+        [ ( "card", (Maybe.withDefault Json.Encode.null << Maybe.map (cardWithTermEncoder)) struct.card )
+        , ( "remaining_due_count", (Json.Encode.int) struct.remainingDueCount )
+        ]
+
+
+type alias SubmitReviewRequest =
+    { cardIdentifier : ReviewableCardId
+    , rating : Int
+    , reviewTimeMs : Maybe (Int)
+    }
+
+
+submitReviewRequestEncoder : SubmitReviewRequest -> Json.Encode.Value
+submitReviewRequestEncoder struct =
+    Json.Encode.object
+        [ ( "card_identifier", (reviewableCardIdEncoder) struct.cardIdentifier )
+        , ( "rating", (Json.Encode.int) struct.rating )
+        , ( "review_time_ms", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.int)) struct.reviewTimeMs )
+        ]
+
+
+type alias SubmitReviewResponse =
+    { updatedCard : Card
+    , reviewLog : ReviewLog
+    , nextDueDate : String
+    , wasNewCard : Bool
+    }
+
+
+submitReviewResponseEncoder : SubmitReviewResponse -> Json.Encode.Value
+submitReviewResponseEncoder struct =
+    Json.Encode.object
+        [ ( "updated_card", (cardEncoder) struct.updatedCard )
+        , ( "review_log", (reviewLogEncoder) struct.reviewLog )
+        , ( "next_due_date", (Json.Encode.string) struct.nextDueDate )
+        , ( "was_new_card", (Json.Encode.bool) struct.wasNewCard )
+        ]
+
+
+type alias UpdateFsrsConfigRequest =
+    { newConfig : FsrsLanguageConfig
+    }
+
+
+updateFsrsConfigRequestEncoder : UpdateFsrsConfigRequest -> Json.Encode.Value
+updateFsrsConfigRequestEncoder struct =
+    Json.Encode.object
+        [ ( "new_config", (fsrsLanguageConfigEncoder) struct.newConfig )
+        ]
+
+
+type alias UpdateFsrsConfigResponse =
+    { updatedConfig : FsrsLanguageConfig
+    }
+
+
+updateFsrsConfigResponseEncoder : UpdateFsrsConfigResponse -> Json.Encode.Value
+updateFsrsConfigResponseEncoder struct =
+    Json.Encode.object
+        [ ( "updated_config", (fsrsLanguageConfigEncoder) struct.updatedConfig )
+        ]
+
+
+type alias SetCardStateRequest =
+    { cardId : InfluxResourceId
+    , newState : CardState
+    }
+
+
+setCardStateRequestEncoder : SetCardStateRequest -> Json.Encode.Value
+setCardStateRequestEncoder struct =
+    Json.Encode.object
+        [ ( "card_id", (influxResourceIdEncoder) struct.cardId )
+        , ( "new_state", (cardStateEncoder) struct.newState )
+        ]
+
+
+type alias SetCardStateResponse =
+    { updatedCard : Card
+    }
+
+
+setCardStateResponseEncoder : SetCardStateResponse -> Json.Encode.Value
+setCardStateResponseEncoder struct =
+    Json.Encode.object
+        [ ( "updated_card", (cardEncoder) struct.updatedCard )
+        ]
+
+
 type alias TermDictionary =
     { tokenDict : Dict String (Token)
     , phraseDict : Dict String (Phrase)
@@ -431,20 +575,6 @@ termDictionaryEncoder struct =
     Json.Encode.object
         [ ( "token_dict", (Json.Encode.dict identity (tokenEncoder)) struct.tokenDict )
         , ( "phrase_dict", (Json.Encode.dict identity (phraseEncoder)) struct.phraseDict )
-        ]
-
-
-type alias DocPath =
-    { lang : String
-    , file : String
-    }
-
-
-docPathEncoder : DocPath -> Json.Encode.Value
-docPathEncoder struct =
-    Json.Encode.object
-        [ ( "lang", (Json.Encode.string) struct.lang )
-        , ( "file", (Json.Encode.string) struct.file )
         ]
 
 
@@ -916,18 +1046,89 @@ getDocsRequestDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "language_id" (Json.Decode.nullable (influxResourceIdDecoder))))
 
 
+reviewableCardIdDecoder : Json.Decode.Decoder ReviewableCardId
+reviewableCardIdDecoder = 
+        let
+            elmRsConstructNewTokenCard tokenId cardType =
+                        NewTokenCard { tokenId = tokenId, cardType = cardType }
+            elmRsConstructNewPhraseCard phraseId cardType =
+                        NewPhraseCard { phraseId = phraseId, cardType = cardType }
+        in
+    Json.Decode.oneOf
+        [ Json.Decode.map ExistingCard (Json.Decode.field "ExistingCard" (influxResourceIdDecoder))
+        , Json.Decode.field "NewTokenCard" (Json.Decode.succeed elmRsConstructNewTokenCard |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "token_id" (influxResourceIdDecoder))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "card_type" (cardTypeDecoder))))
+        , Json.Decode.field "NewPhraseCard" (Json.Decode.succeed elmRsConstructNewPhraseCard |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "phrase_id" (influxResourceIdDecoder))) |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "card_type" (cardTypeDecoder))))
+        ]
+
+cardWithTermDecoder : Json.Decode.Decoder CardWithTerm
+cardWithTermDecoder =
+    Json.Decode.succeed CardWithTerm
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "card" (cardDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "term" (termDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "is_new_card" (Json.Decode.bool)))
+
+
+getNextDueCardRequestDecoder : Json.Decode.Decoder GetNextDueCardRequest
+getNextDueCardRequestDecoder =
+    Json.Decode.succeed GetNextDueCardRequest
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lang_id" (influxResourceIdDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "card_types" (Json.Decode.nullable (Json.Decode.list (cardTypeDecoder)))))
+
+
+getNextDueCardResponseDecoder : Json.Decode.Decoder GetNextDueCardResponse
+getNextDueCardResponseDecoder =
+    Json.Decode.succeed GetNextDueCardResponse
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "card" (Json.Decode.nullable (cardWithTermDecoder))))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "remaining_due_count" (Json.Decode.int)))
+
+
+submitReviewRequestDecoder : Json.Decode.Decoder SubmitReviewRequest
+submitReviewRequestDecoder =
+    Json.Decode.succeed SubmitReviewRequest
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "card_identifier" (reviewableCardIdDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "rating" (Json.Decode.int)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "review_time_ms" (Json.Decode.nullable (Json.Decode.int))))
+
+
+submitReviewResponseDecoder : Json.Decode.Decoder SubmitReviewResponse
+submitReviewResponseDecoder =
+    Json.Decode.succeed SubmitReviewResponse
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "updated_card" (cardDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "review_log" (reviewLogDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "next_due_date" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "was_new_card" (Json.Decode.bool)))
+
+
+updateFsrsConfigRequestDecoder : Json.Decode.Decoder UpdateFsrsConfigRequest
+updateFsrsConfigRequestDecoder =
+    Json.Decode.succeed UpdateFsrsConfigRequest
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "new_config" (fsrsLanguageConfigDecoder)))
+
+
+updateFsrsConfigResponseDecoder : Json.Decode.Decoder UpdateFsrsConfigResponse
+updateFsrsConfigResponseDecoder =
+    Json.Decode.succeed UpdateFsrsConfigResponse
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "updated_config" (fsrsLanguageConfigDecoder)))
+
+
+setCardStateRequestDecoder : Json.Decode.Decoder SetCardStateRequest
+setCardStateRequestDecoder =
+    Json.Decode.succeed SetCardStateRequest
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "card_id" (influxResourceIdDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "new_state" (cardStateDecoder)))
+
+
+setCardStateResponseDecoder : Json.Decode.Decoder SetCardStateResponse
+setCardStateResponseDecoder =
+    Json.Decode.succeed SetCardStateResponse
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "updated_card" (cardDecoder)))
+
+
 termDictionaryDecoder : Json.Decode.Decoder TermDictionary
 termDictionaryDecoder =
     Json.Decode.succeed TermDictionary
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "token_dict" (Json.Decode.dict (tokenDecoder))))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "phrase_dict" (Json.Decode.dict (phraseDecoder))))
-
-
-docPathDecoder : Json.Decode.Decoder DocPath
-docPathDecoder =
-    Json.Decode.succeed DocPath
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lang" (Json.Decode.string)))
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "file" (Json.Decode.string)))
 
 
 annotatedDocV2Decoder : Json.Decode.Decoder AnnotatedDocV2

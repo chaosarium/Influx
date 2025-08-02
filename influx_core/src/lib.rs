@@ -65,22 +65,6 @@ pub fn create_app_router(state: ServerState) -> Router {
         )
         .route("/lang/edit", post(handlers::lang_handlers::update_language))
         .route(
-            "/fsrs/due_cards",
-            post(handlers::fsrs_handlers::get_due_cards),
-        )
-        .route(
-            "/fsrs/submit_review",
-            post(handlers::fsrs_handlers::submit_review),
-        )
-        .route(
-            "/fsrs/config",
-            post(handlers::fsrs_handlers::update_fsrs_config),
-        )
-        .route(
-            "/fsrs/card_state",
-            post(handlers::fsrs_handlers::set_card_state),
-        )
-        .route(
             "/extern/macos_dict/{language_identifier}/{orthography}",
             get(handlers::integration_handlers::lookup_in_macos_dict),
         )
@@ -149,8 +133,6 @@ mod tests {
                 handlers::GetDocsRequest,
                 handlers::ReviewableCardId,
                 handlers::CardWithTerm,
-                handlers::GetDueCardsRequest,
-                handlers::GetDueCardsResponse,
                 handlers::GetNextDueCardRequest,
                 handlers::GetNextDueCardResponse,
                 handlers::SubmitReviewRequest,
@@ -160,7 +142,6 @@ mod tests {
                 handlers::SetCardStateRequest,
                 handlers::SetCardStateResponse,
                 nlp::TermDictionary,
-                handlers::DocPath,
                 nlp::AnnotatedDocV2,
                 nlp::DocSegV2,
                 nlp::DocSegVariants,
@@ -192,8 +173,6 @@ mod tests {
                 handlers::GetDocsRequest,
                 handlers::ReviewableCardId,
                 handlers::CardWithTerm,
-                handlers::GetDueCardsRequest,
-                handlers::GetDueCardsResponse,
                 handlers::GetNextDueCardRequest,
                 handlers::GetNextDueCardResponse,
                 handlers::SubmitReviewRequest,
@@ -203,7 +182,6 @@ mod tests {
                 handlers::SetCardStateRequest,
                 handlers::SetCardStateResponse,
                 nlp::TermDictionary,
-                handlers::DocPath,
                 nlp::AnnotatedDocV2,
                 nlp::DocSegV2,
                 nlp::DocSegVariants,

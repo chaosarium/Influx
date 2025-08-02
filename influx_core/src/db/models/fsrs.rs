@@ -1,15 +1,19 @@
 use super::*;
 use crate::db::models::{
     lang::Language,
+    phrase::Phrase,
     vocab::{Token, TokenStatus},
 };
 use crate::db::InfluxResourceId;
-use crate::fsrs_scheduler::SerializableMemoryState;
-use chrono::{DateTime, Offset, Utc};
+use crate::fsrs_scheduler::{FSRSScheduler, SerializableMemoryState};
+use crate::handlers::api_interfaces::{
+    CardWithTerm, ReviewableCardId, SubmitReviewResponse, Term, UpdateFSRSConfigRequest,
+};
+use crate::prelude::*;
+use chrono::{DateTime, Duration, Utc};
+use std::collections::HashSet;
 
-#[derive(
-    Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Elm, ElmEncode, ElmDecode, sqlx::Type,
-)]
+#[derive(Debug,SerdeDerives!,Clone,Copy,PartialEq,Eq,Hash,ElmDerives!,sqlx::Type)]
 #[sqlx(type_name = "card_type")]
 pub enum CardType {
     RECOGNITION,
@@ -17,9 +21,8 @@ pub enum CardType {
     CLOZE,
 }
 
-#[derive(
-    Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Elm, ElmEncode, ElmDecode, sqlx::Type,
-)]
+#[derive(Debug,SerdeDerives!,Clone,Copy,PartialEq,Eq,Hash,ElmDerives!,sqlx::Type)]
+
 #[sqlx(type_name = "card_state")]
 pub enum CardState {
     ACTIVE,
@@ -28,7 +31,7 @@ pub enum CardState {
     DISABLED,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, SerdeDerives!, Clone, PartialEq, ElmDerives!)]
 pub struct FSRSLanguageConfig {
     pub id: Option<InfluxResourceId>,
     pub lang_id: InfluxResourceId,
@@ -39,7 +42,7 @@ pub struct FSRSLanguageConfig {
     pub enabled_card_types: Vec<CardType>,
 }
 
-#[derive(sqlx::FromRow, Serialize, Deserialize, PartialEq)]
+#[derive(sqlx::FromRow, SerdeDerives!, PartialEq)]
 pub struct FSRSLanguageConfigInDB {
     pub id: InfluxResourceId,
     pub lang_id: InfluxResourceId,
@@ -64,7 +67,7 @@ impl From<FSRSLanguageConfigInDB> for FSRSLanguageConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, SerdeDerives!, Clone, PartialEq, ElmDerives!)]
 pub struct Card {
     pub id: Option<InfluxResourceId>,
     pub token_id: Option<InfluxResourceId>,
@@ -76,7 +79,7 @@ pub struct Card {
     pub last_review: Option<DateTime<Utc>>,
 }
 
-#[derive(sqlx::FromRow, Serialize, Deserialize, PartialEq)]
+#[derive(sqlx::FromRow, SerdeDerives!, PartialEq)]
 pub struct CardInDB {
     pub id: InfluxResourceId,
     pub token_id: Option<i64>,
@@ -112,7 +115,7 @@ impl From<CardInDB> for Card {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, SerdeDerives!, Clone, PartialEq, ElmDerives!)]
 pub struct ReviewLog {
     pub id: Option<InfluxResourceId>,
     pub card_id: InfluxResourceId,
@@ -123,7 +126,7 @@ pub struct ReviewLog {
     pub review_date: DateTime<Utc>,
 }
 
-#[derive(sqlx::FromRow, Serialize, Deserialize, PartialEq)]
+#[derive(sqlx::FromRow, SerdeDerives!, PartialEq)]
 pub struct ReviewLogInDB {
     pub id: InfluxResourceId,
     pub card_id: InfluxResourceId,
@@ -172,7 +175,7 @@ impl From<ReviewLogInDB> for ReviewLog {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, SerdeDerives!, Clone, PartialEq)]
 pub struct FSRSOptimizationLog {
     pub id: Option<InfluxResourceId>,
     pub lang_id: InfluxResourceId,
@@ -367,5 +370,52 @@ impl DB {
                 Ok(record.into())
             }
         }
+    }
+
+    pub async fn get_due_cards(
+        &self,
+        lang_id: InfluxResourceId,
+        limit: Option<usize>,
+        card_types: Option<Vec<CardType>>,
+    ) -> Result<Vec<CardWithTerm>> {
+        let now = Utc::now();
+
+        // 1. get fsrs config
+        // 2. call some function to get existing due cards
+        // 3. call some function to get implicit cards for untracked tokens
+        // 4. call some function to get implicit cards for untracked phrases
+        // 5. sort them by something, like due date?
+
+        todo!()
+    }
+
+    pub async fn get_due_cards_count(
+        &self,
+        lang_id: InfluxResourceId,
+        card_types: Option<Vec<CardType>>,
+    ) -> Result<usize> {
+        todo!()
+    }
+
+    pub async fn submit_review(
+        &self,
+        card_identifier: ReviewableCardId,
+        rating: i32,
+        review_time_ms: Option<i32>,
+    ) -> Result<SubmitReviewResponse> {
+        // 1. get or create the card. If creating new card, set its state to active.
+        // 2. get the langauge's fsrs config, and build ascheduler
+        // 3. state transition the card according to the rating
+        // 4. add a review log entry
+
+        todo!()
+    }
+
+    pub async fn update_fsrs_language_config(
+        &self,
+        lang_id: InfluxResourceId,
+        updates: UpdateFSRSConfigRequest,
+    ) -> Result<FSRSLanguageConfig> {
+        todo!()
     }
 }
