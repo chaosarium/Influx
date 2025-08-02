@@ -252,23 +252,9 @@ update msg model =
 
         TermEditorEvent formMsg ->
             case formMsg of
-                TermEditForm.RequestEditTerm action term doc_path ->
-                    let
-                        documentId =
-                            case doc_path of
-                                Just path ->
-                                    case String.toInt path.file of
-                                        Just id ->
-                                            Just (Bindings.SerialId id)
-
-                                        Nothing ->
-                                            Nothing
-
-                                Nothing ->
-                                    Nothing
-                    in
+                TermEditForm.RequestEditTerm action term document_id ->
                     ( model
-                    , Effect.sendCmd (Api.TermEdit.edit { requestedAction = action, term = term, documentId = documentId } (TermEditorEvent << TermEditForm.GotTermEditResponse))
+                    , Effect.sendCmd (Api.TermEdit.edit { requestedAction = action, term = term, documentId = document_id } (TermEditorEvent << TermEditForm.GotTermEditResponse))
                     )
 
                 TermEditForm.GotUpdatedAnnotatedDoc updated_doc ->
@@ -994,19 +980,13 @@ view shared route model =
         , TermEditForm.view model.form_model
             TermEditorEvent
             { dict = model.working_dict
-            , doc_path =
-                Just
-                    { lang =
-                        String.fromInt
-                            (case model.working_doc.lang_id of
-                                Bindings.SerialId id ->
-                                    id
+            , document_id =
+                case String.toInt route.params.doc of
+                    Just id ->
+                        Just (Bindings.SerialId id)
 
-                                Bindings.StringId id ->
-                                    0
-                            )
-                    , file = route.params.doc
-                    }
+                    Nothing ->
+                        Nothing
             }
         , viewTermDetails model.working_dict model.focus_ctx.segment_selection
         ]

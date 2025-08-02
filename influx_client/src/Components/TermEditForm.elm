@@ -65,7 +65,7 @@ type FormMsg
 type Msg
     = InputChanged FormMsg
       -- upward propagation
-    | RequestEditTerm TermEditAction Term (Maybe DocPath)
+    | RequestEditTerm TermEditAction Term (Maybe InfluxResourceId)
     | OverwriteTerm Term
     | AddToast String
     | GotUpdatedAnnotatedDoc AnnotatedDocV2
@@ -390,7 +390,7 @@ viewTermForm :
     -> (Msg -> msg)
     ->
         { dict : DictContext.T
-        , doc_path : Maybe DocPath
+        , document_id : Maybe InfluxResourceId
         }
     -> Html msg
 viewTermForm form lift args =
@@ -440,11 +440,11 @@ viewTermForm form lift args =
             )
         , textboxC "Notes" "notesInput" (lift << InputChanged << UpdateNotesInput) form_data.notes
         , Utils.htmlIf (form.write_action == Create) <|
-            buttonC [ Html.Events.onClick (lift (RequestEditTerm CreateTerm form.working_term args.doc_path)) ] "Create"
+            buttonC [ Html.Events.onClick (lift (RequestEditTerm CreateTerm form.working_term args.document_id)) ] "Create"
         , Utils.htmlIf (form.write_action == Update) <|
-            buttonC [ Html.Events.onClick (lift (RequestEditTerm UpdateTerm form.working_term args.doc_path)) ] "Update"
+            buttonC [ Html.Events.onClick (lift (RequestEditTerm UpdateTerm form.working_term args.document_id)) ] "Update"
         , Utils.htmlIf (form.write_action == Update) <|
-            buttonC [ Html.Events.onClick (lift (RequestEditTerm DeleteTerm form.working_term args.doc_path)) ] "Delete"
+            buttonC [ Html.Events.onClick (lift (RequestEditTerm DeleteTerm form.working_term args.document_id)) ] "Delete"
         , if form.working_term /= form.orig_term then
             Html.div [ Html.Attributes.style "color" "orange", Html.Attributes.style "margin-top" "8px" ]
                 [ Html.text "You have unsaved changes." ]
@@ -459,13 +459,13 @@ view :
     -> (Msg -> msg)
     ->
         { dict : DictContext.T
-        , doc_path : Maybe DocPath
+        , document_id : Maybe InfluxResourceId
         }
     -> Html msg
-view model lift { dict, doc_path } =
+view model lift { dict, document_id } =
     case model.form_model of
         TermForm term_form ->
-            viewTermForm term_form lift { dict = dict, doc_path = doc_path }
+            viewTermForm term_form lift { dict = dict, document_id = document_id }
 
         _ ->
             Html.div [] [ Html.text "No segment selected for editing." ]
