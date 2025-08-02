@@ -65,3 +65,7 @@ When updating the database schema, you should just do `cargo sqlx database reset
 ## Security/Authentication/Validation
 
 Disregard these for now as the app is intended to run locally and we want to move quickly.
+
+## Miscellaneous
+
+Don't do `TestDb::new().await.unwrap()` in a helper function when testing. It doesn't work for mystery reason. Instead, do it in the test function itself.

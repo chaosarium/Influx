@@ -441,13 +441,41 @@ pub async fn process_review_impact(
 - **Database Constraints**: Ensure data integrity at the database level with consistency checks
 - **Performance Optimization**: Native PostgreSQL numeric types provide better performance than JSONB operations
 
-### Phase 2: Core Logic - FSRS Integration
+### Phase 2: Core Logic - FSRS Integration ✅ **COMPLETED**
 **Deliverable:** Working FSRS scheduling without UI
-- [ ] Implement `FSRSScheduler` with memory state management
-- [ ] Create functions to get implicit cards for terms in learning states
-- [ ] Implement review submission with on-demand card record creation
-- [ ] Add FSRS state update logic after reviews
-- [ ] Write unit tests for FSRS operations
+- [x] Implement `FSRSScheduler` with memory state management
+- [x] Create functions to get implicit cards for terms in learning states
+- [x] Implement review submission with on-demand card record creation
+- [x] Add FSRS state update logic after reviews
+- [x] Write comprehensive unit tests for FSRS operations
+- [x] Add extensive sequence testing for review progressions
+- [x] Create end-to-end integration tests with database
+
+**Status:** ✅ **COMPLETED** - Full FSRS scheduling logic implemented with comprehensive testing.
+
+**Technical Implementation:**
+- **Core Scheduler**: Complete `FSRSScheduler` wrapper around fsrs-rs with proper error handling
+- **Memory State Management**: Robust conversion between domain models and database representation
+- **Review Processing**: Full sequence testing showing realistic learning progressions
+- **Database Integration**: End-to-end tests demonstrating card creation, updates, and state management
+- **Multiple Card Types**: Support for Recognition, Production, and Cloze cards with independent FSRS states
+- **Card State Management**: Complete lifecycle management (Active, Suspended, Archived, Disabled)
+
+**Key Features Implemented:**
+- **Spaced Repetition Logic**: Proper interval calculation with increasing difficulty over time
+- **Memory State Tracking**: Stability and difficulty values properly maintained across reviews
+- **Review Sequence Testing**: Multiple scenarios including good performance, struggling learner, and mastery progression
+- **Database Operations**: Full CRUD operations for cards, review logs, and FSRS configuration
+- **Retrievability Calculation**: Time-based forgetting curve calculations
+- **Multi-Language Support**: Per-language FSRS parameter configuration
+
+**Test Coverage:**
+- **Unit Tests**: Basic FSRS functionality and memory state serialization
+- **Sequence Tests**: Complex review progressions showing realistic learning patterns
+- **Integration Tests**: End-to-end database operations with real card and review workflows
+- **Edge Cases**: State transitions, multiple card types, and different performance patterns
+
+**Ready for:** Phase 3 API implementation with full FSRS backend support.
 
 ### Phase 3: API Layer - Review Endpoints
 **Deliverable:** HTTP APIs for review operations  
@@ -648,8 +676,9 @@ impl From<CardInDB> for Card {
 
 ### Testing Strategy
 
-- **Unit Tests**: Individual FSRS operations and card generation
-- **Integration Tests**: End-to-end review workflows
+Use snapshot testing. Don't test trivial things that will obviously work based on the type system.
+
+Use snapshot testing to make the test sequence readable. For SRS scheduling, for example, we can create a snapshot of the expected memory state after a series of reviews.
 
 ## Conclusion
 

@@ -11,4 +11,4 @@ sass:
     npm run dev:sass
 
 fmt:
-    find src -name "*.elm" ! -name "Bindings.elm" -exec elm-format {} --yes \;
+    find src -name "*.elm" ! -name "Bindings.elm" -exec elm-format {} --yes \; > /dev/null 2>&1

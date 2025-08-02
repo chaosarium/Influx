@@ -12,9 +12,9 @@ use chrono::{DateTime, Offset, Utc};
 )]
 #[sqlx(type_name = "card_type")]
 pub enum CardType {
-    RECOGNITION, // Form → Meaning
-    PRODUCTION,  // Meaning → Form
-    CLOZE,       // Context → Fill blank
+    RECOGNITION,
+    PRODUCTION,
+    CLOZE,
 }
 
 #[derive(
@@ -22,10 +22,10 @@ pub enum CardType {
 )]
 #[sqlx(type_name = "card_state")]
 pub enum CardState {
-    ACTIVE,    // Normal card in rotation
-    SUSPENDED, // Temporarily paused
-    ARCHIVED,  // Permanently disabled but kept for history
-    DISABLED,  // User-disabled, can be re-enabled
+    ACTIVE,
+    SUSPENDED,
+    ARCHIVED,
+    DISABLED,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode)]
@@ -47,7 +47,7 @@ pub struct FSRSLanguageConfigInDB {
     pub desired_retention: f64,
     pub maximum_interval: i32,
     pub request_retention: Option<f64>,
-    pub enabled_card_types: Vec<CardType>, // card_type[] from postgres
+    pub enabled_card_types: Vec<CardType>,
 }
 
 impl From<FSRSLanguageConfigInDB> for FSRSLanguageConfig {
@@ -71,7 +71,7 @@ pub struct Card {
     pub phrase_id: Option<InfluxResourceId>,
     pub card_type: CardType,
     pub card_state: CardState,
-    pub fsrs_memory: Option<SerializableMemoryState>, // FSRS memory state
+    pub fsrs_memory: Option<SerializableMemoryState>,
     pub due_date: Option<DateTime<Utc>>,
     pub last_review: Option<DateTime<Utc>>,
 }
