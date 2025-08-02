@@ -4,6 +4,8 @@ use reqwest::Client;
 use serde_json::{json, Value};
 use std::process::Command;
 
+pub mod stardict;
+
 #[async_trait]
 pub trait ExternalDict {
     async fn open_dictionary(&self, query: String);

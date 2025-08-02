@@ -52,7 +52,6 @@ sqlx = { version = "0.8.3", features = [
     "postgres",
     "runtime-tokio",
     "tls-native-tls",
-    # "time",
     "chrono",
 ] }
 time = { version = "0.3.41", features = ["serde"] }
@@ -62,6 +61,9 @@ tempfile = "3.8"
 dirs = "5.0"
 fsrs = "5.0"
 macro_rules_attribute = "0.2.2"
+stardict = { git = "https://github.com/chaosarium/stardict", default-features = false, features = [
+    "sled",
+] }
 
 [dev-dependencies]
 insta = "1.43.1"

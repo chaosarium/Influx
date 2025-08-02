@@ -21,12 +21,16 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "biplist>=1.0.3",
     "black>=25.1.0",
     "fugashi[unidic]>=1.5.1",
+    "lxml>=6.0.0",
     "nltk>=3.9.1",
     "pandas>=2.3.0",
     "pip>=25.1.1",
+    "pyglossary>=5.1.0",
     "pykakasi>=2.3.0",
+    "python-idzip>=0.3.9",
     "spacy>=3.8.7",
     "tabulate>=0.9.0",
     "unidic>=1.1.0",
