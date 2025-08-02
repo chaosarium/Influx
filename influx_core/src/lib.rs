@@ -21,6 +21,9 @@ pub mod test_utils;
 
 use db::DB;
 
+#[macro_use]
+extern crate macro_rules_attribute;
+
 #[derive(Debug, ValueEnum, Clone, Copy)]
 pub enum DBChoice {
     // SurrealMemory,
@@ -61,6 +64,22 @@ pub fn create_app_router(state: ServerState) -> Router {
             get(handlers::lang_handlers::get_language_by_id),
         )
         .route("/lang/edit", post(handlers::lang_handlers::update_language))
+        .route(
+            "/fsrs/due_cards",
+            post(handlers::fsrs_handlers::get_due_cards),
+        )
+        .route(
+            "/fsrs/submit_review",
+            post(handlers::fsrs_handlers::submit_review),
+        )
+        .route(
+            "/fsrs/config",
+            post(handlers::fsrs_handlers::update_fsrs_config),
+        )
+        .route(
+            "/fsrs/card_state",
+            post(handlers::fsrs_handlers::set_card_state),
+        )
         .route(
             "/extern/macos_dict/{language_identifier}/{orthography}",
             get(handlers::integration_handlers::lookup_in_macos_dict),
@@ -128,6 +147,18 @@ mod tests {
                 handlers::TermEditRequest,
                 handlers::TermEditResponse,
                 handlers::GetDocsRequest,
+                handlers::ReviewableCardId,
+                handlers::CardWithTerm,
+                handlers::GetDueCardsRequest,
+                handlers::GetDueCardsResponse,
+                handlers::GetNextDueCardRequest,
+                handlers::GetNextDueCardResponse,
+                handlers::SubmitReviewRequest,
+                handlers::SubmitReviewResponse,
+                handlers::UpdateFSRSConfigRequest,
+                handlers::UpdateFSRSConfigResponse,
+                handlers::SetCardStateRequest,
+                handlers::SetCardStateResponse,
                 nlp::TermDictionary,
                 handlers::DocPath,
                 nlp::AnnotatedDocV2,
@@ -159,6 +190,18 @@ mod tests {
                 handlers::TermEditRequest,
                 handlers::TermEditResponse,
                 handlers::GetDocsRequest,
+                handlers::ReviewableCardId,
+                handlers::CardWithTerm,
+                handlers::GetDueCardsRequest,
+                handlers::GetDueCardsResponse,
+                handlers::GetNextDueCardRequest,
+                handlers::GetNextDueCardResponse,
+                handlers::SubmitReviewRequest,
+                handlers::SubmitReviewResponse,
+                handlers::UpdateFSRSConfigRequest,
+                handlers::UpdateFSRSConfigResponse,
+                handlers::SetCardStateRequest,
+                handlers::SetCardStateResponse,
                 nlp::TermDictionary,
                 handlers::DocPath,
                 nlp::AnnotatedDocV2,

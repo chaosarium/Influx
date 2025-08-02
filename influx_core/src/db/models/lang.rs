@@ -3,6 +3,7 @@ use crate::db::InfluxResourceId;
 use super::*;
 // use crate::db::deserialize_surreal_thing_opt;
 // use surrealdb::RecordId;
+use crate::prelude::*;
 use std::collections::HashMap;
 
 #[derive(
@@ -22,7 +23,7 @@ pub struct ParserConfig {
     pub parser_args: HashMap<String, String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, SerdeDerives!, Clone, PartialEq, ElmDerives!)]
 pub struct Language {
     pub id: Option<InfluxResourceId>,
     pub name: String,
@@ -35,7 +36,7 @@ pub struct Language {
     pub parser_config: ParserConfig,
 }
 
-#[derive(sqlx::FromRow, Serialize, Deserialize, PartialEq)]
+#[derive(sqlx::FromRow, SerdeDerives!, PartialEq)]
 pub struct LanguageInDB {
     pub id: InfluxResourceId,
     pub name: String,

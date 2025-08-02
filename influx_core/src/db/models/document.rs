@@ -2,10 +2,11 @@ use super::*;
 // SurrealDB is deprecated - commenting out import
 // use crate::db::deserialize_surreal_thing_opt;
 use crate::db::InfluxResourceId;
+use crate::prelude::*;
 use chrono::{DateTime, Offset, Utc};
 use std::collections::HashMap;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, SerdeDerives!, Clone, PartialEq, Eq, ElmDerives!)]
 pub struct Document {
     pub id: Option<InfluxResourceId>,
     pub lang_id: InfluxResourceId,
@@ -44,7 +45,7 @@ impl From<DocumentInDB> for Document {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, Clone, Deserialize, Serialize, ElmDerives!)]
 pub struct DocPackage {
     pub document_id: InfluxResourceId,
     pub language_id: InfluxResourceId,

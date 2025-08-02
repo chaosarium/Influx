@@ -17,12 +17,13 @@ use crate::db::models::vocab::Token;
 use crate::db::InfluxResourceId;
 use crate::utils::trie::Trie;
 pub mod phrase_fitting;
+use crate::prelude::*;
 use reqwest::Client;
 use serde_json::json;
 use serde_json::value::Value;
 
 /// Conjugation chain step
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, ElmDerives!)]
 pub struct ConjugationStep {
     step: u32,
     form: String,
@@ -30,7 +31,7 @@ pub struct ConjugationStep {
 }
 
 /// Segment attribute
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, ElmDerives!)]
 pub struct SegAttribute {
     lemma: Option<String>,
 
@@ -42,14 +43,14 @@ pub struct SegAttribute {
 }
 
 /// Document segment variants.
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, ElmDerives!)]
 pub enum DocSegVariants {
     Sentence { segments: Vec<SentSegV2> },
     DocumentWhitespace,
 }
 
 /// Document segment
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, ElmDerives!)]
 pub struct DocSegV2 {
     text: String,
     start_char: usize,
@@ -58,7 +59,7 @@ pub struct DocSegV2 {
 }
 
 /// Sentence segment variants
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, ElmDerives!)]
 pub enum SentSegVariants {
     TokenSeg {
         idx: usize,
@@ -74,7 +75,7 @@ pub enum SentSegVariants {
 }
 
 /// Sentence segment
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, ElmDerives!)]
 pub struct SentSegV2 {
     sentence_idx: usize,
     text: String,
@@ -84,7 +85,7 @@ pub struct SentSegV2 {
     attributes: SegAttribute,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, ElmDerives!)]
 pub struct AnnotatedDocV2 {
     pub text: String,
     pub segments: Vec<DocSegV2>,
@@ -94,7 +95,7 @@ pub struct AnnotatedDocV2 {
     pub parser_config: crate::db::models::lang::ParserConfig,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, ElmDerives!)]
 pub struct TermDictionary {
     pub token_dict: BTreeMap<String, Token>,
     // JavaScript doesn't support HashMaps with non-string keys, sad. We'll concat the keys into a string for now.

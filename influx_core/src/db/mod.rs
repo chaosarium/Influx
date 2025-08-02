@@ -19,6 +19,7 @@ use std::{fs, path::PathBuf, sync::Arc};
 
 use crate::DBChoice;
 pub mod models;
+use crate::prelude::*;
 
 #[derive(Clone)]
 pub enum DB {
@@ -154,7 +155,7 @@ impl DB {
     // }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, SerdeDerives!, Clone, PartialEq, Eq, Hash, ElmDerives!)]
 pub enum InfluxResourceId {
     SerialId(i64),
     StringId(String),

@@ -9,7 +9,7 @@ use tracing::{debug, warn};
 use DB::*;
 
 #[derive(
-    Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode, sqlx::Type,
+    Debug, SerdeDerives!, Clone, PartialEq, Eq, Hash, ElmDerives!, sqlx::Type,
 )]
 #[sqlx(type_name = "token_status")]
 pub enum TokenStatus {
@@ -23,7 +23,7 @@ pub enum TokenStatus {
     IGNORED,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, SerdeDerives!, Clone, PartialEq, Eq, Hash, ElmDerives!)]
 pub struct Token {
     pub id: Option<InfluxResourceId>,
     pub lang_id: InfluxResourceId,

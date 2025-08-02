@@ -61,6 +61,7 @@ postgresql_embedded = "0.19.0"
 tempfile = "3.8"
 dirs = "5.0"
 fsrs = "5.0"
+macro_rules_attribute = "0.2.2"
 
 [dev-dependencies]
 insta = "1.43.1"

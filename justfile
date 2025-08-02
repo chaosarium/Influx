@@ -27,3 +27,7 @@ push:
 push-main:
     jj bookmark set main -r @-
     jj git push --all
+
+new-empty-parent:
+    jj new
+    jj squash --from=@- --to=@ --keep-emptied

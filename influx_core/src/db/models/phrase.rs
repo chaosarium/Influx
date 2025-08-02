@@ -12,7 +12,7 @@ use DB::*;
 //     Thing::from((TABLE.to_string(), id))
 // }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Elm, ElmEncode, ElmDecode)]
+#[derive(Debug, SerdeDerives!, Clone, PartialEq, Eq, Hash, ElmDerives!)]
 pub struct Phrase {
     // #[serde(deserialize_with = "deserialize_surreal_thing_opt")]
     pub id: Option<InfluxResourceId>,
