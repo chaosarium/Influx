@@ -59,6 +59,6 @@ view config =
                         ]
                         [ text "▶" ]
                     ]
-                , div [] config.content
+                , div [ class "resizable-sidebar__sections" ] config.content
                 ]
             ]

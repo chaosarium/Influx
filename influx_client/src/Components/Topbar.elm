@@ -6,12 +6,10 @@ import Html.Attributes exposing (..)
 
 view : {} -> Html msg
 view props =
-    div [ class "layout" ]
-        [ nav [ class "navbar" ]
-            [ ul []
-                [ li [] [ a [ href "/" ] [ text "Home" ] ]
-                , li [] [ a [ href "/langs" ] [ text "Languages" ] ]
-                , li [] [ a [ href "/docs" ] [ text "Documents" ] ]
-                ]
+    nav [ class "navbar" ]
+        [ ul []
+            [ li [] [ a [ href "/" ] [ text "Home" ] ]
+            , li [] [ a [ href "/langs" ] [ text "Languages" ] ]
+            , li [] [ a [ href "/docs" ] [ text "Documents" ] ]
             ]
         ]

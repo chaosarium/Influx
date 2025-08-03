@@ -13,19 +13,59 @@ $uiFont: "Space Grotesk";
 body {
     font-family: $uiFont, sans-serif;
     color: theme.$foreground;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
     // background: theme.$background;
 }
 
+html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+// Navbar and layout styles
+.layout {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
 nav.navbar {
+    height: 30px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    flex-shrink: 0;
+
     ul {
         list-style-type: none;
         padding: 0;
         margin: 0;
+        display: flex;
+        align-items: center;
     }
 
     ul li {
         display: inline;
-        margin-right: 10px;
+        margin-right: 20px;
+
+        a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+
+            &:hover {
+                background-color: #e9ecef;
+            }
+        }
     }
 }
 
@@ -168,6 +208,7 @@ span.clickable-tkn-span {
     position: fixed;
     top: 1em;
     right: 1em;
+    z-index: 9999;
 }
 
 .toast {
@@ -321,24 +362,77 @@ span.clickable-tkn-span {
 .resizable-sidebar {
     min-width: 200px;
     max-width: 800px;
-    border-left: 1px solid $gray4;
+    background-color: #fafafa;
+    border-left: 1px solid #ddd;
     overflow-y: auto;
     position: relative;
+    height: 100%;
 }
 
 .resizable-sidebar--collapsed {
-    width: 40px;
-    border-left: 1px solid $gray4;
+    width: 30px;
+    background-color: #fafafa;
+    border-left: 1px solid #ddd;
     display: flex;
     align-items: flex-start;
-    padding: 12px 8px;
+    height: 100%;
 }
+
+
+.resizable-sidebar__content {
+    padding: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.resizable-sidebar__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    background-color: #f8f8f8;
+    flex-shrink: 0;
+}
+
+.resizable-sidebar__title {
+    font-weight: bold;
+    color: #333;
+}
+
+.resizable-sidebar__toggle-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #666;
+}
+
+.resizable-sidebar__sections {
+    flex: 1;
+    overflow-y: auto;
+}
+
+// Main document layout styles
+.document-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.document-layout__left-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
 
 .resizable-sidebar__resize-handle {
     position: absolute;
     left: 0;
     top: 0;
-    width: 4px;
+    width: 2px;
     height: 100%;
     background-color: $gray7;
     cursor: col-resize;
@@ -359,6 +453,7 @@ span.clickable-tkn-span {
 
 .resizable-sidebar__title {
     font-weight: bold;
+    color: #333;
 }
 
 .resizable-sidebar__toggle-btn {
@@ -371,8 +466,7 @@ span.clickable-tkn-span {
 
 // Collapsible Section Component Styles
 .collapsible-section {
-    border: 1px solid #ddd;
-    margin-bottom: 8px;
+    margin-bottom: 0;
 }
 
 .collapsible-section__header {
@@ -382,10 +476,11 @@ span.clickable-tkn-span {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .collapsible-section__header--expanded {
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .collapsible-section__title {
@@ -399,4 +494,5 @@ span.clickable-tkn-span {
 
 .collapsible-section__content {
     padding: 12px;
+    border-bottom: 1px solid #e0e0e0;
 }

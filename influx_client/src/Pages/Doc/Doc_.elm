@@ -1080,27 +1080,23 @@ view shared route model =
     in
     { title = "Document view"
     , body =
-        [ Components.Topbar.view {}
-        , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
-        , div
-            [ style "display" "flex"
-            , style "height" "calc(100vh - 60px)"
-            , style "overflow" "hidden"
-            ]
-            [ div
-                [ style "flex" "1"
-                , style "overflow-y" "auto"
-                , style "padding" "20px"
+        [ div [ class "layout" ]
+            [ Components.Topbar.view {}
+            , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
+            , div
+                [ class "document-layout" ]
+                [ div
+                    [ class "document-layout__left-panel" ]
+                    leftPanelContent
+                , Components.ResizableSidebar.view
+                    { width = model.rightPanelWidth
+                    , isCollapsed = model.sidebarCollapsed
+                    , title = "Document Tools"
+                    , onStartResize = StartResize
+                    , onToggleCollapse = ToggleSidebar
+                    , content = rightPanelContent
+                    }
                 ]
-                leftPanelContent
-            , Components.ResizableSidebar.view
-                { width = model.rightPanelWidth
-                , isCollapsed = model.sidebarCollapsed
-                , title = "Document Tools"
-                , onStartResize = StartResize
-                , onToggleCollapse = ToggleSidebar
-                , content = rightPanelContent
-                }
             ]
 
         -- for debugging check focus context model
