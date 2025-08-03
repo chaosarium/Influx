@@ -1,7 +1,7 @@
 module Components.CollapsibleSection exposing (view)
 
 import Html exposing (..)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (class)
 import Html.Events
 
 
@@ -9,13 +9,14 @@ import Html.Events
 and optionally shows content when expanded.
 
 Usage:
-    CollapsibleSection.view
-        { sectionId = "mySection"
-        , title = "My Section"
-        , isExpanded = True
-        , onToggle = ToggleSection "mySection"
-        , content = myContent
-        }
+CollapsibleSection.view
+{ sectionId = "mySection"
+, title = "My Section"
+, isExpanded = True
+, onToggle = ToggleSection "mySection"
+, content = myContent
+}
+
 -}
 view :
     { sectionId : String
@@ -26,22 +27,31 @@ view :
     }
     -> Html msg
 view config =
-    div [ style "border" "1px solid #ddd", style "margin-bottom" "8px" ]
+    div [ class "collapsible-section" ]
         [ div
-            [ style "background-color" "#f5f5f5"
-            , style "padding" "8px 12px"
-            , style "cursor" "pointer"
-            , style "border-bottom" (if config.isExpanded then "1px solid #ddd" else "none")
-            , style "display" "flex"
-            , style "align-items" "center"
-            , style "justify-content" "space-between"
+            [ class
+                (if config.isExpanded then
+                    "collapsible-section__header collapsible-section__header--expanded"
+
+                 else
+                    "collapsible-section__header"
+                )
             , Html.Events.onClick config.onToggle
             ]
-            [ span [ style "font-weight" "bold", style "font-size" "14px" ] [ text config.title ]
-            , span [ style "font-size" "12px" ] [ text (if config.isExpanded then "▼" else "▶") ]
+            [ span [ class "collapsible-section__title" ] [ text config.title ]
+            , span [ class "collapsible-section__toggle-icon" ]
+                [ text
+                    (if config.isExpanded then
+                        "▼"
+
+                     else
+                        "▶"
+                    )
+                ]
             ]
         , if config.isExpanded then
-            div [ style "padding" "12px" ] [ config.content ]
+            div [ class "collapsible-section__content" ] [ config.content ]
+
           else
             text ""
         ]

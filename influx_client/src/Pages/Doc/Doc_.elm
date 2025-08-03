@@ -20,7 +20,7 @@ import Datastore.FocusContext as FocusContext
 import Dict
 import Effect exposing (Effect)
 import Html exposing (..)
-import Html.Attributes exposing (class, href, style, draggable)
+import Html.Attributes exposing (class, draggable, href, style)
 import Html.Events
 import Html.Extra
 import Http
@@ -100,13 +100,13 @@ init { documentId } () =
       , showFurigana = False
       , lemma_editing_mode = EditingInflectedToken
       , rightPanelWidth = 400
-      , sectionStates = 
-          { termEditor = True
-          , termDetails = True
-          , annotationControls = False
-          , translation = False
-          , tts = False
-          }
+      , sectionStates =
+            { termEditor = True
+            , termDetails = True
+            , annotationControls = False
+            , translation = False
+            , tts = False
+            }
       , isResizing = False
       , resizeStartX = 0
       , resizeStartWidth = 0
@@ -148,7 +148,7 @@ type Msg
     | ToggleFurigana
       -- Panel management...
     | StartResize Float
-    | StopResize  
+    | StopResize
     | ResizeMove Float
     | ToggleSidebar
     | ToggleSection String
@@ -460,7 +460,7 @@ update msg model =
             )
 
         StartResize startX ->
-            ( { model 
+            ( { model
                 | isResizing = True
                 , resizeStartX = startX
                 , resizeStartWidth = model.rightPanelWidth
@@ -477,14 +477,18 @@ update msg model =
             if model.isResizing then
                 let
                     -- Calculate how much the mouse has moved to the left (negative) or right (positive)
-                    deltaX = model.resizeStartX - clientX
+                    deltaX =
+                        model.resizeStartX - clientX
+
                     -- Moving left (positive deltaX) should increase panel width
                     -- Moving right (negative deltaX) should decrease panel width
-                    newWidth = max 200 (min 800 (model.resizeStartWidth + deltaX))
+                    newWidth =
+                        max 200 (min 800 (model.resizeStartWidth + deltaX))
                 in
                 ( { model | rightPanelWidth = newWidth }
                 , Effect.none
                 )
+
             else
                 ( model, Effect.none )
 
@@ -510,6 +514,7 @@ subscriptions model =
             [ Browser.Events.onMouseMove (Decode.map ResizeMove (Decode.field "clientX" Decode.float))
             , Browser.Events.onMouseUp (Decode.succeed StopResize)
             ]
+
     else
         Sub.none
 
@@ -927,6 +932,7 @@ tokenStatusToString status =
             "Known"
 
 
+
 -- end
 
 
@@ -955,7 +961,7 @@ view shared route model =
             , annotation_config = model.annotation_config
             , showFurigana = model.showFurigana
             }
-        
+
         leftPanelContent =
             case model.get_doc_api_res of
                 Api.Loading ->
@@ -983,34 +989,38 @@ view shared route model =
                 , title = "Term Editor"
                 , isExpanded = model.sectionStates.termEditor
                 , onToggle = ToggleSection "termEditor"
-                , content = TermEditForm.view model.form_model
-                    TermEditorEvent
-                    { dict = model.working_dict
-                    , document_id =
-                        case String.toInt route.params.doc of
-                            Just id ->
-                                Just (Bindings.SerialId id)
+                , content =
+                    TermEditForm.view model.form_model
+                        TermEditorEvent
+                        { dict = model.working_dict
+                        , document_id =
+                            case String.toInt route.params.doc of
+                                Just id ->
+                                    Just (Bindings.SerialId id)
 
-                            Nothing ->
-                                Nothing
-                    }
+                                Nothing ->
+                                    Nothing
+                        }
                 }
             , Components.CollapsibleSection.view
                 { sectionId = "termDetails"
                 , title = "Term Details"
                 , isExpanded = model.sectionStates.termDetails
                 , onToggle = ToggleSection "termDetails"
-                , content = div []
-                    [ viewTermDetails model.working_dict model.focus_ctx.segment_selection
-                    , case model.focus_ctx.segment_selection of
-                        Just seg ->
-                            if hasLemma seg then
-                                viewLemmaDisplay seg model.lemma_editing_mode model.working_dict model.annotation_config model.showFurigana
-                            else
+                , content =
+                    div []
+                        [ viewTermDetails model.working_dict model.focus_ctx.segment_selection
+                        , case model.focus_ctx.segment_selection of
+                            Just seg ->
+                                if hasLemma seg then
+                                    viewLemmaDisplay seg model.lemma_editing_mode model.working_dict model.annotation_config model.showFurigana
+
+                                else
+                                    Html.text ""
+
+                            Nothing ->
                                 Html.text ""
-                        Nothing ->
-                            Html.text ""
-                    ]
+                        ]
                 }
             , Components.CollapsibleSection.view
                 { sectionId = "annotationControls"
@@ -1024,45 +1034,47 @@ view shared route model =
                 , title = "Translation"
                 , isExpanded = model.sectionStates.translation
                 , onToggle = ToggleSection "translation"
-                , content = div []
-                    [ Html.text
-                        ("Selected text: "
-                            ++ Maybe.withDefault "" model.focus_ctx.selected_text
-                        )
-                    , Html.br [] []
-                    , Html.button
-                        [ Html.Events.onClick TranslateText
-                        , Html.Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
-                        ]
-                        [ Html.text "Translate with DeepL" ]
-                    , case model.translation_result of
-                        Just translation ->
-                            Html.div [ Html.Attributes.style "margin-top" "10px", Html.Attributes.style "padding" "10px", Html.Attributes.style "background-color" "#f0f0f0" ]
-                                [ Html.strong [] [ Html.text "Translation: " ]
-                                , Html.br [] []
-                                , Html.text translation
-                                ]
+                , content =
+                    div []
+                        [ Html.text
+                            ("Selected text: "
+                                ++ Maybe.withDefault "" model.focus_ctx.selected_text
+                            )
+                        , Html.br [] []
+                        , Html.button
+                            [ Html.Events.onClick TranslateText
+                            , Html.Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
+                            ]
+                            [ Html.text "Translate with DeepL" ]
+                        , case model.translation_result of
+                            Just translation ->
+                                Html.div [ Html.Attributes.style "margin-top" "10px", Html.Attributes.style "padding" "10px", Html.Attributes.style "background-color" "#f0f0f0" ]
+                                    [ Html.strong [] [ Html.text "Translation: " ]
+                                    , Html.br [] []
+                                    , Html.text translation
+                                    ]
 
-                        Nothing ->
-                            Html.text ""
-                    ]
+                            Nothing ->
+                                Html.text ""
+                        ]
                 }
             , Components.CollapsibleSection.view
                 { sectionId = "tts"
                 , title = "Text-to-Speech"
                 , isExpanded = model.sectionStates.tts
                 , onToggle = ToggleSection "tts"
-                , content = case model.get_doc_api_res of
-                    Api.Success response ->
-                        Components.TtsEmitter.view
-                            { text = Maybe.withDefault "" model.focus_ctx.selected_text
-                            , language = response.docPackage.language
-                            , onStartTts = StartTts
-                            , onStopTts = StopTts
-                            }
+                , content =
+                    case model.get_doc_api_res of
+                        Api.Success response ->
+                            Components.TtsEmitter.view
+                                { text = Maybe.withDefault "" model.focus_ctx.selected_text
+                                , language = response.docPackage.language
+                                , onStartTts = StartTts
+                                , onStopTts = StopTts
+                                }
 
-                    _ ->
-                        text ""
+                        _ ->
+                            text ""
                 }
             ]
     in
@@ -1070,12 +1082,12 @@ view shared route model =
     , body =
         [ Components.Topbar.view {}
         , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
-        , div 
+        , div
             [ style "display" "flex"
             , style "height" "calc(100vh - 60px)"
             , style "overflow" "hidden"
             ]
-            [ div 
+            [ div
                 [ style "flex" "1"
                 , style "overflow-y" "auto"
                 , style "padding" "20px"

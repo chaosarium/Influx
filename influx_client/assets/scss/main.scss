@@ -316,3 +316,87 @@ span.clickable-tkn-span {
 .popup-content .popup-lemma {
     color: #5a7c65;
 }
+
+// Resizable Sidebar Component Styles
+.resizable-sidebar {
+    min-width: 200px;
+    max-width: 800px;
+    border-left: 1px solid $gray4;
+    overflow-y: auto;
+    position: relative;
+}
+
+.resizable-sidebar--collapsed {
+    width: 40px;
+    border-left: 1px solid $gray4;
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 8px;
+}
+
+.resizable-sidebar__resize-handle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background-color: $gray7;
+    cursor: col-resize;
+}
+
+.resizable-sidebar__content {
+    padding: 12px;
+}
+
+.resizable-sidebar__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+.resizable-sidebar__title {
+    font-weight: bold;
+}
+
+.resizable-sidebar__toggle-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #666;
+}
+
+// Collapsible Section Component Styles
+.collapsible-section {
+    border: 1px solid #ddd;
+    margin-bottom: 8px;
+}
+
+.collapsible-section__header {
+    background-color: #f5f5f5;
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.collapsible-section__header--expanded {
+    border-bottom: 1px solid #ddd;
+}
+
+.collapsible-section__title {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.collapsible-section__toggle-icon {
+    font-size: 12px;
+}
+
+.collapsible-section__content {
+    padding: 12px;
+}

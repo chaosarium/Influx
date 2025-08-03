@@ -1,7 +1,7 @@
 module Components.ResizableSidebar exposing (view)
 
 import Html exposing (..)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (class, style)
 import Html.Events
 import Json.Decode as Decode
 
@@ -9,14 +9,15 @@ import Json.Decode as Decode
 {-| A resizable sidebar component with collapse functionality.
 
 Usage:
-    ResizableSidebar.view
-        { width = 400
-        , isCollapsed = False
-        , title = "Sidebar Title"
-        , onStartResize = StartResize
-        , onToggleCollapse = ToggleSidebar
-        , content = [ ... ]
-        }
+ResizableSidebar.view
+{ width = 400
+, isCollapsed = False
+, title = "Sidebar Title"
+, onStartResize = StartResize
+, onToggleCollapse = ToggleSidebar
+, content = [ ... ]
+}
+
 -}
 view :
     { width : Float
@@ -30,61 +31,30 @@ view :
 view config =
     if config.isCollapsed then
         div
-            [ style "width" "40px"
-            , style "background-color" "#fafafa"
-            , style "border-left" "1px solid #ddd"
-            , style "display" "flex"
-            , style "align-items" "flex-start"
-            , style "padding" "12px 8px"
-            ]
+            [ class "resizable-sidebar--collapsed" ]
             [ button
-                [ style "background" "none"
-                , style "border" "none"
-                , style "cursor" "pointer"
-                , style "font-size" "16px"
-                , style "color" "#666"
+                [ class "resizable-sidebar__toggle-btn"
                 , Html.Events.onClick config.onToggleCollapse
                 ]
                 [ text "◀" ]
             ]
+
     else
         div
-            [ style "width" (String.fromFloat config.width ++ "px")
-            , style "min-width" "200px"
-            , style "max-width" "800px"
-            , style "background-color" "#fafafa"
-            , style "border-left" "1px solid #ddd"
-            , style "overflow-y" "auto"
-            , style "position" "relative"
+            [ class "resizable-sidebar"
+            , style "width" (String.fromFloat config.width ++ "px")
             ]
             [ div
-                [ style "position" "absolute"
-                , style "left" "0"
-                , style "top" "0"
-                , style "width" "4px"
-                , style "height" "100%"
-                , style "background-color" "#ccc"
-                , style "cursor" "col-resize"
-                , Html.Events.on "mousedown" 
+                [ class "resizable-sidebar__resize-handle"
+                , Html.Events.on "mousedown"
                     (Decode.map config.onStartResize (Decode.field "clientX" Decode.float))
                 ]
                 []
-            , div [ style "padding" "12px" ] 
-                [ div 
-                    [ style "display" "flex"
-                    , style "justify-content" "space-between"
-                    , style "align-items" "center"
-                    , style "margin-bottom" "12px"
-                    , style "padding-bottom" "8px"
-                    , style "border-bottom" "1px solid #ddd"
-                    ]
-                    [ span [ style "font-weight" "bold", style "color" "#333" ] [ text config.title ]
+            , div [ class "resizable-sidebar__content" ]
+                [ div [ class "resizable-sidebar__header" ]
+                    [ span [ class "resizable-sidebar__title" ] [ text config.title ]
                     , button
-                        [ style "background" "none"
-                        , style "border" "none"
-                        , style "cursor" "pointer"
-                        , style "font-size" "16px"
-                        , style "color" "#666"
+                        [ class "resizable-sidebar__toggle-btn"
                         , Html.Events.onClick config.onToggleCollapse
                         ]
                         [ text "▶" ]
