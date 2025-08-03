@@ -6,6 +6,7 @@ import Api.TermEdit
 import Api.Translate
 import Bindings exposing (..)
 import BindingsUtils
+import Browser.Events
 import Components.AnnotatedText as AnnotatedText
 import Components.DbgDisplay
 import Components.TermEditForm as TermEditForm
@@ -68,6 +69,10 @@ type alias Model =
     , lemma_editing_mode : LemmaEditingMode
     , rightPanelWidth : Float
     , sectionStates : SectionStates
+    , isResizing : Bool
+    , resizeStartX : Float
+    , resizeStartWidth : Float
+    , sidebarCollapsed : Bool
     }
 
 
@@ -100,6 +105,10 @@ init { documentId } () =
           , translation = False
           , tts = False
           }
+      , isResizing = False
+      , resizeStartX = 0
+      , resizeStartWidth = 0
+      , sidebarCollapsed = False
       }
     , Effect.sendCmd (Api.GetAnnotatedDoc.get { filepath = documentId } ApiResponded)
     )
@@ -136,7 +145,10 @@ type Msg
       -- Furigana toggle...
     | ToggleFurigana
       -- Panel management...
-    | SetRightPanelWidth Float
+    | StartResize Float
+    | StopResize  
+    | ResizeMove Float
+    | ToggleSidebar
     | ToggleSection String
       -- Shared
     | SharedMsg Shared.Msg.Msg
@@ -445,8 +457,37 @@ update msg model =
             , Effect.none
             )
 
-        SetRightPanelWidth width ->
-            ( { model | rightPanelWidth = max 200 (min 800 width) }
+        StartResize startX ->
+            ( { model 
+                | isResizing = True
+                , resizeStartX = startX
+                , resizeStartWidth = model.rightPanelWidth
+              }
+            , Effect.none
+            )
+
+        StopResize ->
+            ( { model | isResizing = False }
+            , Effect.none
+            )
+
+        ResizeMove clientX ->
+            if model.isResizing then
+                let
+                    -- Calculate how much the mouse has moved to the left (negative) or right (positive)
+                    deltaX = model.resizeStartX - clientX
+                    -- Moving left (positive deltaX) should increase panel width
+                    -- Moving right (negative deltaX) should decrease panel width
+                    newWidth = max 200 (min 800 (model.resizeStartWidth + deltaX))
+                in
+                ( { model | rightPanelWidth = newWidth }
+                , Effect.none
+                )
+            else
+                ( model, Effect.none )
+
+        ToggleSidebar ->
+            ( { model | sidebarCollapsed = not model.sidebarCollapsed }
             , Effect.none
             )
 
@@ -462,7 +503,13 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    if model.isResizing then
+        Sub.batch
+            [ Browser.Events.onMouseMove (Decode.map ResizeMove (Decode.field "clientX" Decode.float))
+            , Browser.Events.onMouseUp (Decode.succeed StopResize)
+            ]
+    else
+        Sub.none
 
 
 
@@ -901,30 +948,72 @@ viewCollapsibleSection sectionId title isExpanded content =
         ]
 
 
-viewResizablePanel : Float -> List (Html Msg) -> Html Msg
-viewResizablePanel width content =
-    div
-        [ style "width" (String.fromFloat width ++ "px")
-        , style "min-width" "200px"
-        , style "max-width" "800px"
-        , style "background-color" "#fafafa"
-        , style "border-left" "1px solid #ddd"
-        , style "overflow-y" "auto"
-        , style "position" "relative"
-        ]
-        [ div
-            [ style "position" "absolute"
-            , style "left" "0"
-            , style "top" "0"
-            , style "width" "4px"
-            , style "height" "100%"
-            , style "background-color" "#ccc"
-            , style "cursor" "col-resize"
-            , Html.Events.on "mousedown" (Decode.succeed (SetRightPanelWidth width))
+viewResizablePanel : Float -> Bool -> List (Html Msg) -> Html Msg
+viewResizablePanel width isCollapsed content =
+    if isCollapsed then
+        div
+            [ style "width" "40px"
+            , style "background-color" "#fafafa"
+            , style "border-left" "1px solid #ddd"
+            , style "display" "flex"
+            , style "align-items" "flex-start"
+            , style "padding" "12px 8px"
             ]
-            []
-        , div [ style "padding" "12px" ] content
-        ]
+            [ button
+                [ style "background" "none"
+                , style "border" "none"
+                , style "cursor" "pointer"
+                , style "font-size" "16px"
+                , style "color" "#666"
+                , Html.Events.onClick ToggleSidebar
+                ]
+                [ text "◀" ]
+            ]
+    else
+        div
+            [ style "width" (String.fromFloat width ++ "px")
+            , style "min-width" "200px"
+            , style "max-width" "800px"
+            , style "background-color" "#fafafa"
+            , style "border-left" "1px solid #ddd"
+            , style "overflow-y" "auto"
+            , style "position" "relative"
+            ]
+            [ div
+                [ style "position" "absolute"
+                , style "left" "0"
+                , style "top" "0"
+                , style "width" "4px"
+                , style "height" "100%"
+                , style "background-color" "#ccc"
+                , style "cursor" "col-resize"
+                , Html.Events.on "mousedown" 
+                    (Decode.map StartResize (Decode.field "clientX" Decode.float))
+                ]
+                []
+            , div [ style "padding" "12px" ] 
+                [ div 
+                    [ style "display" "flex"
+                    , style "justify-content" "space-between"
+                    , style "align-items" "center"
+                    , style "margin-bottom" "12px"
+                    , style "padding-bottom" "8px"
+                    , style "border-bottom" "1px solid #ddd"
+                    ]
+                    [ span [ style "font-weight" "bold", style "color" "#333" ] [ text "Document Tools" ]
+                    , button
+                        [ style "background" "none"
+                        , style "border" "none"
+                        , style "cursor" "pointer"
+                        , style "font-size" "16px"
+                        , style "color" "#666"
+                        , Html.Events.onClick ToggleSidebar
+                        ]
+                        [ text "▶" ]
+                    ]
+                , div [] content
+                ]
+            ]
 
 
 
@@ -1061,7 +1150,7 @@ view shared route model =
                 , style "padding" "20px"
                 ]
                 leftPanelContent
-            , viewResizablePanel model.rightPanelWidth rightPanelContent
+            , viewResizablePanel model.rightPanelWidth model.sidebarCollapsed rightPanelContent
             ]
 
         -- for debugging check focus context model
