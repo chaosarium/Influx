@@ -17,7 +17,7 @@ import Datastore.FocusContext as FocusContext
 import Dict
 import Effect exposing (Effect)
 import Html exposing (..)
-import Html.Attributes exposing (class, href, style)
+import Html.Attributes exposing (class, href, style, draggable)
 import Html.Events
 import Html.Extra
 import Http
@@ -66,6 +66,17 @@ type alias Model =
     , annotation_config : AnnotatedText.AnnotationConfig
     , showFurigana : Bool
     , lemma_editing_mode : LemmaEditingMode
+    , rightPanelWidth : Float
+    , sectionStates : SectionStates
+    }
+
+
+type alias SectionStates =
+    { termEditor : Bool
+    , termDetails : Bool
+    , annotationControls : Bool
+    , translation : Bool
+    , tts : Bool
     }
 
 
@@ -81,6 +92,14 @@ init { documentId } () =
       , annotation_config = { topAnnotation = AnnotatedText.Definition, bottomAnnotation = AnnotatedText.Phonetic }
       , showFurigana = False
       , lemma_editing_mode = EditingInflectedToken
+      , rightPanelWidth = 400
+      , sectionStates = 
+          { termEditor = True
+          , termDetails = True
+          , annotationControls = False
+          , translation = False
+          , tts = False
+          }
       }
     , Effect.sendCmd (Api.GetAnnotatedDoc.get { filepath = documentId } ApiResponded)
     )
@@ -116,8 +135,33 @@ type Msg
     | SetBottomAnnotation AnnotatedText.AnnotationOption
       -- Furigana toggle...
     | ToggleFurigana
+      -- Panel management...
+    | SetRightPanelWidth Float
+    | ToggleSection String
       -- Shared
     | SharedMsg Shared.Msg.Msg
+
+
+updateSectionStates : String -> SectionStates -> SectionStates
+updateSectionStates sectionName sectionStates =
+    case sectionName of
+        "termEditor" ->
+            { sectionStates | termEditor = not sectionStates.termEditor }
+
+        "termDetails" ->
+            { sectionStates | termDetails = not sectionStates.termDetails }
+
+        "annotationControls" ->
+            { sectionStates | annotationControls = not sectionStates.annotationControls }
+
+        "translation" ->
+            { sectionStates | translation = not sectionStates.translation }
+
+        "tts" ->
+            { sectionStates | tts = not sectionStates.tts }
+
+        _ ->
+            sectionStates
 
 
 getLemmaFromSeg : SentSegV2 -> Maybe String
@@ -398,6 +442,16 @@ update msg model =
 
         ToggleFurigana ->
             ( { model | showFurigana = not model.showFurigana }
+            , Effect.none
+            )
+
+        SetRightPanelWidth width ->
+            ( { model | rightPanelWidth = max 200 (min 800 width) }
+            , Effect.none
+            )
+
+        ToggleSection sectionName ->
+            ( { model | sectionStates = updateSectionStates sectionName model.sectionStates }
             , Effect.none
             )
 
@@ -824,6 +878,55 @@ tokenStatusToString status =
             "Known"
 
 
+viewCollapsibleSection : String -> String -> Bool -> Html Msg -> Html Msg
+viewCollapsibleSection sectionId title isExpanded content =
+    div [ style "border" "1px solid #ddd", style "margin-bottom" "8px" ]
+        [ div
+            [ style "background-color" "#f5f5f5"
+            , style "padding" "8px 12px"
+            , style "cursor" "pointer"
+            , style "border-bottom" (if isExpanded then "1px solid #ddd" else "none")
+            , style "display" "flex"
+            , style "align-items" "center"
+            , style "justify-content" "space-between"
+            , Html.Events.onClick (ToggleSection sectionId)
+            ]
+            [ span [ style "font-weight" "bold", style "font-size" "14px" ] [ text title ]
+            , span [ style "font-size" "12px" ] [ text (if isExpanded then "▼" else "▶") ]
+            ]
+        , if isExpanded then
+            div [ style "padding" "12px" ] [ content ]
+          else
+            text ""
+        ]
+
+
+viewResizablePanel : Float -> List (Html Msg) -> Html Msg
+viewResizablePanel width content =
+    div
+        [ style "width" (String.fromFloat width ++ "px")
+        , style "min-width" "200px"
+        , style "max-width" "800px"
+        , style "background-color" "#fafafa"
+        , style "border-left" "1px solid #ddd"
+        , style "overflow-y" "auto"
+        , style "position" "relative"
+        ]
+        [ div
+            [ style "position" "absolute"
+            , style "left" "0"
+            , style "top" "0"
+            , style "width" "4px"
+            , style "height" "100%"
+            , style "background-color" "#ccc"
+            , style "cursor" "col-resize"
+            , Html.Events.on "mousedown" (Decode.succeed (SetRightPanelWidth width))
+            ]
+            []
+        , div [ style "padding" "12px" ] content
+        ]
+
+
 
 -- end
 
@@ -853,62 +956,113 @@ view shared route model =
             , annotation_config = model.annotation_config
             , showFurigana = model.showFurigana
             }
-    in
-    let
-        selectedSegViewCtx =
-            { dict = model.working_dict
-            , modifier_state = shared.modifier_state
-            , mouse_handler = NoopMouseEvent
-            , focus_predicate = \_ -> False
-            , seg_display_predicate =
-                case model.focus_ctx.slice_selection of
-                    Nothing ->
-                        \_ -> False
-
-                    Just slice ->
-                        FocusContext.isSentSegInSlice slice
-            , doc_seg_display_predicate =
-                case model.focus_ctx.slice_selection of
-                    Nothing ->
-                        \_ -> False
-
-                    Just slice ->
-                        FocusContext.isDocSegInSlice slice
-            , popup_state = Nothing
-            , on_hover_start = \_ _ -> HidePopup
-            , on_hover_end = HidePopup
-            , on_mouse_enter_with_position = \_ _ _ _ -> HidePopup
-            , annotation_config = model.annotation_config
-            , showFurigana = model.showFurigana
-            }
-    in
-    { title = "Document view"
-    , body =
-        [ Components.Topbar.view {}
-        , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
-        , case model.get_doc_api_res of
-            Api.Loading ->
-                div []
+        
+        leftPanelContent =
+            case model.get_doc_api_res of
+                Api.Loading ->
                     [ Html.h1 [] [ Html.text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
                     , Html.text "Loading..."
                     ]
 
-            Api.Failure err ->
-                div []
+                Api.Failure err ->
                     [ Html.h1 [] [ Html.text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
                     , Html.text ("Error: " ++ Api.stringOfHttpErrMsg err)
                     ]
 
-            Api.Success response ->
-                div []
+                Api.Success response ->
                     [ viewDocumentInfo response
                     , div [ class "annotated-doc-div", class "dbg-off" ]
                         (AnnotatedText.view
                             annotatedDocViewCtx
                             model.working_doc
                         )
-                    , viewAnnotationControls model.annotation_config model.showFurigana
                     ]
+
+        rightPanelContent =
+            [ viewCollapsibleSection "termEditor" "Term Editor" model.sectionStates.termEditor
+                (TermEditForm.view model.form_model
+                    TermEditorEvent
+                    { dict = model.working_dict
+                    , document_id =
+                        case String.toInt route.params.doc of
+                            Just id ->
+                                Just (Bindings.SerialId id)
+
+                            Nothing ->
+                                Nothing
+                    }
+                )
+            , viewCollapsibleSection "termDetails" "Term Details" model.sectionStates.termDetails
+                (div []
+                    [ viewTermDetails model.working_dict model.focus_ctx.segment_selection
+                    , case model.focus_ctx.segment_selection of
+                        Just seg ->
+                            if hasLemma seg then
+                                viewLemmaDisplay seg model.lemma_editing_mode model.working_dict model.annotation_config model.showFurigana
+                            else
+                                Html.text ""
+                        Nothing ->
+                            Html.text ""
+                    ]
+                )
+            , viewCollapsibleSection "annotationControls" "Annotation Controls" model.sectionStates.annotationControls
+                (viewAnnotationControls model.annotation_config model.showFurigana)
+            , viewCollapsibleSection "translation" "Translation" model.sectionStates.translation
+                (div []
+                    [ Html.text
+                        ("Selected text: "
+                            ++ Maybe.withDefault "" model.focus_ctx.selected_text
+                        )
+                    , Html.br [] []
+                    , Html.button
+                        [ Html.Events.onClick TranslateText
+                        , Html.Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
+                        ]
+                        [ Html.text "Translate with DeepL" ]
+                    , case model.translation_result of
+                        Just translation ->
+                            Html.div [ Html.Attributes.style "margin-top" "10px", Html.Attributes.style "padding" "10px", Html.Attributes.style "background-color" "#f0f0f0" ]
+                                [ Html.strong [] [ Html.text "Translation: " ]
+                                , Html.br [] []
+                                , Html.text translation
+                                ]
+
+                        Nothing ->
+                            Html.text ""
+                    ]
+                )
+            , viewCollapsibleSection "tts" "Text-to-Speech" model.sectionStates.tts
+                (case model.get_doc_api_res of
+                    Api.Success response ->
+                        Components.TtsEmitter.view
+                            { text = Maybe.withDefault "" model.focus_ctx.selected_text
+                            , language = response.docPackage.language
+                            , onStartTts = StartTts
+                            , onStopTts = StopTts
+                            }
+
+                    _ ->
+                        text ""
+                )
+            ]
+    in
+    { title = "Document view"
+    , body =
+        [ Components.Topbar.view {}
+        , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
+        , div 
+            [ style "display" "flex"
+            , style "height" "calc(100vh - 60px)"
+            , style "overflow" "hidden"
+            ]
+            [ div 
+                [ style "flex" "1"
+                , style "overflow-y" "auto"
+                , style "padding" "20px"
+                ]
+                leftPanelContent
+            , viewResizablePanel model.rightPanelWidth rightPanelContent
+            ]
 
         -- for debugging check focus context model
         , Components.DbgDisplay.view "model.focus_ctx.last_hovered_at" model.focus_ctx.last_hovered_at
@@ -918,77 +1072,6 @@ view shared route model =
         , Components.DbgDisplay.view "model.focus_ctx.selected_text" model.focus_ctx.selected_text
         , Components.DbgDisplay.view "model.focus_ctx.segment_selection" model.focus_ctx.segment_selection
         , Components.DbgDisplay.view "model.focus_ctx.segment_slice" model.focus_ctx.segment_slice
-
-        -- selected text
-        , div []
-            [ Html.text
-                ("selected text: "
-                    ++ Maybe.withDefault "" model.focus_ctx.selected_text
-                )
-            , Html.br [] []
-            , Html.button
-                [ Html.Events.onClick TranslateText
-                , Html.Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
-                ]
-                [ Html.text "Translate with DeepL" ]
-            , case model.translation_result of
-                Just translation ->
-                    Html.div [ Html.Attributes.style "margin-top" "10px", Html.Attributes.style "padding" "10px", Html.Attributes.style "background-color" "#f0f0f0" ]
-                        [ Html.strong [] [ Html.text "Translation: " ]
-                        , Html.br [] []
-                        , Html.text translation
-                        ]
-
-                Nothing ->
-                    Html.text ""
-            ]
-
-        -- TTS controls for selected text
-        , case model.get_doc_api_res of
-            Api.Success response ->
-                Components.TtsEmitter.view
-                    { text = Maybe.withDefault "" model.focus_ctx.selected_text
-                    , language = response.docPackage.language
-                    , onStartTts = StartTts
-                    , onStopTts = StopTts
-                    }
-
-            _ ->
-                text ""
-
-        -- selected segment
-        , div []
-            [ span []
-                [ Html.text "selected seg: " ]
-            , Maybe.withDefault
-                (Html.text "")
-                (Maybe.andThen (AnnotatedText.viewSentenceSegment selectedSegViewCtx) model.focus_ctx.segment_selection)
-            , Html.Extra.viewMaybe (\seg -> viewSegExtraInfo model.working_dict seg) model.focus_ctx.segment_selection
-            ]
-
-        -- lemma display for selected segment (if it has a lemma)
-        , case model.focus_ctx.segment_selection of
-            Just seg ->
-                if hasLemma seg then
-                    viewLemmaDisplay seg model.lemma_editing_mode model.working_dict model.annotation_config model.showFurigana
-
-                else
-                    Html.text ""
-
-            Nothing ->
-                Html.text ""
-        , TermEditForm.view model.form_model
-            TermEditorEvent
-            { dict = model.working_dict
-            , document_id =
-                case String.toInt route.params.doc of
-                    Just id ->
-                        Just (Bindings.SerialId id)
-
-                    Nothing ->
-                        Nothing
-            }
-        , viewTermDetails model.working_dict model.focus_ctx.segment_selection
         ]
     }
 
