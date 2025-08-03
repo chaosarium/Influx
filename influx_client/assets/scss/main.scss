@@ -16,30 +16,32 @@ body {
     font-family: $uiFont, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     margin: 0;
     padding: 0;
-    height: 100vh;
-    overflow: hidden;
+    // height: 100vh;
+    // overflow: hidden;
 }
 
-// === BASE STYLES ===
-
-
-
-
-// Navbar and layout styles
-.layout {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
+a {
+    color: unset;
 }
+
+// === COMPONENTS ===
+
+// === NAV ===
 
 nav.navbar {
-    height: 30px;
-    background-color: $gray-2;
-    border-bottom: 1px solid $gray-6;
+    height: 32px;
+    background-color: $bgColorSubtle;
+    border-bottom: $borderSubtle;
     display: flex;
     align-items: center;
-    padding: 0 20px;
+    padding: 0 8px;
     flex-shrink: 0;
+    font-size: 0.875em;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9998;
 
     ul {
         list-style-type: none;
@@ -51,56 +53,59 @@ nav.navbar {
 
     ul li {
         display: inline;
-        margin-right: 20px;
+        // margin-right: 8px;
 
         a {
             text-decoration: none;
-            color: $gray-11;
-            font-weight: 500;
-            padding: 8px 12px;
+            color: $gray-9;
+            font-weight: 400;
             border-radius: 4px;
-            transition: background-color 0.2s;
+            padding: 2px 8px;
 
             &:hover {
-                background-color: $gray-4;
+                color: $gray-10;
+                background-color: $gray-3;
             }
         }
     }
 }
 
-// for debug stuff only
 
-// div.dbg-container-div {
-//     border: 1px rgb(219, 219, 219) solid;
-//     background: repeating-linear-gradient(
-//         -45deg,
-//         #fff7e680,
-//         #fff7e680 10px,
-//         #fff7e6f0 10px,
-//         #fff7e6f0 20px
-//     );
-// }
+// === LAYOUT ===
+
+// layout right below body
+.layout-outer {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+// Full width layout for stuff that do not have side-by-side split
+.layout-content {
+    max-width: $content-max-width;
+    margin: 0 auto;
+    padding: 32px 16px;
+}
+
+// Main document layout styles
+.document-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.document-layout__left-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 16px;
+}
+
+
+// === DEBUG ===
 
 pre.dbg-json-pre {
     text-wrap: auto;
     margin: 10px;
-}
-
-// text viewer
-
-.annotated-doc-div {
-    border-top: 1px solid $gray-6;
-    border-bottom: 1px solid $gray-6;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    line-height: 3.2;
-    user-select: none;
-    white-space: preserve;
-}
-
-span.document-whitespace-span,
-span.sentence-whitespace-span {
-    // white-space: preserve;
 }
 
 .dbg-on {
@@ -131,7 +136,24 @@ span.sentence-whitespace-span {
     }
 }
 
-// tkn status
+// === TEXT VIEWER ===
+
+.annotated-doc-div {
+    border-top: 1px solid $gray-6;
+    border-bottom: 1px solid $gray-6;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    line-height: 3.2;
+    user-select: none;
+    white-space: preserve;
+}
+
+.annotated-text-container {
+    user-select: none;
+}
+
+// === TOKENS ===
+
 span.tkn-unmarked {
     background: $colorUnmarked;
 }
@@ -165,96 +187,67 @@ span.tkn-known {
 }
 
 span.tkn-nostatus {
-    background: red;
+    background: $unreachable-color;
 }
-
-
-
-/* Container for annotated text to handle spacing */
-.annotated-text-container {
-    //     font-size: 0; // Remove whitespace between inline elements??
-    user-select: none;
-}
-
 
 span.tkn-focus {
     text-decoration: underline;
-
-    // display: inline-block;
-
 }
 
 span.clickable-tkn-span {
-    user-select: none;
-
     &:hover {
         cursor: pointer;
-        background-color: $colorHover;
     }
 }
 
 .dbg-unreachable {
-    background-color: $colorDebugUnreachable;
+    background-color: $unreachable-color;
 }
 
 .dbg-todo {
     background-color: $colorDebugTodo;
 }
 
-// toast stuff
+// === TOAST STUFF ===
 
 .toast-tray {
     position: fixed;
-    top: 1em;
-    right: 1em;
+    left: 8px;
+    bottom: 8px;
     z-index: 9999;
 }
 
 .toast {
-    font-family: sans-serif;
     box-sizing: content-box;
     display: flex;
+    box-shadow: $card-ish-shadow;
     align-items: center;
     justify-content: space-between;
     position: relative;
-    width: 15em;
-    padding: 0.8em 1em;
-    background: $violet-9;
-    color: $gray-1;
-    opacity: 1;
-    transition: opacity 0.6s ease, transform 0.6s ease;
-}
-
-.toast::after {
-    content: "";
-    position: absolute;
-    z-index: -1;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    box-shadow: 2px 2px 5px 1px $gray-8;
-    opacity: 0.5;
-    transition: opacity 0.3s ease, box-shadow 0.3s ease;
+    width: 16em;
+    border: $borderSubtle;
+    padding: 8px 8px;
+    background-color: $white;
+    color: $black;
+    border-radius: $border-radius;
 }
 
 .toast--spaced {
     margin-bottom: 1em;
 }
 
+// === TEXT RENDERING ===
+
 .double-ruby {
     position: relative;
     display: inline;
-    // display: inline-block;
-    // vertical-align: baseline;
-    // background-color: #e5e7eb;
 }
 
 .double-ruby.auto-width {
-    /* JavaScript will set min-width dynamically */
+    // JavaScript will set min-width dynamically
     text-align: center;
     box-sizing: border-box;
 }
-
 
 .double-ruby::before {
     content: attr(data-top);
@@ -273,7 +266,6 @@ span.clickable-tkn-span {
     max-width: var(--annotation-max-width, 100%);
 }
 
-/* Bottom annotation using ::after */
 .double-ruby::after {
     content: attr(data-bottom);
     position: absolute;
@@ -290,7 +282,6 @@ span.clickable-tkn-span {
     max-width: var(--annotation-max-width, 100%);
 }
 
-/* Hide pseudo-elements when data attributes are empty */
 .double-ruby:not([data-top])::before,
 .double-ruby[data-top=""]::before {
     display: none;
@@ -301,7 +292,8 @@ span.clickable-tkn-span {
     display: none;
 }
 
-/* Popup component styles */
+// === HOVER DICT ===
+
 .popup-container {
     pointer-events: none;
     /* Allow clicks to pass through the container */
@@ -312,8 +304,8 @@ span.clickable-tkn-span {
 .popup-content {
     background: $background;
     border: 1px solid $gray-6;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border-radius: $border-radius;
+    box-shadow: $card-ish-shadow;
     padding: 8px 12px;
     max-width: 300px;
     font-size: 14px;
@@ -378,13 +370,6 @@ span.clickable-tkn-span {
 }
 
 
-.resizable-sidebar__content {
-    padding: 0;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
 .resizable-sidebar__header {
     display: flex;
     justify-content: space-between;
@@ -413,18 +398,6 @@ span.clickable-tkn-span {
     overflow-y: auto;
 }
 
-// Main document layout styles
-.document-layout {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-}
-
-.document-layout__left-panel {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-}
 
 
 .resizable-sidebar__resize-handle {
@@ -438,7 +411,12 @@ span.clickable-tkn-span {
 }
 
 .resizable-sidebar__content {
-    padding: 12px;
+    padding: 0 12px;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
 }
 
 .resizable-sidebar__header {
@@ -463,14 +441,15 @@ span.clickable-tkn-span {
     color: $gray-10;
 }
 
-// Collapsible Section Component Styles
+// === Collapsible Section ===
+
 .collapsible-section {
     margin-bottom: 0;
 }
 
 .collapsible-section__header {
-    background-color: $gray-3;
-    padding: 8px 12px;
+    // background-color: $gray-3;
+    padding: 8px 16px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -483,15 +462,15 @@ span.clickable-tkn-span {
 }
 
 .collapsible-section__title {
-    font-weight: bold;
-    font-size: 14px;
+    // font-weight: bold;
+    // font-size: 14px;
 }
 
 .collapsible-section__toggle-icon {
-    font-size: 12px;
+    // font-size: 12px;
 }
 
 .collapsible-section__content {
-    padding: 12px;
-    border-bottom: 1px solid $gray-5;
+    padding: 16px;
+    // border-bottom: 1px solid $gray-5;
 }

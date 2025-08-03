@@ -1138,7 +1138,7 @@ view shared route model =
     in
     { title = "Document view"
     , body =
-        [ div [ class "layout" ]
+        [ div [ class "outer-layout" ]
             [ Components.Topbar.view {}
             , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
             , div

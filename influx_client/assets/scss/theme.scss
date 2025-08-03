@@ -12,5 +12,43 @@ $colorL4: $lime-4;
 $colorL5: $green-4;
 $colorKnown: transparent;
 $colorHover: $gray-7;
-$colorDebugUnreachable: $red-9;
-$colorDebugTodo: $amber-9;
+
+$bgColorSubtle: $gray-2;
+$borderColorSubtle: $gray-6;
+$borderSubtle: 1px solid $borderColorSubtle;
+
+$linkColor: $slate-9;
+
+$content-max-width: 1000px;
+
+$card-ish-shadow: 0 2px 8px $gray-a3;
+$border-radius: 4px;
+
+// dev only
+$unreachable-color: red;
+$colorDebugTodo: orange;
+
+
+// white and black
+$white-light: white;
+$black-light: black;
+$white-dark: black;
+$black-dark: white;
+
+:root {
+    // Light theme as default
+    --white: #{$white-light};
+    --black: #{$black-light};
+    // ...
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --white: #{$white-dark};
+        --black: #{$black-dark};
+        // ...
+    }
+}
+
+$white: var(--white);
+$black: var(--black);

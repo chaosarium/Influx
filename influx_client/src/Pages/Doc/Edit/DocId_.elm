@@ -268,18 +268,22 @@ view : Shared.Model -> ThisRoute -> Model -> View Msg
 view shared route model =
     { title = "Edit Document"
     , body =
-        [ Components.Topbar.view {}
-        , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
-        , Html.h1 [] [ Html.text "Edit Document" ]
-        , case model.formModel of
-            LoadingForm ->
-                div [] [ Html.text "Loading..." ]
+        [ Html.div [ class "layout-outer" ]
+            [ Components.Topbar.view {}
+            , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
+            , Html.div [ class "layout-content" ]
+                [ Html.h1 [] [ Html.text "Edit Document" ]
+                , case model.formModel of
+                    LoadingForm ->
+                        div [] [ Html.text "Loading..." ]
 
-            ErrorForm error ->
-                div [ style "color" "red" ] [ Html.text error ]
+                    ErrorForm error ->
+                        div [ style "color" "red" ] [ Html.text error ]
 
-            EditingDocument formModel ->
-                viewDocumentForm formModel model.languagesData model.isSubmitting
+                    EditingDocument formModel ->
+                        viewDocumentForm formModel model.languagesData model.isSubmitting
+                ]
+            ]
         ]
     }
 

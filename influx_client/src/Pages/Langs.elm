@@ -8,7 +8,7 @@ import Components.Topbar
 import Dict
 import Effect exposing (Effect)
 import Html exposing (..)
-import Html.Attributes exposing (href, style)
+import Html.Attributes exposing (class, href, style)
 import Http
 import Page exposing (Page)
 import Route exposing (Route)
@@ -119,21 +119,30 @@ viewLanguagesTable languages =
         ]
 
 
+viewLangs model =
+    case model.langData of
+        Api.Loading ->
+            div [] [ Html.text "Loading..." ]
+
+        Api.Failure httpError ->
+            div [] [ Html.text "Error: ", Html.text (Api.stringOfHttpErrMsg httpError) ]
+
+        Api.Success languages ->
+            div []
+                [ viewLanguagesTable languages ]
+
+
 view : Model -> View Msg
 view model =
     { title = "Languages"
     , body =
-        [ Components.Topbar.view {}
-        , Html.h1 [] [ Html.text "Languages" ]
-        , case model.langData of
-            Api.Loading ->
-                div [] [ Html.text "Loading..." ]
-
-            Api.Failure httpError ->
-                div [] [ Html.text "Error: ", Html.text (Api.stringOfHttpErrMsg httpError) ]
-
-            Api.Success languages ->
-                div []
-                    [ viewLanguagesTable languages ]
+        [ Html.div [ class "layout-outer" ]
+            [ Components.Topbar.view {}
+            , Html.div [ class "layout-content" ]
+                [ -- the main content of the page
+                  Html.h1 [] [ Html.text "Languages" ]
+                , viewLangs model
+                ]
+            ]
         ]
     }

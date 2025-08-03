@@ -9,7 +9,7 @@ import Components.Topbar
 import Dict
 import Effect exposing (Effect)
 import Html exposing (..)
-import Html.Attributes exposing (href, style)
+import Html.Attributes exposing (class, href, style)
 import Html.Events
 import Http
 import Page exposing (Page)
@@ -169,21 +169,29 @@ viewDocumentsTable docPackages =
         ]
 
 
+viewDocs model =
+    case model.docData of
+        Api.Loading ->
+            div [] [ Html.text "Loading..." ]
+
+        Api.Failure httpError ->
+            div [] [ Html.text "Error: ", Html.text (Api.stringOfHttpErrMsg httpError) ]
+
+        Api.Success docPackages ->
+            div []
+                [ viewDocumentsTable docPackages ]
+
+
 view : ThisRoute -> Model -> View Msg
 view route model =
     { title = "All Documents"
     , body =
-        [ Components.Topbar.view {}
-        , Html.h1 [] [ Html.text "All Documents" ]
-        , case model.docData of
-            Api.Loading ->
-                div [] [ Html.text "Loading..." ]
-
-            Api.Failure httpError ->
-                div [] [ Html.text "Error: ", Html.text (Api.stringOfHttpErrMsg httpError) ]
-
-            Api.Success docPackages ->
-                div []
-                    [ viewDocumentsTable docPackages ]
+        [ Html.div [ class "layout-outer" ]
+            [ Components.Topbar.view {}
+            , div [ class "layout-content" ]
+                [ Html.h1 [] [ Html.text "All Documents" ]
+                , viewDocs model
+                ]
+            ]
         ]
     }

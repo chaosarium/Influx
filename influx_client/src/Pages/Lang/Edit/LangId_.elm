@@ -393,18 +393,22 @@ view : Shared.Model -> ThisRoute -> Model -> View Msg
 view shared route model =
     { title = "Edit Language"
     , body =
-        [ Components.Topbar.view {}
-        , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
-        , Html.h1 [] [ Html.text "Edit Language" ]
-        , case model.formModel of
-            LoadingForm ->
-                div [] [ Html.text "Loading..." ]
+        [ div [ class "outer-layout" ]
+            [ Components.Topbar.view {}
+            , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
+            , Html.div [ class "layout-content" ]
+                [ Html.h1 [] [ Html.text "Edit Language" ]
+                , case model.formModel of
+                    LoadingForm ->
+                        div [] [ Html.text "Loading..." ]
 
-            ErrorForm error ->
-                div [ style "color" "red" ] [ Html.text error ]
+                    ErrorForm error ->
+                        div [ style "color" "red" ] [ Html.text error ]
 
-            EditingLanguage formModel ->
-                viewLanguageForm formModel model.isSubmitting model.availableVoices
+                    EditingLanguage formModel ->
+                        viewLanguageForm formModel model.isSubmitting model.availableVoices
+                ]
+            ]
         ]
     }
 
