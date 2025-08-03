@@ -88,16 +88,23 @@ nav.navbar {
 }
 
 // Main document layout styles
-.document-layout {
+.text-document-layout {
     display: flex;
     flex: 1;
     overflow: hidden;
 }
 
-.document-layout__left-panel {
+.text-document-layout__left-panel {
     flex: 1;
     overflow-y: auto;
+
+}
+
+.text-document-layout__left-panel_content {
+    max-width: $text-doc-max-width;
     padding: 32px 16px;
+    margin: 0 auto;
+
 }
 
 
@@ -226,7 +233,7 @@ span.clickable-tkn-span {
     position: relative;
     width: 16em;
     border: $borderSubtle;
-    padding: 8px 8px;
+    padding: 8px 16px;
     background-color: $white;
     color: $black;
     border-radius: $border-radius;

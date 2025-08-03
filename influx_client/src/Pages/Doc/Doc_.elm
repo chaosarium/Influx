@@ -1113,7 +1113,7 @@ view shared route model =
                 , onToggle = ToggleSection "audio"
                 , content =
                     div []
-                        [ audio [ Html.Attributes.id "influx-audio-player", Html.Attributes.src "http://localhost:8000/test.mp3", Html.Attributes.controls True, Html.Attributes.attribute "crossorigin" "anonymous" ]
+                        [ audio [ Html.Attributes.id "influx-audio-player", Html.Attributes.src "http://localhost:8000/test.mp3", Html.Attributes.controls True ]
                             []
                         ]
                 }
@@ -1142,10 +1142,12 @@ view shared route model =
             [ Components.Topbar.view {}
             , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
             , div
-                [ class "document-layout" ]
+                [ class "text-document-layout" ]
                 [ div
-                    [ class "document-layout__left-panel" ]
-                    leftPanelContent
+                    [ class "text-document-layout__left-panel" ]
+                    [ div [ class "text-document-layout__left-panel_content" ]
+                        leftPanelContent
+                    ]
                 , Components.ResizableSidebar.view
                     { width = model.rightPanelWidth
                     , isCollapsed = model.sidebarCollapsed
