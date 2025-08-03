@@ -1115,9 +1115,6 @@ view shared route model =
                     div []
                         [ audio [ Html.Attributes.id "influx-audio-player", Html.Attributes.src "http://localhost:8000/test.mp3", Html.Attributes.controls True, Html.Attributes.attribute "crossorigin" "anonymous" ]
                             []
-                        , Html.button
-                            [ Html.Events.onDoubleClick (AudioSetPlaybackPosition { playback_position = 0.5 }) ]
-                            [ Html.text "Set Playback Position to 50%" ]
                         ]
                 }
             , Components.CollapsibleSection.view
