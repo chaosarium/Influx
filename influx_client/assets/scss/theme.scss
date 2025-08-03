@@ -1,0 +1,16 @@
+@use "extern/radix-ui-colors.scss" as *;
+
+// Semantic color variables
+$background: $gray-1;
+$foreground: $gray-12;
+$colorIgnored: $violet-4;
+$colorUnmarked: $gray-4;
+$colorL1: $red-4;
+$colorL2: $orange-4;
+$colorL3: $amber-4;
+$colorL4: $lime-4;
+$colorL5: $green-4;
+$colorKnown: transparent;
+$colorHover: $gray-7;
+$colorDebugUnreachable: $red-9;
+$colorDebugTodo: $amber-9;

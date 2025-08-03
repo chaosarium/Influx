@@ -1,23 +1,29 @@
-@use "./_theme.scss" as theme;
+@use "extern/radix-ui-colors.scss" as *;
+@use "theme.scss" as *;
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
 $uiFont: "Open Sans";
 
-body {
-    font-family: $uiFont, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    color: theme.$foreground;
-    margin: 0;
-    padding: 0;
-    height: 100vh;
-    overflow: hidden;
-    background: theme.$background;
-}
+// === BASE STYLES ===
 
 html {
     height: 100%;
     margin: 0;
     padding: 0;
 }
+
+body {
+    font-family: $uiFont, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+}
+
+// === BASE STYLES ===
+
+
+
 
 // Navbar and layout styles
 .layout {
@@ -28,8 +34,8 @@ html {
 
 nav.navbar {
     height: 30px;
-    background-color: theme.$gray2;
-    border-bottom: 1px solid theme.$gray6;
+    background-color: $gray-2;
+    border-bottom: 1px solid $gray-6;
     display: flex;
     align-items: center;
     padding: 0 20px;
@@ -49,14 +55,14 @@ nav.navbar {
 
         a {
             text-decoration: none;
-            color: theme.$gray11;
+            color: $gray-11;
             font-weight: 500;
             padding: 8px 12px;
             border-radius: 4px;
             transition: background-color 0.2s;
 
             &:hover {
-                background-color: theme.$gray4;
+                background-color: $gray-4;
             }
         }
     }
@@ -83,8 +89,8 @@ pre.dbg-json-pre {
 // text viewer
 
 .annotated-doc-div {
-    border-top: 1px solid theme.$gray6;
-    border-bottom: 1px solid theme.$gray6;
+    border-top: 1px solid $gray-6;
+    border-bottom: 1px solid $gray-6;
     padding-top: 10px;
     padding-bottom: 10px;
     line-height: 3.2;
@@ -127,35 +133,35 @@ span.sentence-whitespace-span {
 
 // tkn status
 span.tkn-unmarked {
-    background: theme.$colorUnmarked;
+    background: $colorUnmarked;
 }
 
 span.tkn-ignored {
-    background: theme.$colorIgnored;
+    background: $colorIgnored;
 }
 
 span.tkn-l1 {
-    background: theme.$colorL1;
+    background: $colorL1;
 }
 
 span.tkn-l2 {
-    background: theme.$colorL2;
+    background: $colorL2;
 }
 
 span.tkn-l3 {
-    background: theme.$colorL3;
+    background: $colorL3;
 }
 
 span.tkn-l4 {
-    background: theme.$colorL4;
+    background: $colorL4;
 }
 
 span.tkn-l5 {
-    background: theme.$colorL5;
+    background: $colorL5;
 }
 
 span.tkn-known {
-    background: theme.$colorKnown;
+    background: $colorKnown;
 }
 
 span.tkn-nostatus {
@@ -183,16 +189,16 @@ span.clickable-tkn-span {
 
     &:hover {
         cursor: pointer;
-        background-color: theme.$colorHover;
+        background-color: $colorHover;
     }
 }
 
 .dbg-unreachable {
-    background-color: theme.$colorDebugUnreachable;
+    background-color: $colorDebugUnreachable;
 }
 
 .dbg-todo {
-    background-color: theme.$colorDebugTodo;
+    background-color: $colorDebugTodo;
 }
 
 // toast stuff
@@ -213,8 +219,8 @@ span.clickable-tkn-span {
     position: relative;
     width: 15em;
     padding: 0.8em 1em;
-    background: theme.$violet9;
-    color: theme.$gray1;
+    background: $violet-9;
+    color: $gray-1;
     opacity: 1;
     transition: opacity 0.6s ease, transform 0.6s ease;
 }
@@ -226,7 +232,7 @@ span.clickable-tkn-span {
     left: 0;
     width: 100%;
     height: 100%;
-    box-shadow: 2px 2px 5px 1px theme.$gray8;
+    box-shadow: 2px 2px 5px 1px $gray-8;
     opacity: 0.5;
     transition: opacity 0.3s ease, box-shadow 0.3s ease;
 }
@@ -257,7 +263,7 @@ span.clickable-tkn-span {
     left: 50%;
     transform: translateX(-50%);
     font-size: 0.6em;
-    color: theme.$violet10;
+    color: $violet-10;
     font-weight: 500;
     line-height: 1.2;
     white-space: nowrap;
@@ -275,7 +281,7 @@ span.clickable-tkn-span {
     left: 50%;
     transform: translateX(-50%);
     font-size: 0.6em;
-    color: theme.$red10;
+    color: $red-10;
     line-height: 1.2;
     white-space: nowrap;
     pointer-events: none;
@@ -304,8 +310,8 @@ span.clickable-tkn-span {
 }
 
 .popup-content {
-    background: theme.$background;
-    border: 1px solid theme.$gray6;
+    background: $background;
+    border: 1px solid $gray-6;
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     padding: 8px 12px;
@@ -326,37 +332,37 @@ span.clickable-tkn-span {
 
 .popup-content .popup-label {
     font-weight: bold;
-    color: theme.$gray10;
+    color: $gray-10;
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .popup-content .popup-value {
-    color: theme.$foreground;
+    color: $foreground;
     margin-top: 2px;
 }
 
 .popup-content .popup-definition {
-    color: theme.$violet10;
+    color: $violet-10;
     font-weight: 500;
 }
 
 .popup-content .popup-pos {
-    color: theme.$amber10;
+    color: $amber-10;
     font-style: italic;
 }
 
 .popup-content .popup-lemma {
-    color: theme.$green10;
+    color: $green-10;
 }
 
 // Resizable Sidebar Component Styles
 .resizable-sidebar {
     min-width: 200px;
     max-width: 800px;
-    background-color: theme.$gray2;
-    border-left: 1px solid theme.$gray6;
+    background-color: $gray-2;
+    border-left: 1px solid $gray-6;
     overflow-y: auto;
     position: relative;
     height: 100%;
@@ -364,8 +370,8 @@ span.clickable-tkn-span {
 
 .resizable-sidebar--collapsed {
     width: 30px;
-    background-color: theme.$gray2;
-    border-left: 1px solid theme.$gray6;
+    background-color: $gray-2;
+    border-left: 1px solid $gray-6;
     display: flex;
     align-items: flex-start;
     height: 100%;
@@ -384,14 +390,14 @@ span.clickable-tkn-span {
     justify-content: space-between;
     align-items: center;
     padding: 12px;
-    border-bottom: 1px solid theme.$gray6;
-    background-color: theme.$gray3;
+    border-bottom: 1px solid $gray-6;
+    background-color: $gray-3;
     flex-shrink: 0;
 }
 
 .resizable-sidebar__title {
     font-weight: bold;
-    color: theme.$foreground;
+    color: $foreground;
 }
 
 .resizable-sidebar__toggle-btn {
@@ -399,7 +405,7 @@ span.clickable-tkn-span {
     border: none;
     cursor: pointer;
     font-size: 16px;
-    color: theme.$gray10;
+    color: $gray-10;
 }
 
 .resizable-sidebar__sections {
@@ -427,7 +433,7 @@ span.clickable-tkn-span {
     top: 0;
     width: 2px;
     height: 100%;
-    background-color: theme.$colorHover;
+    background-color: $colorHover;
     cursor: col-resize;
 }
 
@@ -441,12 +447,12 @@ span.clickable-tkn-span {
     align-items: center;
     margin-bottom: 12px;
     padding-bottom: 8px;
-    border-bottom: 1px solid theme.$gray6;
+    border-bottom: 1px solid $gray-6;
 }
 
 .resizable-sidebar__title {
     font-weight: bold;
-    color: theme.$foreground;
+    color: $foreground;
 }
 
 .resizable-sidebar__toggle-btn {
@@ -454,7 +460,7 @@ span.clickable-tkn-span {
     border: none;
     cursor: pointer;
     font-size: 16px;
-    color: theme.$gray10;
+    color: $gray-10;
 }
 
 // Collapsible Section Component Styles
@@ -463,17 +469,17 @@ span.clickable-tkn-span {
 }
 
 .collapsible-section__header {
-    background-color: theme.$gray3;
+    background-color: $gray-3;
     padding: 8px 12px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid theme.$gray5;
+    border-bottom: 1px solid $gray-5;
 }
 
 .collapsible-section__header--expanded {
-    border-bottom: 1px solid theme.$gray5;
+    border-bottom: 1px solid $gray-5;
 }
 
 .collapsible-section__title {
@@ -487,5 +493,5 @@ span.clickable-tkn-span {
 
 .collapsible-section__content {
     padding: 12px;
-    border-bottom: 1px solid theme.$gray5;
+    border-bottom: 1px solid $gray-5;
 }
