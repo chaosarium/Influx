@@ -36,6 +36,11 @@ export const onReady = ({ app, env }) => {
                     utterance.pitch = data.pitch || 1;
                     speechSynthesis.speak(utterance);
                     return;
+                case "SET_AUDIO_PLAYBACK_POSITION":
+                    let audio = document.getElementById('influx-audio-player');
+                    audio.currentTime = data.playback_position * audio.duration;
+                    console.log(`Set audio playback position to ${data.playback_position}`);
+                    return;
                 case "CANCEL":
                     speechSynthesis.cancel();
                     return;
@@ -75,11 +80,11 @@ function measureTextWidth(text, fontSize, fontFamily) {
     span.style.fontSize = fontSize;
     span.style.fontFamily = fontFamily;
     span.textContent = text;
-    
+
     document.body.appendChild(span);
     const width = span.offsetWidth;
     document.body.removeChild(span);
-    
+
     return width;
 }
 
@@ -87,26 +92,26 @@ function adjustAnnotationWidth(element) {
     const topText = element.getAttribute('data-top') || '';
     const bottomText = element.getAttribute('data-bottom') || '';
     const mainText = element.textContent || '';
-    
+
     // Get computed styles
     const computedStyle = window.getComputedStyle(element);
     const fontSize = computedStyle.fontSize;
     const fontFamily = computedStyle.fontFamily;
-    
+
     // Calculate annotation font size (0.6em of main font)
     const annotationFontSize = parseFloat(fontSize) * 0.6 + 'px';
-    
+
     // Measure widths
     const mainWidth = measureTextWidth(mainText, fontSize, fontFamily);
     const topWidth = topText ? measureTextWidth(topText, annotationFontSize, fontFamily) : 0;
     const bottomWidth = bottomText ? measureTextWidth(bottomText, annotationFontSize, fontFamily) : 0;
-    
+
     // Find the maximum width
     const maxWidth = Math.min(Math.max(mainWidth, topWidth, bottomWidth), 2 * mainWidth);
-    
+
     // Set CSS custom property for pseudo-element max-width constraint
     element.style.setProperty('--annotation-max-width', maxWidth + 'px');
-    
+
     // Set minimum width if needed
     if (maxWidth > mainWidth) {
         element.style.textAlign = 'center';

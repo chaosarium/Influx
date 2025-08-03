@@ -135,6 +135,8 @@ type Msg
       -- TTS controls...
     | StartTts
     | StopTts
+      -- Audio controls...
+    | AudioSetPlaybackPosition { playback_position : Float }
       -- Translation...
     | TranslateText
     | TranslationReceived (Result Http.Error Api.Translate.TranslateResponse)
@@ -387,6 +389,9 @@ update msg model =
 
         StopTts ->
             ( model, Effect.ttsCancel )
+
+        AudioSetPlaybackPosition { playback_position } ->
+            ( model, Effect.audioSetPlaybackPosition { playback_position = playback_position } )
 
         TranslateText ->
             case model.get_doc_api_res of
@@ -1075,6 +1080,20 @@ view shared route model =
 
                         _ ->
                             text ""
+                }
+            , Components.CollapsibleSection.view
+                { sectionId = "audio"
+                , title = "Audio"
+                , isExpanded = True
+                , onToggle = ToggleSection "audio"
+                , content =
+                    div []
+                        [ audio [ Html.Attributes.id "influx-audio-player", Html.Attributes.src "http://localhost:8000/test.mp3", Html.Attributes.controls True, Html.Attributes.attribute "crossorigin" "anonymous" ]
+                            []
+                        , Html.button
+                            [ Html.Events.onDoubleClick (AudioSetPlaybackPosition { playback_position = 0.5 }) ]
+                            [ Html.text "Set Playback Position to 50%" ]
+                        ]
                 }
             ]
     in

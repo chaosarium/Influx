@@ -6,7 +6,7 @@ port module Effect exposing
     , pushRoutePath, replaceRoutePath
     , loadExternalUrl, back
     , map, toCmd
-    , adjustAnnotationWidths, jsIncoming, openWindowDialog, sendSharedMsg, ttsCancel, ttsCancelAndSpeak, ttsGetVoices, ttsSpeak
+    , adjustAnnotationWidths, audioSetPlaybackPosition, jsIncoming, openWindowDialog, sendSharedMsg, ttsCancel, ttsCancelAndSpeak, ttsGetVoices, ttsSpeak
     )
 
 {-|
@@ -190,6 +190,16 @@ ttsSpeak options =
                 , ( "rate", Maybe.withDefault Json.Encode.null (Maybe.map Json.Encode.float options.rate) )
                 , ( "pitch", Maybe.withDefault Json.Encode.null (Maybe.map Json.Encode.float options.pitch) )
                 ]
+        }
+
+
+audioSetPlaybackPosition : { playback_position : Float } -> Effect msg
+audioSetPlaybackPosition options =
+    SendMessageToJavaScript
+        { tag = "SET_AUDIO_PLAYBACK_POSITION"
+        , data =
+            Json.Encode.object
+                [ ( "playback_position", Json.Encode.float options.playback_position ) ]
         }
 
 
