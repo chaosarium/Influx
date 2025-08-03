@@ -8,7 +8,9 @@ import Bindings exposing (..)
 import BindingsUtils
 import Browser.Events
 import Components.AnnotatedText as AnnotatedText
+import Components.CollapsibleSection
 import Components.DbgDisplay
+import Components.ResizableSidebar
 import Components.TermEditForm as TermEditForm
 import Components.Topbar
 import Components.TtsEmitter
@@ -925,98 +927,6 @@ tokenStatusToString status =
             "Known"
 
 
-viewCollapsibleSection : String -> String -> Bool -> Html Msg -> Html Msg
-viewCollapsibleSection sectionId title isExpanded content =
-    div [ style "border" "1px solid #ddd", style "margin-bottom" "8px" ]
-        [ div
-            [ style "background-color" "#f5f5f5"
-            , style "padding" "8px 12px"
-            , style "cursor" "pointer"
-            , style "border-bottom" (if isExpanded then "1px solid #ddd" else "none")
-            , style "display" "flex"
-            , style "align-items" "center"
-            , style "justify-content" "space-between"
-            , Html.Events.onClick (ToggleSection sectionId)
-            ]
-            [ span [ style "font-weight" "bold", style "font-size" "14px" ] [ text title ]
-            , span [ style "font-size" "12px" ] [ text (if isExpanded then "▼" else "▶") ]
-            ]
-        , if isExpanded then
-            div [ style "padding" "12px" ] [ content ]
-          else
-            text ""
-        ]
-
-
-viewResizablePanel : Float -> Bool -> List (Html Msg) -> Html Msg
-viewResizablePanel width isCollapsed content =
-    if isCollapsed then
-        div
-            [ style "width" "40px"
-            , style "background-color" "#fafafa"
-            , style "border-left" "1px solid #ddd"
-            , style "display" "flex"
-            , style "align-items" "flex-start"
-            , style "padding" "12px 8px"
-            ]
-            [ button
-                [ style "background" "none"
-                , style "border" "none"
-                , style "cursor" "pointer"
-                , style "font-size" "16px"
-                , style "color" "#666"
-                , Html.Events.onClick ToggleSidebar
-                ]
-                [ text "◀" ]
-            ]
-    else
-        div
-            [ style "width" (String.fromFloat width ++ "px")
-            , style "min-width" "200px"
-            , style "max-width" "800px"
-            , style "background-color" "#fafafa"
-            , style "border-left" "1px solid #ddd"
-            , style "overflow-y" "auto"
-            , style "position" "relative"
-            ]
-            [ div
-                [ style "position" "absolute"
-                , style "left" "0"
-                , style "top" "0"
-                , style "width" "4px"
-                , style "height" "100%"
-                , style "background-color" "#ccc"
-                , style "cursor" "col-resize"
-                , Html.Events.on "mousedown" 
-                    (Decode.map StartResize (Decode.field "clientX" Decode.float))
-                ]
-                []
-            , div [ style "padding" "12px" ] 
-                [ div 
-                    [ style "display" "flex"
-                    , style "justify-content" "space-between"
-                    , style "align-items" "center"
-                    , style "margin-bottom" "12px"
-                    , style "padding-bottom" "8px"
-                    , style "border-bottom" "1px solid #ddd"
-                    ]
-                    [ span [ style "font-weight" "bold", style "color" "#333" ] [ text "Document Tools" ]
-                    , button
-                        [ style "background" "none"
-                        , style "border" "none"
-                        , style "cursor" "pointer"
-                        , style "font-size" "16px"
-                        , style "color" "#666"
-                        , Html.Events.onClick ToggleSidebar
-                        ]
-                        [ text "▶" ]
-                    ]
-                , div [] content
-                ]
-            ]
-
-
-
 -- end
 
 
@@ -1068,8 +978,12 @@ view shared route model =
                     ]
 
         rightPanelContent =
-            [ viewCollapsibleSection "termEditor" "Term Editor" model.sectionStates.termEditor
-                (TermEditForm.view model.form_model
+            [ Components.CollapsibleSection.view
+                { sectionId = "termEditor"
+                , title = "Term Editor"
+                , isExpanded = model.sectionStates.termEditor
+                , onToggle = ToggleSection "termEditor"
+                , content = TermEditForm.view model.form_model
                     TermEditorEvent
                     { dict = model.working_dict
                     , document_id =
@@ -1080,9 +994,13 @@ view shared route model =
                             Nothing ->
                                 Nothing
                     }
-                )
-            , viewCollapsibleSection "termDetails" "Term Details" model.sectionStates.termDetails
-                (div []
+                }
+            , Components.CollapsibleSection.view
+                { sectionId = "termDetails"
+                , title = "Term Details"
+                , isExpanded = model.sectionStates.termDetails
+                , onToggle = ToggleSection "termDetails"
+                , content = div []
                     [ viewTermDetails model.working_dict model.focus_ctx.segment_selection
                     , case model.focus_ctx.segment_selection of
                         Just seg ->
@@ -1093,11 +1011,20 @@ view shared route model =
                         Nothing ->
                             Html.text ""
                     ]
-                )
-            , viewCollapsibleSection "annotationControls" "Annotation Controls" model.sectionStates.annotationControls
-                (viewAnnotationControls model.annotation_config model.showFurigana)
-            , viewCollapsibleSection "translation" "Translation" model.sectionStates.translation
-                (div []
+                }
+            , Components.CollapsibleSection.view
+                { sectionId = "annotationControls"
+                , title = "Annotation Controls"
+                , isExpanded = model.sectionStates.annotationControls
+                , onToggle = ToggleSection "annotationControls"
+                , content = viewAnnotationControls model.annotation_config model.showFurigana
+                }
+            , Components.CollapsibleSection.view
+                { sectionId = "translation"
+                , title = "Translation"
+                , isExpanded = model.sectionStates.translation
+                , onToggle = ToggleSection "translation"
+                , content = div []
                     [ Html.text
                         ("Selected text: "
                             ++ Maybe.withDefault "" model.focus_ctx.selected_text
@@ -1119,9 +1046,13 @@ view shared route model =
                         Nothing ->
                             Html.text ""
                     ]
-                )
-            , viewCollapsibleSection "tts" "Text-to-Speech" model.sectionStates.tts
-                (case model.get_doc_api_res of
+                }
+            , Components.CollapsibleSection.view
+                { sectionId = "tts"
+                , title = "Text-to-Speech"
+                , isExpanded = model.sectionStates.tts
+                , onToggle = ToggleSection "tts"
+                , content = case model.get_doc_api_res of
                     Api.Success response ->
                         Components.TtsEmitter.view
                             { text = Maybe.withDefault "" model.focus_ctx.selected_text
@@ -1132,7 +1063,7 @@ view shared route model =
 
                     _ ->
                         text ""
-                )
+                }
             ]
     in
     { title = "Document view"
@@ -1150,7 +1081,14 @@ view shared route model =
                 , style "padding" "20px"
                 ]
                 leftPanelContent
-            , viewResizablePanel model.rightPanelWidth model.sidebarCollapsed rightPanelContent
+            , Components.ResizableSidebar.view
+                { width = model.rightPanelWidth
+                , isCollapsed = model.sidebarCollapsed
+                , title = "Document Tools"
+                , onStartResize = StartResize
+                , onToggleCollapse = ToggleSidebar
+                , content = rightPanelContent
+                }
             ]
 
         -- for debugging check focus context model
