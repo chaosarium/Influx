@@ -9,7 +9,7 @@ import Dict
 import Html exposing (Html, div, span)
 import Html.Attributes exposing (class, style)
 import Html.Attributes.Extra
-import Html.Events exposing (onMouseDown, onMouseEnter, onMouseLeave, onMouseUp)
+import Html.Events exposing (onDoubleClick, onMouseDown, onMouseEnter, onMouseLeave, onMouseUp)
 import Json.Decode as Decode
 import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
 import Utils.ModifierState as ModifierState
@@ -41,6 +41,7 @@ type alias Args msg =
     , on_hover_start : { x : Float, y : Float } -> PopupContent -> msg
     , on_hover_end : msg
     , on_mouse_enter_with_position : Float -> Float -> FocusContext.Msg -> PopupContent -> msg
+    , on_token_double_click : SentSegV2 -> msg
     , annotation_config : AnnotationConfig
     , showFurigana : Bool
     }
@@ -326,6 +327,7 @@ viewRegisteredTkn args attrs text tkn seg =
             ++ [ tokenStatusToClass tkn.status
                , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
                , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+               , onDoubleClick (args.on_token_double_click seg)
                , onMouseEnterWithPositionAndFocus
                     (\x y focusMsg -> args.on_mouse_enter_with_position x y focusMsg (TokenPopup tkn seg))
                     (FocusContext.SelectMouseEnter seg)
@@ -358,6 +360,7 @@ viewRegisteredPhrase args attrs phrase seg components =
         (attrs
             ++ [ Utils.attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
                , Utils.attributeIfNot args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+               , Utils.attributeIfNot args.modifier_state.alt <| onDoubleClick (args.on_token_double_click seg)
                , Utils.attributeIfNot args.modifier_state.alt <|
                     onMouseEnterWithPositionAndFocus
                         (\x y focusMsg -> args.on_mouse_enter_with_position x y focusMsg (PhrasePopup phrase seg))

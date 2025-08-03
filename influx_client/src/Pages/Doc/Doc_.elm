@@ -137,6 +137,7 @@ type Msg
     | StopTts
       -- Audio controls...
     | AudioSetPlaybackPosition { playback_position : Float }
+    | AudioJumpToToken SentSegV2
       -- Translation...
     | TranslateText
     | TranslationReceived (Result Http.Error Api.Translate.TranslateResponse)
@@ -392,6 +393,28 @@ update msg model =
 
         AudioSetPlaybackPosition { playback_position } ->
             ( model, Effect.audioSetPlaybackPosition { playback_position = playback_position } )
+
+        AudioJumpToToken seg ->
+            case model.get_doc_api_res of
+                Api.Success response ->
+                    let
+                        totalTextLength =
+                            String.length response.annotatedDoc.text
+
+                        tokenStartChar =
+                            seg.startChar
+
+                        playbackRatio =
+                            if totalTextLength > 0 then
+                                toFloat tokenStartChar / toFloat totalTextLength
+
+                            else
+                                0.0
+                    in
+                    ( model, Effect.audioSetPlaybackPosition { playback_position = playbackRatio } )
+
+                _ ->
+                    ( model, Effect.none )
 
         TranslateText ->
             case model.get_doc_api_res of
@@ -745,6 +768,7 @@ viewLemmaDisplay seg editingMode dict annotation_config showFurigana =
                     , on_hover_start = \_ _ -> HidePopup
                     , on_hover_end = HidePopup
                     , on_mouse_enter_with_position = \_ _ _ _ -> HidePopup
+                    , on_token_double_click = \_ -> HidePopup
                     , annotation_config = annotation_config
                     , showFurigana = showFurigana
                     }
@@ -963,6 +987,7 @@ view shared route model =
             , on_mouse_enter_with_position =
                 \x y focusMsg popupContent ->
                     CombinedMouseEnter { x = x, y = y } focusMsg popupContent
+            , on_token_double_click = AudioJumpToToken
             , annotation_config = model.annotation_config
             , showFurigana = model.showFurigana
             }
@@ -1095,6 +1120,23 @@ view shared route model =
                             [ Html.text "Set Playback Position to 50%" ]
                         ]
                 }
+            , Components.CollapsibleSection.view
+                { sectionId = "debug-info"
+                , title = "Debug Info"
+                , isExpanded = True
+                , onToggle = ToggleSection "debug-info"
+                , content =
+                    div []
+                        [ -- for debugging check focus context model
+                          Components.DbgDisplay.view "model.focus_ctx.last_hovered_at" model.focus_ctx.last_hovered_at
+                        , Components.DbgDisplay.view "model.focus_ctx.mouse_down_at" model.focus_ctx.mouse_down_at
+                        , Components.DbgDisplay.view "model.focus_ctx.last_mouse_down_at" model.focus_ctx.last_mouse_down_at
+                        , Components.DbgDisplay.view "model.focus_ctx.slice_selection" model.focus_ctx.slice_selection
+                        , Components.DbgDisplay.view "model.focus_ctx.selected_text" model.focus_ctx.selected_text
+                        , Components.DbgDisplay.view "model.focus_ctx.segment_selection" model.focus_ctx.segment_selection
+                        , Components.DbgDisplay.view "model.focus_ctx.segment_slice" model.focus_ctx.segment_slice
+                        ]
+                }
             ]
     in
     { title = "Document view"
@@ -1117,15 +1159,6 @@ view shared route model =
                     }
                 ]
             ]
-
-        -- for debugging check focus context model
-        , Components.DbgDisplay.view "model.focus_ctx.last_hovered_at" model.focus_ctx.last_hovered_at
-        , Components.DbgDisplay.view "model.focus_ctx.mouse_down_at" model.focus_ctx.mouse_down_at
-        , Components.DbgDisplay.view "model.focus_ctx.last_mouse_down_at" model.focus_ctx.last_mouse_down_at
-        , Components.DbgDisplay.view "model.focus_ctx.slice_selection" model.focus_ctx.slice_selection
-        , Components.DbgDisplay.view "model.focus_ctx.selected_text" model.focus_ctx.selected_text
-        , Components.DbgDisplay.view "model.focus_ctx.segment_selection" model.focus_ctx.segment_selection
-        , Components.DbgDisplay.view "model.focus_ctx.segment_slice" model.focus_ctx.segment_slice
         ]
     }
 
