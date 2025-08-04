@@ -12,7 +12,7 @@ use axum::extract::State;
 use tracing::debug;
 
 pub async fn get_language_list(
-    State(ServerState { db }): State<ServerState>,
+    State(ServerState { db, .. }): State<ServerState>,
 ) -> Result<Json<Vec<Language>>, ServerError> {
     debug!("Fetching language list");
     let languages = db.get_languages_vec().await?;
@@ -20,7 +20,7 @@ pub async fn get_language_list(
 }
 
 pub async fn get_language_by_id(
-    State(ServerState { db }): State<ServerState>,
+    State(ServerState { db, .. }): State<ServerState>,
     Path(lang_id): Path<String>,
 ) -> Result<Json<Option<Language>>, ServerError> {
     let id = lang_id
@@ -35,7 +35,7 @@ pub async fn get_language_by_id(
 }
 
 pub async fn update_language(
-    State(ServerState { db }): State<ServerState>,
+    State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<Language>,
 ) -> Result<Json<Language>, ServerError> {
     debug!(language_id = ?payload.id, name = %payload.name, "Updating language");

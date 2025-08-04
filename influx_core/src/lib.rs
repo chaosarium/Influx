@@ -44,11 +44,20 @@ pub struct InfluxCoreArgs {
     /// Whether to seed database
     #[arg(short, long, default_value_t = false)]
     pub seed: bool,
+
+    /// Port to bind the server to
+    #[arg(short, long, default_value_t = 3000)]
+    pub port: u16,
+
+    /// URL of the NLP service
+    #[arg(short, long, default_value = "http://127.0.0.1:3001")]
+    pub nlp_url: String,
 }
 
 #[derive(Clone)]
 pub struct ServerState {
     pub db: DB,
+    pub nlp_url: String,
 }
 
 pub fn create_app_router(state: ServerState) -> Router {
@@ -85,9 +94,13 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
         let _ = db.seed_all_tables().await;
     }
 
-    let app = create_app_router(ServerState { db });
+    let app = create_app_router(ServerState {
+        db,
+        nlp_url: args.nlp_url.clone(),
+    });
 
-    let listener = TcpListener::bind("127.0.0.1:3000").await?;
+    let bind_addr = format!("127.0.0.1:{}", args.port);
+    let listener = TcpListener::bind(&bind_addr).await?;
     info!(
         "Starting Influx server at http://{:?}",
         listener.local_addr()?
