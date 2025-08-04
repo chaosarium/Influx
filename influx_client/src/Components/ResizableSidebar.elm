@@ -33,8 +33,7 @@ view config =
         div
             [ class "resizable-sidebar--collapsed" ]
             [ button
-                [ class "resizable-sidebar__toggle-btn"
-                , Html.Events.onClick config.onToggleCollapse
+                [ Html.Events.onClick config.onToggleCollapse
                 ]
                 [ text "◀" ]
             ]

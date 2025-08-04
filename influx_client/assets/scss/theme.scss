@@ -40,14 +40,12 @@ $black-dark: white;
     // Light theme as default
     --white: #{$white-light};
     --black: #{$black-light};
-    // ...
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
         --white: #{$white-dark};
         --black: #{$black-dark};
-        // ...
     }
 }
 

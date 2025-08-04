@@ -27,7 +27,7 @@ You can find a brief Elm syntax reference in `elm-syntax.txt`.
 ## Commands
 
 - **Elm Frontend (in `influx_client`):** To see if influx_client type checks, compile it by running `elm-land build`.
-  - No need to build `assets/scss/main.scss`. There is already a background process that will build it automatically.
+  - No need to build `influx_client/assets/scss/main.scss`. There is already a background process that will build it automatically.
 - **Python NLP Service (in `influx_nlp`):** `uv run pytest .`, `uv run pytest . --inline-snapshot=fix`, `uv run black .`
 - **Rust (in `influx_core`):** `cargo test` (it's better to run specific test cases), `cargo fmt`, `cargo test generate_elm_bindings` (generates Elm types)
 - **SQLX (in `influx_core`):** this is used for database migration. Run `cargo sqlx` to manage the development database.
@@ -55,6 +55,11 @@ When updating the database schema, you should just do `cargo sqlx database reset
   - Always include type annotation.
 - **Elm:**
   - Component functions end in uppercase `C`, e.g. `textboxC` for some textbox component used in HTML forms.
+
+## CSS Guidelines
+
+- `influx_client/assets/scss/main.scss` should use color variables defined in `influx_client/assets/scss/theme.scss` 
+- Prefer minimal CSS. Use the least code to achive the desired effect.
 
 ## Testing
 
