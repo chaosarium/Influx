@@ -37,11 +37,6 @@ nav.navbar {
     padding: 0 8px;
     flex-shrink: 0;
     font-size: 0.875em;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 9998;
 
     ul {
         list-style-type: none;
@@ -91,7 +86,7 @@ nav.navbar {
 .text-document-layout {
     display: flex;
     flex: 1;
-    overflow: hidden;
+    // overflow: hidden;
 }
 
 .text-document-layout__left-panel {
@@ -106,6 +101,76 @@ nav.navbar {
     margin: 0 auto;
 
 }
+
+// === SIDEBAR ===
+
+// Resizable Sidebar Component Styles
+.resizable-sidebar {
+    min-width: 200px;
+    max-width: 800px;
+    background-color: $gray-2;
+    border-left: 1px solid $gray-6;
+    position: sticky;
+    top: 0;
+    bottom: 0;
+    min-height: 60vh;
+    max-height: 100vh;
+}
+
+.resizable-sidebar--collapsed {
+    width: 30px;
+    background-color: $gray-2;
+    border-left: 1px solid $gray-6;
+    display: flex;
+    align-items: flex-start;
+    height: 100%;
+}
+
+
+.resizable-sidebar__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid $gray-6;
+    background-color: $gray-3;
+    flex-shrink: 0;
+}
+
+
+.resizable-sidebar__sections {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.resizable-sidebar__resize-handle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background-color: $colorHover;
+    cursor: col-resize;
+}
+
+.resizable-sidebar__content {
+    padding: 0 12px;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+}
+
+// .resizable-sidebar__header {
+//     display: flex;
+//     justify-content: space-between;
+//     align-items: center;
+//     margin-bottom: 12px;
+//     padding-bottom: 8px;
+//     border-bottom: 1px solid $gray-6;
+// }
+
 
 
 // === DEBUG ===
@@ -354,98 +419,6 @@ span.clickable-tkn-span {
 
 .popup-content .popup-lemma {
     color: $green-10;
-}
-
-// Resizable Sidebar Component Styles
-.resizable-sidebar {
-    min-width: 200px;
-    max-width: 800px;
-    background-color: $gray-2;
-    border-left: 1px solid $gray-6;
-    overflow-y: auto;
-    position: relative;
-    height: 100%;
-}
-
-.resizable-sidebar--collapsed {
-    width: 30px;
-    background-color: $gray-2;
-    border-left: 1px solid $gray-6;
-    display: flex;
-    align-items: flex-start;
-    height: 100%;
-}
-
-
-.resizable-sidebar__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px;
-    border-bottom: 1px solid $gray-6;
-    background-color: $gray-3;
-    flex-shrink: 0;
-}
-
-.resizable-sidebar__title {
-    font-weight: bold;
-    color: $foreground;
-}
-
-.resizable-sidebar__toggle-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    color: $gray-10;
-}
-
-.resizable-sidebar__sections {
-    flex: 1;
-    overflow-y: auto;
-}
-
-
-
-.resizable-sidebar__resize-handle {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 2px;
-    height: 100%;
-    background-color: $colorHover;
-    cursor: col-resize;
-}
-
-.resizable-sidebar__content {
-    padding: 0 12px;
-    padding: 0;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-
-}
-
-.resizable-sidebar__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid $gray-6;
-}
-
-.resizable-sidebar__title {
-    font-weight: bold;
-    color: $foreground;
-}
-
-.resizable-sidebar__toggle-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    color: $gray-10;
 }
 
 // === Collapsible Section ===
