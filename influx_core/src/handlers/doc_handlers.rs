@@ -22,7 +22,7 @@ use tracing::{debug, info};
 const USE_CACHE: bool = false;
 
 pub async fn get_docs_list(
-    State(ServerState { db }): State<ServerState>,
+    State(ServerState { db, .. }): State<ServerState>,
     Json(request): Json<GetDocsRequest>,
 ) -> Response {
     match db.get_documents(request.language_id).await {
@@ -136,6 +136,7 @@ pub(crate) async fn get_annotated_doc_logic(
                 text.as_str(),
                 lang_code.clone(),
                 lang_entry.parser_config.clone(),
+                &state.nlp_url,
             )
             .await?;
             let serialized_json = serde_json::to_value(&it)?;

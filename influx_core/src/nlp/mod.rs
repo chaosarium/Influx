@@ -107,9 +107,10 @@ pub async fn tokenise_pipeline(
     text: &str,
     language_code: String,
     parser_config: crate::db::models::lang::ParserConfig,
+    nlp_url: &str,
 ) -> anyhow::Result<AnnotatedDocV2> {
     let client = Client::new();
-    let url = "http://127.0.0.1:3001/tokeniser".to_string();
+    let url = format!("{}/tokeniser", nlp_url);
     let payload = json!({
         "text": text,
         "parser_config": parser_config
@@ -325,6 +326,7 @@ mod tests {
                     "spacy_model".to_string() => "en_core_web_sm".to_string()
                 },
             },
+            "http://127.0.0.1:3001",
         )
         .await;
         assert!(res.is_ok());
@@ -554,6 +556,7 @@ mod tests {
                     "spacy_model".to_string() => "en_core_web_sm".to_string()
                 },
             },
+            "http://127.0.0.1:3001",
         )
         .await;
         assert!(res.is_ok());
@@ -744,6 +747,7 @@ mod tests {
                     "enable_conjugation_analysis".to_string() => "true".to_string()
                 },
             },
+            "http://127.0.0.1:3001",
         )
         .await;
         assert!(res.is_ok());

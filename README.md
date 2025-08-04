@@ -29,7 +29,7 @@ No. Not yet. It technically has a functioning database and text reader, but the 
 - [x] translation integration
 - [x] annotated text reader
 - [ ] dictionary integration
-- [ ] reasonable UI
+- [ ] reasonable ui
 - [ ] SRS
 - [ ] language-specific nlp
     - [x] japanese — auto furigana
