@@ -20,6 +20,9 @@ mod utils;
 pub mod test_utils;
 
 use db::DB;
+use integration::stardict::StardictManager;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 #[macro_use]
 extern crate macro_rules_attribute;
@@ -58,6 +61,7 @@ pub struct InfluxCoreArgs {
 pub struct ServerState {
     pub db: DB,
     pub nlp_url: String,
+    pub stardict_manager: Arc<Mutex<StardictManager>>,
 }
 
 pub fn create_app_router(state: ServerState) -> Router {
@@ -81,6 +85,10 @@ pub fn create_app_router(state: ServerState) -> Router {
             "/extern/translate",
             post(handlers::integration_handlers::extern_translate),
         )
+        .route(
+            "/extern/stardict/lookup",
+            get(handlers::integration_handlers::stardict_lookup),
+        )
         .layer(CorsLayer::permissive())
         .with_state(state)
 }
@@ -97,6 +105,7 @@ pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
     let app = create_app_router(ServerState {
         db,
         nlp_url: args.nlp_url.clone(),
+        stardict_manager: Arc::new(Mutex::new(StardictManager::new())),
     });
 
     let bind_addr = format!("127.0.0.1:{}", args.port);
