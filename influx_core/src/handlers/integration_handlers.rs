@@ -4,6 +4,7 @@ use crate::integration::ExternalDict;
 use crate::integration::ExternalTranslator;
 use crate::ServerState;
 use axum::extract::Path;
+use axum::extract::Query;
 use axum::extract::State;
 use axum::Json;
 use serde::Deserialize;
@@ -59,4 +60,56 @@ pub async fn extern_translate(
     };
 
     return Ok(Json(response));
+}
+
+#[derive(Deserialize)]
+pub struct StardictLookupQuery {
+    pub dict_path: String,
+    pub word: String,
+}
+
+#[derive(serde::Serialize)]
+pub struct WordDefinitionSegment {
+    pub types: String,
+    pub text: String,
+}
+
+#[derive(serde::Serialize)]
+pub struct WordDefinition {
+    pub word: String,
+    pub segments: Vec<WordDefinitionSegment>,
+}
+
+impl From<stardict::WordDefinition> for WordDefinition {
+    fn from(def: stardict::WordDefinition) -> Self {
+        Self {
+            word: def.word,
+            segments: def
+                .segments
+                .into_iter()
+                .map(|seg| WordDefinitionSegment {
+                    types: seg.types,
+                    text: seg.text,
+                })
+                .collect(),
+        }
+    }
+}
+
+pub async fn stardict_lookup(
+    State(state): State<ServerState>,
+    Query(query): Query<StardictLookupQuery>,
+) -> Result<Json<Vec<WordDefinition>>, ServerError> {
+    debug!(dict_path = %query.dict_path, word = %query.word, "Looking up word in stardict");
+
+    // TODO maybe can do rwlock instead, but mutex should be fine for now
+    let mut stardict_manager = state.stardict_manager.lock().await;
+    let result = stardict_manager.lookup_word(query.dict_path, &query.word)?;
+
+    match result {
+        Some(definitions) => Ok(Json(
+            definitions.into_iter().map(|def| def.into()).collect(),
+        )),
+        None => Ok(Json(vec![])),
+    }
 }
