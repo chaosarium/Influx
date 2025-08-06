@@ -8,6 +8,7 @@ use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 
+pub mod data_dir;
 pub mod db;
 pub mod embedded_db;
 pub mod fsrs_scheduler;
@@ -89,12 +90,19 @@ pub fn create_app_router(state: ServerState) -> Router {
             "/dictionary/lookup",
             get(handlers::integration_handlers::stardict_lookup),
         )
+        .route(
+            "/dictionary/list",
+            get(handlers::integration_handlers::list_dictionaries),
+        )
         .layer(CorsLayer::permissive())
         .with_state(state)
 }
 
 pub async fn launch(args: InfluxCoreArgs) -> anyhow::Result<()> {
     info!("Whether to seed: {}", args.seed);
+
+    // Initialize data directories
+    data_dir::init_data_directories()?;
 
     let db = DB::create_db(args.db_choice).await?;
 

@@ -1,4 +1,5 @@
 use super::ServerError;
+use crate::data_dir;
 use crate::integration;
 use crate::integration::ExternalDict;
 use crate::integration::ExternalTranslator;
@@ -118,9 +119,15 @@ pub async fn stardict_lookup(
 ) -> Result<Json<Vec<WordDefinition>>, ServerError> {
     debug!(dict_path = %query.dict_path, query = %query.query, "Looking up word in stardict");
 
+    // Resolve relative path to absolute path
+    let absolute_path = data_dir::resolve_dict_path(&query.dict_path)
+        .map_err(|e| ServerError(e))?
+        .to_string_lossy()
+        .to_string();
+
     // TODO maybe can do rwlock instead, but mutex should be fine for now
     let mut stardict_manager = state.stardict_manager.lock().await;
-    let result = stardict_manager.lookup_word(query.dict_path, &query.query)?;
+    let result = stardict_manager.lookup_word(absolute_path, &query.query)?;
 
     match result {
         Some(definitions) => Ok(Json(
@@ -128,4 +135,43 @@ pub async fn stardict_lookup(
         )),
         None => Ok(Json(vec![])),
     }
+}
+
+pub async fn list_dictionaries() -> Result<Json<Vec<String>>, ServerError> {
+    let dictionaries_dir = data_dir::get_dictionaries_dir().map_err(|e| ServerError(e))?;
+
+    let mut dictionary_names = Vec::new();
+
+    if let Ok(entries) = std::fs::read_dir(&dictionaries_dir) {
+        for entry in entries {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                if path.is_dir() {
+                    if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
+                        // Look for any .ifo files in the directory
+                        if let Ok(dir_entries) = std::fs::read_dir(&path) {
+                            for dir_entry in dir_entries {
+                                if let Ok(dir_entry) = dir_entry {
+                                    let file_path = dir_entry.path();
+                                    if let Some(extension) = file_path.extension() {
+                                        if extension == "ifo" {
+                                            if let Some(file_name) =
+                                                file_path.file_name().and_then(|n| n.to_str())
+                                            {
+                                                dictionary_names
+                                                    .push(format!("{}/{}", dir_name, file_name));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    dictionary_names.sort();
+    Ok(Json(dictionary_names))
 }

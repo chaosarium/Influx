@@ -2815,7 +2815,7 @@ dependencies = [
  "axum-test",
  "chrono",
  "clap",
- "dirs 5.0.1",
+ "dirs 6.0.0",
  "dotenvy",
  "elm_rs",
  "expect-test",
