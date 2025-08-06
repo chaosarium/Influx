@@ -12,7 +12,7 @@ pub mod db;
 pub mod embedded_db;
 pub mod fsrs_scheduler;
 mod handlers;
-mod integration;
+pub mod integration;
 mod nlp;
 mod prelude;
 mod utils;
@@ -86,7 +86,7 @@ pub fn create_app_router(state: ServerState) -> Router {
             post(handlers::integration_handlers::extern_translate),
         )
         .route(
-            "/extern/stardict/lookup",
+            "/dictionary/lookup",
             get(handlers::integration_handlers::stardict_lookup),
         )
         .layer(CorsLayer::permissive())
@@ -163,6 +163,8 @@ mod tests {
                 handlers::UpdateFSRSConfigResponse,
                 handlers::SetCardStateRequest,
                 handlers::SetCardStateResponse,
+                handlers::integration_handlers::WordDefinition,
+                handlers::integration_handlers::WordDefinitionSegment,
                 nlp::TermDictionary,
                 nlp::AnnotatedDocV2,
                 nlp::DocSegV2,
@@ -203,6 +205,8 @@ mod tests {
                 handlers::UpdateFSRSConfigResponse,
                 handlers::SetCardStateRequest,
                 handlers::SetCardStateResponse,
+                handlers::integration_handlers::WordDefinition,
+                handlers::integration_handlers::WordDefinitionSegment,
                 nlp::TermDictionary,
                 nlp::AnnotatedDocV2,
                 nlp::DocSegV2,

@@ -60,6 +60,10 @@ async fn setup_test_server() -> (TestServer, TestDb) {
     let test_db = TestDb::new().await.unwrap();
     let app = create_test_app(ServerState {
         db: test_db.db.clone(),
+        nlp_url: "http://127.0.0.1:3001".to_string(),
+        stardict_manager: std::sync::Arc::new(tokio::sync::Mutex::new(
+            influx_core::integration::stardict::StardictManager::new(),
+        )),
     });
     let server = TestServer::new(app).unwrap();
     (server, test_db)
