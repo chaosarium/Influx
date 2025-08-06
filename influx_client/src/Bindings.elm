@@ -564,6 +564,34 @@ setCardStateResponseEncoder struct =
         ]
 
 
+type alias WordDefinition =
+    { word : String
+    , segments : List (WordDefinitionSegment)
+    }
+
+
+wordDefinitionEncoder : WordDefinition -> Json.Encode.Value
+wordDefinitionEncoder struct =
+    Json.Encode.object
+        [ ( "word", (Json.Encode.string) struct.word )
+        , ( "segments", (Json.Encode.list (wordDefinitionSegmentEncoder)) struct.segments )
+        ]
+
+
+type alias WordDefinitionSegment =
+    { types : String
+    , text : String
+    }
+
+
+wordDefinitionSegmentEncoder : WordDefinitionSegment -> Json.Encode.Value
+wordDefinitionSegmentEncoder struct =
+    Json.Encode.object
+        [ ( "types", (Json.Encode.string) struct.types )
+        , ( "text", (Json.Encode.string) struct.text )
+        ]
+
+
 type alias TermDictionary =
     { tokenDict : Dict String (Token)
     , phraseDict : Dict String (Phrase)
@@ -1122,6 +1150,20 @@ setCardStateResponseDecoder : Json.Decode.Decoder SetCardStateResponse
 setCardStateResponseDecoder =
     Json.Decode.succeed SetCardStateResponse
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "updated_card" (cardDecoder)))
+
+
+wordDefinitionDecoder : Json.Decode.Decoder WordDefinition
+wordDefinitionDecoder =
+    Json.Decode.succeed WordDefinition
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "word" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "segments" (Json.Decode.list (wordDefinitionSegmentDecoder))))
+
+
+wordDefinitionSegmentDecoder : Json.Decode.Decoder WordDefinitionSegment
+wordDefinitionSegmentDecoder =
+    Json.Decode.succeed WordDefinitionSegment
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "types" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string)))
 
 
 termDictionaryDecoder : Json.Decode.Decoder TermDictionary
