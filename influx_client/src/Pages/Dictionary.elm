@@ -1,9 +1,10 @@
 module Pages.Dictionary exposing (Model, Msg, page)
 
 import Api
+import Api.DictionaryList
 import Api.DictionaryLookup
 import Bindings exposing (StardictType(..), WordDefinition, WordDefinitionSegment)
-import Components.FormElements exposing (buttonC, inputC)
+import Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC)
 import Components.Topbar
 import Effect exposing (Effect)
 import Html exposing (..)
@@ -20,6 +21,8 @@ type alias Model =
     { dictPath : String
     , query : String
     , lookupResult : LookupResult
+    , availableDictionaries : List String
+    , dictionariesLoadStatus : DictionariesLoadStatus
     }
 
 
@@ -30,13 +33,22 @@ type LookupResult
     | Error String
 
 
+type DictionariesLoadStatus
+    = DictionariesNotLoaded
+    | DictionariesLoading
+    | DictionariesLoadedSuccess
+    | DictionariesError String
+
+
 init : () -> ( Model, Effect Msg )
 init () =
     ( { dictPath = ""
       , query = ""
       , lookupResult = NotStarted
+      , availableDictionaries = []
+      , dictionariesLoadStatus = DictionariesLoading
       }
-    , Effect.none
+    , Effect.sendCmd (Api.DictionaryList.dictionaryList DictionariesLoaded)
     )
 
 
@@ -45,6 +57,7 @@ type Msg
     | QueryChanged String
     | LookupClicked
     | LookupResponded (Result Http.Error (List WordDefinition))
+    | DictionariesLoaded (Result Http.Error (List String))
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -75,6 +88,21 @@ update msg model =
         LookupResponded (Err err) ->
             ( { model | lookupResult = Error (Api.stringOfHttpErrMsg err) }, Effect.none )
 
+        DictionariesLoaded (Ok dictionaries) ->
+            ( { model
+                | availableDictionaries = dictionaries
+                , dictionariesLoadStatus = DictionariesLoadedSuccess
+              }
+            , Effect.none
+            )
+
+        DictionariesLoaded (Err err) ->
+            ( { model
+                | dictionariesLoadStatus = DictionariesError (httpErrorToString err)
+              }
+            , Effect.none
+            )
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -89,14 +117,7 @@ view model =
             [ Components.Topbar.view {}
             , Html.div [ class "layout-content" ]
                 [ Html.h1 [] [ Html.text "Dictionary Lookup" ]
-                , Html.div []
-                    [ inputC
-                        []
-                        "Dictionary Path"
-                        "dict-path"
-                        DictPathChanged
-                        model.dictPath
-                    ]
+                , viewDictionarySelector model
                 , Html.div []
                     [ inputC
                         []
@@ -115,6 +136,34 @@ view model =
             ]
         ]
     }
+
+
+viewDictionarySelector : Model -> Html Msg
+viewDictionarySelector model =
+    case model.dictionariesLoadStatus of
+        DictionariesLoading ->
+            Html.div [] [ Html.text "Loading dictionaries..." ]
+
+        DictionariesError errorMsg ->
+            Html.div [ class "error" ] [ Html.text ("Error loading dictionaries: " ++ errorMsg) ]
+
+        DictionariesLoadedSuccess ->
+            if List.isEmpty model.availableDictionaries then
+                Html.div [ class "error" ]
+                    [ Html.text "No dictionaries found. Please add .ifo files to the dictionaries directory." ]
+
+            else
+                Html.div []
+                    [ selectC
+                        "Dictionary"
+                        "dict-selector"
+                        DictPathChanged
+                        (List.map (\dict -> { value = dict, label = dict }) model.availableDictionaries)
+                        model.dictPath
+                    ]
+
+        DictionariesNotLoaded ->
+            Html.div [] []
 
 
 viewLookupResult : LookupResult -> Html Msg

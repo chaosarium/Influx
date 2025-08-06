@@ -1,5 +1,6 @@
 use stardict::{no_cache, with_sled, StarDict};
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 pub struct StardictManager {
     dictionaries: HashMap<String, Box<dyn StarDict + Send>>,
@@ -23,11 +24,13 @@ impl StardictManager {
 
     pub fn load_dictionary(&mut self, ifo_path: String) -> &mut Box<dyn StarDict + Send> {
         if !self.dictionaries.contains_key(&ifo_path) {
+            let path_buf = PathBuf::from(&ifo_path);
+
             let dict: Box<dyn StarDict + Send> = if self.use_cache {
                 // TODO cache name is definitely not right. maybe use the path library to get our app data dir?
-                Box::new(with_sled(&ifo_path, "influx_stardict").unwrap())
+                Box::new(with_sled(path_buf, "influx_stardict").unwrap())
             } else {
-                Box::new(no_cache(&ifo_path).unwrap())
+                Box::new(no_cache(path_buf).unwrap())
             };
             self.dictionaries.insert(ifo_path.clone(), dict);
         }

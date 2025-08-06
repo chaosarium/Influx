@@ -58,7 +58,7 @@ time = { version = "0.3.41", features = ["serde"] }
 dotenvy = "0.15.7"
 postgresql_embedded = "0.19.0"
 tempfile = "3.8"
-dirs = "5.0"
+dirs = "6.0.0"
 fsrs = "5.0"
 macro_rules_attribute = "0.2.2"
 stardict = { git = "https://github.com/chaosarium/stardict", default-features = false, features = [
