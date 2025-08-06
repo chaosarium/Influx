@@ -2,7 +2,7 @@ module Pages.Dictionary exposing (Model, Msg, page)
 
 import Api
 import Api.DictionaryLookup
-import Bindings exposing (WordDefinition, WordDefinitionSegment)
+import Bindings exposing (StardictType(..), WordDefinition, WordDefinitionSegment)
 import Components.FormElements exposing (buttonC, inputC)
 import Components.Topbar
 import Effect exposing (Effect)
@@ -146,9 +146,26 @@ viewDefinition definition =
 
 viewSegment : WordDefinitionSegment -> Html Msg
 viewSegment segment =
+    let
+        typeDisplay =
+            case segment.types of
+                Html ->
+                    "(html) "
+
+                Other typeStr ->
+                    "(" ++ typeStr ++ ") "
+
+        contentDisplay =
+            case segment.types of
+                Html ->
+                    Utils.htmlOfString segment.text
+
+                Other _ ->
+                    [ Html.text segment.text ]
+    in
     Html.div [ class "segment" ]
-        [ Html.span [ class "segment-type" ] [ Html.text ("(" ++ segment.types ++ ") ") ]
-        , Html.span [ class "segment-text" ] [ Html.text segment.text ]
+        [ Html.span [ class "segment-type" ] [ Html.text typeDisplay ]
+        , Html.span [ class "segment-text" ] contentDisplay
         ]
 
 

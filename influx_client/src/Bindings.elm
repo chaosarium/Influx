@@ -564,6 +564,19 @@ setCardStateResponseEncoder struct =
         ]
 
 
+type StardictType
+    = Html
+    | Other (String)
+
+
+stardictTypeEncoder : StardictType -> Json.Encode.Value
+stardictTypeEncoder enum =
+    case enum of
+        Html ->
+            Json.Encode.string "Html"
+        Other inner ->
+            Json.Encode.object [ ( "Other", Json.Encode.string inner ) ]
+
 type alias WordDefinition =
     { word : String
     , segments : List (WordDefinitionSegment)
@@ -579,7 +592,7 @@ wordDefinitionEncoder struct =
 
 
 type alias WordDefinitionSegment =
-    { types : String
+    { types : StardictType
     , text : String
     }
 
@@ -587,7 +600,7 @@ type alias WordDefinitionSegment =
 wordDefinitionSegmentEncoder : WordDefinitionSegment -> Json.Encode.Value
 wordDefinitionSegmentEncoder struct =
     Json.Encode.object
-        [ ( "types", (Json.Encode.string) struct.types )
+        [ ( "types", (stardictTypeEncoder) struct.types )
         , ( "text", (Json.Encode.string) struct.text )
         ]
 
@@ -1152,6 +1165,21 @@ setCardStateResponseDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "updated_card" (cardDecoder)))
 
 
+stardictTypeDecoder : Json.Decode.Decoder StardictType
+stardictTypeDecoder = 
+    Json.Decode.oneOf
+        [ Json.Decode.string
+            |> Json.Decode.andThen
+                (\x ->
+                    case x of
+                        "Html" ->
+                            Json.Decode.succeed Html
+                        unexpected ->
+                            Json.Decode.fail <| "Unexpected variant " ++ unexpected
+                )
+        , Json.Decode.map Other (Json.Decode.field "Other" (Json.Decode.string))
+        ]
+
 wordDefinitionDecoder : Json.Decode.Decoder WordDefinition
 wordDefinitionDecoder =
     Json.Decode.succeed WordDefinition
@@ -1162,7 +1190,7 @@ wordDefinitionDecoder =
 wordDefinitionSegmentDecoder : Json.Decode.Decoder WordDefinitionSegment
 wordDefinitionSegmentDecoder =
     Json.Decode.succeed WordDefinitionSegment
-        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "types" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "types" (stardictTypeDecoder)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "text" (Json.Decode.string)))
 
 

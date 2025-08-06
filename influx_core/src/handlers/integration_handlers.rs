@@ -70,8 +70,23 @@ pub struct StardictLookupQuery {
 }
 
 #[derive(Debug, SerdeDerives!, Clone, PartialEq, Eq, ElmDerives!)]
+pub enum StardictType {
+    Html,
+    Other(String),
+}
+
+impl From<String> for StardictType {
+    fn from(type_str: String) -> Self {
+        match type_str.as_str() {
+            "h" => StardictType::Html,
+            _ => StardictType::Other(type_str),
+        }
+    }
+}
+
+#[derive(Debug, SerdeDerives!, Clone, PartialEq, Eq, ElmDerives!)]
 pub struct WordDefinitionSegment {
-    pub types: String,
+    pub types: StardictType,
     pub text: String,
 }
 
@@ -89,7 +104,7 @@ impl From<stardict::WordDefinition> for WordDefinition {
                 .segments
                 .into_iter()
                 .map(|seg| WordDefinitionSegment {
-                    types: seg.types,
+                    types: seg.types.into(),
                     text: seg.text,
                 })
                 .collect(),
