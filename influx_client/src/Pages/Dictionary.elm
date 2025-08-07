@@ -8,7 +8,7 @@ import Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC
 import Components.Topbar
 import Effect exposing (Effect)
 import Html exposing (..)
-import Html.Attributes exposing (class, placeholder, value)
+import Html.Attributes exposing (class, id, placeholder, value)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Page exposing (Page)
@@ -83,7 +83,31 @@ update msg model =
                 )
 
         LookupResponded (Ok definitions) ->
-            ( { model | lookupResult = Success definitions }, Effect.none )
+            let
+                htmlInjectionEffects =
+                    definitions
+                        |> List.indexedMap
+                            (\defIndex definition ->
+                                definition.segments
+                                    |> List.indexedMap
+                                        (\segIndex segment ->
+                                            case segment.types of
+                                                Html ->
+                                                    [ Effect.injectHtml
+                                                        { elementId = "html-segment-" ++ String.fromInt defIndex ++ "-" ++ String.fromInt segIndex
+                                                        , htmlContent = segment.text
+                                                        }
+                                                    ]
+
+                                                Other _ ->
+                                                    []
+                                        )
+                                    |> List.concat
+                            )
+                        |> List.concat
+                        |> Effect.batch
+            in
+            ( { model | lookupResult = Success definitions }, htmlInjectionEffects )
 
         LookupResponded (Err err) ->
             ( { model | lookupResult = Error (Api.stringOfHttpErrMsg err) }, Effect.none )
@@ -181,20 +205,20 @@ viewLookupResult result =
         Success definitions ->
             Html.div []
                 [ Html.h2 [] [ Html.text "Results:" ]
-                , Html.div [] (List.map viewDefinition definitions)
+                , Html.div [] (List.indexedMap viewDefinition definitions)
                 ]
 
 
-viewDefinition : WordDefinition -> Html Msg
-viewDefinition definition =
+viewDefinition : Int -> WordDefinition -> Html Msg
+viewDefinition defIndex definition =
     Html.div [ class "definition" ]
         [ Html.h3 [] [ Html.text definition.word ]
-        , Html.div [] (List.map viewSegment definition.segments)
+        , Html.div [] (List.indexedMap (viewSegment defIndex) definition.segments)
         ]
 
 
-viewSegment : WordDefinitionSegment -> Html Msg
-viewSegment segment =
+viewSegment : Int -> Int -> WordDefinitionSegment -> Html Msg
+viewSegment defIndex segIndex segment =
     let
         typeDisplay =
             case segment.types of
@@ -207,7 +231,12 @@ viewSegment segment =
         contentDisplay =
             case segment.types of
                 Html ->
-                    Utils.htmlOfString segment.text
+                    [ Html.div
+                        [ id ("html-segment-" ++ String.fromInt defIndex ++ "-" ++ String.fromInt segIndex)
+                        , class "html-content-placeholder"
+                        ]
+                        [ Html.text "Loading HTML content..." ]
+                    ]
 
                 Other _ ->
                     [ Html.text segment.text ]
