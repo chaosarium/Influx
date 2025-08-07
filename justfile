@@ -5,13 +5,10 @@ nlp:
     cd influx_nlp && just
 
 client:
-    cd influx_client && just sass &
-    cd influx_client && just 
+    cd influx_client && just
 
 dev:
-    just serve &
-    just nlp &
-    just client &
+    concurrently "just serve" "just nlp" "just client"
 
 surreal:
     surreal start rocksdb:surrealtemp.db -A --user root --pass root
