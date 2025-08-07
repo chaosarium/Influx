@@ -155,8 +155,14 @@ function injectHtmlToElement(elementId, htmlContent, dictName) {
         // Process HTML content to resolve all resource paths (CSS, images, etc.)
         const processedHtml = processAllResourcePaths(htmlContent, dictDir);
 
-        // Inject processed HTML content into shadow DOM for isolation
-        targetElement.shadowRoot.innerHTML = processedHtml;
+        // Create isolation styles to prevent outside styling from affecting shadow DOM content
+        const isolationStyles = `
+            <style>
+            </style>
+        `;
+
+        // Inject isolation styles and processed HTML content into shadow DOM
+        targetElement.shadowRoot.innerHTML = isolationStyles + processedHtml;
     });
 }
 

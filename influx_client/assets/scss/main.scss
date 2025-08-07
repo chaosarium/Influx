@@ -458,8 +458,18 @@ span.clickable-tkn-span {
 // === HTML CONTENT PLACEHOLDERS ===
 
 .html-content-placeholder {
+    /* Reset any inherited styles that might affect the shadow DOM container */
+    all: unset;
+    display: block;
+    
+    /* Basic container styling */
     min-height: 20px;
     padding: 4px 8px;
     border-radius: 4px;
     border: 1px dashed $borderColorSubtle;
+    // background-color: $bgColorSubtle;
+    
+    /* Ensure shadow DOM host is properly isolated */
+    isolation: isolate;
+    contain: layout style paint;
 }

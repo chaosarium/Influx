@@ -1,5 +1,5 @@
 default:
-    just sass & just server
+    concurrently "just sass" "just server"
 
 server:
     elm-land server
