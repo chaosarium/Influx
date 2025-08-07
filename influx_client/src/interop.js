@@ -155,7 +155,7 @@ function injectHtmlToElement(elementId, htmlContent, dictName) {
         // Process HTML content to resolve all resource paths (CSS, images, etc.)
         const processedHtml = processAllResourcePaths(htmlContent, dictDir);
 
-        // Create isolation styles to prevent outside styling from affecting shadow DOM content
+w        // Create isolation styles to prevent outside styling from affecting shadow DOM content
         const isolationStyles = `
             <style>
             </style>

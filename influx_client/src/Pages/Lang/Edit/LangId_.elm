@@ -1,10 +1,11 @@
 module Pages.Lang.Edit.LangId_ exposing (Model, Msg, page)
 
 import Api
+import Api.DictionaryList
 import Api.GetLanguage
 import Api.LangEdit
 import Bindings exposing (InfluxResourceId(..), Language)
-import Components.FormElements exposing (buttonC, inputC, stringListC)
+import Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC, stringListC)
 import Components.Styles as Styles
 import Components.Topbar
 import Dict exposing (Dict)
@@ -55,6 +56,8 @@ type alias Model =
     , formModel : FormModel
     , isSubmitting : Bool
     , availableVoices : List Voice
+    , availableDictionaries : List String
+    , dictionariesLoadStatus : DictionariesLoadStatus
     }
 
 
@@ -70,7 +73,15 @@ type alias LanguageFormModel =
     , currentDictInput : String
     , ttsRateInput : String
     , ttsPitchInput : String
+    , selectedDictPath : String
     }
+
+
+type DictionariesLoadStatus
+    = DictionariesNotLoaded
+    | DictionariesLoading
+    | DictionariesLoadedSuccess
+    | DictionariesError String
 
 
 init : { languageId : String } -> () -> ( Model, Effect Msg )
@@ -89,10 +100,13 @@ init { languageId } () =
       , formModel = LoadingForm
       , isSubmitting = False
       , availableVoices = []
+      , availableDictionaries = []
+      , dictionariesLoadStatus = DictionariesLoading
       }
     , Effect.batch
         [ Effect.sendCmd (Api.GetLanguage.get { langId = languageId } LanguageDataResponded)
         , Effect.ttsGetVoices
+        , Effect.sendCmd (Api.DictionaryList.dictionaryList DictionariesLoaded)
         ]
     )
 
@@ -117,6 +131,9 @@ type Msg
     | CancelEdit
     | LanguageEditResponded (Result Http.Error Language)
     | VoicesReceived (Maybe D.Value)
+    | DictionariesLoaded (Result Http.Error (List String))
+    | DictPathChanged String
+    | AddSelectedDict
     | SharedMsg Shared.Msg.Msg
 
 
@@ -136,6 +153,7 @@ update msg model =
                         , currentDictInput = ""
                         , ttsRateInput = Maybe.withDefault "" (Maybe.map String.fromFloat language.ttsRate)
                         , ttsPitchInput = Maybe.withDefault "" (Maybe.map String.fromFloat language.ttsPitch)
+                        , selectedDictPath = ""
                         }
               }
             , Effect.none
@@ -173,6 +191,56 @@ update msg model =
                       }
                     , Effect.none
                     )
+
+                _ ->
+                    ( model, Effect.none )
+
+        DictPathChanged value ->
+            case model.formModel of
+                EditingLanguage formModel ->
+                    ( { model
+                        | formModel =
+                            EditingLanguage
+                                { formModel | selectedDictPath = value }
+                      }
+                    , Effect.none
+                    )
+
+                _ ->
+                    ( model, Effect.none )
+
+        AddSelectedDict ->
+            case model.formModel of
+                EditingLanguage formModel ->
+                    if String.isEmpty formModel.selectedDictPath then
+                        ( model, Effect.none )
+
+                    else
+                        let
+                            updatedDicts =
+                                if List.member formModel.selectedDictPath formModel.workingLanguage.dicts then
+                                    formModel.workingLanguage.dicts
+
+                                else
+                                    formModel.workingLanguage.dicts ++ [ formModel.selectedDictPath ]
+                        in
+                        let
+                            workingLanguage =
+                                formModel.workingLanguage
+
+                            updatedWorkingLanguage =
+                                { workingLanguage | dicts = updatedDicts }
+                        in
+                        ( { model
+                            | formModel =
+                                EditingLanguage
+                                    { formModel
+                                        | workingLanguage = updatedWorkingLanguage
+                                        , selectedDictPath = ""
+                                    }
+                          }
+                        , Effect.none
+                        )
 
                 _ ->
                     ( model, Effect.none )
@@ -287,6 +355,7 @@ update msg model =
                         , currentDictInput = ""
                         , ttsRateInput = Maybe.withDefault "" (Maybe.map String.fromFloat updatedLanguage.ttsRate)
                         , ttsPitchInput = Maybe.withDefault "" (Maybe.map String.fromFloat updatedLanguage.ttsPitch)
+                        , selectedDictPath = ""
                         }
                 , isSubmitting = False
               }
@@ -310,6 +379,21 @@ update msg model =
                             []
             in
             ( { model | availableVoices = voices }
+            , Effect.none
+            )
+
+        DictionariesLoaded (Ok dictionaries) ->
+            ( { model
+                | availableDictionaries = dictionaries
+                , dictionariesLoadStatus = DictionariesLoadedSuccess
+              }
+            , Effect.none
+            )
+
+        DictionariesLoaded (Err err) ->
+            ( { model
+                | dictionariesLoadStatus = DictionariesError (Api.stringOfHttpErrMsg err)
+              }
             , Effect.none
             )
 
@@ -406,15 +490,15 @@ view shared route model =
                         div [ style "color" "red" ] [ Html.text error ]
 
                     EditingLanguage formModel ->
-                        viewLanguageForm formModel model.isSubmitting model.availableVoices
+                        viewLanguageForm formModel model.isSubmitting model.availableVoices model.availableDictionaries model.dictionariesLoadStatus
                 ]
             ]
         ]
     }
 
 
-viewLanguageForm : LanguageFormModel -> Bool -> List Voice -> Html Msg
-viewLanguageForm { originalLanguage, workingLanguage, currentDictInput, ttsRateInput, ttsPitchInput } isSubmitting availableVoices =
+viewLanguageForm : LanguageFormModel -> Bool -> List Voice -> List String -> DictionariesLoadStatus -> Html Msg
+viewLanguageForm { originalLanguage, workingLanguage, currentDictInput, ttsRateInput, ttsPitchInput, selectedDictPath } isSubmitting availableVoices availableDictionaries dictionariesLoadStatus =
     let
         hasChanges =
             originalLanguage /= workingLanguage
@@ -422,6 +506,7 @@ viewLanguageForm { originalLanguage, workingLanguage, currentDictInput, ttsRateI
     Html.form [ Html.Events.onSubmit SubmitForm ]
         [ inputC [] "Language Name" "nameInput" UpdateNameInput workingLanguage.name
         , stringListC "Dictionary URLs" "dictsInput" UpdateDictsList UpdateDictInput workingLanguage.dicts currentDictInput
+        , viewDictionarySelector selectedDictPath availableDictionaries dictionariesLoadStatus
         , Html.h3 [] [ Html.text "Text-to-Speech Settings" ]
         , inputC [] "TTS Rate (0.1-10.0)" "ttsRateInput" UpdateTtsRateInput ttsRateInput
         , inputC [] "TTS Pitch (0.0-2.0)" "ttsPitchInput" UpdateTtsPitchInput ttsPitchInput
@@ -463,6 +548,44 @@ viewLanguageForm { originalLanguage, workingLanguage, currentDictInput, ttsRateI
 
           else
             Utils.htmlEmpty
+        ]
+
+
+viewDictionarySelector : String -> List String -> DictionariesLoadStatus -> Html Msg
+viewDictionarySelector selectedDictPath availableDictionaries dictionariesLoadStatus =
+    Html.div []
+        [ Html.h3 [] [ Html.text "Add Dictionary from Available" ]
+        , case dictionariesLoadStatus of
+            DictionariesLoading ->
+                Html.div [] [ Html.text "Loading dictionaries..." ]
+
+            DictionariesError errorMsg ->
+                Html.div [ class "error" ] [ Html.text ("Error loading dictionaries: " ++ errorMsg) ]
+
+            DictionariesLoadedSuccess ->
+                if List.isEmpty availableDictionaries then
+                    Html.div [ class "error" ]
+                        [ Html.text "No dictionaries found. Please add .ifo files to the dictionaries directory." ]
+
+                else
+                    Html.div []
+                        [ selectC
+                            "Available Dictionaries"
+                            "dict-selector"
+                            DictPathChanged
+                            (List.map (\dict -> { value = dict, label = dict }) availableDictionaries)
+                            selectedDictPath
+                        , Html.div [ Html.Attributes.style "margin-top" "10px" ]
+                            [ buttonC
+                                [ onClick AddSelectedDict
+                                , Html.Attributes.disabled (String.isEmpty selectedDictPath)
+                                ]
+                                "Add Dictionary"
+                            ]
+                        ]
+
+            DictionariesNotLoaded ->
+                Html.div [] []
         ]
 
 

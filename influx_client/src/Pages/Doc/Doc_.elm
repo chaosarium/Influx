@@ -10,6 +10,7 @@ import Browser.Events
 import Components.AnnotatedText as AnnotatedText
 import Components.CollapsibleSection
 import Components.DbgDisplay
+import Components.DictionaryLookup as DictionaryLookup
 import Components.ResizableSidebar
 import Components.TermEditForm as TermEditForm
 import Components.Topbar
@@ -75,6 +76,7 @@ type alias Model =
     , resizeStartX : Float
     , resizeStartWidth : Float
     , sidebarCollapsed : Bool
+    , dictionaryLookup : DictionaryLookup.Model
     }
 
 
@@ -84,6 +86,7 @@ type alias SectionStates =
     , annotationControls : Bool
     , translation : Bool
     , tts : Bool
+    , dictionary : Bool
     }
 
 
@@ -106,11 +109,13 @@ init { documentId } () =
             , annotationControls = False
             , translation = False
             , tts = False
+            , dictionary = False
             }
       , isResizing = False
       , resizeStartX = 0
       , resizeStartWidth = 0
       , sidebarCollapsed = False
+      , dictionaryLookup = DictionaryLookup.init []
       }
     , Effect.sendCmd (Api.GetAnnotatedDoc.get { filepath = documentId } ApiResponded)
     )
@@ -157,6 +162,9 @@ type Msg
     | ToggleSection String
       -- Shared
     | SharedMsg Shared.Msg.Msg
+      -- Dictionary
+    | DictionaryLookupMsg DictionaryLookup.Msg
+    | LookupSelectedText
 
 
 updateSectionStates : String -> SectionStates -> SectionStates
@@ -176,6 +184,9 @@ updateSectionStates sectionName sectionStates =
 
         "tts" ->
             { sectionStates | tts = not sectionStates.tts }
+
+        "dictionary" ->
+            { sectionStates | dictionary = not sectionStates.dictionary }
 
         _ ->
             sectionStates
@@ -259,11 +270,48 @@ update msg model =
         SharedMsg sharedMsg ->
             ( model, Effect.sendSharedMsg sharedMsg )
 
+        DictionaryLookupMsg dictionaryMsg ->
+            let
+                ( newDictionaryModel, effect ) =
+                    DictionaryLookup.update dictionaryMsg model.dictionaryLookup
+            in
+            ( { model | dictionaryLookup = newDictionaryModel }
+            , Effect.map DictionaryLookupMsg effect
+            )
+
+        LookupSelectedText ->
+            case model.focus_ctx.selected_text of
+                Just selectedText ->
+                    if String.isEmpty (String.trim selectedText) then
+                        ( model, Effect.none )
+
+                    else
+                        let
+                            ( newDictionaryModel, effect ) =
+                                DictionaryLookup.update (DictionaryLookup.QueryChanged selectedText) model.dictionaryLookup
+
+                            sectionStates =
+                                model.sectionStates
+
+                            updatedSectionStates =
+                                { sectionStates | dictionary = True }
+                        in
+                        ( { model
+                            | dictionaryLookup = newDictionaryModel
+                            , sectionStates = updatedSectionStates
+                          }
+                        , Effect.map DictionaryLookupMsg effect
+                        )
+
+                Nothing ->
+                    ( model, Effect.none )
+
         ApiResponded (Ok res) ->
             ( { model
                 | get_doc_api_res = Api.Success res
                 , working_doc = DocContext.fromAnnotatedDocument res.docPackage.languageId res.annotatedDoc
                 , working_dict = DictContext.fromTermDictionary res.docPackage.languageId res.termDict
+                , dictionaryLookup = DictionaryLookup.init res.docPackage.language.dicts
               }
             , Effect.adjustAnnotationWidths
             )
@@ -1105,6 +1153,23 @@ view shared route model =
 
                         _ ->
                             text ""
+                }
+            , Components.CollapsibleSection.view
+                { sectionId = "dictionary"
+                , title = "Dictionary Lookup"
+                , isExpanded = model.sectionStates.dictionary
+                , onToggle = ToggleSection "dictionary"
+                , content =
+                    div []
+                        [ div []
+                            [ Html.text ("Selected text: " ++ Maybe.withDefault "" model.focus_ctx.selected_text) ]
+                        , Html.button
+                            [ Html.Events.onClick LookupSelectedText
+                            , Html.Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
+                            ]
+                            [ Html.text "Lookup in Dictionary" ]
+                        , Html.map DictionaryLookupMsg (DictionaryLookup.view model.dictionaryLookup)
+                        ]
                 }
             , Components.CollapsibleSection.view
                 { sectionId = "audio"
