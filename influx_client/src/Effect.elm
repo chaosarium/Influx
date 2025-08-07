@@ -6,7 +6,7 @@ port module Effect exposing
     , pushRoutePath, replaceRoutePath
     , loadExternalUrl, back
     , map, toCmd
-    , adjustAnnotationWidths, audioSetPlaybackPosition, jsIncoming, openWindowDialog, sendSharedMsg, ttsCancel, ttsCancelAndSpeak, ttsGetVoices, ttsSpeak
+    , adjustAnnotationWidths, audioSetPlaybackPosition, injectHtml, jsIncoming, openWindowDialog, sendSharedMsg, ttsCancel, ttsCancelAndSpeak, ttsGetVoices, ttsSpeak
     )
 
 {-|
@@ -230,6 +230,18 @@ adjustAnnotationWidths =
     SendMessageToJavaScript
         { tag = "ADJUST_ANNOTATION_WIDTHS"
         , data = Json.Encode.null
+        }
+
+
+injectHtml : { elementId : String, htmlContent : String } -> Effect msg
+injectHtml options =
+    SendMessageToJavaScript
+        { tag = "INJECT_HTML"
+        , data =
+            Json.Encode.object
+                [ ( "elementId", Json.Encode.string options.elementId )
+                , ( "htmlContent", Json.Encode.string options.htmlContent )
+                ]
         }
 
 

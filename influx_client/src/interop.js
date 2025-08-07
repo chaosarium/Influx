@@ -63,6 +63,9 @@ export const onReady = ({ app, env }) => {
                 case "ADJUST_ANNOTATION_WIDTHS":
                     adjustAnnotationWidths();
                     return;
+                case "INJECT_HTML":
+                    injectHtmlToElement(data.elementId, data.htmlContent);
+                    return;
                 default:
                     console.warn(`Unhandled outgoing port: "${tag}"`);
                     return;
@@ -126,5 +129,22 @@ function adjustAnnotationWidths() {
     requestAnimationFrame(() => {
         const annotations = document.querySelectorAll('.double-ruby.tkn-auto-width');
         annotations.forEach(adjustAnnotationWidth);
+    });
+}
+
+function injectHtmlToElement(elementId, htmlContent) {
+    // Use requestAnimationFrame to ensure DOM is fully updated
+    requestAnimationFrame(() => {
+        const targetElement = document.getElementById(elementId);
+        if (!targetElement) {
+            console.warn(`Element with id "${elementId}" not found for HTML injection`);
+            return;
+        }
+
+        if (!targetElement.shadowRoot) {
+            targetElement.attachShadow({ mode: 'open' });
+        }
+
+        targetElement.shadowRoot.innerHTML = htmlContent;
     });
 }
