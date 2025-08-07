@@ -233,7 +233,7 @@ adjustAnnotationWidths =
         }
 
 
-injectHtml : { elementId : String, htmlContent : String } -> Effect msg
+injectHtml : { elementId : String, htmlContent : String, dictName : String } -> Effect msg
 injectHtml options =
     SendMessageToJavaScript
         { tag = "INJECT_HTML"
@@ -241,6 +241,7 @@ injectHtml options =
             Json.Encode.object
                 [ ( "elementId", Json.Encode.string options.elementId )
                 , ( "htmlContent", Json.Encode.string options.htmlContent )
+                , ( "dictName", Json.Encode.string options.dictName )
                 ]
         }
 

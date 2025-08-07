@@ -8,6 +8,9 @@ use crate::ServerState;
 use axum::extract::Path;
 use axum::extract::Query;
 use axum::extract::State;
+use axum::http::header;
+use axum::http::StatusCode;
+use axum::response::Response;
 use axum::Json;
 use serde::Deserialize;
 use tracing::debug;
@@ -174,4 +177,77 @@ pub async fn list_dictionaries() -> Result<Json<Vec<String>>, ServerError> {
 
     dictionary_names.sort();
     Ok(Json(dictionary_names))
+}
+
+// TODO this is very hacky... is there a cleaner way to do this?
+// but it works for now
+pub async fn serve_dictionary_resource(
+    Path((dict_name, resource_path)): Path<(String, String)>,
+) -> Result<Response<axum::body::Body>, StatusCode> {
+    debug!(dict_name = %dict_name, resource_path = %resource_path, "Serving dictionary resource");
+
+    let dictionaries_dir = match data_dir::get_dictionaries_dir() {
+        Ok(dir) => dir,
+        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR),
+    };
+
+    let dict_dir = dictionaries_dir.join(&dict_name);
+    let resource_file = dict_dir.join(&resource_path);
+
+    // Security check: ensure the requested file is within the dictionary directory
+    if !resource_file.starts_with(&dict_dir) {
+        debug!(
+            "Invalid resource path: {} not within {}",
+            resource_file.display(),
+            dict_dir.display()
+        );
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    // Check if file exists
+    if !resource_file.exists() {
+        debug!("Resource not found: {}", resource_file.display());
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    // Read file content
+    let content = match std::fs::read(&resource_file) {
+        Ok(content) => content,
+        Err(e) => {
+            debug!("Error reading file {}: {}", resource_file.display(), e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+
+    // Determine content type based on file extension
+    let content_type = match resource_file
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .unwrap_or("")
+    {
+        "css" => "text/css",
+        "js" => "application/javascript",
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "svg" => "image/svg+xml",
+        "woff" => "font/woff",
+        "woff2" => "font/woff2",
+        "ttf" => "font/ttf",
+        _ => "application/octet-stream",
+    };
+
+    // Build response
+    match Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, content_type)
+        .header(header::CACHE_CONTROL, "public, max-age=3600") // Cache for 1 hour
+        .body(axum::body::Body::from(content))
+    {
+        Ok(response) => Ok(response),
+        Err(e) => {
+            debug!("Error building response: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }

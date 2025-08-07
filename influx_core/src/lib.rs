@@ -94,6 +94,10 @@ pub fn create_app_router(state: ServerState) -> Router {
             "/dictionary/list",
             get(handlers::integration_handlers::list_dictionaries),
         )
+        .route(
+            "/dictionary/resources/{dict_name}/{*resource_path}",
+            get(handlers::integration_handlers::serve_dictionary_resource),
+        )
         .layer(CorsLayer::permissive())
         .with_state(state)
 }
