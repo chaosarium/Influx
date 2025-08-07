@@ -64,7 +64,7 @@ export const onReady = ({ app, env }) => {
                     adjustAnnotationWidths();
                     return;
                 case "INJECT_HTML":
-                    injectHtmlToElement(data.elementId, data.htmlContent);
+                    injectHtmlToElement(data.elementId, data.htmlContent, data.dictName);
                     return;
                 default:
                     console.warn(`Unhandled outgoing port: "${tag}"`);
@@ -132,7 +132,7 @@ function adjustAnnotationWidths() {
     });
 }
 
-function injectHtmlToElement(elementId, htmlContent) {
+function injectHtmlToElement(elementId, htmlContent, dictName) {
     // Use requestAnimationFrame to ensure DOM is fully updated
     requestAnimationFrame(() => {
         const targetElement = document.getElementById(elementId);
@@ -145,6 +145,70 @@ function injectHtmlToElement(elementId, htmlContent) {
             targetElement.attachShadow({ mode: 'open' });
         }
 
-        targetElement.shadowRoot.innerHTML = htmlContent;
+        // Extract the dictionary directory name from dictName (remove .ifo suffix)
+        // dictName format: "French - English/French - English.ifo"
+        // We want: "French - English"
+        const dictDir = dictName.includes('/') ? dictName.split('/')[0] : dictName.replace(/\.ifo$/, '');
+
+        console.log('Dictionary injection:', { dictName, dictDir, elementId });
+
+        // Check if CSS file exists for this dictionary and inject CSS link
+        // Use the backend server URL (port 3000) instead of frontend URL
+        const cssUrl = `http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/res/style.css`;
+
+        // Create CSS link element for the shadow DOM with better error handling
+        const cssLink = `<link rel="stylesheet" type="text/css" href="${cssUrl}" onerror="console.log('CSS not found for dictionary: ${dictDir}'); this.remove();">`;
+
+        // Process HTML content to resolve relative resource paths
+        const processedHtml = processRelativeResourcePaths(htmlContent, dictDir);
+
+        // Inject CSS link and processed HTML content into shadow DOM for isolation
+        targetElement.shadowRoot.innerHTML = cssLink + processedHtml;
     });
+}
+
+function processRelativeResourcePaths(htmlContent, dictDir) {
+    // Create a temporary div to parse the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+
+    // Process img src attributes
+    const images = tempDiv.querySelectorAll('img[src]');
+    images.forEach(img => {
+        const src = img.getAttribute('src');
+        if (src && isRelativePath(src)) {
+            const newSrc = `http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/${src}`;
+            img.setAttribute('src', newSrc);
+        }
+    });
+
+    // Process any other elements with relative resource references
+    // (like background images in style attributes, audio/video sources, etc.)
+    const elementsWithStyle = tempDiv.querySelectorAll('[style]');
+    elementsWithStyle.forEach(el => {
+        const style = el.getAttribute('style');
+        if (style) {
+            const processedStyle = style.replace(
+                /url\(['"]?([^'")]+)['"]?\)/g,
+                (match, url) => {
+                    if (isRelativePath(url)) {
+                        return `url('http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/${url}')`;
+                    }
+                    return match;
+                }
+            );
+            el.setAttribute('style', processedStyle);
+        }
+    });
+
+    return tempDiv.innerHTML;
+}
+
+function isRelativePath(path) {
+    // Check if path is relative (not starting with http://, https://, //, or /)
+    return path &&
+        !path.startsWith('http://') &&
+        !path.startsWith('https://') &&
+        !path.startsWith('//') &&
+        !path.startsWith('/');
 }

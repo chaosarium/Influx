@@ -96,6 +96,7 @@ update msg model =
                                                     [ Effect.injectHtml
                                                         { elementId = "html-segment-" ++ String.fromInt defIndex ++ "-" ++ String.fromInt segIndex
                                                         , htmlContent = segment.text
+                                                        , dictName = model.dictPath
                                                         }
                                                     ]
 
