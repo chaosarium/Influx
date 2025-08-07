@@ -152,38 +152,61 @@ function injectHtmlToElement(elementId, htmlContent, dictName) {
 
         console.log('Dictionary injection:', { dictName, dictDir, elementId });
 
-        // Check if CSS file exists for this dictionary and inject CSS link
-        // Use the backend server URL (port 3000) instead of frontend URL
-        const cssUrl = `http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/res/style.css`;
+        // Process HTML content to resolve all resource paths (CSS, images, etc.)
+        const processedHtml = processAllResourcePaths(htmlContent, dictDir);
 
-        // Create CSS link element for the shadow DOM with better error handling
-        const cssLink = `<link rel="stylesheet" type="text/css" href="${cssUrl}" onerror="console.log('CSS not found for dictionary: ${dictDir}'); this.remove();">`;
-
-        // Process HTML content to resolve relative resource paths
-        const processedHtml = processRelativeResourcePaths(htmlContent, dictDir);
-
-        // Inject CSS link and processed HTML content into shadow DOM for isolation
-        targetElement.shadowRoot.innerHTML = cssLink + processedHtml;
+        // Inject processed HTML content into shadow DOM for isolation
+        targetElement.shadowRoot.innerHTML = processedHtml;
     });
 }
 
-function processRelativeResourcePaths(htmlContent, dictDir) {
+function processAllResourcePaths(htmlContent, dictDir) {
     // Create a temporary div to parse the HTML
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlContent;
+
+    // Process CSS link tags (href attributes)
+    const cssLinks = tempDiv.querySelectorAll('link[rel="stylesheet"][href]');
+    cssLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && isRelativePath(href)) {
+            const newHref = `http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/res/${href}`;
+            link.setAttribute('href', newHref);
+        }
+    });
+
+    // Process script tags (src attributes)
+    const scripts = tempDiv.querySelectorAll('script[src]');
+    scripts.forEach(script => {
+        const src = script.getAttribute('src');
+        if (src && isRelativePath(src)) {
+            const newSrc = `http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/res/${src}`;
+            script.setAttribute('src', newSrc);
+        }
+    });
 
     // Process img src attributes
     const images = tempDiv.querySelectorAll('img[src]');
     images.forEach(img => {
         const src = img.getAttribute('src');
         if (src && isRelativePath(src)) {
-            const newSrc = `http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/${src}`;
+            const newSrc = `http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/res/${src}`;
             img.setAttribute('src', newSrc);
         }
     });
 
+    // Process audio/video source tags
+    const mediaSources = tempDiv.querySelectorAll('audio[src], video[src], source[src]');
+    mediaSources.forEach(media => {
+        const src = media.getAttribute('src');
+        if (src && isRelativePath(src)) {
+            const newSrc = `http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/res/${src}`;
+            media.setAttribute('src', newSrc);
+        }
+    });
+
     // Process any other elements with relative resource references
-    // (like background images in style attributes, audio/video sources, etc.)
+    // (like background images in style attributes, etc.)
     const elementsWithStyle = tempDiv.querySelectorAll('[style]');
     elementsWithStyle.forEach(el => {
         const style = el.getAttribute('style');
@@ -192,7 +215,7 @@ function processRelativeResourcePaths(htmlContent, dictDir) {
                 /url\(['"]?([^'")]+)['"]?\)/g,
                 (match, url) => {
                     if (isRelativePath(url)) {
-                        return `url('http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/${url}')`;
+                        return `url('http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/res/${url}')`;
                     }
                     return match;
                 }
