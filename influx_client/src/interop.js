@@ -133,6 +133,8 @@ function adjustAnnotationWidths() {
 }
 
 function injectHtmlToElement(elementId, htmlContent, dictName) {
+    console.log('Injecting HTML content into element:', { elementId, dictName });
+
     // Use requestAnimationFrame to ensure DOM is fully updated
     requestAnimationFrame(() => {
         const targetElement = document.getElementById(elementId);
@@ -155,7 +157,7 @@ function injectHtmlToElement(elementId, htmlContent, dictName) {
         // Process HTML content to resolve all resource paths (CSS, images, etc.)
         const processedHtml = processAllResourcePaths(htmlContent, dictDir);
 
-w        // Create isolation styles to prevent outside styling from affecting shadow DOM content
+        // Create isolation styles to prevent outside styling from affecting shadow DOM content
         const isolationStyles = `
             <style>
             </style>
@@ -176,7 +178,7 @@ function processAllResourcePaths(htmlContent, dictDir) {
     cssLinks.forEach(link => {
         const href = link.getAttribute('href');
         if (href && isRelativePath(href)) {
-            const newHref = `http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/res/${href}`;
+            const newHref = `http://127.0.0.1:3000/influx_app_data/dictionaries/stardicts/${encodeURIComponent(dictDir)}/res/${href}`;
             link.setAttribute('href', newHref);
         }
     });
@@ -186,7 +188,7 @@ function processAllResourcePaths(htmlContent, dictDir) {
     scripts.forEach(script => {
         const src = script.getAttribute('src');
         if (src && isRelativePath(src)) {
-            const newSrc = `http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/res/${src}`;
+            const newSrc = `http://127.0.0.1:3000/influx_app_data/dictionaries/stardicts/${encodeURIComponent(dictDir)}/res/${src}`;
             script.setAttribute('src', newSrc);
         }
     });
@@ -196,7 +198,7 @@ function processAllResourcePaths(htmlContent, dictDir) {
     images.forEach(img => {
         const src = img.getAttribute('src');
         if (src && isRelativePath(src)) {
-            const newSrc = `http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/res/${src}`;
+            const newSrc = `http://127.0.0.1:3000/influx_app_data/dictionaries/stardicts/${encodeURIComponent(dictDir)}/res/${src}`;
             img.setAttribute('src', newSrc);
         }
     });
@@ -206,7 +208,7 @@ function processAllResourcePaths(htmlContent, dictDir) {
     mediaSources.forEach(media => {
         const src = media.getAttribute('src');
         if (src && isRelativePath(src)) {
-            const newSrc = `http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/res/${src}`;
+            const newSrc = `http://127.0.0.1:3000/influx_app_data/dictionaries/stardicts/${encodeURIComponent(dictDir)}/res/${src}`;
             media.setAttribute('src', newSrc);
         }
     });
@@ -221,7 +223,7 @@ function processAllResourcePaths(htmlContent, dictDir) {
                 /url\(['"]?([^'")]+)['"]?\)/g,
                 (match, url) => {
                     if (isRelativePath(url)) {
-                        return `url('http://127.0.0.1:3000/dictionary/resources/${encodeURIComponent(dictDir)}/res/${url}')`;
+                        return `url('http://127.0.0.1:3000/influx_app_data/dictionaries/stardicts/${encodeURIComponent(dictDir)}/res/${url}')`;
                     }
                     return match;
                 }

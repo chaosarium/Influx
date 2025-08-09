@@ -1178,7 +1178,7 @@ view shared route model =
                 , onToggle = ToggleSection "audio"
                 , content =
                     div []
-                        [ audio [ Html.Attributes.id "influx-audio-player", Html.Attributes.src "http://localhost:8000/test.mp3", Html.Attributes.controls True ]
+                        [ audio [ Html.Attributes.id "influx-audio-player", Html.Attributes.src "http://localhost:3000/influx_app_data/test.mp3", Html.Attributes.controls True ]
                             []
                         ]
                 }

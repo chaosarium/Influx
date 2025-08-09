@@ -6,6 +6,7 @@ use axum::{
 use clap::{Parser, ValueEnum};
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
+use tower_http::services::ServeDir;
 use tracing::info;
 
 pub mod data_dir;
@@ -66,6 +67,9 @@ pub struct ServerState {
 }
 
 pub fn create_app_router(state: ServerState) -> Router {
+    // Get the data directory for file serving
+    let data_dir = data_dir::get_data_dir().expect("Failed to get data directory");
+
     Router::new()
         .route("/connection_test", get(handlers::connection_test))
         .route("/docs", post(handlers::doc_handlers::get_docs_list))
@@ -95,9 +99,10 @@ pub fn create_app_router(state: ServerState) -> Router {
             get(handlers::integration_handlers::list_dictionaries),
         )
         .route(
-            "/dictionary/resources/{dict_name}/{*resource_path}",
-            get(handlers::integration_handlers::serve_dictionary_resource),
+            "/open_influx_app_data_dir",
+            get(handlers::integration_handlers::open_app_data_dir),
         )
+        .nest_service("/influx_app_data", ServeDir::new(data_dir))
         .layer(CorsLayer::permissive())
         .with_state(state)
 }
