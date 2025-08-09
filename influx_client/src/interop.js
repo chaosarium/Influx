@@ -10,7 +10,7 @@ export const flags = ({ env }) => {
 // Define the custom shadow-element
 class ShadowElement extends HTMLElement {
     static get observedAttributes() {
-        return ['inner-html', 'dict-name'];
+        return ['inner-html', 'base-url'];
     }
 
     constructor() {
@@ -19,43 +19,22 @@ class ShadowElement extends HTMLElement {
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'inner-html' && newValue !== oldValue) {
+        if ((name === 'inner-html' || name === 'base-url') && newValue !== oldValue) {
             this.updateContent();
         }
     }
 
     updateContent() {
         const htmlContent = this.getAttribute('inner-html');
-        const dictName = this.getAttribute('dict-name');
-
+        const baseUrl = this.getAttribute('base-url');
+        
         if (!htmlContent) {
             this.shadowRoot.innerHTML = '';
             return;
         }
 
-        // Extract the dictionary directory name from dictName (remove .ifo suffix)
-        // dictName format: "French - English/French - English.ifo"
-        // We want: "French - English"
-        let dictDir = '';
-        if (dictName) {
-            if (dictName.includes('/')) {
-                dictDir = dictName.split('/')[0];
-            } else {
-                dictDir = dictName.replace(/\.ifo$/, '');
-            }
-        }
-
-        console.log('Shadow element content update:', { dictName, dictDir });
-
-        // Only process HTML if we have a valid dictDir
-        if (!dictDir) {
-            console.warn('No valid dictionary directory found, rendering raw HTML');
-            this.shadowRoot.innerHTML = `<style></style>${htmlContent}`;
-            return;
-        }
-
-        // Process HTML content to resolve all resource paths (CSS, images, etc.)
-        const processedHtml = processAllResourcePaths(htmlContent, dictDir);
+        // Process HTML content to resolve all resource paths using the provided base URL
+        const processedHtml = processAllResourcePaths(htmlContent, baseUrl);
 
         // Create isolation styles to prevent outside styling from affecting shadow DOM content
         const isolationStyles = `
@@ -193,10 +172,9 @@ function adjustAnnotationWidths() {
     });
 }
 
-function processAllResourcePaths(htmlContent, dictDir) {
-    // If no dictDir, return original content
-    // TODO this is terrible
-    if (!dictDir) {
+function processAllResourcePaths(htmlContent, baseUrl) {
+    // If no baseUrl provided, return original content
+    if (!baseUrl) {
         return htmlContent;
     }
 
@@ -204,48 +182,23 @@ function processAllResourcePaths(htmlContent, dictDir) {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlContent;
 
-    // Process CSS link tags (href attributes)
-    const cssLinks = tempDiv.querySelectorAll('link[rel="stylesheet"][href]');
-    cssLinks.forEach(link => {
-        const href = link.getAttribute('href');
+    // Process all elements with src or href attributes
+    const elementsWithPaths = tempDiv.querySelectorAll('[src], [href]');
+    elementsWithPaths.forEach(element => {
+        // Check src attribute
+        const src = element.getAttribute('src');
+        if (src && isRelativePath(src)) {
+            element.setAttribute('src', `${baseUrl}/${src}`);
+        }
+
+        // Check href attribute
+        const href = element.getAttribute('href');
         if (href && isRelativePath(href)) {
-            const newHref = `http://127.0.0.1:3000/influx_app_data/dictionaries/stardicts/${encodeURIComponent(dictDir)}/res/${href}`;
-            link.setAttribute('href', newHref);
+            element.setAttribute('href', `${baseUrl}/${href}`);
         }
     });
 
-    // Process script tags (src attributes)
-    const scripts = tempDiv.querySelectorAll('script[src]');
-    scripts.forEach(script => {
-        const src = script.getAttribute('src');
-        if (src && isRelativePath(src)) {
-            const newSrc = `http://127.0.0.1:3000/influx_app_data/dictionaries/stardicts/${encodeURIComponent(dictDir)}/res/${src}`;
-            script.setAttribute('src', newSrc);
-        }
-    });
-
-    // Process img src attributes
-    const images = tempDiv.querySelectorAll('img[src]');
-    images.forEach(img => {
-        const src = img.getAttribute('src');
-        if (src && isRelativePath(src)) {
-            const newSrc = `http://127.0.0.1:3000/influx_app_data/dictionaries/stardicts/${encodeURIComponent(dictDir)}/res/${src}`;
-            img.setAttribute('src', newSrc);
-        }
-    });
-
-    // Process audio/video source tags
-    const mediaSources = tempDiv.querySelectorAll('audio[src], video[src], source[src]');
-    mediaSources.forEach(media => {
-        const src = media.getAttribute('src');
-        if (src && isRelativePath(src)) {
-            const newSrc = `http://127.0.0.1:3000/influx_app_data/dictionaries/stardicts/${encodeURIComponent(dictDir)}/res/${src}`;
-            media.setAttribute('src', newSrc);
-        }
-    });
-
-    // Process any other elements with relative resource references
-    // (like background images in style attributes, etc.)
+    // Process any other elements with relative resource references in style attributes
     const elementsWithStyle = tempDiv.querySelectorAll('[style]');
     elementsWithStyle.forEach(el => {
         const style = el.getAttribute('style');
@@ -254,7 +207,7 @@ function processAllResourcePaths(htmlContent, dictDir) {
                 /url\(['"]?([^'")]+)['"]?\)/g,
                 (match, url) => {
                     if (isRelativePath(url)) {
-                        return `url('http://127.0.0.1:3000/influx_app_data/dictionaries/stardicts/${encodeURIComponent(dictDir)}/res/${url}')`;
+                        return `url('${baseUrl}/${url}')`;
                     }
                     return match;
                 }

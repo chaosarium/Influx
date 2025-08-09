@@ -86,6 +86,13 @@ impl From<String> for StardictType {
 }
 
 #[derive(Debug, SerdeDerives!, Clone, PartialEq, Eq, ElmDerives!)]
+pub struct DictionaryInfo {
+    pub name: String,           // Human-readable name (e.g., "French - English")
+    pub directory_name: String, // Directory name for resources (e.g., "French - English")
+    pub base_url: String,       // Complete base URL for resources
+}
+
+#[derive(Debug, SerdeDerives!, Clone, PartialEq, Eq, ElmDerives!)]
 pub struct WordDefinitionSegment {
     pub types: StardictType,
     pub text: String,
@@ -95,10 +102,28 @@ pub struct WordDefinitionSegment {
 pub struct WordDefinition {
     pub word: String,
     pub segments: Vec<WordDefinitionSegment>,
+    pub dictionary_info: DictionaryInfo,
 }
 
-impl From<stardict::WordDefinition> for WordDefinition {
-    fn from(def: stardict::WordDefinition) -> Self {
+impl WordDefinition {
+    fn from_stardict_with_metadata(def: stardict::WordDefinition, dict_path: &str) -> Self {
+        // Extract directory name from dict_path
+        // dict_path format: "French - English/French - English.ifo"
+        let directory_name = dict_path.split('/').next().unwrap_or("unknown").to_string();
+
+        // Create base URL for resources
+        // Use the directory name directly since it should be safe for URLs
+        let base_url = format!(
+            "http://127.0.0.1:3000/influx_app_data/dictionaries/stardicts/{}/res",
+            directory_name.replace(" ", "%20") // Simple space encoding
+        );
+
+        let dictionary_info = DictionaryInfo {
+            name: directory_name.clone(),
+            directory_name: directory_name.clone(),
+            base_url,
+        };
+
         Self {
             word: def.word,
             segments: def
@@ -109,6 +134,7 @@ impl From<stardict::WordDefinition> for WordDefinition {
                     text: seg.text,
                 })
                 .collect(),
+            dictionary_info,
         }
     }
 }
@@ -131,7 +157,10 @@ pub async fn stardict_lookup(
 
     match result {
         Some(definitions) => Ok(Json(
-            definitions.into_iter().map(|def| def.into()).collect(),
+            definitions
+                .into_iter()
+                .map(|def| WordDefinition::from_stardict_with_metadata(def, &query.dict_path))
+                .collect(),
         )),
         None => Ok(Json(vec![])),
     }

@@ -137,7 +137,7 @@ view model =
                 [ onClick LookupClicked ]
                 "Lookup"
             ]
-        , viewLookupResult model.dictPath model.lookupResult
+        , viewLookupResult model.lookupResult
         ]
 
 
@@ -169,8 +169,8 @@ viewDictionarySelector model =
             Html.div [] []
 
 
-viewLookupResult : String -> LookupResult -> Html Msg
-viewLookupResult dictPath result =
+viewLookupResult : LookupResult -> Html Msg
+viewLookupResult result =
     case result of
         NotStarted ->
             Html.div [] []
@@ -184,20 +184,20 @@ viewLookupResult dictPath result =
         Success definitions ->
             Html.div []
                 [ Html.h3 [] [ Html.text "Results:" ]
-                , Html.div [] (List.indexedMap (viewDefinition dictPath) definitions)
+                , Html.div [] (List.indexedMap viewDefinition definitions)
                 ]
 
 
-viewDefinition : String -> Int -> WordDefinition -> Html Msg
-viewDefinition dictPath defIndex definition =
+viewDefinition : Int -> WordDefinition -> Html Msg
+viewDefinition defIndex definition =
     Html.div [ class "definition" ]
         [ Html.h4 [] [ Html.text definition.word ]
-        , Html.div [] (List.indexedMap (viewSegment dictPath defIndex) definition.segments)
+        , Html.div [] (List.indexedMap (viewSegment definition) definition.segments)
         ]
 
 
-viewSegment : String -> Int -> Int -> WordDefinitionSegment -> Html Msg
-viewSegment dictPath defIndex segIndex segment =
+viewSegment : WordDefinition -> Int -> WordDefinitionSegment -> Html Msg
+viewSegment definition segIndex segment =
     let
         typeDisplay =
             case segment.types of
@@ -212,12 +212,10 @@ viewSegment dictPath defIndex segIndex segment =
                 Html ->
                     [ Html.node "shadow-element"
                         [ attribute "inner-html" segment.text
-                        , attribute "dict-name" dictPath
+                        , attribute "base-url" definition.dictionaryInfo.baseUrl
                         , class "html-content-shadow"
                         ]
                         []
-                    , Html.div [ class "debug-info" ]
-                        [ Html.text ("Debug: dictPath = '" ++ dictPath ++ "'") ]
                     ]
 
                 Other _ ->

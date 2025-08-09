@@ -102,7 +102,7 @@ init { documentId } () =
       , annotation_config = { topAnnotation = AnnotatedText.Definition, bottomAnnotation = AnnotatedText.Phonetic }
       , showFurigana = False
       , lemma_editing_mode = EditingInflectedToken
-      , rightPanelWidth = 400
+      , rightPanelWidth = 600
       , sectionStates =
             { termEditor = True
             , termDetails = True
