@@ -7,6 +7,70 @@ export const flags = ({ env }) => {
         message: "Hello, from JavaScript flags!",
     };
 };
+// Define the custom shadow-element
+class ShadowElement extends HTMLElement {
+    static get observedAttributes() {
+        return ['inner-html', 'dict-name'];
+    }
+
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'inner-html' && newValue !== oldValue) {
+            this.updateContent();
+        }
+    }
+
+    updateContent() {
+        const htmlContent = this.getAttribute('inner-html');
+        const dictName = this.getAttribute('dict-name');
+
+        if (!htmlContent) {
+            this.shadowRoot.innerHTML = '';
+            return;
+        }
+
+        // Extract the dictionary directory name from dictName (remove .ifo suffix)
+        // dictName format: "French - English/French - English.ifo"
+        // We want: "French - English"
+        let dictDir = '';
+        if (dictName) {
+            if (dictName.includes('/')) {
+                dictDir = dictName.split('/')[0];
+            } else {
+                dictDir = dictName.replace(/\.ifo$/, '');
+            }
+        }
+
+        console.log('Shadow element content update:', { dictName, dictDir });
+
+        // Only process HTML if we have a valid dictDir
+        if (!dictDir) {
+            console.warn('No valid dictionary directory found, rendering raw HTML');
+            this.shadowRoot.innerHTML = `<style></style>${htmlContent}`;
+            return;
+        }
+
+        // Process HTML content to resolve all resource paths (CSS, images, etc.)
+        const processedHtml = processAllResourcePaths(htmlContent, dictDir);
+
+        // Create isolation styles to prevent outside styling from affecting shadow DOM content
+        const isolationStyles = `
+            <style>
+            </style>
+        `;
+
+        // Inject isolation styles and processed HTML content into shadow DOM
+        this.shadowRoot.innerHTML = isolationStyles + processedHtml;
+    }
+}
+
+// Register the custom element
+customElements.define('shadow-element', ShadowElement);
+
 // This is called AFTER your Elm app starts up
 //
 // Here you can work with `app.ports` to send messages
@@ -62,9 +126,6 @@ export const onReady = ({ app, env }) => {
                     return;
                 case "ADJUST_ANNOTATION_WIDTHS":
                     adjustAnnotationWidths();
-                    return;
-                case "INJECT_HTML":
-                    injectHtmlToElement(data.elementId, data.htmlContent, data.dictName);
                     return;
                 default:
                     console.warn(`Unhandled outgoing port: "${tag}"`);
@@ -132,43 +193,13 @@ function adjustAnnotationWidths() {
     });
 }
 
-function injectHtmlToElement(elementId, htmlContent, dictName) {
-    console.log('Injecting HTML content into element:', { elementId, dictName });
-
-    // Use requestAnimationFrame to ensure DOM is fully updated
-    requestAnimationFrame(() => {
-        const targetElement = document.getElementById(elementId);
-        if (!targetElement) {
-            console.warn(`Element with id "${elementId}" not found for HTML injection`);
-            return;
-        }
-
-        if (!targetElement.shadowRoot) {
-            targetElement.attachShadow({ mode: 'open' });
-        }
-
-        // Extract the dictionary directory name from dictName (remove .ifo suffix)
-        // dictName format: "French - English/French - English.ifo"
-        // We want: "French - English"
-        const dictDir = dictName.includes('/') ? dictName.split('/')[0] : dictName.replace(/\.ifo$/, '');
-
-        console.log('Dictionary injection:', { dictName, dictDir, elementId });
-
-        // Process HTML content to resolve all resource paths (CSS, images, etc.)
-        const processedHtml = processAllResourcePaths(htmlContent, dictDir);
-
-        // Create isolation styles to prevent outside styling from affecting shadow DOM content
-        const isolationStyles = `
-            <style>
-            </style>
-        `;
-
-        // Inject isolation styles and processed HTML content into shadow DOM
-        targetElement.shadowRoot.innerHTML = isolationStyles + processedHtml;
-    });
-}
-
 function processAllResourcePaths(htmlContent, dictDir) {
+    // If no dictDir, return original content
+    // TODO this is terrible
+    if (!dictDir) {
+        return htmlContent;
+    }
+
     // Create a temporary div to parse the HTML
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlContent;

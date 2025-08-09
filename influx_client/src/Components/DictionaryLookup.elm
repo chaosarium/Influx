@@ -6,7 +6,7 @@ import Bindings exposing (StardictType(..), WordDefinition, WordDefinitionSegmen
 import Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC)
 import Effect exposing (Effect)
 import Html exposing (..)
-import Html.Attributes exposing (class, id, placeholder, value)
+import Html.Attributes exposing (attribute, class, placeholder, value)
 import Html.Events exposing (onClick, onInput)
 import Http
 
@@ -80,32 +80,7 @@ update msg model =
                 )
 
         LookupResponded (Ok definitions) ->
-            let
-                htmlInjectionEffects =
-                    definitions
-                        |> List.indexedMap
-                            (\defIndex definition ->
-                                definition.segments
-                                    |> List.indexedMap
-                                        (\segIndex segment ->
-                                            case segment.types of
-                                                Html ->
-                                                    [ Effect.injectHtml
-                                                        { elementId = "html-segment-" ++ String.fromInt defIndex ++ "-" ++ String.fromInt segIndex
-                                                        , htmlContent = segment.text
-                                                        , dictName = model.dictPath
-                                                        }
-                                                    ]
-
-                                                Other _ ->
-                                                    []
-                                        )
-                                    |> List.concat
-                            )
-                        |> List.concat
-                        |> Effect.batch
-            in
-            ( { model | lookupResult = Success definitions }, htmlInjectionEffects )
+            ( { model | lookupResult = Success definitions }, Effect.none )
 
         LookupResponded (Err err) ->
             ( { model | lookupResult = Error (httpErrorToString err) }, Effect.none )
@@ -162,7 +137,7 @@ view model =
                 [ onClick LookupClicked ]
                 "Lookup"
             ]
-        , viewLookupResult model.lookupResult
+        , viewLookupResult model.dictPath model.lookupResult
         ]
 
 
@@ -194,8 +169,8 @@ viewDictionarySelector model =
             Html.div [] []
 
 
-viewLookupResult : LookupResult -> Html Msg
-viewLookupResult result =
+viewLookupResult : String -> LookupResult -> Html Msg
+viewLookupResult dictPath result =
     case result of
         NotStarted ->
             Html.div [] []
@@ -209,20 +184,20 @@ viewLookupResult result =
         Success definitions ->
             Html.div []
                 [ Html.h3 [] [ Html.text "Results:" ]
-                , Html.div [] (List.indexedMap viewDefinition definitions)
+                , Html.div [] (List.indexedMap (viewDefinition dictPath) definitions)
                 ]
 
 
-viewDefinition : Int -> WordDefinition -> Html Msg
-viewDefinition defIndex definition =
+viewDefinition : String -> Int -> WordDefinition -> Html Msg
+viewDefinition dictPath defIndex definition =
     Html.div [ class "definition" ]
         [ Html.h4 [] [ Html.text definition.word ]
-        , Html.div [] (List.indexedMap (viewSegment defIndex) definition.segments)
+        , Html.div [] (List.indexedMap (viewSegment dictPath defIndex) definition.segments)
         ]
 
 
-viewSegment : Int -> Int -> WordDefinitionSegment -> Html Msg
-viewSegment defIndex segIndex segment =
+viewSegment : String -> Int -> Int -> WordDefinitionSegment -> Html Msg
+viewSegment dictPath defIndex segIndex segment =
     let
         typeDisplay =
             case segment.types of
@@ -235,11 +210,14 @@ viewSegment defIndex segIndex segment =
         contentDisplay =
             case segment.types of
                 Html ->
-                    [ Html.div
-                        [ id ("html-segment-" ++ String.fromInt defIndex ++ "-" ++ String.fromInt segIndex)
-                        , class "html-content-placeholder"
+                    [ Html.node "shadow-element"
+                        [ attribute "inner-html" segment.text
+                        , attribute "dict-name" dictPath
+                        , class "html-content-shadow"
                         ]
-                        [ Html.text "Loading HTML content..." ]
+                        []
+                    , Html.div [ class "debug-info" ]
+                        [ Html.text ("Debug: dictPath = '" ++ dictPath ++ "'") ]
                     ]
 
                 Other _ ->
