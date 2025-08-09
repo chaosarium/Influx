@@ -34,6 +34,7 @@ No. Not yet. It technically has a functioning database and text reader, but the 
 - [ ] language-specific nlp
     - [x] japanese — auto furigana
     - [x] japanese — inflection derivation chain
+- [ ] import data from lwt
 
 ## Development notes
 
