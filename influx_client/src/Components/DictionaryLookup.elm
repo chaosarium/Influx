@@ -23,6 +23,7 @@ type alias Model =
 type LookupResult
     = NotStarted
     | Loading
+    | LoadingWithPrevious (List WordDefinition)
     | Success (List WordDefinition)
     | Error String
 
@@ -71,7 +72,16 @@ update msg model =
                 ( { model | lookupResult = Error "Please fill in both dictionary path and query" }, Effect.none )
 
             else
-                ( { model | lookupResult = Loading }
+                let
+                    newLookupResult =
+                        case model.lookupResult of
+                            Success previousDefinitions ->
+                                LoadingWithPrevious previousDefinitions
+
+                            _ ->
+                                Loading
+                in
+                ( { model | lookupResult = newLookupResult }
                 , Effect.sendCmd
                     (Api.DictionaryLookup.dictionaryLookup
                         { dictPath = model.dictPath, query = model.query }
@@ -177,6 +187,12 @@ viewLookupResult result =
 
         Loading ->
             Html.div [] [ Html.text "Loading..." ]
+
+        LoadingWithPrevious definitions ->
+            Html.div []
+                [ Html.h3 [] [ Html.text "Results:" ]
+                , Html.div [] (List.indexedMap viewDefinition definitions)
+                ]
 
         Error errorMsg ->
             Html.div [ class "error" ] [ Html.text ("Error: " ++ errorMsg) ]
