@@ -1,4 +1,4 @@
-use super::document::Document;
+use super::document::{Document, DocumentCreateRequest};
 use super::phrase::Phrase;
 use super::vocab::{Token, TokenStatus};
 use super::DB;
@@ -46,16 +46,13 @@ fn create_document(
     title: &str,
     content: &str,
     tags: Vec<&str>,
-) -> Document {
-    Document {
-        id: None,
+) -> DocumentCreateRequest {
+    DocumentCreateRequest {
         lang_id,
         title: title.to_string(),
         content: content.to_string(),
         doc_type: "Text".to_string(),
         tags: tags.iter().map(|s| s.to_string()).collect(),
-        created_ts: Utc::now(),
-        updated_ts: Utc::now(),
     }
 }
 

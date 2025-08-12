@@ -121,6 +121,9 @@ viewLanguagesTable languages =
 
 viewLangs model =
     case model.langData of
+        Api.NotAsked ->
+            div [] [ Html.text "Languages not loaded" ]
+
         Api.Loading ->
             div [] [ Html.text "Loading..." ]
 

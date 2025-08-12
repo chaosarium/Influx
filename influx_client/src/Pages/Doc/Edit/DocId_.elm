@@ -319,6 +319,9 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
 
             Api.Failure _ ->
                 div [] [ Html.text "Failed to load languages" ]
+
+            Api.NotAsked ->
+                div [] [ Html.text "Languages not loaded" ]
         , div []
             [ buttonC
                 [ onClick SubmitForm

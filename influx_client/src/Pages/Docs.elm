@@ -5,6 +5,7 @@ import Api.GetDocuments
 import Bindings exposing (DocPackage, InfluxResourceId(..))
 import BindingsUtils
 import Components.DbgDisplay
+import Components.FormElements exposing (buttonC)
 import Components.Topbar
 import Dict
 import Effect exposing (Effect)
@@ -14,6 +15,7 @@ import Html.Events
 import Http
 import Page exposing (Page)
 import Route exposing (Route)
+import Route.Path
 import Shared
 import View exposing (View)
 
@@ -67,6 +69,7 @@ init route () =
 
 type Msg
     = ApiResponded (Result Http.Error (List DocPackage))
+    | AddDocument
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -77,6 +80,9 @@ update msg model =
 
         ApiResponded (Err httpError) ->
             ( { model | docData = Api.Failure httpError }, Effect.none )
+
+        AddDocument ->
+            ( model, Effect.pushRoute { path = Route.Path.Doc_Edit, query = Dict.empty, hash = Nothing } )
 
 
 
@@ -158,7 +164,7 @@ viewDocumentsTable docPackages =
                             [ text (formatDate docPackage.document.updatedTs) ]
                         , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
                             [ a
-                                [ href ("/doc/edit/" ++ BindingsUtils.influxResourceIdToString docPackage.documentId)
+                                [ href ("/doc/edit?docId=" ++ BindingsUtils.influxResourceIdToString docPackage.documentId)
                                 ]
                                 [ text "Edit" ]
                             ]
@@ -171,6 +177,9 @@ viewDocumentsTable docPackages =
 
 viewDocs model =
     case model.docData of
+        Api.NotAsked ->
+            div [] [ Html.text "Documents not loaded" ]
+
         Api.Loading ->
             div [] [ Html.text "Loading..." ]
 
@@ -179,7 +188,16 @@ viewDocs model =
 
         Api.Success docPackages ->
             div []
-                [ viewDocumentsTable docPackages ]
+                [ div [ style "margin-bottom" "20px" ]
+                    [ buttonC
+                        [ Html.Events.onClick AddDocument
+                        , style "background-color" "#28a745"
+                        , style "color" "white"
+                        ]
+                        "Add Document"
+                    ]
+                , viewDocumentsTable docPackages
+                ]
 
 
 view : ThisRoute -> Model -> View Msg

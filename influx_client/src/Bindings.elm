@@ -109,6 +109,26 @@ documentEncoder struct =
         ]
 
 
+type alias DocumentCreateRequest =
+    { langId : InfluxResourceId
+    , title : String
+    , content : String
+    , docType : String
+    , tags : List (String)
+    }
+
+
+documentCreateRequestEncoder : DocumentCreateRequest -> Json.Encode.Value
+documentCreateRequestEncoder struct =
+    Json.Encode.object
+        [ ( "lang_id", (influxResourceIdEncoder) struct.langId )
+        , ( "title", (Json.Encode.string) struct.title )
+        , ( "content", (Json.Encode.string) struct.content )
+        , ( "doc_type", (Json.Encode.string) struct.docType )
+        , ( "tags", (Json.Encode.list (Json.Encode.string)) struct.tags )
+        ]
+
+
 type alias DocPackage =
     { documentId : InfluxResourceId
     , languageId : InfluxResourceId
@@ -806,6 +826,16 @@ documentDecoder =
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "tags" (Json.Decode.list (Json.Decode.string))))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "created_ts" (Json.Decode.string)))
         |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "updated_ts" (Json.Decode.string)))
+
+
+documentCreateRequestDecoder : Json.Decode.Decoder DocumentCreateRequest
+documentCreateRequestDecoder =
+    Json.Decode.succeed DocumentCreateRequest
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "lang_id" (influxResourceIdDecoder)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "title" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "content" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "doc_type" (Json.Decode.string)))
+        |> Json.Decode.andThen (\x -> Json.Decode.map x (Json.Decode.field "tags" (Json.Decode.list (Json.Decode.string))))
 
 
 docPackageDecoder : Json.Decode.Decoder DocPackage

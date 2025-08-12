@@ -1042,6 +1042,11 @@ view shared route model =
 
         leftPanelContent =
             case model.get_doc_api_res of
+                Api.NotAsked ->
+                    [ Html.h1 [] [ Html.text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
+                    , Html.text "Not loaded"
+                    ]
+
                 Api.Loading ->
                     [ Html.h1 [] [ Html.text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
                     , Html.text "Loading..."

@@ -1,6 +1,6 @@
 use super::api_interfaces::*;
 use super::ServerError;
-use crate::db::models::document::{DocPackage, Document};
+use crate::db::models::document::{DocPackage, Document, DocumentCreateRequest};
 use crate::db::models::phrase::mk_phrase_trie;
 use crate::db::models::phrase::Phrase;
 use crate::db::models::vocab::Token;
@@ -203,10 +203,31 @@ pub async fn get_doc(
     Ok(Json(response))
 }
 
+pub async fn create_document(
+    State(ServerState { db, .. }): State<ServerState>,
+    Json(payload): Json<DocumentCreateRequest>,
+) -> Result<Json<Document>, ServerError> {
+    debug!(title = %payload.title, "Creating document");
+    Ok(Json(db.create_document(payload).await?))
+}
+
 pub async fn update_document(
     State(ServerState { db, .. }): State<ServerState>,
     Json(payload): Json<Document>,
 ) -> Result<Json<Document>, ServerError> {
     debug!(document_id = ?payload.id, title = %payload.title, "Updating document");
     Ok(Json(db.update_document(payload).await?))
+}
+
+pub async fn delete_document(
+    State(ServerState { db, .. }): State<ServerState>,
+    Path(id): Path<String>,
+) -> Result<StatusCode, ServerError> {
+    let document_id = InfluxResourceId::SerialId(
+        id.parse::<i64>()
+            .map_err(|_| ServerError(anyhow::anyhow!("Invalid document ID: {}", id)))?,
+    );
+    debug!(document_id = ?document_id, "Deleting document");
+    db.delete_document(document_id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }

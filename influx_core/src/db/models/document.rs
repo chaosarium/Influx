@@ -18,6 +18,15 @@ pub struct Document {
     pub updated_ts: DateTime<Utc>,
 }
 
+#[derive(Debug, SerdeDerives!, Clone, PartialEq, Eq, ElmDerives!)]
+pub struct DocumentCreateRequest {
+    pub lang_id: InfluxResourceId,
+    pub title: String,
+    pub content: String,
+    pub doc_type: String,
+    pub tags: Vec<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DocumentInDB {
     pub id: InfluxResourceId,
@@ -56,8 +65,7 @@ pub struct DocPackage {
 use DB::*;
 
 impl DB {
-    pub async fn create_document(&self, document: Document) -> Result<Document> {
-        assert!(document.id.is_none());
+    pub async fn create_document(&self, request: DocumentCreateRequest) -> Result<Document> {
         match self {
             Postgres { pool } | EmbeddedPostgres { pool, .. } => {
                 let record = sqlx::query_as!(
@@ -67,11 +75,11 @@ impl DB {
                         VALUES ($1, $2, $3, $4, $5)
                         RETURNING id, lang_id, title, content, doc_type, tags, created_ts, updated_ts
                     "#,
-                    document.lang_id.as_i64()?,
-                    document.title,
-                    document.content,
-                    document.doc_type,
-                    &document.tags
+                    request.lang_id.as_i64()?,
+                    request.title,
+                    request.content,
+                    request.doc_type,
+                    &request.tags
                 )
                 .fetch_one(pool.as_ref())
                 .await?;

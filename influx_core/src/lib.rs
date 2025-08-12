@@ -74,7 +74,12 @@ pub fn create_app_router(state: ServerState) -> Router {
         .route("/connection_test", get(handlers::connection_test))
         .route("/docs", post(handlers::doc_handlers::get_docs_list))
         .route("/doc/{id}", get(handlers::doc_handlers::get_doc))
+        .route("/doc/create", post(handlers::doc_handlers::create_document))
         .route("/doc/edit", post(handlers::doc_handlers::update_document))
+        .route(
+            "/doc/delete/{id}",
+            post(handlers::doc_handlers::delete_document),
+        )
         .route("/term/edit", post(handlers::term_handlers::edit_term))
         .route("/lang", get(handlers::lang_handlers::get_language_list))
         .route(
@@ -154,6 +159,7 @@ mod tests {
                 lang::Language,
                 lang::ParserConfig,
                 db::models::document::Document,
+                db::models::document::DocumentCreateRequest,
                 db::models::document::DocPackage,
                 db::models::vocab::Token,
                 db::models::vocab::TokenStatus,
@@ -198,6 +204,7 @@ mod tests {
                 lang::Language,
                 lang::ParserConfig,
                 db::models::document::Document,
+                db::models::document::DocumentCreateRequest,
                 db::models::document::DocPackage,
                 db::models::vocab::Token,
                 db::models::vocab::TokenStatus,
