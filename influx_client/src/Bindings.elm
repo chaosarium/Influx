@@ -83,6 +83,32 @@ parserConfigEncoder struct =
         ]
 
 
+type alias LanguageCreateRequest =
+    { name : String
+    , dicts : List (String)
+    , ttsRate : Maybe (Float)
+    , ttsPitch : Maybe (Float)
+    , ttsVoice : Maybe (String)
+    , deeplSourceLang : Maybe (String)
+    , deeplTargetLang : Maybe (String)
+    , parserConfig : ParserConfig
+    }
+
+
+languageCreateRequestEncoder : LanguageCreateRequest -> Json.Encode.Value
+languageCreateRequestEncoder struct =
+    Json.Encode.object
+        [ ( "name", (Json.Encode.string) struct.name )
+        , ( "dicts", (Json.Encode.list (Json.Encode.string)) struct.dicts )
+        , ( "tts_rate", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.float)) struct.ttsRate )
+        , ( "tts_pitch", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.float)) struct.ttsPitch )
+        , ( "tts_voice", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.string)) struct.ttsVoice )
+        , ( "deepl_source_lang", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.string)) struct.deeplSourceLang )
+        , ( "deepl_target_lang", (Maybe.withDefault Json.Encode.null << Maybe.map (Json.Encode.string)) struct.deeplTargetLang )
+        , ( "parser_config", (parserConfigEncoder) struct.parserConfig )
+        ]
+
+
 type alias Document =
     { id : Maybe (InfluxResourceId)
     , langId : InfluxResourceId

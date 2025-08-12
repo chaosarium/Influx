@@ -205,6 +205,23 @@ impl DB {
             }
         }
     }
+
+    pub async fn delete_language(&self, id: InfluxResourceId) -> Result<()> {
+        match self {
+            Postgres { pool } | EmbeddedPostgres { pool, .. } => {
+                sqlx::query!(
+                    r#"
+                        DELETE FROM language WHERE id = $1
+                    "#,
+                    id.as_i64()?
+                )
+                .execute(pool.as_ref())
+                .await?;
+
+                Ok(())
+            }
+        }
+    }
 }
 
 #[cfg(test)]

@@ -86,7 +86,15 @@ pub fn create_app_router(state: ServerState) -> Router {
             "/lang/{lang_id}",
             get(handlers::lang_handlers::get_language_by_id),
         )
+        .route(
+            "/lang/create",
+            post(handlers::lang_handlers::create_language),
+        )
         .route("/lang/edit", post(handlers::lang_handlers::update_language))
+        .route(
+            "/lang/delete/{id}",
+            post(handlers::lang_handlers::delete_language),
+        )
         .route(
             "/extern/macos_dict/{language_identifier}/{orthography}",
             get(handlers::integration_handlers::lookup_in_macos_dict),
@@ -158,6 +166,7 @@ mod tests {
                 db::InfluxResourceId,
                 lang::Language,
                 lang::ParserConfig,
+                handlers::lang_handlers::LanguageCreateRequest,
                 db::models::document::Document,
                 db::models::document::DocumentCreateRequest,
                 db::models::document::DocPackage,

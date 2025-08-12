@@ -4,11 +4,13 @@ import Api
 import Api.GetLanguages
 import Bindings exposing (InfluxResourceId(..), Language)
 import BindingsUtils
+import Components.FormElements exposing (buttonC)
 import Components.Topbar
 import Dict
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (class, href, style)
+import Html.Events
 import Http
 import Page exposing (Page)
 import Route exposing (Route)
@@ -48,6 +50,7 @@ init () =
 
 type Msg
     = ApiResponded (Result Http.Error (List Language))
+    | AddLanguage
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -58,6 +61,9 @@ update msg model =
 
         ApiResponded (Err httpError) ->
             ( { model | langData = Api.Failure httpError }, Effect.none )
+
+        AddLanguage ->
+            ( model, Effect.pushRoutePath Route.Path.Lang_Edit )
 
 
 
@@ -96,7 +102,7 @@ viewLanguagesTable languages =
                                 Just langId ->
                                     div []
                                         [ a
-                                            [ href ("/lang/edit/" ++ BindingsUtils.influxResourceIdToString langId) ]
+                                            [ href ("/lang/edit?langId=" ++ BindingsUtils.influxResourceIdToString langId) ]
                                             [ text "Edit" ]
                                         , text " | "
                                         , a
@@ -132,7 +138,16 @@ viewLangs model =
 
         Api.Success languages ->
             div []
-                [ viewLanguagesTable languages ]
+                [ div [ style "margin-bottom" "20px" ]
+                    [ buttonC
+                        [ Html.Events.onClick AddLanguage
+                        , style "background-color" "#28a745"
+                        , style "color" "white"
+                        ]
+                        "Add Language"
+                    ]
+                , viewLanguagesTable languages
+                ]
 
 
 view : Model -> View Msg
