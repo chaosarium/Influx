@@ -144,7 +144,7 @@ view model =
             ]
         , Html.div []
             [ buttonC
-                [ onClick LookupClicked ]
+                (Just LookupClicked)
                 "Lookup"
             ]
         , viewLookupResult model.lookupResult

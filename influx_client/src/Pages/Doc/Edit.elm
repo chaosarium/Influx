@@ -8,14 +8,16 @@ import Api.GetAnnotatedDoc
 import Api.GetLanguages
 import Bindings exposing (Document, InfluxResourceId(..), Language)
 import BindingsUtils
-import Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC, stringListC, textboxC)
-import Components.Styles as Styles
+import Colours
+import Components.FormElements3 exposing (SelectCOption, buttonC, buttonRowC, formC, inputC, selectC, stringListC, textareaC)
+import Components.ToastView
 import Components.Topbar
+import Css exposing (marginTop)
 import Dict
 import Effect exposing (Effect)
-import Html exposing (..)
-import Html.Attributes exposing (class, style)
-import Html.Events exposing (onClick)
+import Html.Styled as Html exposing (..)
+import Html.Styled.Attributes exposing (class, css, style)
+import Html.Styled.Events exposing (onClick)
 import Http
 import Page exposing (Page)
 import Route exposing (Route)
@@ -438,8 +440,8 @@ view shared route model =
     { title = title
     , body =
         [ Html.div [ class "layout-outer" ]
-            [ Components.Topbar.view {}
-            , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
+            [ Html.fromUnstyled <| Components.Topbar.view {}
+            , Html.div [ class "toast-tray" ] [ Html.fromUnstyled <| Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
             , Html.div [ class "layout-content" ]
                 [ Html.h1 [] [ Html.text title ]
                 , case model.formModel of
@@ -485,93 +487,108 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
                     else
                         "Save"
     in
-    Html.form [ Html.Events.onSubmit SubmitForm ]
-        [ inputC [] "Title" "titleInput" UpdateTitleInput workingDocument.title
-        , textboxC "Content" "contentInput" UpdateContentInput workingDocument.content
-        , inputC [] "Document Type" "docTypeInput" UpdateDocTypeInput workingDocument.docType
-        , stringListC "Tags" "tagsInput" UpdateTagsList UpdateTagInput workingDocument.tags currentTagInput
-        , case languagesData of
-            Api.Success languages ->
-                selectC
-                    "Language"
-                    "languageInput"
-                    UpdateLanguageInput
-                    (languageOptions languages)
-                    (case workingDocument.langId of
-                        SerialId id ->
-                            String.fromInt id
+    formC
+        { rows =
+            [ inputC { label = "Title", toMsg = UpdateTitleInput, value_ = workingDocument.title, placeholder = "Edit title..." }
+            , textareaC { label = "Content", toMsg = UpdateContentInput, value_ = workingDocument.content, placeholder = "Edit content..." }
+            , inputC { label = "Document Type", toMsg = UpdateDocTypeInput, value_ = workingDocument.docType, placeholder = "Edit document type..." }
+            , stringListC { label = "Tags", items = workingDocument.tags, currentInput = currentTagInput, onListChange = UpdateTagsList, onInputChange = UpdateTagInput }
+            , case languagesData of
+                Api.Success languages ->
+                    selectC
+                        { label = "Language"
+                        , toMsg = UpdateLanguageInput
+                        , options = languageOptions languages
+                        , value_ =
+                            case workingDocument.langId of
+                                SerialId id ->
+                                    String.fromInt id
 
-                        StringId id ->
-                            id
-                    )
+                                StringId id ->
+                                    id
+                        }
 
-            Api.Loading ->
-                div [] [ Html.text "Loading languages..." ]
+                Api.Loading ->
+                    Html.div [] [ Html.text "Loading languages..." ]
 
-            Api.Failure _ ->
-                div [] [ Html.text "Failed to load languages" ]
+                Api.Failure _ ->
+                    Html.div [] [ Html.text "Failed to load languages" ]
 
-            Api.NotAsked ->
-                div [] [ Html.text "Languages not loaded" ]
-        , div []
-            [ buttonC
-                [ onClick SubmitForm
-                , Html.Attributes.disabled (isSubmitting || not hasChanges)
-                ]
-                submitButtonText
-            , buttonC
-                [ onClick CancelEdit
-                , Html.Attributes.disabled isSubmitting
-                ]
-                "Cancel"
-            , case mode of
-                EditMode ->
-                    buttonC
-                        [ onClick DeleteDocument
-                        , Html.Attributes.disabled isSubmitting
-                        , Html.Attributes.style "background-color" "#dc3545"
-                        , Html.Attributes.style "color" "white"
-                        , Html.Attributes.style "margin-left" "10px"
-                        ]
-                        (if isSubmitting then
-                            "Deleting..."
-
-                         else
-                            "Delete"
-                        )
-
-                CreateMode ->
-                    Utils.htmlEmpty
+                Api.NotAsked ->
+                    Html.div [] [ Html.text "Languages not loaded" ]
             ]
-        , if hasChanges && not isSubmitting then
-            Html.div [ Html.Attributes.style "color" "orange" ]
-                [ Html.text
-                    (case mode of
-                        CreateMode ->
-                            "Fill in the form to create a new document."
+        , buttons =
+            List.filterMap identity
+                [ Just
+                    (buttonC
+                        { onPress =
+                            if isSubmitting || not hasChanges then
+                                Nothing
 
-                        EditMode ->
-                            "You have unsaved changes."
+                            else
+                                Just SubmitForm
+                        , label = submitButtonText
+                        }
                     )
-                ]
+                , Just
+                    (buttonC
+                        { onPress =
+                            if isSubmitting then
+                                Nothing
 
-          else if isSubmitting then
-            Html.div [ Html.Attributes.style "color" "gray" ]
-                [ Html.text
-                    (case mode of
-                        CreateMode ->
-                            "Creating document..."
-
-                        EditMode ->
-                            "Saving changes..."
+                            else
+                                Just CancelEdit
+                        , label = "Cancel"
+                        }
                     )
+                , case mode of
+                    EditMode ->
+                        Just
+                            (buttonC
+                                { onPress =
+                                    if isSubmitting then
+                                        Nothing
+
+                                    else
+                                        Just DeleteDocument
+                                , label =
+                                    if isSubmitting then
+                                        "Deleting..."
+
+                                    else
+                                        "Delete"
+                                }
+                            )
+
+                    CreateMode ->
+                        Nothing
                 ]
+        , status =
+            [ if hasChanges && not isSubmitting then
+                Html.div [ css [ Colours.colorCss Colours.orange9, marginTop (Css.px 8) ] ]
+                    [ Html.text
+                        (case mode of
+                            CreateMode ->
+                                "Fill in the form to create a new document."
 
-          else
-            Utils.htmlEmpty
-        ]
+                            EditMode ->
+                                "You have unsaved changes."
+                        )
+                    ]
 
+              else if isSubmitting then
+                Html.div [ css [ Colours.colorCss Colours.orange9, marginTop (Css.px 8) ] ]
+                    [ Html.text
+                        (case mode of
+                            CreateMode ->
+                                "Creating document..."
 
-viewToast : List (Html.Attribute msg) -> Toast.Info String -> Html msg
-viewToast attributes toast =
-    Html.div (class "toast toast--spaced" :: attributes) [ Html.text toast.content ]
+                            EditMode ->
+                                "Saving changes..."
+                        )
+                    ]
+
+              else
+                Html.text ""
+            ]
+        }

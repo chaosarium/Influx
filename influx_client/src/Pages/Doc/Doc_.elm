@@ -24,6 +24,7 @@ import Html exposing (..)
 import Html.Attributes exposing (class, draggable, href, style)
 import Html.Events
 import Html.Extra
+import Html.Styled
 import Http
 import Json.Decode as Decode
 import Page exposing (Page)
@@ -640,7 +641,7 @@ viewDocumentInfo response =
             , text (String.left 10 document.updatedTs)
             ]
         , p []
-            [ a [ href ("/doc/edit/" ++ documentId) ] [ text "Edit Document" ]
+            [ a [ href ("/doc/edit?docId=" ++ documentId) ] [ text "Edit Document" ]
             , text " | "
             , a [ href ("/lang/edit/" ++ languageId) ] [ text "Edit Language" ]
             ]
@@ -1208,27 +1209,28 @@ view shared route model =
     in
     { title = "Document view"
     , body =
-        [ div [ class "outer-layout" ]
-            [ Components.Topbar.view {}
-            , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
-            , div
-                [ class "text-document-layout" ]
-                [ div
-                    [ class "text-document-layout__left-panel" ]
-                    [ div [ class "text-document-layout__left-panel_content" ]
-                        leftPanelContent
+        List.map Html.Styled.fromUnstyled <|
+            [ div [ class "outer-layout" ]
+                [ Components.Topbar.view {}
+                , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
+                , div
+                    [ class "text-document-layout" ]
+                    [ div
+                        [ class "text-document-layout__left-panel" ]
+                        [ div [ class "text-document-layout__left-panel_content" ]
+                            leftPanelContent
+                        ]
+                    , Components.ResizableSidebar.view
+                        { width = model.rightPanelWidth
+                        , isCollapsed = model.sidebarCollapsed
+                        , title = "Document Tools"
+                        , onStartResize = StartResize
+                        , onToggleCollapse = ToggleSidebar
+                        , content = rightPanelContent
+                        }
                     ]
-                , Components.ResizableSidebar.view
-                    { width = model.rightPanelWidth
-                    , isCollapsed = model.sidebarCollapsed
-                    , title = "Document Tools"
-                    , onStartResize = StartResize
-                    , onToggleCollapse = ToggleSidebar
-                    , content = rightPanelContent
-                    }
                 ]
             ]
-        ]
     }
 
 
