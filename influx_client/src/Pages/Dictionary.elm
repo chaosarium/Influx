@@ -7,6 +7,7 @@ import Components.Topbar
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (class)
+import Html.Styled
 import Http
 import Page exposing (Page)
 import Route exposing (Route)
@@ -78,14 +79,15 @@ view : Model -> View Msg
 view model =
     { title = "Dictionary Lookup"
     , body =
-        [ Html.div [ class "layout-outer" ]
-            [ Components.Topbar.view {}
-            , Html.div [ class "layout-content" ]
-                [ Html.h1 [] [ Html.text "Dictionary Lookup" ]
-                , Html.map DictionaryLookupMsg (DictionaryLookup.view model.dictionaryLookup)
+        List.map Html.Styled.fromUnstyled <|
+            [ Html.div [ class "layout-outer" ]
+                [ Components.Topbar.view {}
+                , Html.div [ class "layout-content" ]
+                    [ Html.h1 [] [ Html.text "Dictionary Lookup" ]
+                    , Html.map DictionaryLookupMsg (DictionaryLookup.view model.dictionaryLookup)
+                    ]
                 ]
             ]
-        ]
     }
 
 

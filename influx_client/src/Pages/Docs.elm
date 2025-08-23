@@ -12,6 +12,7 @@ import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (class, href, style)
 import Html.Events
+import Html.Styled
 import Http
 import Page exposing (Page)
 import Route exposing (Route)
@@ -190,10 +191,7 @@ viewDocs model =
             div []
                 [ div [ style "margin-bottom" "20px" ]
                     [ buttonC
-                        [ Html.Events.onClick AddDocument
-                        , style "background-color" "#28a745"
-                        , style "color" "white"
-                        ]
+                        (Just AddDocument)
                         "Add Document"
                     ]
                 , viewDocumentsTable docPackages
@@ -204,12 +202,13 @@ view : ThisRoute -> Model -> View Msg
 view route model =
     { title = "All Documents"
     , body =
-        [ Html.div [ class "layout-outer" ]
-            [ Components.Topbar.view {}
-            , div [ class "layout-content" ]
-                [ Html.h1 [] [ Html.text "All Documents" ]
-                , viewDocs model
+        List.map Html.Styled.fromUnstyled <|
+            [ Html.div [ class "layout-outer" ]
+                [ Components.Topbar.view {}
+                , div [ class "layout-content" ]
+                    [ Html.h1 [] [ Html.text "All Documents" ]
+                    , viewDocs model
+                    ]
                 ]
             ]
-        ]
     }

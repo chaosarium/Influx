@@ -1,27 +1,34 @@
 @use "extern/radix-ui-colors.scss" as *;
 @use "theme.scss" as *;
+@use "reset.scss" as *;
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
-
-$uiFont: "Open Sans";
 
 // === BASE STYLES ===
 
+$uiFont: "Open Sans";
+
 html {
     height: 100%;
-    margin: 0;
-    padding: 0;
 }
 
 body {
     font-family: $uiFont, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    margin: 0;
-    padding: 0;
-    // height: 100vh;
-    // overflow: hidden;
+    background-color: $gray-2;
 }
 
-a {
-    color: unset;
+h1 {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
 }
 
 // === COMPONENTS ===
@@ -73,11 +80,12 @@ nav.navbar {
     height: 100vh;
     display: flex;
     flex-direction: column;
+    background-color: $white;
 }
 
 // Full width layout for stuff that do not have side-by-side split
 .layout-content {
-    max-width: $content-max-width;
+    width: 1000px;
     margin: 0 auto;
     padding: 32px 16px;
 }
@@ -96,7 +104,7 @@ nav.navbar {
 }
 
 .text-document-layout__left-panel_content {
-    max-width: $text-doc-max-width;
+    max-width: 1000px;
     padding: 32px 16px;
     margin: 0 auto;
 
@@ -461,14 +469,14 @@ span.clickable-tkn-span {
     /* Reset any inherited styles that might affect the shadow DOM container */
     all: unset;
     display: block;
-    
+
     /* Basic container styling */
     min-height: 20px;
     padding: 4px 8px;
     border-radius: 4px;
     border: 1px dashed $borderColorSubtle;
     // background-color: $bgColorSubtle;
-    
+
     /* Ensure shadow DOM host is properly isolated */
     isolation: isolate;
     contain: layout style paint;

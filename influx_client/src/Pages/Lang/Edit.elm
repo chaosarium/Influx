@@ -742,11 +742,8 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
                         , onListChange = UpdateDictsList
                         , onInputChange = UpdateDictInput
                         }
+                    , viewDictionarySelectorRow selectedDictPath availableDictionaries dictionariesLoadStatus
                     ]
-              , buttons = []
-              }
-            , { title = Just "Add Dictionary from Available"
-              , rows = viewDictionarySelectorRows selectedDictPath availableDictionaries dictionariesLoadStatus
               , buttons = []
               }
             , { title = Just "Text-to-Speech Settings"
@@ -817,9 +814,9 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
         }
 
 
-viewDictionarySelectorRows : String -> List String -> DictionariesLoadStatus -> List (Html Msg)
-viewDictionarySelectorRows selectedDictPath availableDictionaries dictionariesLoadStatus =
-    [ case dictionariesLoadStatus of
+viewDictionarySelectorRow : String -> List String -> DictionariesLoadStatus -> Html Msg
+viewDictionarySelectorRow selectedDictPath availableDictionaries dictionariesLoadStatus =
+    case dictionariesLoadStatus of
         DictionariesLoading ->
             div [] [ text "Loading dictionaries..." ]
 
@@ -837,7 +834,12 @@ viewDictionarySelectorRows selectedDictPath availableDictionaries dictionariesLo
                         { label = "Available Dictionaries"
                         , toMsg = DictPathChanged
                         , options = List.map (\dict -> { value = dict, label = dict }) availableDictionaries
-                        , value_ = if String.isEmpty selectedDictPath then Nothing else Just selectedDictPath
+                        , value_ =
+                            if String.isEmpty selectedDictPath then
+                                Nothing
+
+                            else
+                                Just selectedDictPath
                         , placeholder = "Select a dictionary..."
                         }
                     , div [ style "margin-top" "16px" ]
@@ -855,15 +857,6 @@ viewDictionarySelectorRows selectedDictPath availableDictionaries dictionariesLo
 
         DictionariesNotLoaded ->
             div [] []
-    ]
-
-
-viewDictionarySelector : String -> List String -> DictionariesLoadStatus -> Html Msg
-viewDictionarySelector selectedDictPath availableDictionaries dictionariesLoadStatus =
-    formSectionC
-        { title = "Add Dictionary from Available"
-        , rows = viewDictionarySelectorRows selectedDictPath availableDictionaries dictionariesLoadStatus
-        }
 
 
 viewVoiceDropdown : Maybe String -> List Voice -> Html Msg
@@ -886,6 +879,11 @@ viewParserDropdown selectedParser =
             [ { value = "base_spacy", label = "Plain spaCy" }
             , { value = "enhanced_japanese", label = "Enhanced Japanese" }
             ]
-        , value_ = if String.isEmpty selectedParser then Nothing else Just selectedParser
+        , value_ =
+            if String.isEmpty selectedParser then
+                Nothing
+
+            else
+                Just selectedParser
         , placeholder = "Select a parser..."
         }
