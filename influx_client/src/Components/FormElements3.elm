@@ -7,7 +7,6 @@ module Components.FormElements3 exposing
     , formSectionC
     , formSectionHr
     , inputC
-    , inputDisabledC
     , inputWithTooltipC
     , numberInputC
     , selectC
@@ -18,6 +17,7 @@ module Components.FormElements3 exposing
 
 import Bindings exposing (TokenStatus(..))
 import Colours
+import Components.StatusColours as StatusColours
 import Css exposing (..)
 import Html.Styled as Html exposing (..)
 import Html.Styled.Attributes as Attributes exposing (css, type_, value)
@@ -198,37 +198,32 @@ textInputCss =
     formElementCss []
 
 
-inputC : { label : String, toMsg : String -> msg, value_ : String, placeholder : String } -> Html msg
+inputC : { label : String, toMsg : Maybe (String -> msg), value_ : String, placeholder : String } -> Html msg
 inputC { label, toMsg, value_, placeholder } =
     inputKeyVal label <|
         input
-            [ type_ "text"
-            , value value_
-            , onInput toMsg
-            , Attributes.placeholder placeholder
-            , textInputCss
-            , css
+            ([ type_ "text"
+             , value value_
+             , Attributes.placeholder placeholder
+             , textInputCss
+             , css
                 [ height inputKeyValHeight
                 ]
-            ]
-            []
+             ]
+                ++ (case toMsg of
+                        Just msg ->
+                            [ onInput msg ]
 
-
-inputDisabledC : { label : String, value_ : String } -> Html msg
-inputDisabledC { label, value_ } =
-    inputKeyVal label <|
-        input
-            [ type_ "text"
-            , value value_
-            , Attributes.disabled True
-            , textInputCss
-            , css
-                [ height inputKeyValHeight
-                , Colours.bgCss Colours.gray2
-                , Colours.colorCss Colours.gray9
-                , cursor notAllowed
-                ]
-            ]
+                        Nothing ->
+                            [ Attributes.disabled True
+                            , css
+                                [ Colours.bgCss Colours.gray2
+                                , Colours.colorCss Colours.gray9
+                                , cursor notAllowed
+                                ]
+                            ]
+                   )
+            )
             []
 
 
@@ -267,15 +262,14 @@ numberInputC { label, toMsg, value_, min, max, step, placeholder } =
             []
 
 
-textareaC : { label : String, toMsg : String -> msg, value_ : String, placeholder : String, minHeight : Float } -> Html msg
+textareaC : { label : String, toMsg : Maybe (String -> msg), value_ : String, placeholder : String, minHeight : Float } -> Html msg
 textareaC { label, toMsg, value_, placeholder, minHeight } =
     inputKeyVal label <|
         Html.textarea
-            [ onInput toMsg
-            , value value_
-            , Attributes.placeholder placeholder
-            , textInputCss
-            , css
+            ([ value value_
+             , Attributes.placeholder placeholder
+             , textInputCss
+             , css
                 [ resize none
                 , Css.minHeight (px minHeight)
                 , focus
@@ -286,7 +280,21 @@ textareaC { label, toMsg, value_, placeholder, minHeight } =
                     ]
                 , display block
                 ]
-            ]
+             ]
+                ++ (case toMsg of
+                        Just msg ->
+                            [ onInput msg ]
+
+                        Nothing ->
+                            [ Attributes.disabled True
+                            , css
+                                [ Colours.bgCss Colours.gray2
+                                , Colours.colorCss Colours.gray9
+                                , cursor notAllowed
+                                ]
+                            ]
+                   )
+            )
             []
 
 
@@ -589,34 +597,6 @@ formSectionC { title, rows } =
         ]
 
 
-statusToColor : TokenStatus -> String
-statusToColor status =
-    case status of
-        L1 ->
-            Colours.red4
-
-        L2 ->
-            Colours.orange4
-
-        L3 ->
-            Colours.amber4
-
-        L4 ->
-            Colours.lime4
-
-        L5 ->
-            Colours.green4
-
-        Known ->
-            Colours.gray6
-
-        Ignored ->
-            Colours.violet4
-
-        Unmarked ->
-            Colours.gray3
-
-
 termStatusSelectC : { label : String, toMsg : TokenStatus -> msg, selectedStatus : TokenStatus } -> Html msg
 termStatusSelectC { label, toMsg, selectedStatus } =
     let
@@ -709,17 +689,34 @@ termStatusSelectC { label, toMsg, selectedStatus } =
                         Colours.gray5
 
                     else if isSelected status then
-                        statusToColor selectedStatus
+                        StatusColours.statusFillColor selectedStatus
 
                     else
                         Colours.gray2
+
+                borderColor =
+                    if isGrayedOut status then
+                        Colours.gray6
+
+                    else if isSelected status then
+                        StatusColours.statusBorderColor selectedStatus
+
+                    else
+                        Colours.gray5
 
                 hoverBackgroundColor =
                     if isGrayedOut status then
                         Colours.gray6
 
                     else
-                        statusToColor selectedStatus
+                        StatusColours.statusFillColor selectedStatus
+
+                hoverBorderColor =
+                    if isGrayedOut status then
+                        Colours.gray6
+
+                    else
+                        StatusColours.statusBorderColor selectedStatus
             in
             button
                 [ onClick (toMsg status)
@@ -727,13 +724,14 @@ termStatusSelectC { label, toMsg, selectedStatus } =
                     [ width (px 16)
                     , height (px 16)
                     , border2 (px 1) solid
-                    , Colours.borderCss Colours.gray5
+                    , Colours.borderCss borderColor
                     , borderRadius space4px
                     , Colours.bgCss backgroundColor
                     , cursor pointer
                     , padding space0px
                     , hover
                         [ Colours.bgCss hoverBackgroundColor
+                        , Colours.borderCss hoverBorderColor
                         ]
                     , margin space2px
                     ]

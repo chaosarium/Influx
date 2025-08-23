@@ -491,9 +491,9 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
         { sections =
             [ { title = Nothing
               , rows =
-                    [ inputC { label = "Title", toMsg = UpdateTitleInput, value_ = workingDocument.title, placeholder = "Edit title..." }
-                    , textareaC { label = "Content", toMsg = UpdateContentInput, value_ = workingDocument.content, placeholder = "Edit content...", minHeight = 200 }
-                    , inputC { label = "Document Type", toMsg = UpdateDocTypeInput, value_ = workingDocument.docType, placeholder = "Edit document type..." }
+                    [ inputC { label = "Title", toMsg = Just UpdateTitleInput, value_ = workingDocument.title, placeholder = "Edit title..." }
+                    , textareaC { label = "Content", toMsg = Just UpdateContentInput, value_ = workingDocument.content, placeholder = "Edit content...", minHeight = 200 }
+                    , inputC { label = "Document Type", toMsg = Just UpdateDocTypeInput, value_ = workingDocument.docType, placeholder = "Edit document type..." }
                     , stringListC { label = "Tags", items = workingDocument.tags, currentInput = currentTagInput, onListChange = UpdateTagsList, onInputChange = UpdateTagInput }
                     , case languagesData of
                         Api.Success languages ->

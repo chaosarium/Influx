@@ -731,7 +731,7 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
               , rows =
                     [ inputC
                         { label = "Language Name"
-                        , toMsg = UpdateNameInput
+                        , toMsg = Just UpdateNameInput
                         , value_ = workingLanguage.name
                         , placeholder = "Enter language name..."
                         }

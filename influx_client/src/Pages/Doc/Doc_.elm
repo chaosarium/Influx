@@ -1233,6 +1233,3 @@ view shared route model =
                 ]
             ]
     }
-
-
-

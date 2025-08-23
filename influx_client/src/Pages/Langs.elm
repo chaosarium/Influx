@@ -4,7 +4,7 @@ import Api
 import Api.GetLanguages
 import Bindings exposing (InfluxResourceId(..), Language)
 import BindingsUtils
-import Components.FormElements exposing (buttonC)
+import Components.FormElements3 exposing (buttonC)
 import Components.Topbar
 import Dict
 import Effect exposing (Effect)
@@ -140,9 +140,11 @@ viewLangs model =
         Api.Success languages ->
             div []
                 [ div [ style "margin-bottom" "20px" ]
-                    [ buttonC
-                        (Just AddLanguage)
-                        "Add Language"
+                    [ Html.Styled.toUnstyled <|
+                        buttonC
+                            { label = "Add Language"
+                            , onPress = Just AddLanguage
+                            }
                     ]
                 , viewLanguagesTable languages
                 ]

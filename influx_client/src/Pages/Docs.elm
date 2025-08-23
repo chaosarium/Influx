@@ -5,7 +5,7 @@ import Api.GetDocuments
 import Bindings exposing (DocPackage, InfluxResourceId(..))
 import BindingsUtils
 import Components.DbgDisplay
-import Components.FormElements exposing (buttonC)
+import Components.FormElements3 exposing (buttonC)
 import Components.Topbar
 import Dict
 import Effect exposing (Effect)
@@ -190,9 +190,11 @@ viewDocs model =
         Api.Success docPackages ->
             div []
                 [ div [ style "margin-bottom" "20px" ]
-                    [ buttonC
-                        (Just AddDocument)
-                        "Add Document"
+                    [ Html.Styled.toUnstyled <|
+                        buttonC
+                            { label = "Add Document"
+                            , onPress = Just AddDocument
+                            }
                     ]
                 , viewDocumentsTable docPackages
                 ]

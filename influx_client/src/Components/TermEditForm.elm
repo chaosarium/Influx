@@ -2,7 +2,7 @@ module Components.TermEditForm exposing (..)
 
 import Bindings exposing (..)
 import BindingsUtils exposing (getSentenceSegmentOrthography)
-import Components.FormElements3 exposing (buttonC, buttonRowC, formC, inputC, inputDisabledC, termStatusSelectC, textareaC)
+import Components.FormElements3 exposing (buttonC, buttonRowC, formC, inputC, termStatusSelectC, textareaC)
 import Components.Styles as Styles
 import Datastore.DictContext as DictContext
 import Datastore.FocusContext as FocusContext
@@ -409,16 +409,16 @@ viewTermForm form lift args =
                 [ { title = Just ("Editing " ++ form_data.token_or_phrase)
                   , rows =
                         List.filterMap identity
-                            [ Just (inputDisabledC { label = "Orthography", value_ = form_data.orthography })
-                            , Just (inputC { label = "Definition", toMsg = lift << InputChanged << UpdateDefinitionInput, value_ = form_data.definition, placeholder = "Definition..." })
+                            [ Just (inputC { label = "Orthography", toMsg = Nothing, value_ = form_data.orthography, placeholder = "" })
+                            , Just (inputC { label = "Definition", toMsg = Just (lift << InputChanged << UpdateDefinitionInput), value_ = form_data.definition, placeholder = "Definition..." })
                             , case form_data.phonetic of
                                 Just p ->
-                                    Just (inputC { label = "Phonetic", toMsg = lift << InputChanged << UpdatePhoneticInput, value_ = p, placeholder = "Phonetic..." })
+                                    Just (inputC { label = "Phonetic", toMsg = Just (lift << InputChanged << UpdatePhoneticInput), value_ = p, placeholder = "Phonetic..." })
 
                                 Nothing ->
                                     Nothing
                             , Just (termStatusSelectC { label = "Status", toMsg = lift << InputChanged << UpdateStatusInput, selectedStatus = form_data.status })
-                            , Just (textareaC { label = "Notes", toMsg = lift << InputChanged << UpdateNotesInput, value_ = form_data.notes, placeholder = "Notes...", minHeight = 80 })
+                            , Just (textareaC { label = "Notes", toMsg = Just (lift << InputChanged << UpdateNotesInput), value_ = form_data.notes, placeholder = "Notes...", minHeight = 80 })
                             ]
                   , buttons =
                         List.filterMap identity

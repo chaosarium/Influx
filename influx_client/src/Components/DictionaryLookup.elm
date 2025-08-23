@@ -3,11 +3,12 @@ module Components.DictionaryLookup exposing (Model, Msg(..), init, update, view)
 import Api.DictionaryList
 import Api.DictionaryLookup
 import Bindings exposing (StardictType(..), WordDefinition, WordDefinitionSegment)
-import Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC)
+import Components.FormElements3 exposing (SelectCOption, buttonC, inputC, selectC)
 import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, placeholder, value)
 import Html.Events exposing (onClick, onInput)
+import Html.Styled
 import Http
 
 
@@ -135,18 +136,19 @@ view model =
     Html.div []
         [ viewDictionarySelector model
         , Html.div []
-            [ inputC
-                []
-                "Query"
-                "query"
-                QueryChanged
-                model.query
+            [ Html.Styled.toUnstyled <|
+                inputC
+                    { label = "Query"
+                    , toMsg = Just QueryChanged
+                    , value_ = model.query
+                    , placeholder = "Enter query..."
+                    }
             ]
-        , Html.div []
-            [ buttonC
-                (Just LookupClicked)
-                "Lookup"
-            ]
+        , Html.Styled.toUnstyled <|
+            buttonC
+                { label = "Lookup"
+                , onPress = Just LookupClicked
+                }
         , viewLookupResult model.lookupResult
         ]
 
@@ -167,12 +169,19 @@ viewDictionarySelector model =
 
             else
                 Html.div []
-                    [ selectC
-                        "Dictionary"
-                        "dict-selector"
-                        DictPathChanged
-                        (List.map (\dict -> { value = dict, label = dict }) model.availableDictionaries)
-                        model.dictPath
+                    [ Html.Styled.toUnstyled <|
+                        selectC
+                            { label = "Dictionary"
+                            , toMsg = DictPathChanged
+                            , options = List.map (\dict -> { value = dict, label = dict }) model.availableDictionaries
+                            , value_ =
+                                if String.isEmpty model.dictPath then
+                                    Nothing
+
+                                else
+                                    Just model.dictPath
+                            , placeholder = "Select a dictionary..."
+                            }
                     ]
 
         DictionariesNotLoaded ->

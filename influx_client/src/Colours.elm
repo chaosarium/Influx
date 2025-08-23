@@ -1,7 +1,6 @@
 module Colours exposing (..)
 
 import Css
-import Element as El
 import Html
 import Html.Attributes
 
@@ -15,11 +14,6 @@ colorHtml colourStr =
     Html.Attributes.style "color" colourStr
 
 
-colorEl : String -> El.Attribute msg
-colorEl colourStr =
-    El.htmlAttribute <| colorHtml colourStr
-
-
 colorCss : String -> Css.Style
 colorCss colourStr =
     Css.property "color" colourStr
@@ -30,11 +24,6 @@ bgHtml colourStr =
     Html.Attributes.style "background-color" colourStr
 
 
-bgEl : String -> El.Attribute msg
-bgEl colourStr =
-    El.htmlAttribute <| bgHtml colourStr
-
-
 bgCss : String -> Css.Style
 bgCss colourStr =
     Css.property "background-color" colourStr
@@ -43,11 +32,6 @@ bgCss colourStr =
 borderHtml : String -> Html.Attribute msg
 borderHtml colourStr =
     Html.Attributes.style "border-color" colourStr
-
-
-borderEl : String -> El.Attribute msg
-borderEl colourStr =
-    El.htmlAttribute <| borderHtml colourStr
 
 
 borderCss : String -> Css.Style
