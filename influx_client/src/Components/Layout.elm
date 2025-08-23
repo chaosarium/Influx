@@ -1,4 +1,4 @@
-module Components.Layout exposing (pageLayoutC)
+module Components.Layout exposing (documentLayoutC, pageLayoutC)
 
 import Components.Topbar
 import Css exposing (..)
@@ -41,6 +41,61 @@ pageLayoutC { toastTray } content =
                         ]
                     ]
                     content
+               ]
+        )
+    ]
+
+
+documentLayoutC : { toastTray : Maybe (Html msg) } -> List (Html msg) -> Html msg -> List (Html msg)
+documentLayoutC { toastTray } leftPanelContent rightPanel =
+    [ div
+        [ css
+            [ height (vh 100)
+            , displayFlex
+            , flexDirection column
+            , backgroundColor (hex "#FEFEFE")
+            ]
+        ]
+        ([ Components.Topbar.view {} ]
+            ++ (case toastTray of
+                    Just toastElement ->
+                        [ div
+                            [ css
+                                [ position fixed
+                                , left (px 8)
+                                , bottom (px 8)
+                                , zIndex (int 9999)
+                                ]
+                            ]
+                            [ toastElement ]
+                        ]
+
+                    Nothing ->
+                        []
+               )
+            ++ [ div
+                    [ css
+                        [ displayFlex
+                        , flex (int 1)
+                        ]
+                    ]
+                    [ div
+                        [ css
+                            [ flex (int 1)
+                            , overflowY auto
+                            ]
+                        ]
+                        [ div
+                            [ css
+                                [ maxWidth (px 1000)
+                                , padding2 (px 32) (px 16)
+                                , margin2 zero auto
+                                ]
+                            ]
+                            leftPanelContent
+                        ]
+                    , rightPanel
+                    ]
                ]
         )
     ]

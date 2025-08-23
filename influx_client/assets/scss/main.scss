@@ -35,26 +35,6 @@ h3 {
 
 // === LAYOUT ===
 
-// Main document layout styles
-.text-document-layout {
-    display: flex;
-    flex: 1;
-    // overflow: hidden;
-}
-
-.text-document-layout__left-panel {
-    flex: 1;
-    overflow-y: auto;
-
-}
-
-.text-document-layout__left-panel_content {
-    max-width: 1000px;
-    padding: 32px 16px;
-    margin: 0 auto;
-
-}
-
 // === SIDEBAR ===
 
 // Resizable Sidebar Component Styles

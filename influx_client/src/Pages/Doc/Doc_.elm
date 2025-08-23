@@ -12,10 +12,10 @@ import Components.CollapsibleSection
 import Components.DbgDisplay
 import Components.DictionaryLookup as DictionaryLookup
 import Components.FormElements3 as FormElements3
+import Components.Layout
 import Components.ResizableSidebar
 import Components.TermEditForm as TermEditForm
 import Components.ToastView
-import Components.Topbar
 import Components.TtsEmitter
 import Datastore.DictContext as DictContext
 import Datastore.DocContext as DocContext
@@ -26,7 +26,7 @@ import Html exposing (..)
 import Html.Attributes exposing (class, draggable, href, style)
 import Html.Events
 import Html.Extra
-import Html.Styled
+import Html.Styled as HtmlStyled
 import Http
 import Json.Decode as Decode
 import Page exposing (Page)
@@ -748,7 +748,7 @@ annotationSelectOptions =
 
 viewAnnotationControls : AnnotatedText.AnnotationConfig -> Bool -> Html Msg
 viewAnnotationControls config showFurigana =
-    Html.Styled.toUnstyled <|
+    HtmlStyled.toUnstyled <|
         FormElements3.formC
             { sections =
                 [ { title = Just "Annotation Display Settings"
@@ -1044,18 +1044,18 @@ view shared route model =
         leftPanelContent =
             case model.get_doc_api_res of
                 Api.NotAsked ->
-                    [ Html.h1 [] [ Html.text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
-                    , Html.text "Not loaded"
+                    [ h1 [] [ text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
+                    , text "Not loaded"
                     ]
 
                 Api.Loading ->
-                    [ Html.h1 [] [ Html.text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
-                    , Html.text "Loading..."
+                    [ h1 [] [ text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
+                    , text "Loading..."
                     ]
 
                 Api.Failure err ->
-                    [ Html.h1 [] [ Html.text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
-                    , Html.text ("Error: " ++ Api.stringOfHttpErrMsg err)
+                    [ h1 [] [ text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
+                    , text ("Error: " ++ Api.stringOfHttpErrMsg err)
                     ]
 
                 Api.Success response ->
@@ -1100,10 +1100,10 @@ view shared route model =
                                     viewLemmaDisplay seg model.lemma_editing_mode model.working_dict model.annotation_config model.showFurigana
 
                                 else
-                                    Html.text ""
+                                    text ""
 
                             Nothing ->
-                                Html.text ""
+                                text ""
                         ]
                 }
             , Components.CollapsibleSection.view
@@ -1120,26 +1120,26 @@ view shared route model =
                 , onToggle = ToggleSection "translation"
                 , content =
                     div []
-                        [ Html.text
+                        [ text
                             ("Selected text: "
                                 ++ Maybe.withDefault "" model.focus_ctx.selected_text
                             )
-                        , Html.br [] []
-                        , Html.button
+                        , br [] []
+                        , button
                             [ Html.Events.onClick TranslateText
                             , Html.Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
                             ]
-                            [ Html.text "Translate with DeepL" ]
+                            [ text "Translate with DeepL" ]
                         , case model.translation_result of
                             Just translation ->
-                                Html.div [ Html.Attributes.style "margin-top" "10px", Html.Attributes.style "padding" "10px", Html.Attributes.style "background-color" "#f0f0f0" ]
-                                    [ Html.strong [] [ Html.text "Translation: " ]
-                                    , Html.br [] []
-                                    , Html.text translation
+                                div [ Html.Attributes.style "margin-top" "10px", Html.Attributes.style "padding" "10px", Html.Attributes.style "background-color" "#f0f0f0" ]
+                                    [ strong [] [ text "Translation: " ]
+                                    , br [] []
+                                    , text translation
                                     ]
 
                             Nothing ->
-                                Html.text ""
+                                text ""
                         ]
                 }
             , Components.CollapsibleSection.view
@@ -1168,12 +1168,12 @@ view shared route model =
                 , content =
                     div []
                         [ div []
-                            [ Html.text ("Selected text: " ++ Maybe.withDefault "" model.focus_ctx.selected_text) ]
-                        , Html.button
+                            [ text ("Selected text: " ++ Maybe.withDefault "" model.focus_ctx.selected_text) ]
+                        , button
                             [ Html.Events.onClick LookupSelectedText
                             , Html.Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
                             ]
-                            [ Html.text "Lookup in Dictionary" ]
+                            [ text "Lookup in Dictionary" ]
                         , Html.map DictionaryLookupMsg (DictionaryLookup.view model.dictionaryLookup)
                         ]
                 }
@@ -1206,29 +1206,25 @@ view shared route model =
                         ]
                 }
             ]
+
+        toastTray =
+            HtmlStyled.fromUnstyled (div [ class "toast-tray" ] [ Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ])
+
+        rightPanel =
+            HtmlStyled.fromUnstyled <|
+                Components.ResizableSidebar.view
+                    { width = model.rightPanelWidth
+                    , isCollapsed = model.sidebarCollapsed
+                    , title = "Document Tools"
+                    , onStartResize = StartResize
+                    , onToggleCollapse = ToggleSidebar
+                    , content = rightPanelContent
+                    }
     in
     { title = "Document view"
     , body =
-        List.map Html.Styled.fromUnstyled <|
-            [ div [ class "outer-layout" ]
-                [ Html.Styled.toUnstyled (Components.Topbar.view {})
-                , Html.div [ class "toast-tray" ] [ Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
-                , div
-                    [ class "text-document-layout" ]
-                    [ div
-                        [ class "text-document-layout__left-panel" ]
-                        [ div [ class "text-document-layout__left-panel_content" ]
-                            leftPanelContent
-                        ]
-                    , Components.ResizableSidebar.view
-                        { width = model.rightPanelWidth
-                        , isCollapsed = model.sidebarCollapsed
-                        , title = "Document Tools"
-                        , onStartResize = StartResize
-                        , onToggleCollapse = ToggleSidebar
-                        , content = rightPanelContent
-                        }
-                    ]
-                ]
-            ]
+        Components.Layout.documentLayoutC
+            { toastTray = Just toastTray }
+            (List.map HtmlStyled.fromUnstyled leftPanelContent)
+            rightPanel
     }
