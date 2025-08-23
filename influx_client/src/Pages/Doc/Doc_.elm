@@ -6,36 +6,35 @@ import Api.TermEdit
 import Api.Translate
 import Bindings exposing (..)
 import BindingsUtils
-import Browser.Events
 import Components.AnnotatedText as AnnotatedText
-import Components.CollapsibleSection
+import Components.Common exposing (..)
+import Components.CssExtra exposing (..)
 import Components.DbgDisplay
 import Components.DictionaryLookup as DictionaryLookup
 import Components.FormElements3 as FormElements3
 import Components.Layout
-import Components.ResizableSidebar
+import Components.ListingElements
 import Components.TermEditForm as TermEditForm
 import Components.ToastView
 import Components.TtsEmitter
+import Css exposing (..)
 import Datastore.DictContext as DictContext
 import Datastore.DocContext as DocContext
 import Datastore.FocusContext as FocusContext
 import Dict
 import Effect exposing (Effect)
-import Html exposing (..)
-import Html.Attributes exposing (class, draggable, href, style)
-import Html.Events
+import Html as UnstyledHtml
 import Html.Extra
-import Html.Styled as HtmlStyled
+import Html.Styled as Html exposing (Html, a, audio, br, button, div, h1, h2, h3, li, ol, p, span, strong, text, ul)
+import Html.Styled.Attributes as Attributes exposing (class, controls, css, href, id, src, style)
+import Html.Styled.Events exposing (onClick)
 import Http
-import Json.Decode as Decode
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
 import Shared.Msg
 import Toast
 import Utils
-import Utils.ModifierState as ModifierState
 import View exposing (View)
 
 
@@ -73,23 +72,8 @@ type alias Model =
     , annotation_config : AnnotatedText.AnnotationConfig
     , showFurigana : Bool
     , lemma_editing_mode : LemmaEditingMode
-    , rightPanelWidth : Float
-    , sectionStates : SectionStates
-    , isResizing : Bool
-    , resizeStartX : Float
-    , resizeStartWidth : Float
-    , sidebarCollapsed : Bool
     , dictionaryLookup : DictionaryLookup.Model
-    }
-
-
-type alias SectionStates =
-    { termEditor : Bool
-    , termDetails : Bool
-    , annotationControls : Bool
-    , translation : Bool
-    , tts : Bool
-    , dictionary : Bool
+    , sidebarWidth : Int
     }
 
 
@@ -105,20 +89,8 @@ init { documentId } () =
       , annotation_config = { topAnnotation = AnnotatedText.Definition, bottomAnnotation = AnnotatedText.Phonetic }
       , showFurigana = False
       , lemma_editing_mode = EditingInflectedToken
-      , rightPanelWidth = 600
-      , sectionStates =
-            { termEditor = True
-            , termDetails = True
-            , annotationControls = False
-            , translation = False
-            , tts = False
-            , dictionary = False
-            }
-      , isResizing = False
-      , resizeStartX = 0
-      , resizeStartWidth = 0
-      , sidebarCollapsed = False
       , dictionaryLookup = DictionaryLookup.init []
+      , sidebarWidth = 600
       }
     , Effect.sendCmd (Api.GetAnnotatedDoc.get { filepath = documentId } ApiResponded)
     )
@@ -157,42 +129,13 @@ type Msg
     | SetBottomAnnotation AnnotatedText.AnnotationOption
       -- Furigana toggle...
     | ToggleFurigana
-      -- Panel management...
-    | StartResize Float
-    | StopResize
-    | ResizeMove Float
-    | ToggleSidebar
-    | ToggleSection String
+      -- Sidebar width...
+    | SetSidebarWidth Float
       -- Shared
     | SharedMsg Shared.Msg.Msg
       -- Dictionary
     | DictionaryLookupMsg DictionaryLookup.Msg
     | LookupSelectedText
-
-
-updateSectionStates : String -> SectionStates -> SectionStates
-updateSectionStates sectionName sectionStates =
-    case sectionName of
-        "termEditor" ->
-            { sectionStates | termEditor = not sectionStates.termEditor }
-
-        "termDetails" ->
-            { sectionStates | termDetails = not sectionStates.termDetails }
-
-        "annotationControls" ->
-            { sectionStates | annotationControls = not sectionStates.annotationControls }
-
-        "translation" ->
-            { sectionStates | translation = not sectionStates.translation }
-
-        "tts" ->
-            { sectionStates | tts = not sectionStates.tts }
-
-        "dictionary" ->
-            { sectionStates | dictionary = not sectionStates.dictionary }
-
-        _ ->
-            sectionStates
 
 
 getLemmaFromSeg : SentSegV2 -> Maybe String
@@ -292,16 +235,9 @@ update msg model =
                         let
                             ( newDictionaryModel, effect ) =
                                 DictionaryLookup.update (DictionaryLookup.QueryChanged selectedText) model.dictionaryLookup
-
-                            sectionStates =
-                                model.sectionStates
-
-                            updatedSectionStates =
-                                { sectionStates | dictionary = True }
                         in
                         ( { model
                             | dictionaryLookup = newDictionaryModel
-                            , sectionStates = updatedSectionStates
                           }
                         , Effect.map DictionaryLookupMsg effect
                         )
@@ -538,46 +474,8 @@ update msg model =
             , Effect.none
             )
 
-        StartResize startX ->
-            ( { model
-                | isResizing = True
-                , resizeStartX = startX
-                , resizeStartWidth = model.rightPanelWidth
-              }
-            , Effect.none
-            )
-
-        StopResize ->
-            ( { model | isResizing = False }
-            , Effect.none
-            )
-
-        ResizeMove clientX ->
-            if model.isResizing then
-                let
-                    -- Calculate how much the mouse has moved to the left (negative) or right (positive)
-                    deltaX =
-                        model.resizeStartX - clientX
-
-                    -- Moving left (positive deltaX) should increase panel width
-                    -- Moving right (negative deltaX) should decrease panel width
-                    newWidth =
-                        max 200 (min 800 (model.resizeStartWidth + deltaX))
-                in
-                ( { model | rightPanelWidth = newWidth }
-                , Effect.none
-                )
-
-            else
-                ( model, Effect.none )
-
-        ToggleSidebar ->
-            ( { model | sidebarCollapsed = not model.sidebarCollapsed }
-            , Effect.none
-            )
-
-        ToggleSection sectionName ->
-            ( { model | sectionStates = updateSectionStates sectionName model.sectionStates }
+        SetSidebarWidth width ->
+            ( { model | sidebarWidth = Basics.round (max 200 (min 1200 width)) }
             , Effect.none
             )
 
@@ -588,14 +486,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    if model.isResizing then
-        Sub.batch
-            [ Browser.Events.onMouseMove (Decode.map ResizeMove (Decode.field "clientX" Decode.float))
-            , Browser.Events.onMouseUp (Decode.succeed StopResize)
-            ]
-
-    else
-        Sub.none
+    Sub.none
 
 
 
@@ -670,20 +561,20 @@ viewSegExtraInfo dict seg =
         token_info =
             case DictContext.lookupToken dict orthography of
                 Just token ->
-                    [ Html.text ("token: " ++ token.orthography ++ " -> " ++ token.definition) ]
+                    [ text ("token: " ++ token.orthography ++ " -> " ++ token.definition) ]
 
                 Nothing ->
-                    [ Html.text "no token info" ]
+                    [ text "no token info" ]
 
         phrase_info =
             case DictContext.lookupPhrase dict orthography of
                 Just phrase ->
-                    [ Html.text ("phrase: " ++ String.join " " phrase.orthographySeq ++ " -> " ++ phrase.definition) ]
+                    [ text ("phrase: " ++ String.join " " phrase.orthographySeq ++ " -> " ++ phrase.definition) ]
 
                 Nothing ->
-                    [ Html.text "no phrase info" ]
+                    [ text "no phrase info" ]
     in
-    Html.div []
+    div []
         (token_info ++ phrase_info)
 
 
@@ -746,43 +637,57 @@ annotationSelectOptions =
         |> List.map (\option -> { value = annotationOptionToString option, label = annotationOptionToString option })
 
 
-viewAnnotationControls : AnnotatedText.AnnotationConfig -> Bool -> Html Msg
-viewAnnotationControls config showFurigana =
-    HtmlStyled.toUnstyled <|
-        FormElements3.formC
-            { sections =
-                [ { title = Just "Annotation Display Settings"
-                  , rows =
-                        [ FormElements3.selectC
-                            { label = "Top annotation"
-                            , toMsg = \value -> SetTopAnnotation (annotationOptionFromString value)
-                            , options = annotationSelectOptions
-                            , value_ = Just (annotationOptionToString config.topAnnotation)
-                            , placeholder = "Select annotation"
-                            , compact = True
-                            }
-                        , FormElements3.selectC
-                            { label = "Bottom annotation"
-                            , toMsg = \value -> SetBottomAnnotation (annotationOptionFromString value)
-                            , options = annotationSelectOptions
-                            , value_ = Just (annotationOptionToString config.bottomAnnotation)
-                            , placeholder = "Select annotation"
-                            , compact = True
-                            }
-                        , FormElements3.checkboxC
-                            { label = "Furigana"
-                            , toMsg = ToggleFurigana
-                            , checked = showFurigana
-                            , compact = True
-                            }
-                        ]
-                  , buttons = []
-                  }
-                ]
-            , buttons = []
-            , status = []
-            , compact = True
-            }
+viewAnnotationControls : AnnotatedText.AnnotationConfig -> Bool -> Int -> Html Msg
+viewAnnotationControls config showFurigana sidebarWidth =
+    FormElements3.formC
+        { sections =
+            [ { title = Just "Annotation Display Settings"
+              , rows =
+                    [ FormElements3.selectC
+                        { label = "Top annotation"
+                        , toMsg = \value -> SetTopAnnotation (annotationOptionFromString value)
+                        , options = annotationSelectOptions
+                        , value_ = Just (annotationOptionToString config.topAnnotation)
+                        , placeholder = "Select annotation"
+                        , compact = True
+                        }
+                    , FormElements3.selectC
+                        { label = "Bottom annotation"
+                        , toMsg = \value -> SetBottomAnnotation (annotationOptionFromString value)
+                        , options = annotationSelectOptions
+                        , value_ = Just (annotationOptionToString config.bottomAnnotation)
+                        , placeholder = "Select annotation"
+                        , compact = True
+                        }
+                    , FormElements3.checkboxC
+                        { label = "Furigana"
+                        , toMsg = ToggleFurigana
+                        , checked = showFurigana
+                        , compact = True
+                        }
+                    ]
+              , buttons = []
+              }
+            , { title = Just "Layout Settings"
+              , rows =
+                    [ FormElements3.numberInputC
+                        { label = "Sidebar Width (px)"
+                        , toMsg = SetSidebarWidth
+                        , value_ = toFloat sidebarWidth
+                        , placeholder = "600"
+                        , compact = True
+                        , min = 200
+                        , max = 1200
+                        , step = 10
+                        }
+                    ]
+              , buttons = []
+              }
+            ]
+        , buttons = []
+        , status = []
+        , compact = True
+        }
 
 
 viewLemmaDisplay :
@@ -795,7 +700,7 @@ viewLemmaDisplay :
 viewLemmaDisplay seg editingMode dict annotation_config showFurigana =
     case getLemmaFromSeg seg of
         Nothing ->
-            Html.text ""
+            text ""
 
         Just lemma ->
             let
@@ -828,24 +733,24 @@ viewLemmaDisplay seg editingMode dict annotation_config showFurigana =
                     }
 
                 lemmaView =
-                    Maybe.withDefault (Html.text lemma) (AnnotatedText.viewSentenceSegment lemmaViewCtx lemmaSegment)
+                    Maybe.withDefault (text lemma) (Maybe.map Html.fromUnstyled (AnnotatedText.viewSentenceSegment lemmaViewCtx lemmaSegment))
 
                 inflectedView =
-                    Maybe.withDefault (Html.text seg.text) (AnnotatedText.viewSentenceSegment inflectedViewCtx inflectedSegment)
+                    Maybe.withDefault (text seg.text) (Maybe.map Html.fromUnstyled (AnnotatedText.viewSentenceSegment inflectedViewCtx inflectedSegment))
             in
-            Html.div []
-                [ Html.span []
-                    [ Html.text "inflection: " ]
-                , Html.span
-                    [ Html.Attributes.style "cursor" "pointer"
-                    , Html.Events.onClick SwitchToLemmaEditing
+            div []
+                [ span []
+                    [ text "inflection: " ]
+                , span
+                    [ style "cursor" "pointer"
+                    , onClick SwitchToLemmaEditing
                     ]
                     [ lemmaView ]
-                , Html.span []
-                    [ Html.text " → " ]
-                , Html.span
-                    [ Html.Attributes.style "cursor" "pointer"
-                    , Html.Events.onClick SwitchToInflectedTokenEditing
+                , span []
+                    [ text " → " ]
+                , span
+                    [ style "cursor" "pointer"
+                    , onClick SwitchToInflectedTokenEditing
                     ]
                     [ inflectedView ]
                 ]
@@ -855,7 +760,7 @@ viewTermDetails : DictContext.T -> Maybe SentSegV2 -> Html msg
 viewTermDetails dict maybeSeg =
     case maybeSeg of
         Nothing ->
-            Html.text ""
+            text ""
 
         Just seg ->
             let
@@ -890,63 +795,63 @@ viewTermDetails dict maybeSeg =
                 termInfo =
                     case ( maybeToken, maybePhrase ) of
                         ( Just token, _ ) ->
-                            [ li [] [ Html.text ("Orthography: " ++ token.orthography) ]
-                            , li [] [ Html.text ("Definition: " ++ token.definition) ]
-                            , li [] [ Html.text ("Phonetic: " ++ token.phonetic) ]
-                            , li [] [ Html.text ("Notes: " ++ token.notes) ]
-                            , li [] [ Html.text ("Original Context: " ++ token.originalContext) ]
-                            , li [] [ Html.text ("Status: " ++ tokenStatusToString token.status) ]
+                            [ li [] [ text ("Orthography: " ++ token.orthography) ]
+                            , li [] [ text ("Definition: " ++ token.definition) ]
+                            , li [] [ text ("Phonetic: " ++ token.phonetic) ]
+                            , li [] [ text ("Notes: " ++ token.notes) ]
+                            , li [] [ text ("Original Context: " ++ token.originalContext) ]
+                            , li [] [ text ("Status: " ++ tokenStatusToString token.status) ]
                             ]
 
                         ( Nothing, Just phrase ) ->
-                            [ li [] [ Html.text ("Phrase: " ++ String.join " " phrase.orthographySeq) ]
-                            , li [] [ Html.text ("Definition: " ++ phrase.definition) ]
-                            , li [] [ Html.text ("Notes: " ++ phrase.notes) ]
-                            , li [] [ Html.text ("Original Context: " ++ phrase.originalContext) ]
-                            , li [] [ Html.text ("Status: " ++ tokenStatusToString phrase.status) ]
+                            [ li [] [ text ("Phrase: " ++ String.join " " phrase.orthographySeq) ]
+                            , li [] [ text ("Definition: " ++ phrase.definition) ]
+                            , li [] [ text ("Notes: " ++ phrase.notes) ]
+                            , li [] [ text ("Original Context: " ++ phrase.originalContext) ]
+                            , li [] [ text ("Status: " ++ tokenStatusToString phrase.status) ]
                             ]
 
                         ( Nothing, Nothing ) ->
-                            [ li [] [ Html.text "No term information available" ] ]
+                            [ li [] [ text "No term information available" ] ]
 
                 segAttributeInfo =
-                    [ li [] [ Html.text ("Text: " ++ seg.text) ]
-                    , li [] [ Html.text ("Sentence Index: " ++ String.fromInt seg.sentenceIdx) ]
-                    , li [] [ Html.text ("Start Char: " ++ String.fromInt seg.startChar) ]
-                    , li [] [ Html.text ("End Char: " ++ String.fromInt seg.endChar) ]
+                    [ li [] [ text ("Text: " ++ seg.text) ]
+                    , li [] [ text ("Sentence Index: " ++ String.fromInt seg.sentenceIdx) ]
+                    , li [] [ text ("Start Char: " ++ String.fromInt seg.startChar) ]
+                    , li [] [ text ("End Char: " ++ String.fromInt seg.endChar) ]
                     , case seg.attributes.lemma of
                         Just lemma ->
-                            li [] [ Html.text ("Lemma: " ++ lemma) ]
+                            li [] [ text ("Lemma: " ++ lemma) ]
 
                         Nothing ->
-                            li [] [ Html.text "Lemma: (none)" ]
+                            li [] [ text "Lemma: (none)" ]
                     , case seg.attributes.upos of
                         Just upos ->
-                            li [] [ Html.text ("UPOS: " ++ upos) ]
+                            li [] [ text ("UPOS: " ++ upos) ]
 
                         Nothing ->
-                            li [] [ Html.text "UPOS: (none)" ]
+                            li [] [ text "UPOS: (none)" ]
                     , case seg.attributes.xpos of
                         Just xpos ->
-                            li [] [ Html.text ("XPOS: " ++ xpos) ]
+                            li [] [ text ("XPOS: " ++ xpos) ]
 
                         Nothing ->
-                            li [] [ Html.text "XPOS: (none)" ]
+                            li [] [ text "XPOS: (none)" ]
                     , case seg.attributes.dependency of
                         Just ( parentIdx, relation ) ->
-                            li [] [ Html.text ("Dependency: " ++ String.fromInt parentIdx ++ " (" ++ relation ++ ")") ]
+                            li [] [ text ("Dependency: " ++ String.fromInt parentIdx ++ " (" ++ relation ++ ")") ]
 
                         Nothing ->
-                            li [] [ Html.text "Dependency: (none)" ]
+                            li [] [ text "Dependency: (none)" ]
                     , case seg.attributes.conjugationChain of
                         Just conjugationSteps ->
                             li []
-                                [ Html.text "Conjugation Chain: "
+                                [ text "Conjugation Chain: "
                                 , ol []
                                     (List.map
                                         (\step ->
                                             li []
-                                                [ Html.text
+                                                [ text
                                                     ("Step "
                                                         ++ String.fromInt step.step
                                                         ++ ": "
@@ -961,22 +866,22 @@ viewTermDetails dict maybeSeg =
                                 ]
 
                         Nothing ->
-                            li [] [ Html.text "Conjugation Chain: (none)" ]
+                            li [] [ text "Conjugation Chain: (none)" ]
                     , li []
-                        [ Html.text "Misc: "
+                        [ text "Misc: "
                         , if Dict.isEmpty seg.attributes.misc then
-                            Html.text "(none)"
+                            text "(none)"
 
                           else
                             ul []
                                 (Dict.toList seg.attributes.misc
-                                    |> List.map (\( key, value ) -> li [] [ Html.text (key ++ ": " ++ value) ])
+                                    |> List.map (\( key, value ) -> li [] [ text (key ++ ": " ++ value) ])
                                 )
                         ]
                     ]
             in
             div []
-                [ h3 [] [ Html.text "Selected Term Details" ]
+                [ h3 [] [ text "Selected Term Details" ]
                 , ul []
                     (termInfo ++ segAttributeInfo)
                 ]
@@ -1041,39 +946,46 @@ view shared route model =
             , showFurigana = model.showFurigana
             }
 
-        leftPanelContent =
+        documentCard =
             case model.get_doc_api_res of
                 Api.NotAsked ->
-                    [ h1 [] [ text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
-                    , text "Not loaded"
-                    ]
+                    Components.ListingElements.listingCardC
+                        [ h1 [] [ text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
+                        , text "Not loaded"
+                        ]
 
                 Api.Loading ->
-                    [ h1 [] [ text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
-                    , text "Loading..."
-                    ]
+                    Components.ListingElements.listingCardC
+                        [ h1 [] [ text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
+                        , text "Loading..."
+                        ]
 
                 Api.Failure err ->
-                    [ h1 [] [ text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
-                    , text ("Error: " ++ Api.stringOfHttpErrMsg err)
-                    ]
+                    Components.ListingElements.listingCardC
+                        [ h1 [] [ text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
+                        , text ("Error: " ++ Api.stringOfHttpErrMsg err)
+                        ]
 
                 Api.Success response ->
-                    [ viewDocumentInfo response
-                    , div [ class "annotated-doc-div", class "dbg-off" ]
-                        (AnnotatedText.view
-                            annotatedDocViewCtx
-                            model.working_doc
-                        )
-                    ]
+                    Components.ListingElements.listingCardC
+                        [ viewDocumentInfo response
+                        , div
+                            [ class "annotated-doc-div"
+                            , class "dbg-off"
+                            , style "max-height" "70vh"
+                            , style "overflow-y" "auto"
+                            ]
+                            (List.map Html.fromUnstyled <|
+                                AnnotatedText.view
+                                    annotatedDocViewCtx
+                                    model.working_doc
+                            )
+                        ]
 
-        rightPanelContent =
-            [ Components.CollapsibleSection.view
-                { sectionId = "termEditor"
-                , title = "Term Editor"
-                , isExpanded = model.sectionStates.termEditor
-                , onToggle = ToggleSection "termEditor"
-                , content =
+        termEditorCard =
+            Components.ListingElements.listingCardC
+                [ h3 [] [ text "Term Editor" ]
+                , Html.fromUnstyled <|
                     TermEditForm.view model.form_model
                         TermEditorEvent
                         { dict = model.working_dict
@@ -1085,146 +997,139 @@ view shared route model =
                                 Nothing ->
                                     Nothing
                         }
-                }
-            , Components.CollapsibleSection.view
-                { sectionId = "termDetails"
-                , title = "Term Details"
-                , isExpanded = model.sectionStates.termDetails
-                , onToggle = ToggleSection "termDetails"
-                , content =
-                    div []
-                        [ viewTermDetails model.working_dict model.focus_ctx.segment_selection
-                        , case model.focus_ctx.segment_selection of
-                            Just seg ->
-                                if hasLemma seg then
-                                    viewLemmaDisplay seg model.lemma_editing_mode model.working_dict model.annotation_config model.showFurigana
+                ]
 
-                                else
-                                    text ""
+        termDetailsCard =
+            Components.ListingElements.listingCardC
+                [ h3 [] [ text "Term Details" ]
+                , viewTermDetails model.working_dict model.focus_ctx.segment_selection
+                , case model.focus_ctx.segment_selection of
+                    Just seg ->
+                        if hasLemma seg then
+                            viewLemmaDisplay seg model.lemma_editing_mode model.working_dict model.annotation_config model.showFurigana
 
-                            Nothing ->
-                                text ""
-                        ]
-                }
-            , Components.CollapsibleSection.view
-                { sectionId = "annotationControls"
-                , title = "Annotation Controls"
-                , isExpanded = model.sectionStates.annotationControls
-                , onToggle = ToggleSection "annotationControls"
-                , content = viewAnnotationControls model.annotation_config model.showFurigana
-                }
-            , Components.CollapsibleSection.view
-                { sectionId = "translation"
-                , title = "Translation"
-                , isExpanded = model.sectionStates.translation
-                , onToggle = ToggleSection "translation"
-                , content =
-                    div []
-                        [ text
-                            ("Selected text: "
-                                ++ Maybe.withDefault "" model.focus_ctx.selected_text
-                            )
-                        , br [] []
-                        , button
-                            [ Html.Events.onClick TranslateText
-                            , Html.Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
+                        else
+                            text ""
+
+                    Nothing ->
+                        text ""
+                ]
+
+        annotationControlsCard =
+            Components.ListingElements.listingCardC
+                [ h3 [] [ text "Annotation Controls" ]
+                , viewAnnotationControls model.annotation_config model.showFurigana model.sidebarWidth
+                ]
+
+        translationCard =
+            Components.ListingElements.listingCardC
+                [ h3 [] [ text "Translation" ]
+                , text
+                    ("Selected text: "
+                        ++ Maybe.withDefault "" model.focus_ctx.selected_text
+                    )
+                , br [] []
+                , button
+                    [ onClick TranslateText
+                    , Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
+                    ]
+                    [ text "Translate with DeepL" ]
+                , case model.translation_result of
+                    Just translation ->
+                        div [ style "margin-top" "10px", style "padding" "10px", style "background-color" "#f0f0f0" ]
+                            [ strong [] [ text "Translation: " ]
+                            , br [] []
+                            , text translation
                             ]
-                            [ text "Translate with DeepL" ]
-                        , case model.translation_result of
-                            Just translation ->
-                                div [ Html.Attributes.style "margin-top" "10px", Html.Attributes.style "padding" "10px", Html.Attributes.style "background-color" "#f0f0f0" ]
-                                    [ strong [] [ text "Translation: " ]
-                                    , br [] []
-                                    , text translation
-                                    ]
 
-                            Nothing ->
-                                text ""
-                        ]
-                }
-            , Components.CollapsibleSection.view
-                { sectionId = "tts"
-                , title = "Text-to-Speech"
-                , isExpanded = model.sectionStates.tts
-                , onToggle = ToggleSection "tts"
-                , content =
-                    case model.get_doc_api_res of
-                        Api.Success response ->
+                    Nothing ->
+                        text ""
+                ]
+
+        ttsCard =
+            case model.get_doc_api_res of
+                Api.Success response ->
+                    Components.ListingElements.listingCardC
+                        [ h3 [] [ text "Text-to-Speech" ]
+                        , Html.fromUnstyled <|
                             Components.TtsEmitter.view
                                 { text = Maybe.withDefault "" model.focus_ctx.selected_text
                                 , language = response.docPackage.language
                                 , onStartTts = StartTts
                                 , onStopTts = StopTts
                                 }
+                        ]
 
-                        _ ->
-                            text ""
-                }
-            , Components.CollapsibleSection.view
-                { sectionId = "dictionary"
-                , title = "Dictionary Lookup"
-                , isExpanded = model.sectionStates.dictionary
-                , onToggle = ToggleSection "dictionary"
-                , content =
-                    div []
-                        [ div []
-                            [ text ("Selected text: " ++ Maybe.withDefault "" model.focus_ctx.selected_text) ]
-                        , button
-                            [ Html.Events.onClick LookupSelectedText
-                            , Html.Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
-                            ]
-                            [ text "Lookup in Dictionary" ]
-                        , Html.map DictionaryLookupMsg (DictionaryLookup.view model.dictionaryLookup)
+                _ ->
+                    Components.ListingElements.listingCardC
+                        [ h3 [] [ text "Text-to-Speech" ]
+                        , text ""
                         ]
-                }
-            , Components.CollapsibleSection.view
-                { sectionId = "audio"
-                , title = "Audio"
-                , isExpanded = True
-                , onToggle = ToggleSection "audio"
-                , content =
-                    div []
-                        [ audio [ Html.Attributes.id "influx-audio-player", Html.Attributes.src "http://localhost:3000/influx_app_data/test.mp3", Html.Attributes.controls True ]
-                            []
-                        ]
-                }
-            , Components.CollapsibleSection.view
-                { sectionId = "debug-info"
-                , title = "Debug Info"
-                , isExpanded = True
-                , onToggle = ToggleSection "debug-info"
-                , content =
-                    div []
-                        [ -- for debugging check focus context model
-                          Components.DbgDisplay.view "model.focus_ctx.last_hovered_at" model.focus_ctx.last_hovered_at
-                        , Components.DbgDisplay.view "model.focus_ctx.mouse_down_at" model.focus_ctx.mouse_down_at
-                        , Components.DbgDisplay.view "model.focus_ctx.last_mouse_down_at" model.focus_ctx.last_mouse_down_at
-                        , Components.DbgDisplay.view "model.focus_ctx.slice_selection" model.focus_ctx.slice_selection
-                        , Components.DbgDisplay.view "model.focus_ctx.selected_text" model.focus_ctx.selected_text
-                        , Components.DbgDisplay.view "model.focus_ctx.segment_selection" model.focus_ctx.segment_selection
-                        , Components.DbgDisplay.view "model.focus_ctx.segment_slice" model.focus_ctx.segment_slice
-                        ]
-                }
-            ]
+
+        dictionaryCard =
+            Components.ListingElements.listingCardC
+                [ h3 [] [ text "Dictionary Lookup" ]
+                , div []
+                    [ text ("Selected text: " ++ Maybe.withDefault "" model.focus_ctx.selected_text) ]
+                , button
+                    [ onClick LookupSelectedText
+                    , Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
+                    ]
+                    [ text "Lookup in Dictionary" ]
+                , Html.fromUnstyled <| UnstyledHtml.map DictionaryLookupMsg (DictionaryLookup.view model.dictionaryLookup)
+                ]
+
+        audioCard =
+            Components.ListingElements.listingCardC
+                [ h3 [] [ text "Audio" ]
+                , audio [ id "influx-audio-player", src "http://localhost:3000/influx_app_data/test.mp3", Attributes.controls True ]
+                    []
+                ]
 
         toastTray =
-            HtmlStyled.fromUnstyled (div [ class "toast-tray" ] [ Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ])
+            div [ class "toast-tray" ] [ Html.fromUnstyled (Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg))) ]
 
-        rightPanel =
-            HtmlStyled.fromUnstyled <|
-                Components.ResizableSidebar.view
-                    { width = model.rightPanelWidth
-                    , isCollapsed = model.sidebarCollapsed
-                    , title = "Document Tools"
-                    , onStartResize = StartResize
-                    , onToggleCollapse = ToggleSidebar
-                    , content = rightPanelContent
-                    }
+        leftColumn =
+            div
+                [ css
+                    [ width (px 1000)
+                    , paddingRight (px 16)
+                    ]
+                ]
+                [ documentCard ]
+
+        rightColumn =
+            div
+                [ css
+                    [ width (px (toFloat model.sidebarWidth))
+                    , maxHeight (vh 100)
+                    , overflowY auto
+                    , paddingLeft (px 16)
+                    ]
+                ]
+                [ termEditorCard
+                , termDetailsCard
+                , annotationControlsCard
+                , translationCard
+                , ttsCard
+                , dictionaryCard
+                , audioCard
+                ]
+
+        mainContent =
+            div
+                [ css
+                    [ displayFlex
+                    , width (px (1000 + toFloat model.sidebarWidth + 32))
+                    , minHeight (vh 100)
+                    ]
+                ]
+                [ leftColumn
+                , rightColumn
+                ]
     in
     { title = "Document view"
     , body =
-        Components.Layout.documentLayoutC
-            { toastTray = Just toastTray }
-            (List.map HtmlStyled.fromUnstyled leftPanelContent)
-            rightPanel
+        Components.Layout.pageLayoutC { toastTray = Just toastTray }
+            [ mainContent ]
     }
