@@ -734,6 +734,7 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
                         , toMsg = Just UpdateNameInput
                         , value_ = workingLanguage.name
                         , placeholder = "Enter language name..."
+                        , compact = False
                         }
                     , stringListC
                         { label = "Dictionaries"
@@ -741,6 +742,7 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
                         , currentInput = currentDictInput
                         , onListChange = UpdateDictsList
                         , onInputChange = UpdateDictInput
+                        , compact = False
                         }
                     , viewDictionarySelectorRow selectedDictPath availableDictionaries dictionariesLoadStatus
                     ]
@@ -756,6 +758,7 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
                         , value_ = Maybe.withDefault 1.0 workingLanguage.ttsRate
                         , step = 0.1
                         , placeholder = "1.0"
+                        , compact = False
                         }
                     , numberInputC
                         { label = "TTS Pitch"
@@ -765,6 +768,7 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
                         , value_ = Maybe.withDefault 1.0 workingLanguage.ttsPitch
                         , step = 0.1
                         , placeholder = "1.0"
+                        , compact = False
                         }
                     , viewVoiceDropdown workingLanguage.ttsVoice availableVoices
                     ]
@@ -778,6 +782,7 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
                         , toMsg = UpdateDeeplSourceLang
                         , value_ = Maybe.withDefault "" workingLanguage.deeplSourceLang
                         , placeholder = "EN, FR, JA..."
+                        , compact = False
                         }
                     , inputWithTooltipC
                         { label = "Target Language"
@@ -785,6 +790,7 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
                         , toMsg = UpdateDeeplTargetLang
                         , value_ = Maybe.withDefault "" workingLanguage.deeplTargetLang
                         , placeholder = "EN, DE, FR..."
+                        , compact = False
                         }
                     ]
               , buttons = []
@@ -800,6 +806,7 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
                                 , toMsg = UpdateSpacyModel
                                 , value_ = Maybe.withDefault "" (Dict.get "spacy_model" workingLanguage.parserConfig.parserArgs)
                                 , placeholder = "e.g. en_core_web_sm"
+                                , compact = False
                                 }
                             ]
 
@@ -811,6 +818,7 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
             ]
         , buttons = buttons
         , status = statusMessages
+        , compact = False
         }
 
 
@@ -841,6 +849,7 @@ viewDictionarySelectorRow selectedDictPath availableDictionaries dictionariesLoa
                             else
                                 Just selectedDictPath
                         , placeholder = "Select a dictionary..."
+                        , compact = False
                         }
                     , div [ style "margin-top" "16px" ]
                         [ buttonC
@@ -867,6 +876,7 @@ viewVoiceDropdown selectedVoice voices =
         , options = List.map (\voice -> { value = voice.name, label = voice.name ++ " (" ++ voice.lang ++ ")" }) voices
         , value_ = selectedVoice
         , placeholder = "Select a voice..."
+        , compact = False
         }
 
 
@@ -886,4 +896,5 @@ viewParserDropdown selectedParser =
             else
                 Just selectedParser
         , placeholder = "Select a parser..."
+        , compact = False
         }

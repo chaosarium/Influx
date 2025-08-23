@@ -142,6 +142,7 @@ view model =
                     , toMsg = Just QueryChanged
                     , value_ = model.query
                     , placeholder = "Enter query..."
+                    , compact = False
                     }
             ]
         , Html.Styled.toUnstyled <|
@@ -181,6 +182,7 @@ viewDictionarySelector model =
                                 else
                                     Just model.dictPath
                             , placeholder = "Select a dictionary..."
+                            , compact = False
                             }
                     ]
 

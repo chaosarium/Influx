@@ -491,10 +491,10 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
         { sections =
             [ { title = Nothing
               , rows =
-                    [ inputC { label = "Title", toMsg = Just UpdateTitleInput, value_ = workingDocument.title, placeholder = "Edit title..." }
-                    , textareaC { label = "Content", toMsg = Just UpdateContentInput, value_ = workingDocument.content, placeholder = "Edit content...", minHeight = 200 }
-                    , inputC { label = "Document Type", toMsg = Just UpdateDocTypeInput, value_ = workingDocument.docType, placeholder = "Edit document type..." }
-                    , stringListC { label = "Tags", items = workingDocument.tags, currentInput = currentTagInput, onListChange = UpdateTagsList, onInputChange = UpdateTagInput }
+                    [ inputC { label = "Title", toMsg = Just UpdateTitleInput, value_ = workingDocument.title, placeholder = "Edit title...", compact = False }
+                    , textareaC { label = "Content", toMsg = Just UpdateContentInput, value_ = workingDocument.content, placeholder = "Edit content...", minHeight = 200, compact = False }
+                    , inputC { label = "Document Type", toMsg = Just UpdateDocTypeInput, value_ = workingDocument.docType, placeholder = "Edit document type...", compact = False }
+                    , stringListC { label = "Tags", items = workingDocument.tags, currentInput = currentTagInput, onListChange = UpdateTagsList, onInputChange = UpdateTagInput, compact = False }
                     , case languagesData of
                         Api.Success languages ->
                             selectC
@@ -509,6 +509,7 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
                                         StringId id ->
                                             Just id
                                 , placeholder = "Select a language..."
+                                , compact = False
                                 }
 
                         Api.Loading ->
@@ -597,4 +598,5 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
               else
                 Html.text ""
             ]
+        , compact = False
         }

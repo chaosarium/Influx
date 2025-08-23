@@ -70,6 +70,42 @@ inputKeyValHeight =
     px 42
 
 
+inputKeyValHeightCompact =
+    px 32
+
+
+getKeyValHeight compact =
+    if compact then
+        inputKeyValHeightCompact
+
+    else
+        inputKeyValHeight
+
+
+getGapSize compact =
+    if compact then
+        space8px
+
+    else
+        space16px
+
+
+getPaddingSize compact =
+    if compact then
+        space4px
+
+    else
+        space8px
+
+
+getFormGapSize compact =
+    if compact then
+        space4px
+
+    else
+        space8px
+
+
 borderNone =
     property "border" "none"
 
@@ -82,12 +118,12 @@ bascShadow =
     property "box-shadow" "0px 0px 8px 0px var(--gray-a2)"
 
 
-inputKeyVal label inputEl =
+inputKeyVal compact label inputEl =
     div
         [ css
             [ displayFlex
             , alignItems start
-            , gap space16px
+            , gap (getGapSize compact)
             , width (pct 100)
             , pseudoClass "focus-within"
                 []
@@ -100,7 +136,7 @@ inputKeyVal label inputEl =
                 , overflow hidden
                 , whiteSpace noWrap
                 , labelColor
-                , height inputKeyValHeight
+                , height (getKeyValHeight compact)
                 , displayFlex
                 , alignItems center
                 ]
@@ -113,13 +149,13 @@ inputKeyVal label inputEl =
         ]
 
 
-inputKeyValWithTooltip : String -> String -> Html msg -> Html msg
-inputKeyValWithTooltip label tooltip inputEl =
+inputKeyValWithTooltip : Bool -> String -> String -> Html msg -> Html msg
+inputKeyValWithTooltip compact label tooltip inputEl =
     div
         [ css
             [ displayFlex
             , alignItems start
-            , gap space16px
+            , gap (getGapSize compact)
             , width (pct 100)
             , pseudoClass "focus-within"
                 []
@@ -137,7 +173,7 @@ inputKeyValWithTooltip label tooltip inputEl =
                     , overflow hidden
                     , whiteSpace noWrap
                     , labelColor
-                    , height inputKeyValHeight
+                    , height (getKeyValHeight compact)
                     , displayFlex
                     , alignItems center
                     , cursor help
@@ -170,12 +206,12 @@ inputKeyValWithTooltip label tooltip inputEl =
         ]
 
 
-baseInteractiveCss =
+baseInteractiveCss compact =
     [ fontSize (rem 1)
     , fontFamily inherit
     , Colours.colorCss Colours.black
     , Colours.bgCss Colours.white
-    , padding space8px
+    , padding (getPaddingSize compact)
     , border3 (px 1) solid transparent
     , borderRadius space4px
     , hover
@@ -190,24 +226,24 @@ baseInteractiveCss =
     ]
 
 
-formElementCss additionalStyles =
-    css ([ width (pct 100) ] ++ baseInteractiveCss ++ additionalStyles)
+formElementCss compact additionalStyles =
+    css ([ width (pct 100) ] ++ baseInteractiveCss compact ++ additionalStyles)
 
 
-textInputCss =
-    formElementCss []
+textInputCss compact =
+    formElementCss compact []
 
 
-inputC : { label : String, toMsg : Maybe (String -> msg), value_ : String, placeholder : String } -> Html msg
-inputC { label, toMsg, value_, placeholder } =
-    inputKeyVal label <|
+inputC : { label : String, toMsg : Maybe (String -> msg), value_ : String, placeholder : String, compact : Bool } -> Html msg
+inputC { label, toMsg, value_, placeholder, compact } =
+    inputKeyVal compact label <|
         input
             ([ type_ "text"
              , value value_
              , Attributes.placeholder placeholder
-             , textInputCss
+             , textInputCss compact
              , css
-                [ height inputKeyValHeight
+                [ height (getKeyValHeight compact)
                 ]
              ]
                 ++ (case toMsg of
@@ -227,25 +263,25 @@ inputC { label, toMsg, value_, placeholder } =
             []
 
 
-inputWithTooltipC : { label : String, tooltip : String, toMsg : String -> msg, value_ : String, placeholder : String } -> Html msg
-inputWithTooltipC { label, tooltip, toMsg, value_, placeholder } =
-    inputKeyValWithTooltip label tooltip <|
+inputWithTooltipC : { label : String, tooltip : String, toMsg : String -> msg, value_ : String, placeholder : String, compact : Bool } -> Html msg
+inputWithTooltipC { label, tooltip, toMsg, value_, placeholder, compact } =
+    inputKeyValWithTooltip compact label tooltip <|
         input
             [ type_ "text"
             , value value_
             , onInput toMsg
             , Attributes.placeholder placeholder
-            , textInputCss
+            , textInputCss compact
             , css
-                [ height inputKeyValHeight
+                [ height (getKeyValHeight compact)
                 ]
             ]
             []
 
 
-numberInputC : { label : String, toMsg : Float -> msg, value_ : Float, min : Float, max : Float, step : Float, placeholder : String } -> Html msg
-numberInputC { label, toMsg, value_, min, max, step, placeholder } =
-    inputKeyVal label <|
+numberInputC : { label : String, toMsg : Float -> msg, value_ : Float, min : Float, max : Float, step : Float, placeholder : String, compact : Bool } -> Html msg
+numberInputC { label, toMsg, value_, min, max, step, placeholder, compact } =
+    inputKeyVal compact label <|
         input
             [ type_ "number"
             , Attributes.min (String.fromFloat min)
@@ -254,21 +290,21 @@ numberInputC { label, toMsg, value_, min, max, step, placeholder } =
             , value (String.fromFloat value_)
             , onInput (\val -> toMsg (Maybe.withDefault value_ (String.toFloat val)))
             , Attributes.placeholder placeholder
-            , textInputCss
+            , textInputCss compact
             , css
-                [ height inputKeyValHeight
+                [ height (getKeyValHeight compact)
                 ]
             ]
             []
 
 
-textareaC : { label : String, toMsg : Maybe (String -> msg), value_ : String, placeholder : String, minHeight : Float } -> Html msg
-textareaC { label, toMsg, value_, placeholder, minHeight } =
-    inputKeyVal label <|
+textareaC : { label : String, toMsg : Maybe (String -> msg), value_ : String, placeholder : String, minHeight : Float, compact : Bool } -> Html msg
+textareaC { label, toMsg, value_, placeholder, minHeight, compact } =
+    inputKeyVal compact label <|
         Html.textarea
             ([ value value_
              , Attributes.placeholder placeholder
-             , textInputCss
+             , textInputCss compact
              , css
                 [ resize none
                 , Css.minHeight (px minHeight)
@@ -306,14 +342,14 @@ type alias FormSection msg =
     { title : Maybe String, rows : List (Html msg), buttons : List (Html msg) }
 
 
-selectC : { label : String, toMsg : String -> msg, options : List SelectCOption, value_ : Maybe String, placeholder : String } -> Html msg
-selectC { label, toMsg, options, value_, placeholder } =
-    inputKeyVal label <|
+selectC : { label : String, toMsg : String -> msg, options : List SelectCOption, value_ : Maybe String, placeholder : String, compact : Bool } -> Html msg
+selectC { label, toMsg, options, value_, placeholder, compact } =
+    inputKeyVal compact label <|
         Html.select
             [ value (Maybe.withDefault "" value_)
             , onInput toMsg
             , Attributes.required True
-            , textInputCss
+            , textInputCss compact
             ]
             (Html.option
                 [ value ""
@@ -333,22 +369,30 @@ selectC { label, toMsg, options, value_, placeholder } =
             )
 
 
-formSectionHr : Html msg
-formSectionHr =
+formSectionHr : Bool -> Html msg
+formSectionHr compact =
+    let
+        marginSize =
+            if compact then
+                px 0
+
+            else
+                px 0
+    in
     hr
         [ css
             [ borderNone
             , borderBottom2 (px 1) solid
             , Colours.borderCss Colours.gray3
             , width (pct 100)
-            , margin2 (px 0) (px 0)
+            , margin2 marginSize marginSize
             ]
         ]
         []
 
 
-formC : { sections : List (FormSection msg), buttons : List (Html msg), status : List (Html msg) } -> Html msg
-formC { sections, buttons, status } =
+formC : { sections : List (FormSection msg), buttons : List (Html msg), status : List (Html msg), compact : Bool } -> Html msg
+formC { sections, buttons, status, compact } =
     let
         renderSection section =
             let
@@ -357,13 +401,13 @@ formC { sections, buttons, status } =
                         [ css
                             [ displayFlex
                             , flexDirection column
-                            , gap space8px
+                            , gap (getFormGapSize compact)
                             ]
                         ]
                         (List.concat
-                            [ [ formSectionHr ]
-                            , List.intersperse formSectionHr section.rows
-                            , [ formSectionHr ]
+                            [ [ formSectionHr compact ]
+                            , List.intersperse (formSectionHr compact) section.rows
+                            , [ formSectionHr compact ]
                             ]
                         )
 
@@ -427,8 +471,8 @@ formC { sections, buttons, status } =
             ]
 
 
-stringListC : { label : String, items : List String, currentInput : String, onListChange : List String -> msg, onInputChange : String -> msg } -> Html msg
-stringListC { label, items, currentInput, onListChange, onInputChange } =
+stringListC : { label : String, items : List String, currentInput : String, onListChange : List String -> msg, onInputChange : String -> msg, compact : Bool } -> Html msg
+stringListC { label, items, currentInput, onListChange, onInputChange, compact } =
     let
         onKeyDown =
             Decode.field "key" Decode.string
@@ -444,10 +488,10 @@ stringListC { label, items, currentInput, onListChange, onInputChange } =
                             Decode.fail "Not a handled key combination"
                     )
     in
-    inputKeyVal label <|
+    inputKeyVal compact label <|
         div
-            [ formElementCss
-                [ minHeight inputKeyValHeight
+            [ formElementCss compact
+                [ minHeight (getKeyValHeight compact)
                 , displayFlex
                 , flexWrap wrap
                 , alignItems center
@@ -597,8 +641,8 @@ formSectionC { title, rows } =
         ]
 
 
-termStatusSelectC : { label : String, toMsg : TokenStatus -> msg, selectedStatus : TokenStatus } -> Html msg
-termStatusSelectC { label, toMsg, selectedStatus } =
+termStatusSelectC : { label : String, toMsg : TokenStatus -> msg, selectedStatus : TokenStatus, compact : Bool } -> Html msg
+termStatusSelectC { label, toMsg, selectedStatus, compact } =
     let
         statuses =
             [ L1, L2, L3, L4, L5, Known, Ignored ]
@@ -744,9 +788,9 @@ termStatusSelectC { label, toMsg, selectedStatus } =
                     [ displayFlex
                     , gap space2px
                     , alignItems center
-                    , height inputKeyValHeight
+                    , height (getKeyValHeight compact)
                     ]
                 ]
                 (List.map statusSquare statuses)
     in
-    inputKeyVal label statusSquares
+    inputKeyVal compact label statusSquares
