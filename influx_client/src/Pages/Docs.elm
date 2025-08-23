@@ -6,13 +6,13 @@ import Bindings exposing (DocPackage, InfluxResourceId(..))
 import BindingsUtils
 import Components.DbgDisplay
 import Components.FormElements3 exposing (buttonC)
-import Components.Topbar
+import Components.Layout
+import Css exposing (..)
 import Dict
 import Effect exposing (Effect)
-import Html exposing (..)
-import Html.Attributes exposing (class, href, style)
-import Html.Events
-import Html.Styled
+import Html.Styled as Html exposing (..)
+import Html.Styled.Attributes as Attributes exposing (css, href)
+import Html.Styled.Events as Events
 import Http
 import Page exposing (Page)
 import Route exposing (Route)
@@ -133,38 +133,43 @@ viewDocumentRow docPackage =
 
 viewDocumentsTable : List DocPackage -> Html msg
 viewDocumentsTable docPackages =
-    table [ style "border-collapse" "collapse", style "width" "100%" ]
+    Html.table
+        [ css
+            [ Css.borderCollapse Css.collapse
+            , Css.width (Css.pct 100)
+            ]
+        ]
         [ thead []
             [ tr []
-                [ th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Title" ]
-                , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Language" ]
-                , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Tags" ]
-                , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Type" ]
-                , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Created" ]
-                , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Modified" ]
-                , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Actions" ]
+                [ th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Title" ]
+                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Language" ]
+                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Tags" ]
+                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Type" ]
+                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Created" ]
+                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Modified" ]
+                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Actions" ]
                 ]
             ]
-        , tbody []
+        , Html.tbody []
             (List.map
                 (\docPackage ->
-                    tr [ style "border" "1px solid #ddd" ]
-                        [ td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ a [ href ("/doc/" ++ BindingsUtils.influxResourceIdToString docPackage.documentId) ]
+                    tr [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd") ] ]
+                        [ td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
+                            [ Html.a [ href ("/doc/" ++ BindingsUtils.influxResourceIdToString docPackage.documentId) ]
                                 [ text docPackage.document.title ]
                             ]
-                        , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
+                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
                             [ text docPackage.language.name ]
-                        , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
+                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
                             [ text (String.join ", " docPackage.document.tags) ]
-                        , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
+                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
                             [ text (docTypeToString docPackage.document.docType) ]
-                        , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
+                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
                             [ text (formatDate docPackage.document.createdTs) ]
-                        , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
+                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
                             [ text (formatDate docPackage.document.updatedTs) ]
-                        , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
-                            [ a
+                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
+                            [ Html.a
                                 [ href ("/doc/edit?docId=" ++ BindingsUtils.influxResourceIdToString docPackage.documentId)
                                 ]
                                 [ text "Edit" ]
@@ -179,22 +184,21 @@ viewDocumentsTable docPackages =
 viewDocs model =
     case model.docData of
         Api.NotAsked ->
-            div [] [ Html.text "Documents not loaded" ]
+            div [] [ text "Documents not loaded" ]
 
         Api.Loading ->
-            div [] [ Html.text "Loading..." ]
+            div [] [ text "Loading..." ]
 
         Api.Failure httpError ->
-            div [] [ Html.text "Error: ", Html.text (Api.stringOfHttpErrMsg httpError) ]
+            div [] [ text "Error: ", text (Api.stringOfHttpErrMsg httpError) ]
 
         Api.Success docPackages ->
             div []
-                [ div [ style "margin-bottom" "20px" ]
-                    [ Html.Styled.toUnstyled <|
-                        buttonC
-                            { label = "Add Document"
-                            , onPress = Just AddDocument
-                            }
+                [ div [ css [ Css.marginBottom (Css.px 20) ] ]
+                    [ buttonC
+                        { label = "Add Document"
+                        , onPress = Just AddDocument
+                        }
                     ]
                 , viewDocumentsTable docPackages
                 ]
@@ -204,13 +208,8 @@ view : ThisRoute -> Model -> View Msg
 view route model =
     { title = "All Documents"
     , body =
-        List.map Html.Styled.fromUnstyled <|
-            [ Html.div [ class "layout-outer" ]
-                [ Components.Topbar.view {}
-                , div [ class "layout-content" ]
-                    [ Html.h1 [] [ Html.text "All Documents" ]
-                    , viewDocs model
-                    ]
-                ]
+        Components.Layout.pageLayoutC { toastTray = Nothing }
+            [ h1 [] [ text "All Documents" ]
+            , viewDocs model
             ]
     }

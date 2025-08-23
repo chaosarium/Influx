@@ -5,13 +5,13 @@ import Api.GetLanguages
 import Bindings exposing (InfluxResourceId(..), Language)
 import BindingsUtils
 import Components.FormElements3 exposing (buttonC)
-import Components.Topbar
+import Components.Layout
+import Css exposing (..)
 import Dict
 import Effect exposing (Effect)
-import Html exposing (..)
-import Html.Attributes exposing (class, href, style)
-import Html.Events
-import Html.Styled
+import Html.Styled as Html exposing (..)
+import Html.Styled.Attributes as Attributes exposing (css, href)
+import Html.Styled.Events as Events
 import Http
 import Page exposing (Page)
 import Route exposing (Route)
@@ -82,23 +82,28 @@ subscriptions model =
 
 viewLanguagesTable : List Language -> Html msg
 viewLanguagesTable languages =
-    table [ style "border-collapse" "collapse", style "width" "100%" ]
+    Html.table
+        [ css
+            [ Css.borderCollapse Css.collapse
+            , Css.width (Css.pct 100)
+            ]
+        ]
         [ thead []
             [ tr []
-                [ th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Name" ]
-                , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Dictionary URLs" ]
-                , th [ style "border" "1px solid #ddd", style "padding" "8px", style "text-align" "left" ] [ text "Actions" ]
+                [ th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Name" ]
+                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Dictionary URLs" ]
+                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Actions" ]
                 ]
             ]
         , tbody []
             (List.map
                 (\language ->
-                    tr [ style "border" "1px solid #ddd" ]
-                        [ td [ style "border" "1px solid #ddd", style "padding" "8px" ]
+                    tr [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd") ] ]
+                        [ td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
                             [ text language.name ]
-                        , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
+                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
                             [ text (String.join ", " language.dicts) ]
-                        , td [ style "border" "1px solid #ddd", style "padding" "8px" ]
+                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
                             [ case language.id of
                                 Just langId ->
                                     div []
@@ -107,12 +112,7 @@ viewLanguagesTable languages =
                                             [ text "Edit" ]
                                         , text " | "
                                         , a
-                                            [ Route.href
-                                                { path = Route.Path.Docs
-                                                , query = Dict.fromList [ ( "lang", BindingsUtils.influxResourceIdToString langId ) ]
-                                                , hash = Nothing
-                                                }
-                                            ]
+                                            [ href ("/docs?lang=" ++ BindingsUtils.influxResourceIdToString langId) ]
                                             [ text "View Docs" ]
                                         ]
 
@@ -129,22 +129,21 @@ viewLanguagesTable languages =
 viewLangs model =
     case model.langData of
         Api.NotAsked ->
-            div [] [ Html.text "Languages not loaded" ]
+            div [] [ text "Languages not loaded" ]
 
         Api.Loading ->
-            div [] [ Html.text "Loading..." ]
+            div [] [ text "Loading..." ]
 
         Api.Failure httpError ->
-            div [] [ Html.text "Error: ", Html.text (Api.stringOfHttpErrMsg httpError) ]
+            div [] [ text "Error: ", text (Api.stringOfHttpErrMsg httpError) ]
 
         Api.Success languages ->
             div []
-                [ div [ style "margin-bottom" "20px" ]
-                    [ Html.Styled.toUnstyled <|
-                        buttonC
-                            { label = "Add Language"
-                            , onPress = Just AddLanguage
-                            }
+                [ div [ css [ Css.marginBottom (Css.px 20) ] ]
+                    [ buttonC
+                        { label = "Add Language"
+                        , onPress = Just AddLanguage
+                        }
                     ]
                 , viewLanguagesTable languages
                 ]
@@ -154,14 +153,8 @@ view : Model -> View Msg
 view model =
     { title = "Languages"
     , body =
-        List.map Html.Styled.fromUnstyled <|
-            [ Html.div [ class "layout-outer" ]
-                [ Components.Topbar.view {}
-                , Html.div [ class "layout-content" ]
-                    [ -- the main content of the page
-                      Html.h1 [] [ Html.text "Languages" ]
-                    , viewLangs model
-                    ]
-                ]
+        Components.Layout.pageLayoutC { toastTray = Nothing }
+            [ h1 [] [ text "Languages" ]
+            , viewLangs model
             ]
     }
