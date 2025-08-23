@@ -11,6 +11,7 @@ import Components.AnnotatedText as AnnotatedText
 import Components.CollapsibleSection
 import Components.DbgDisplay
 import Components.DictionaryLookup as DictionaryLookup
+import Components.FormElements3 as FormElements3
 import Components.ResizableSidebar
 import Components.TermEditForm as TermEditForm
 import Components.ToastView
@@ -708,82 +709,80 @@ annotationOptionToString option =
             "Language-specific POS (XPOS)"
 
 
-viewAnnotationSelector : String -> AnnotatedText.AnnotationOption -> (AnnotatedText.AnnotationOption -> Msg) -> Html Msg
-viewAnnotationSelector label currentOption onSelect =
-    let
-        options =
-            [ AnnotatedText.None
-            , AnnotatedText.Definition
-            , AnnotatedText.Phonetic
-            , AnnotatedText.Lemma
-            , AnnotatedText.Upos
-            , AnnotatedText.Xpos
-            ]
+annotationOptionFromString : String -> AnnotatedText.AnnotationOption
+annotationOptionFromString str =
+    case str of
+        "None" ->
+            AnnotatedText.None
 
-        optionView option =
-            Html.option
-                [ Html.Attributes.value (annotationOptionToString option)
-                , Html.Attributes.selected (option == currentOption)
-                ]
-                [ Html.text (annotationOptionToString option) ]
-    in
-    div []
-        [ Html.label [] [ Html.text (label ++ ": ") ]
-        , Html.select
-            [ Html.Events.on "change"
-                (Decode.map
-                    (\value ->
-                        case value of
-                            "None" ->
-                                onSelect AnnotatedText.None
+        "Phonetic" ->
+            AnnotatedText.Phonetic
 
-                            "Phonetic" ->
-                                onSelect AnnotatedText.Phonetic
+        "Definition" ->
+            AnnotatedText.Definition
 
-                            "Definition" ->
-                                onSelect AnnotatedText.Definition
+        "Lemma" ->
+            AnnotatedText.Lemma
 
-                            "Lemma" ->
-                                onSelect AnnotatedText.Lemma
+        "Part of Speech (UPOS)" ->
+            AnnotatedText.Upos
 
-                            "Part of Speech (UPOS)" ->
-                                onSelect AnnotatedText.Upos
+        "Language-specific POS (XPOS)" ->
+            AnnotatedText.Xpos
 
-                            "Language-specific POS (XPOS)" ->
-                                onSelect AnnotatedText.Xpos
+        _ ->
+            AnnotatedText.None
 
-                            _ ->
-                                onSelect AnnotatedText.None
-                    )
-                    (Decode.at [ "target", "value" ] Decode.string)
-                )
-            ]
-            (List.map optionView options)
-        ]
+
+annotationSelectOptions : List FormElements3.SelectCOption
+annotationSelectOptions =
+    [ AnnotatedText.None
+    , AnnotatedText.Phonetic
+    , AnnotatedText.Definition
+    , AnnotatedText.Lemma
+    , AnnotatedText.Upos
+    , AnnotatedText.Xpos
+    ]
+        |> List.map (\option -> { value = annotationOptionToString option, label = annotationOptionToString option })
 
 
 viewAnnotationControls : AnnotatedText.AnnotationConfig -> Bool -> Html Msg
 viewAnnotationControls config showFurigana =
-    div []
-        [ h3 [] [ Html.text "Annotation Display Settings" ]
-        , p [] [ Html.text "Choose what to display above and below the text:" ]
-        , div []
-            [ viewAnnotationSelector "Top annotation" config.topAnnotation SetTopAnnotation
-            , viewAnnotationSelector "Bottom annotation" config.bottomAnnotation SetBottomAnnotation
-            ]
-        , div [ style "margin-top" "10px" ]
-            [ Html.label []
-                [ Html.input
-                    [ Html.Attributes.type_ "checkbox"
-                    , Html.Attributes.checked showFurigana
-                    , Html.Events.onClick ToggleFurigana
-                    , style "margin-right" "5px"
-                    ]
-                    []
-                , Html.text "Show furigana (Japanese reading annotations)"
+    Html.Styled.toUnstyled <|
+        FormElements3.formC
+            { sections =
+                [ { title = Just "Annotation Display Settings"
+                  , rows =
+                        [ FormElements3.selectC
+                            { label = "Top annotation"
+                            , toMsg = \value -> SetTopAnnotation (annotationOptionFromString value)
+                            , options = annotationSelectOptions
+                            , value_ = Just (annotationOptionToString config.topAnnotation)
+                            , placeholder = "Select annotation"
+                            , compact = True
+                            }
+                        , FormElements3.selectC
+                            { label = "Bottom annotation"
+                            , toMsg = \value -> SetBottomAnnotation (annotationOptionFromString value)
+                            , options = annotationSelectOptions
+                            , value_ = Just (annotationOptionToString config.bottomAnnotation)
+                            , placeholder = "Select annotation"
+                            , compact = True
+                            }
+                        , FormElements3.checkboxC
+                            { label = "Furigana"
+                            , toMsg = ToggleFurigana
+                            , checked = showFurigana
+                            , compact = True
+                            }
+                        ]
+                  , buttons = []
+                  }
                 ]
-            ]
-        ]
+            , buttons = []
+            , status = []
+            , compact = True
+            }
 
 
 viewLemmaDisplay :

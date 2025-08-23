@@ -3,6 +3,7 @@ module Components.FormElements3 exposing
     , SelectCOption
     , buttonC
     , buttonRowC
+    , checkboxC
     , formC
     , formSectionC
     , formSectionHr
@@ -90,9 +91,17 @@ getGapSize compact =
         space16px
 
 
-getPaddingSize compact =
+getPaddingXSize compact =
     if compact then
         space4px
+
+    else
+        space8px
+
+
+getPaddingYSize compact =
+    if compact then
+        space2px
 
     else
         space8px
@@ -211,7 +220,7 @@ baseInteractiveCss compact =
     , fontFamily inherit
     , Colours.colorCss Colours.black
     , Colours.bgCss Colours.white
-    , padding (getPaddingSize compact)
+    , padding2 (getPaddingYSize compact) (getPaddingXSize compact)
     , border3 (px 1) solid transparent
     , borderRadius space4px
     , hover
@@ -296,6 +305,80 @@ numberInputC { label, toMsg, value_, min, max, step, placeholder, compact } =
                 ]
             ]
             []
+
+
+checkboxC : { label : String, toMsg : msg, checked : Bool, compact : Bool } -> Html msg
+checkboxC { label, toMsg, checked, compact } =
+    inputKeyVal compact label <|
+        Html.label
+            [ css
+                [ displayFlex
+                , alignItems center
+                , cursor pointer
+                , height (getKeyValHeight compact)
+                , padding2 (getPaddingYSize compact) (getPaddingXSize compact)
+                , fontSize (rem 1)
+                , Colours.bgCss Colours.white
+                , border3 (px 1) solid transparent
+                , borderRadius space4px
+                , hover
+                    [ Colours.borderCss Colours.gray5
+                    , Colours.bgCss Colours.gray1
+                    ]
+                ]
+            ]
+            [ div
+                [ css
+                    [ position relative
+                    , width (px 16)
+                    , height (px 16)
+                    , marginRight (getPaddingXSize compact)
+                    , border3 (px 1) solid transparent
+                    , borderRadius space2px
+                    , cursor pointer
+                    , displayFlex
+                    , alignItems center
+                    , justifyContent center
+                    , if checked then
+                        batch
+                            [ Colours.borderCss Colours.gray9
+                            , Colours.bgCss Colours.gray9
+                            ]
+
+                      else
+                        batch
+                            [ Colours.borderCss Colours.gray6
+                            , Colours.bgCss Colours.white
+                            ]
+                    ]
+                ]
+                [ if checked then
+                    div
+                        [ css
+                            [ Colours.colorCss Colours.white
+                            , fontSize (px 12)
+                            , fontWeight bold
+                            , lineHeight (num 1)
+                            ]
+                        ]
+                        [ text "✓" ]
+
+                  else
+                    text ""
+                ]
+            , input
+                [ type_ "checkbox"
+                , Attributes.checked checked
+                , onClick toMsg
+                , css
+                    [ position absolute
+                    , opacity (num 0)
+                    , width (px 0)
+                    , height (px 0)
+                    ]
+                ]
+                []
+            ]
 
 
 textareaC : { label : String, toMsg : Maybe (String -> msg), value_ : String, placeholder : String, minHeight : Float, compact : Bool } -> Html msg
