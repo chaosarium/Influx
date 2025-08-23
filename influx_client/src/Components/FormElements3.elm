@@ -7,13 +7,16 @@ module Components.FormElements3 exposing
     , formSectionC
     , formSectionHr
     , inputC
+    , inputDisabledC
     , inputWithTooltipC
     , numberInputC
     , selectC
     , stringListC
+    , termStatusSelectC
     , textareaC
     )
 
+import Bindings exposing (TokenStatus(..))
 import Colours
 import Css exposing (..)
 import Html.Styled as Html exposing (..)
@@ -211,6 +214,24 @@ inputC { label, toMsg, value_, placeholder } =
             []
 
 
+inputDisabledC : { label : String, value_ : String } -> Html msg
+inputDisabledC { label, value_ } =
+    inputKeyVal label <|
+        input
+            [ type_ "text"
+            , value value_
+            , Attributes.disabled True
+            , textInputCss
+            , css
+                [ height inputKeyValHeight
+                , Colours.bgCss Colours.gray2
+                , Colours.colorCss Colours.gray9
+                , cursor notAllowed
+                ]
+            ]
+            []
+
+
 inputWithTooltipC : { label : String, tooltip : String, toMsg : String -> msg, value_ : String, placeholder : String } -> Html msg
 inputWithTooltipC { label, tooltip, toMsg, value_, placeholder } =
     inputKeyValWithTooltip label tooltip <|
@@ -246,8 +267,8 @@ numberInputC { label, toMsg, value_, min, max, step, placeholder } =
             []
 
 
-textareaC : { label : String, toMsg : String -> msg, value_ : String, placeholder : String } -> Html msg
-textareaC { label, toMsg, value_, placeholder } =
+textareaC : { label : String, toMsg : String -> msg, value_ : String, placeholder : String, minHeight : Float } -> Html msg
+textareaC { label, toMsg, value_, placeholder, minHeight } =
     inputKeyVal label <|
         Html.textarea
             [ onInput toMsg
@@ -256,7 +277,7 @@ textareaC { label, toMsg, value_, placeholder } =
             , textInputCss
             , css
                 [ resize none
-                , minHeight (px 200)
+                , Css.minHeight (px minHeight)
                 , focus
                     [ resize vertical
                     ]
@@ -566,3 +587,168 @@ formSectionC { title, rows } =
             ]
             rows
         ]
+
+
+statusToColor : TokenStatus -> String
+statusToColor status =
+    case status of
+        L1 ->
+            Colours.red4
+
+        L2 ->
+            Colours.orange4
+
+        L3 ->
+            Colours.amber4
+
+        L4 ->
+            Colours.lime4
+
+        L5 ->
+            Colours.green4
+
+        Known ->
+            Colours.gray6
+
+        Ignored ->
+            Colours.violet4
+
+        Unmarked ->
+            Colours.gray3
+
+
+termStatusSelectC : { label : String, toMsg : TokenStatus -> msg, selectedStatus : TokenStatus } -> Html msg
+termStatusSelectC { label, toMsg, selectedStatus } =
+    let
+        statuses =
+            [ L1, L2, L3, L4, L5, Known, Ignored ]
+
+        isSelected status =
+            case ( selectedStatus, status ) of
+                ( L1, L1 ) ->
+                    True
+
+                ( L2, L1 ) ->
+                    True
+
+                ( L2, L2 ) ->
+                    True
+
+                ( L3, L1 ) ->
+                    True
+
+                ( L3, L2 ) ->
+                    True
+
+                ( L3, L3 ) ->
+                    True
+
+                ( L4, L1 ) ->
+                    True
+
+                ( L4, L2 ) ->
+                    True
+
+                ( L4, L3 ) ->
+                    True
+
+                ( L4, L4 ) ->
+                    True
+
+                ( L5, L1 ) ->
+                    True
+
+                ( L5, L2 ) ->
+                    True
+
+                ( L5, L3 ) ->
+                    True
+
+                ( L5, L4 ) ->
+                    True
+
+                ( L5, L5 ) ->
+                    True
+
+                ( Known, Known ) ->
+                    True
+
+                ( Ignored, Ignored ) ->
+                    True
+
+                ( Unmarked, _ ) ->
+                    False
+
+                _ ->
+                    False
+
+        isGrayedOut status =
+            case ( selectedStatus, status ) of
+                ( Known, L1 ) ->
+                    True
+
+                ( Known, L2 ) ->
+                    True
+
+                ( Known, L3 ) ->
+                    True
+
+                ( Known, L4 ) ->
+                    True
+
+                ( Known, L5 ) ->
+                    True
+
+                _ ->
+                    False
+
+        statusSquare status =
+            let
+                backgroundColor =
+                    if isGrayedOut status then
+                        Colours.gray5
+
+                    else if isSelected status then
+                        statusToColor selectedStatus
+
+                    else
+                        Colours.gray2
+
+                hoverBackgroundColor =
+                    if isGrayedOut status then
+                        Colours.gray6
+
+                    else
+                        statusToColor selectedStatus
+            in
+            button
+                [ onClick (toMsg status)
+                , css
+                    [ width (px 16)
+                    , height (px 16)
+                    , border2 (px 1) solid
+                    , Colours.borderCss Colours.gray5
+                    , borderRadius space4px
+                    , Colours.bgCss backgroundColor
+                    , cursor pointer
+                    , padding space0px
+                    , hover
+                        [ Colours.bgCss hoverBackgroundColor
+                        ]
+                    , margin space2px
+                    ]
+                ]
+                []
+
+        statusSquares =
+            div
+                [ css
+                    [ displayFlex
+                    , gap space2px
+                    , alignItems center
+                    , height inputKeyValHeight
+                    ]
+                ]
+                (List.map statusSquare statuses)
+    in
+    inputKeyVal label statusSquares

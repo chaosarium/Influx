@@ -2,14 +2,14 @@ module Components.TermEditForm exposing (..)
 
 import Bindings exposing (..)
 import BindingsUtils exposing (getSentenceSegmentOrthography)
-import Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC, textboxC)
+import Components.FormElements3 exposing (buttonC, buttonRowC, formC, inputC, inputDisabledC, termStatusSelectC, textareaC)
 import Components.Styles as Styles
 import Datastore.DictContext as DictContext
 import Datastore.FocusContext as FocusContext
 import Effect exposing (Effect)
-import Html exposing (Html, div, span)
-import Html.Attributes exposing (style)
-import Html.Events exposing (onInput)
+import Html exposing (Html)
+import Html.Styled
+import Html.Styled.Attributes exposing (style)
 import Http
 import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
 
@@ -314,18 +314,6 @@ update dict_ctx msg model =
 -- VIEW
 
 
-tokenStatusOptions : List SelectCOption
-tokenStatusOptions =
-    [ { value = "L1", label = "L1" }
-    , { value = "L2", label = "L2" }
-    , { value = "L3", label = "L3" }
-    , { value = "L4", label = "L4" }
-    , { value = "L5", label = "L5" }
-    , { value = "KNOWN", label = "KNOWN" }
-    , { value = "IGNORED", label = "IGNORED" }
-    ]
-
-
 tokenStatusOfStringExn : String -> TokenStatus
 tokenStatusOfStringExn str =
     case str of
@@ -415,43 +403,53 @@ viewTermForm form lift args =
                     , notes = phrase.notes
                     }
     in
-    Html.form
-        [ Styles.bgGrey ]
-        [ Html.text ("Editing " ++ form_data.token_or_phrase)
-        , inputC [ Html.Attributes.disabled True ] "Orthography" "orthographyInput" (lift << InputChanged << UpdateOrthographyInput) form_data.orthography
-        , inputC [] "Definition" "definitionInput" (lift << InputChanged << UpdateDefinitionInput) form_data.definition
-        , case form_data.phonetic of
-            Just p ->
-                inputC [] "Phonetic" "phoneticInput" (lift << InputChanged << UpdatePhoneticInput) p
+    Html.Styled.toUnstyled <|
+        formC
+            { sections =
+                [ { title = Just ("Editing " ++ form_data.token_or_phrase)
+                  , rows =
+                        List.filterMap identity
+                            [ Just (inputDisabledC { label = "Orthography", value_ = form_data.orthography })
+                            , Just (inputC { label = "Definition", toMsg = lift << InputChanged << UpdateDefinitionInput, value_ = form_data.definition, placeholder = "Definition..." })
+                            , case form_data.phonetic of
+                                Just p ->
+                                    Just (inputC { label = "Phonetic", toMsg = lift << InputChanged << UpdatePhoneticInput, value_ = p, placeholder = "Phonetic..." })
 
-            Nothing ->
-                Utils.htmlEmpty
-        , selectC
-            "Status"
-            "statusInput"
-            (lift << InputChanged << UpdateStatusInput << tokenStatusOfStringExn)
-            tokenStatusOptions
-            (case form.write_action of
-                Create ->
-                    ""
+                                Nothing ->
+                                    Nothing
+                            , Just (termStatusSelectC { label = "Status", toMsg = lift << InputChanged << UpdateStatusInput, selectedStatus = form_data.status })
+                            , Just (textareaC { label = "Notes", toMsg = lift << InputChanged << UpdateNotesInput, value_ = form_data.notes, placeholder = "Notes...", minHeight = 80 })
+                            ]
+                  , buttons =
+                        List.filterMap identity
+                            [ if form.write_action == Create then
+                                Just (buttonC { label = "Create", onPress = Just (lift (RequestEditTerm CreateTerm form.working_term args.document_id)) })
 
-                Update ->
-                    tokenStatusToString form_data.status
-            )
-        , textboxC "Notes" "notesInput" (lift << InputChanged << UpdateNotesInput) form_data.notes
-        , Utils.htmlIf (form.write_action == Create) <|
-            buttonC [ Html.Events.onClick (lift (RequestEditTerm CreateTerm form.working_term args.document_id)) ] "Create"
-        , Utils.htmlIf (form.write_action == Update) <|
-            buttonC [ Html.Events.onClick (lift (RequestEditTerm UpdateTerm form.working_term args.document_id)) ] "Update"
-        , Utils.htmlIf (form.write_action == Update) <|
-            buttonC [ Html.Events.onClick (lift (RequestEditTerm DeleteTerm form.working_term args.document_id)) ] "Delete"
-        , if form.working_term /= form.orig_term then
-            Html.div [ Html.Attributes.style "color" "orange", Html.Attributes.style "margin-top" "8px" ]
-                [ Html.text "You have unsaved changes." ]
+                              else
+                                Nothing
+                            , if form.write_action == Update then
+                                Just (buttonC { label = "Update", onPress = Just (lift (RequestEditTerm UpdateTerm form.working_term args.document_id)) })
 
-          else
-            Utils.htmlEmpty
-        ]
+                              else
+                                Nothing
+                            , if form.write_action == Update then
+                                Just (buttonC { label = "Delete", onPress = Just (lift (RequestEditTerm DeleteTerm form.working_term args.document_id)) })
+
+                              else
+                                Nothing
+                            ]
+                  }
+                ]
+            , buttons = []
+            , status =
+                [ if form.working_term /= form.orig_term then
+                    Html.Styled.div [ style "color" "orange", style "margin-top" "8px" ]
+                        [ Html.Styled.text "You have unsaved changes." ]
+
+                  else
+                    Html.Styled.text ""
+                ]
+            }
 
 
 view :
