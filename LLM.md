@@ -13,6 +13,7 @@ You can find a brief Elm syntax reference in `elm-syntax.txt`.
 - In general, do not touch existing comments. If a TODO comment is implemented, change it to DONE and leave the comment in place.
 - `influx_core/migrations/000001_initial.sql` is currently the only `sql` version of interest. It's not the final version, so we can keep updating it without making new versions.
 - Always run `just fmt` at project directory after finishing a task.
+- Do not make git commits for changes
 
 ## Directory Structure
 

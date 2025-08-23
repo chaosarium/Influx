@@ -7,14 +7,17 @@ import Api.LangCreate
 import Api.LangDelete
 import Api.LangEdit
 import Bindings exposing (InfluxResourceId(..), Language, LanguageCreateRequest, ParserConfig)
-import Components.FormElements exposing (SelectCOption, buttonC, inputC, selectC, stringListC)
+import Components.FormElements3 as FormElements3 exposing (FormSection, SelectCOption, buttonC, buttonRowC, formC, formSectionC, inputC, inputWithTooltipC, numberInputC, selectC, stringListC)
 import Components.Styles as Styles
+import Components.ToastView
 import Components.Topbar
 import Dict exposing (Dict)
 import Effect exposing (Effect)
-import Html exposing (..)
-import Html.Attributes exposing (class, selected, style, value)
-import Html.Events exposing (onClick, onInput)
+import Html
+import Html.Attributes
+import Html.Styled exposing (Html, div, h1, hr, span, text)
+import Html.Styled.Attributes as Attributes exposing (class, style)
+import Html.Styled.Events as Events exposing (onClick)
 import Http
 import Json.Decode as D
 import Page exposing (Page)
@@ -25,6 +28,10 @@ import Shared.Msg
 import Toast
 import Utils
 import View exposing (View)
+
+
+type alias SelectCOption =
+    FormElements3.SelectCOption
 
 
 page : Shared.Model -> Route () -> Page Model Msg
@@ -189,8 +196,8 @@ type Msg
     | UpdateNameInput String
     | UpdateDictsList (List String)
     | UpdateDictInput String
-    | UpdateTtsRateInput String
-    | UpdateTtsPitchInput String
+    | UpdateTtsRateInput Float
+    | UpdateTtsPitchInput Float
     | UpdateTtsVoice String
     | UpdateDeeplSourceLang String
     | UpdateDeeplTargetLang String
@@ -318,28 +325,10 @@ update msg model =
                     ( model, Effect.none )
 
         UpdateTtsRateInput value ->
-            let
-                rateValue =
-                    if String.isEmpty value then
-                        Nothing
-
-                    else
-                        String.toFloat value
-            in
-            updateWorkingLanguage (\lang -> { lang | ttsRate = rateValue }) model
-                |> updateFormInput (\formModel -> { formModel | ttsRateInput = value })
+            updateWorkingLanguage (\lang -> { lang | ttsRate = Just value }) model
 
         UpdateTtsPitchInput value ->
-            let
-                pitchValue =
-                    if String.isEmpty value then
-                        Nothing
-
-                    else
-                        String.toFloat value
-            in
-            updateWorkingLanguage (\lang -> { lang | ttsPitch = pitchValue }) model
-                |> updateFormInput (\formModel -> { formModel | ttsPitchInput = value })
+            updateWorkingLanguage (\lang -> { lang | ttsPitch = Just value }) model
 
         UpdateTtsVoice value ->
             let
@@ -623,23 +612,24 @@ view shared route model =
     in
     { title = title
     , body =
-        [ div [ class "outer-layout" ]
-            [ Components.Topbar.view {}
-            , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
-            , Html.div [ class "layout-content" ]
-                [ Html.h1 [] [ Html.text title ]
-                , case model.formModel of
-                    LoadingForm ->
-                        div [] [ Html.text "Loading..." ]
+        List.map Html.Styled.fromUnstyled <|
+            [ Html.div [ Html.Attributes.class "outer-layout" ]
+                [ Components.Topbar.view {}
+                , Html.div [ Html.Attributes.class "toast-tray" ] [ Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
+                , Html.div [ Html.Attributes.class "layout-content" ]
+                    [ Html.h1 [] [ Html.text title ]
+                    , case model.formModel of
+                        LoadingForm ->
+                            Html.div [] [ Html.text "Loading..." ]
 
-                    ErrorForm error ->
-                        div [ style "color" "red" ] [ Html.text error ]
+                        ErrorForm error ->
+                            Html.div [ Html.Attributes.style "color" "red" ] [ Html.text error ]
 
-                    EditingLanguage formModel ->
-                        viewLanguageForm model.mode formModel model.isSubmitting model.availableVoices model.availableDictionaries model.dictionariesLoadStatus
+                        EditingLanguage formModel ->
+                            Html.Styled.toUnstyled (viewLanguageForm model.mode formModel model.isSubmitting model.availableVoices model.availableDictionaries model.dictionariesLoadStatus)
+                    ]
                 ]
             ]
-        ]
     }
 
 
@@ -656,166 +646,246 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
 
         isValid =
             not (String.isEmpty workingLanguage.name)
-    in
-    Html.form [ Html.Events.onSubmit SubmitForm ]
-        [ inputC [] "Language Name" "nameInput" UpdateNameInput workingLanguage.name
-        , stringListC "Dictionary URLs" "dictsInput" UpdateDictsList UpdateDictInput workingLanguage.dicts currentDictInput
-        , viewDictionarySelector selectedDictPath availableDictionaries dictionariesLoadStatus
-        , Html.h3 [] [ Html.text "Text-to-Speech Settings" ]
-        , inputC [] "TTS Rate (0.1-10.0)" "ttsRateInput" UpdateTtsRateInput ttsRateInput
-        , inputC [] "TTS Pitch (0.0-2.0)" "ttsPitchInput" UpdateTtsPitchInput ttsPitchInput
-        , viewVoiceDropdown workingLanguage.ttsVoice availableVoices
-        , Html.h3 [] [ Html.text "DeepL Translation Settings" ]
-        , inputC [] "DeepL Source Language Code (e.g., EN, FR, JA)" "deeplSourceInput" UpdateDeeplSourceLang (Maybe.withDefault "" workingLanguage.deeplSourceLang)
-        , inputC [] "DeepL Target Language Code (e.g., EN, DE, FR)" "deeplTargetInput" UpdateDeeplTargetLang (Maybe.withDefault "" workingLanguage.deeplTargetLang)
-        , Html.h3 [] [ Html.text "Parser Configuration" ]
-        , viewParserDropdown workingLanguage.parserConfig.whichParser
-        , if workingLanguage.parserConfig.whichParser == "base_spacy" then
-            inputC [] "Custom spaCy Model (find at https://spacy.io/models)" "spacyModelInput" UpdateSpacyModel (Maybe.withDefault "" (Dict.get "spacy_model" workingLanguage.parserConfig.parserArgs))
 
-          else
-            Utils.htmlEmpty
-        , div []
-            [ buttonC
-                [ onClick SubmitForm
-                , Html.Attributes.disabled (isSubmitting || not hasChanges || not isValid)
+        statusMessages =
+            if hasChanges && not isSubmitting then
+                [ div [ style "color" "orange" ]
+                    [ text "You have unsaved changes." ]
                 ]
-                (if isSubmitting then
-                    case mode of
-                        CreateMode ->
-                            "Creating..."
 
-                        EditMode ->
-                            "Saving..."
+            else if isSubmitting then
+                [ div [ style "color" "gray" ]
+                    [ text
+                        (case mode of
+                            CreateMode ->
+                                "Creating language..."
 
-                 else
-                    case mode of
-                        CreateMode ->
-                            "Create"
-
-                        EditMode ->
-                            "Save"
-                )
-            , buttonC
-                [ onClick CancelEdit
-                , Html.Attributes.disabled isSubmitting
-                ]
-                "Cancel"
-            , if mode == EditMode then
-                buttonC
-                    [ onClick DeleteLanguage
-                    , Html.Attributes.disabled isSubmitting
-                    , Html.Attributes.style "background-color" "red"
-                    , Html.Attributes.style "margin-left" "10px"
+                            EditMode ->
+                                "Saving changes..."
+                        )
                     ]
-                    "Delete"
-
-              else
-                Utils.htmlEmpty
-            ]
-        , if hasChanges && not isSubmitting then
-            Html.div [ Html.Attributes.style "color" "orange" ]
-                [ Html.text "You have unsaved changes." ]
-
-          else if isSubmitting then
-            Html.div [ Html.Attributes.style "color" "gray" ]
-                [ Html.text
-                    (case mode of
-                        CreateMode ->
-                            "Creating language..."
-
-                        EditMode ->
-                            "Saving changes..."
-                    )
                 ]
 
-          else
-            Utils.htmlEmpty
-        ]
+            else
+                []
+
+        buttons =
+            List.filterMap identity
+                [ Just
+                    (buttonC
+                        { label =
+                            if isSubmitting then
+                                case mode of
+                                    CreateMode ->
+                                        "Creating..."
+
+                                    EditMode ->
+                                        "Saving..."
+
+                            else
+                                case mode of
+                                    CreateMode ->
+                                        "Create"
+
+                                    EditMode ->
+                                        "Save"
+                        , onPress =
+                            if isSubmitting || not hasChanges || not isValid then
+                                Nothing
+
+                            else
+                                Just SubmitForm
+                        }
+                    )
+                , Just
+                    (buttonC
+                        { label = "Cancel"
+                        , onPress =
+                            if isSubmitting then
+                                Nothing
+
+                            else
+                                Just CancelEdit
+                        }
+                    )
+                , if mode == EditMode then
+                    Just
+                        (buttonC
+                            { label = "Delete"
+                            , onPress =
+                                if isSubmitting then
+                                    Nothing
+
+                                else
+                                    Just DeleteLanguage
+                            }
+                        )
+
+                  else
+                    Nothing
+                ]
+    in
+    formC
+        { sections =
+            [ { title = Just "Basic Information"
+              , rows =
+                    [ inputC
+                        { label = "Language Name"
+                        , toMsg = UpdateNameInput
+                        , value_ = workingLanguage.name
+                        , placeholder = "Enter language name..."
+                        }
+                    , stringListC
+                        { label = "Dictionaries"
+                        , items = workingLanguage.dicts
+                        , currentInput = currentDictInput
+                        , onListChange = UpdateDictsList
+                        , onInputChange = UpdateDictInput
+                        }
+                    ]
+              , buttons = []
+              }
+            , { title = Just "Add Dictionary from Available"
+              , rows = viewDictionarySelectorRows selectedDictPath availableDictionaries dictionariesLoadStatus
+              , buttons = []
+              }
+            , { title = Just "Text-to-Speech Settings"
+              , rows =
+                    [ numberInputC
+                        { label = "TTS Rate"
+                        , toMsg = UpdateTtsRateInput
+                        , min = 0.1
+                        , max = 10.0
+                        , value_ = Maybe.withDefault 1.0 workingLanguage.ttsRate
+                        , step = 0.1
+                        , placeholder = "1.0"
+                        }
+                    , numberInputC
+                        { label = "TTS Pitch"
+                        , toMsg = UpdateTtsPitchInput
+                        , min = 0.0
+                        , max = 2.0
+                        , value_ = Maybe.withDefault 1.0 workingLanguage.ttsPitch
+                        , step = 0.1
+                        , placeholder = "1.0"
+                        }
+                    , viewVoiceDropdown workingLanguage.ttsVoice availableVoices
+                    ]
+              , buttons = []
+              }
+            , { title = Just "DeepL Settings"
+              , rows =
+                    [ inputWithTooltipC
+                        { label = "Source Language"
+                        , tooltip = "DeepL Source Language Code (e.g., EN, FR, JA)"
+                        , toMsg = UpdateDeeplSourceLang
+                        , value_ = Maybe.withDefault "" workingLanguage.deeplSourceLang
+                        , placeholder = "EN, FR, JA..."
+                        }
+                    , inputWithTooltipC
+                        { label = "Target Language"
+                        , tooltip = "DeepL Target Language Code (e.g., EN, DE, FR)"
+                        , toMsg = UpdateDeeplTargetLang
+                        , value_ = Maybe.withDefault "" workingLanguage.deeplTargetLang
+                        , placeholder = "EN, DE, FR..."
+                        }
+                    ]
+              , buttons = []
+              }
+            , { title = Just "Parser Configuration"
+              , rows =
+                    List.concat
+                        [ [ viewParserDropdown workingLanguage.parserConfig.whichParser ]
+                        , if workingLanguage.parserConfig.whichParser == "base_spacy" then
+                            [ inputWithTooltipC
+                                { label = "SpaCy Model"
+                                , tooltip = "SpaCy Model (find models at https://spacy.io/models)"
+                                , toMsg = UpdateSpacyModel
+                                , value_ = Maybe.withDefault "" (Dict.get "spacy_model" workingLanguage.parserConfig.parserArgs)
+                                , placeholder = "e.g. en_core_web_sm"
+                                }
+                            ]
+
+                          else
+                            []
+                        ]
+              , buttons = []
+              }
+            ]
+        , buttons = buttons
+        , status = statusMessages
+        }
+
+
+viewDictionarySelectorRows : String -> List String -> DictionariesLoadStatus -> List (Html Msg)
+viewDictionarySelectorRows selectedDictPath availableDictionaries dictionariesLoadStatus =
+    [ case dictionariesLoadStatus of
+        DictionariesLoading ->
+            div [] [ text "Loading dictionaries..." ]
+
+        DictionariesError errorMsg ->
+            div [ class "error" ] [ text ("Error loading dictionaries: " ++ errorMsg) ]
+
+        DictionariesLoadedSuccess ->
+            if List.isEmpty availableDictionaries then
+                div [ class "error" ]
+                    [ text "No dictionaries found. Please add .ifo files to the dictionaries directory." ]
+
+            else
+                div []
+                    [ selectC
+                        { label = "Available Dictionaries"
+                        , toMsg = DictPathChanged
+                        , options = List.map (\dict -> { value = dict, label = dict }) availableDictionaries
+                        , value_ = if String.isEmpty selectedDictPath then Nothing else Just selectedDictPath
+                        , placeholder = "Select a dictionary..."
+                        }
+                    , div [ style "margin-top" "16px" ]
+                        [ buttonC
+                            { label = "Add Dictionary"
+                            , onPress =
+                                if String.isEmpty selectedDictPath then
+                                    Nothing
+
+                                else
+                                    Just AddSelectedDict
+                            }
+                        ]
+                    ]
+
+        DictionariesNotLoaded ->
+            div [] []
+    ]
 
 
 viewDictionarySelector : String -> List String -> DictionariesLoadStatus -> Html Msg
 viewDictionarySelector selectedDictPath availableDictionaries dictionariesLoadStatus =
-    Html.div []
-        [ Html.h3 [] [ Html.text "Add Dictionary from Available" ]
-        , case dictionariesLoadStatus of
-            DictionariesLoading ->
-                Html.div [] [ Html.text "Loading dictionaries..." ]
-
-            DictionariesError errorMsg ->
-                Html.div [ class "error" ] [ Html.text ("Error loading dictionaries: " ++ errorMsg) ]
-
-            DictionariesLoadedSuccess ->
-                if List.isEmpty availableDictionaries then
-                    Html.div [ class "error" ]
-                        [ Html.text "No dictionaries found. Please add .ifo files to the dictionaries directory." ]
-
-                else
-                    Html.div []
-                        [ selectC
-                            "Available Dictionaries"
-                            "dict-selector"
-                            DictPathChanged
-                            (List.map (\dict -> { value = dict, label = dict }) availableDictionaries)
-                            selectedDictPath
-                        , Html.div [ Html.Attributes.style "margin-top" "10px" ]
-                            [ buttonC
-                                [ onClick AddSelectedDict
-                                , Html.Attributes.disabled (String.isEmpty selectedDictPath)
-                                ]
-                                "Add Dictionary"
-                            ]
-                        ]
-
-            DictionariesNotLoaded ->
-                Html.div [] []
-        ]
+    formSectionC
+        { title = "Add Dictionary from Available"
+        , rows = viewDictionarySelectorRows selectedDictPath availableDictionaries dictionariesLoadStatus
+        }
 
 
 viewVoiceDropdown : Maybe String -> List Voice -> Html Msg
 viewVoiceDropdown selectedVoice voices =
-    Html.div []
-        [ Html.label [] [ Html.text "TTS Voice" ]
-        , Html.select
-            [ onInput UpdateTtsVoice
-            , value (Maybe.withDefault "" selectedVoice)
-            ]
-            (Html.option [ value "" ] [ Html.text "-- Select Voice --" ]
-                :: List.map
-                    (\voice ->
-                        Html.option
-                            [ value voice.name
-                            , selected (selectedVoice == Just voice.name)
-                            ]
-                            [ Html.text (voice.name ++ " (" ++ voice.lang ++ ")") ]
-                    )
-                    voices
-            )
-        ]
+    selectC
+        { label = "TTS Voice"
+        , toMsg = UpdateTtsVoice
+        , options = List.map (\voice -> { value = voice.name, label = voice.name ++ " (" ++ voice.lang ++ ")" }) voices
+        , value_ = selectedVoice
+        , placeholder = "Select a voice..."
+        }
 
 
 viewParserDropdown : String -> Html Msg
 viewParserDropdown selectedParser =
-    Html.div []
-        [ Html.label [] [ Html.text "Parser" ]
-        , Html.select
-            [ onInput UpdateParserType
-            , value selectedParser
+    selectC
+        { label = "Parser"
+        , toMsg = UpdateParserType
+        , options =
+            [ { value = "base_spacy", label = "Plain spaCy" }
+            , { value = "enhanced_japanese", label = "Enhanced Japanese" }
             ]
-            [ Html.option
-                [ value "base_spacy"
-                , selected (selectedParser == "base_spacy")
-                ]
-                [ Html.text "Base (spaCy)" ]
-            , Html.option
-                [ value "enhanced_japanese"
-                , selected (selectedParser == "enhanced_japanese")
-                ]
-                [ Html.text "Enhanced Japanese" ]
-            ]
-        ]
-
-
-viewToast : List (Html.Attribute msg) -> Toast.Info String -> Html msg
-viewToast attributes toast =
-    Html.div (class "toast toast--spaced" :: attributes) [ Html.text toast.content ]
+        , value_ = if String.isEmpty selectedParser then Nothing else Just selectedParser
+        , placeholder = "Select a parser..."
+        }

@@ -27,7 +27,7 @@ class ShadowElement extends HTMLElement {
     updateContent() {
         const htmlContent = this.getAttribute('inner-html');
         const baseUrl = this.getAttribute('base-url');
-        
+
         if (!htmlContent) {
             this.shadowRoot.innerHTML = '';
             return;
@@ -63,9 +63,33 @@ export const onReady = ({ app, env }) => {
                     window.alert(data);
                     return;
                 case "GET_VOICES":
+                    const sendVoicesToElm = () => {
+                        let voices = speechSynthesis.getVoices();
+                        let voiceData = voices.map(v => ({ name: v.name, lang: v.lang, default: v.default }));
+                        app.ports.jsIncoming.send({ tag: "VOICES_LIST", data: voiceData });
+                    };
+
                     let voices = speechSynthesis.getVoices();
-                    let voiceData = voices.map(v => ({ name: v.name, lang: v.lang, default: v.default }));
-                    app.ports.jsIncoming.send({ tag: "VOICES_LIST", data: voiceData });
+                    if (voices.length > 0) {
+                        let voiceData = voices.map(v => ({ name: v.name, lang: v.lang, default: v.default }));
+                        app.ports.jsIncoming.send({ tag: "VOICES_LIST", data: voiceData });
+                    } else {
+                        // in case voices is async...
+                        const handleVoicesChanged = () => {
+                            speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+                            sendVoicesToElm();
+                        };
+                        speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+
+                        setTimeout(() => {
+                            let voices = speechSynthesis.getVoices();
+                            if (voices.length > 0) {
+                                speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+                                let voiceData = voices.map(v => ({ name: v.name, lang: v.lang, default: v.default }));
+                                app.ports.jsIncoming.send({ tag: "VOICES_LIST", data: voiceData });
+                            }
+                        }, 100);
+                    }
                     return;
                 case "SPEAK":
                     let utterance = new SpeechSynthesisUtterance(data.text);

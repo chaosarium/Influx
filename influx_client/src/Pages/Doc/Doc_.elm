@@ -13,6 +13,7 @@ import Components.DbgDisplay
 import Components.DictionaryLookup as DictionaryLookup
 import Components.ResizableSidebar
 import Components.TermEditForm as TermEditForm
+import Components.ToastView
 import Components.Topbar
 import Components.TtsEmitter
 import Datastore.DictContext as DictContext
@@ -643,7 +644,7 @@ viewDocumentInfo response =
         , p []
             [ a [ href ("/doc/edit?docId=" ++ documentId) ] [ text "Edit Document" ]
             , text " | "
-            , a [ href ("/lang/edit/" ++ languageId) ] [ text "Edit Language" ]
+            , a [ href ("/lang/edit?langId=" ++ languageId) ] [ text "Edit Language" ]
             ]
         ]
 
@@ -1212,7 +1213,7 @@ view shared route model =
         List.map Html.Styled.fromUnstyled <|
             [ div [ class "outer-layout" ]
                 [ Components.Topbar.view {}
-                , Html.div [ class "toast-tray" ] [ Toast.render viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
+                , Html.div [ class "toast-tray" ] [ Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
                 , div
                     [ class "text-document-layout" ]
                     [ div
@@ -1234,6 +1235,4 @@ view shared route model =
     }
 
 
-viewToast : List (Html.Attribute msg) -> Toast.Info String -> Html msg
-viewToast attributes toast =
-    Html.div (class "toast toast--spaced" :: attributes) [ Html.text toast.content ]
+

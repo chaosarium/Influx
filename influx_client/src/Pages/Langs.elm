@@ -11,6 +11,7 @@ import Effect exposing (Effect)
 import Html exposing (..)
 import Html.Attributes exposing (class, href, style)
 import Html.Events
+import Html.Styled
 import Http
 import Page exposing (Page)
 import Route exposing (Route)
@@ -140,10 +141,7 @@ viewLangs model =
             div []
                 [ div [ style "margin-bottom" "20px" ]
                     [ buttonC
-                        [ Html.Events.onClick AddLanguage
-                        , style "background-color" "#28a745"
-                        , style "color" "white"
-                        ]
+                        (Just AddLanguage)
                         "Add Language"
                     ]
                 , viewLanguagesTable languages
@@ -154,13 +152,14 @@ view : Model -> View Msg
 view model =
     { title = "Languages"
     , body =
-        [ Html.div [ class "layout-outer" ]
-            [ Components.Topbar.view {}
-            , Html.div [ class "layout-content" ]
-                [ -- the main content of the page
-                  Html.h1 [] [ Html.text "Languages" ]
-                , viewLangs model
+        List.map Html.Styled.fromUnstyled <|
+            [ Html.div [ class "layout-outer" ]
+                [ Components.Topbar.view {}
+                , Html.div [ class "layout-content" ]
+                    [ -- the main content of the page
+                      Html.h1 [] [ Html.text "Languages" ]
+                    , viewLangs model
+                    ]
                 ]
             ]
-        ]
     }

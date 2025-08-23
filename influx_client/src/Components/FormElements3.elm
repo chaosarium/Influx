@@ -1,10 +1,14 @@
 module Components.FormElements3 exposing
-    ( SelectCOption
+    ( FormSection
+    , SelectCOption
     , buttonC
     , buttonRowC
     , formC
+    , formSectionC
     , formSectionHr
     , inputC
+    , inputWithTooltipC
+    , numberInputC
     , selectC
     , stringListC
     , textareaC
@@ -67,6 +71,14 @@ borderNone =
     property "border" "none"
 
 
+labelColor =
+    Colours.colorCss Colours.gray10
+
+
+bascShadow =
+    property "box-shadow" "0px 0px 8px 0px var(--gray-a2)"
+
+
 inputKeyVal label inputEl =
     div
         [ css
@@ -83,13 +95,71 @@ inputKeyVal label inputEl =
                 [ width formLabelWidth
                 , textOverflow ellipsis
                 , overflow hidden
-                , Colours.colorCss Colours.gray10
+                , whiteSpace noWrap
+                , labelColor
                 , height inputKeyValHeight
                 , displayFlex
                 , alignItems center
                 ]
             ]
             [ text label ]
+        , div
+            [ css [ width (pct 100) ]
+            ]
+            [ inputEl ]
+        ]
+
+
+inputKeyValWithTooltip : String -> String -> Html msg -> Html msg
+inputKeyValWithTooltip label tooltip inputEl =
+    div
+        [ css
+            [ displayFlex
+            , alignItems start
+            , gap space16px
+            , width (pct 100)
+            , pseudoClass "focus-within"
+                []
+            ]
+        ]
+        [ div
+            [ css
+                [ width formLabelWidth
+                , position relative
+                ]
+            ]
+            [ div
+                [ css
+                    [ textOverflow ellipsis
+                    , overflow hidden
+                    , whiteSpace noWrap
+                    , labelColor
+                    , height inputKeyValHeight
+                    , displayFlex
+                    , alignItems center
+                    , cursor help
+                    , hover
+                        [ after
+                            [ property "content" ("\"" ++ tooltip ++ "\"")
+                            , position absolute
+                            , bottom (pct 100)
+                            , left (px 0)
+                            , Colours.bgCss Colours.gray1
+                            , padding2 space4px space8px
+                            , border2 (px 1) solid
+                            , Colours.borderCss Colours.gray5
+                            , borderRadius space4px
+                            , fontSize (rem 0.875)
+                            , whiteSpace normal
+                            , zIndex (int 1000)
+                            , width (px 200)
+                            , marginBottom space4px
+                            ]
+                        ]
+                    ]
+                ]
+                [ text label ]
+            ]
         , div
             [ css [ width (pct 100) ]
             ]
@@ -141,6 +211,41 @@ inputC { label, toMsg, value_, placeholder } =
             []
 
 
+inputWithTooltipC : { label : String, tooltip : String, toMsg : String -> msg, value_ : String, placeholder : String } -> Html msg
+inputWithTooltipC { label, tooltip, toMsg, value_, placeholder } =
+    inputKeyValWithTooltip label tooltip <|
+        input
+            [ type_ "text"
+            , value value_
+            , onInput toMsg
+            , Attributes.placeholder placeholder
+            , textInputCss
+            , css
+                [ height inputKeyValHeight
+                ]
+            ]
+            []
+
+
+numberInputC : { label : String, toMsg : Float -> msg, value_ : Float, min : Float, max : Float, step : Float, placeholder : String } -> Html msg
+numberInputC { label, toMsg, value_, min, max, step, placeholder } =
+    inputKeyVal label <|
+        input
+            [ type_ "number"
+            , Attributes.min (String.fromFloat min)
+            , Attributes.max (String.fromFloat max)
+            , Attributes.step (String.fromFloat step)
+            , value (String.fromFloat value_)
+            , onInput (\val -> toMsg (Maybe.withDefault value_ (String.toFloat val)))
+            , Attributes.placeholder placeholder
+            , textInputCss
+            , css
+                [ height inputKeyValHeight
+                ]
+            ]
+            []
+
+
 textareaC : { label : String, toMsg : String -> msg, value_ : String, placeholder : String } -> Html msg
 textareaC { label, toMsg, value_, placeholder } =
     inputKeyVal label <|
@@ -168,11 +273,15 @@ type alias SelectCOption =
     { value : String, label : String }
 
 
-selectC : { label : String, toMsg : String -> msg, options : List SelectCOption, value_ : String } -> Html msg
-selectC { label, toMsg, options, value_ } =
+type alias FormSection msg =
+    { title : Maybe String, rows : List (Html msg), buttons : List (Html msg) }
+
+
+selectC : { label : String, toMsg : String -> msg, options : List SelectCOption, value_ : Maybe String, placeholder : String } -> Html msg
+selectC { label, toMsg, options, value_, placeholder } =
     inputKeyVal label <|
         Html.select
-            [ value value_
+            [ value (Maybe.withDefault "" value_)
             , onInput toMsg
             , Attributes.required True
             , textInputCss
@@ -180,15 +289,14 @@ selectC { label, toMsg, options, value_ } =
             (Html.option
                 [ value ""
                 , Attributes.disabled True
-                , Attributes.selected (value_ == "")
-                , Attributes.hidden True
+                , Attributes.selected (value_ == Nothing)
                 ]
-                [ Html.text "Select a status... (or default to L1)" ]
+                [ Html.text placeholder ]
                 :: List.map
                     (\opt ->
                         Html.option
                             [ value opt.value
-                            , Attributes.selected (opt.value == value_)
+                            , Attributes.selected (Just opt.value == value_)
                             ]
                             [ Html.text opt.label ]
                     )
@@ -210,23 +318,82 @@ formSectionHr =
         []
 
 
-formC : { rows : List (Html msg), buttons : List (Html msg), status : List (Html msg) } -> Html msg
-formC { rows, buttons, status } =
+formC : { sections : List (FormSection msg), buttons : List (Html msg), status : List (Html msg) } -> Html msg
+formC { sections, buttons, status } =
     let
-        fieldsDiv =
-            div [ css [ margin2 space16px space0px, displayFlex, flexDirection column, gap space8px ] ] <|
-                List.concat
-                    [ [ formSectionHr ]
-                    , List.intersperse formSectionHr rows
-                    , [ formSectionHr ]
+        renderSection section =
+            let
+                sectionContent =
+                    div
+                        [ css
+                            [ displayFlex
+                            , flexDirection column
+                            , gap space8px
+                            ]
+                        ]
+                        (List.concat
+                            [ [ formSectionHr ]
+                            , List.intersperse formSectionHr section.rows
+                            , [ formSectionHr ]
+                            ]
+                        )
+
+                sectionHeader =
+                    case section.title of
+                        Just title ->
+                            [ h3
+                                [ css
+                                    [ fontSize (rem 1)
+                                    , fontWeight bold
+                                    , margin2 space0px space0px
+                                    , marginBottom space16px
+                                    , labelColor
+                                    ]
+                                ]
+                                [ text title ]
+                            ]
+
+                        Nothing ->
+                            []
+
+                sectionButtons =
+                    if List.isEmpty section.buttons then
+                        []
+
+                    else
+                        [ buttonRowC section.buttons ]
+            in
+            div
+                [ css
+                    [ border2 (px 1) solid
+                    , Colours.borderCss Colours.gray3
+                    , borderRadius space8px
+                    , padding space16px
+                    , margin2 space16px space0px
+                    , Colours.bgCss Colours.white
+                    , bascShadow
                     ]
+                ]
+                (List.concat
+                    [ sectionHeader
+                    , [ sectionContent ]
+                    , sectionButtons
+                    ]
+                )
+
+        formButtons =
+            if List.isEmpty buttons then
+                []
+
+            else
+                [ buttonRowC buttons ]
     in
     div
         [ css [] ]
     <|
         List.concat
-            [ [ fieldsDiv ]
-            , [ buttonRowC buttons ]
+            [ List.map renderSection sections
+            , formButtons
             , status
             ]
 
@@ -372,3 +539,30 @@ buttonRowC buttons =
             ]
         ]
         buttons
+
+
+formSectionC : { title : String, rows : List (Html msg) } -> Html msg
+formSectionC { title, rows } =
+    div
+        [ css
+            [ margin2 space16px space0px
+            ]
+        ]
+        [ h3
+            [ css
+                [ fontWeight bold
+                , margin2 space0px space0px
+                , marginBottom space16px
+                , labelColor
+                ]
+            ]
+            [ text title ]
+        , div
+            [ css
+                [ displayFlex
+                , flexDirection column
+                , gap space16px
+                ]
+            ]
+            rows
+        ]

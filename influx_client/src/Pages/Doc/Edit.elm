@@ -9,7 +9,7 @@ import Api.GetLanguages
 import Bindings exposing (Document, InfluxResourceId(..), Language)
 import BindingsUtils
 import Colours
-import Components.FormElements3 exposing (SelectCOption, buttonC, buttonRowC, formC, inputC, selectC, stringListC, textareaC)
+import Components.FormElements3 exposing (FormSection, SelectCOption, buttonC, buttonRowC, formC, inputC, selectC, stringListC, textareaC)
 import Components.ToastView
 import Components.Topbar
 import Css exposing (marginTop)
@@ -488,34 +488,40 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
                         "Save"
     in
     formC
-        { rows =
-            [ inputC { label = "Title", toMsg = UpdateTitleInput, value_ = workingDocument.title, placeholder = "Edit title..." }
-            , textareaC { label = "Content", toMsg = UpdateContentInput, value_ = workingDocument.content, placeholder = "Edit content..." }
-            , inputC { label = "Document Type", toMsg = UpdateDocTypeInput, value_ = workingDocument.docType, placeholder = "Edit document type..." }
-            , stringListC { label = "Tags", items = workingDocument.tags, currentInput = currentTagInput, onListChange = UpdateTagsList, onInputChange = UpdateTagInput }
-            , case languagesData of
-                Api.Success languages ->
-                    selectC
-                        { label = "Language"
-                        , toMsg = UpdateLanguageInput
-                        , options = languageOptions languages
-                        , value_ =
-                            case workingDocument.langId of
-                                SerialId id ->
-                                    String.fromInt id
+        { sections =
+            [ { title = Nothing
+              , rows =
+                    [ inputC { label = "Title", toMsg = UpdateTitleInput, value_ = workingDocument.title, placeholder = "Edit title..." }
+                    , textareaC { label = "Content", toMsg = UpdateContentInput, value_ = workingDocument.content, placeholder = "Edit content..." }
+                    , inputC { label = "Document Type", toMsg = UpdateDocTypeInput, value_ = workingDocument.docType, placeholder = "Edit document type..." }
+                    , stringListC { label = "Tags", items = workingDocument.tags, currentInput = currentTagInput, onListChange = UpdateTagsList, onInputChange = UpdateTagInput }
+                    , case languagesData of
+                        Api.Success languages ->
+                            selectC
+                                { label = "Language"
+                                , toMsg = UpdateLanguageInput
+                                , options = languageOptions languages
+                                , value_ =
+                                    case workingDocument.langId of
+                                        SerialId id ->
+                                            Just (String.fromInt id)
 
-                                StringId id ->
-                                    id
-                        }
+                                        StringId id ->
+                                            Just id
+                                , placeholder = "Select a language..."
+                                }
 
-                Api.Loading ->
-                    Html.div [] [ Html.text "Loading languages..." ]
+                        Api.Loading ->
+                            Html.div [] [ Html.text "Loading languages..." ]
 
-                Api.Failure _ ->
-                    Html.div [] [ Html.text "Failed to load languages" ]
+                        Api.Failure _ ->
+                            Html.div [] [ Html.text "Failed to load languages" ]
 
-                Api.NotAsked ->
-                    Html.div [] [ Html.text "Languages not loaded" ]
+                        Api.NotAsked ->
+                            Html.div [] [ Html.text "Languages not loaded" ]
+                    ]
+              , buttons = []
+              }
             ]
         , buttons =
             List.filterMap identity
