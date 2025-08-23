@@ -1211,7 +1211,7 @@ view shared route model =
     , body =
         List.map Html.Styled.fromUnstyled <|
             [ div [ class "outer-layout" ]
-                [ Components.Topbar.view {}
+                [ Html.Styled.toUnstyled (Components.Topbar.view {})
                 , Html.div [ class "toast-tray" ] [ Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
                 , div
                     [ class "text-document-layout" ]

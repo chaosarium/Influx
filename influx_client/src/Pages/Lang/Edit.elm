@@ -8,15 +8,14 @@ import Api.LangDelete
 import Api.LangEdit
 import Bindings exposing (InfluxResourceId(..), Language, LanguageCreateRequest, ParserConfig)
 import Components.FormElements3 as FormElements3 exposing (FormSection, SelectCOption, buttonC, buttonRowC, formC, formSectionC, inputC, inputWithTooltipC, numberInputC, selectC, stringListC)
+import Components.Layout
 import Components.Styles as Styles
 import Components.ToastView
-import Components.Topbar
+import Css exposing (..)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
-import Html
-import Html.Attributes
-import Html.Styled exposing (Html, div, h1, hr, span, text)
-import Html.Styled.Attributes as Attributes exposing (class, style)
+import Html.Styled as Html exposing (Html, div, h1, hr, span, table, tbody, td, text, th, thead, tr)
+import Html.Styled.Attributes as Attributes exposing (class, css, style)
 import Html.Styled.Events as Events exposing (onClick)
 import Http
 import Json.Decode as D
@@ -609,26 +608,23 @@ view shared route model =
 
                 EditMode ->
                     "Edit Language"
+
+        toastTray =
+            Html.fromUnstyled (Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)))
     in
     { title = title
     , body =
-        List.map Html.Styled.fromUnstyled <|
-            [ Html.div [ Html.Attributes.class "outer-layout" ]
-                [ Components.Topbar.view {}
-                , Html.div [ Html.Attributes.class "toast-tray" ] [ Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
-                , Html.div [ Html.Attributes.class "layout-content" ]
-                    [ Html.h1 [] [ Html.text title ]
-                    , case model.formModel of
-                        LoadingForm ->
-                            Html.div [] [ Html.text "Loading..." ]
+        Components.Layout.pageLayoutC { toastTray = Just toastTray }
+            [ h1 [] [ text title ]
+            , case model.formModel of
+                LoadingForm ->
+                    div [] [ text "Loading..." ]
 
-                        ErrorForm error ->
-                            Html.div [ Html.Attributes.style "color" "red" ] [ Html.text error ]
+                ErrorForm error ->
+                    div [ css [ color (hex "#ff0000") ] ] [ text error ]
 
-                        EditingLanguage formModel ->
-                            Html.Styled.toUnstyled (viewLanguageForm model.mode formModel model.isSubmitting model.availableVoices model.availableDictionaries model.dictionariesLoadStatus)
-                    ]
-                ]
+                EditingLanguage formModel ->
+                    viewLanguageForm model.mode formModel model.isSubmitting model.availableVoices model.availableDictionaries model.dictionariesLoadStatus
             ]
     }
 

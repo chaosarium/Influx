@@ -3,11 +3,11 @@ module Pages.Dictionary exposing (Model, Msg, page)
 import Api
 import Api.DictionaryList
 import Components.DictionaryLookup as DictionaryLookup
-import Components.Topbar
+import Components.Layout
 import Effect exposing (Effect)
-import Html exposing (..)
-import Html.Attributes exposing (class)
-import Html.Styled
+import Html
+import Html.Styled as HtmlStyled exposing (Html, div, h1, text)
+import Html.Styled.Attributes
 import Http
 import Page exposing (Page)
 import Route exposing (Route)
@@ -79,14 +79,10 @@ view : Model -> View Msg
 view model =
     { title = "Dictionary Lookup"
     , body =
-        List.map Html.Styled.fromUnstyled <|
-            [ Html.div [ class "layout-outer" ]
-                [ Components.Topbar.view {}
-                , Html.div [ class "layout-content" ]
-                    [ Html.h1 [] [ Html.text "Dictionary Lookup" ]
-                    , Html.map DictionaryLookupMsg (DictionaryLookup.view model.dictionaryLookup)
-                    ]
-                ]
+        Components.Layout.pageLayoutC
+            { toastTray = Nothing }
+            [ h1 [] [ text "Dictionary Lookup" ]
+            , HtmlStyled.fromUnstyled (Html.map DictionaryLookupMsg (DictionaryLookup.view model.dictionaryLookup))
             ]
     }
 

@@ -33,62 +33,7 @@ h3 {
 
 // === COMPONENTS ===
 
-// === NAV ===
-
-nav.navbar {
-    height: 32px;
-    background-color: $bgColorSubtle;
-    border-bottom: $borderSubtle;
-    display: flex;
-    align-items: center;
-    padding: 0 8px;
-    flex-shrink: 0;
-    font-size: 0.875em;
-
-    ul {
-        list-style-type: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        align-items: center;
-    }
-
-    ul li {
-        display: inline;
-        // margin-right: 8px;
-
-        a {
-            text-decoration: none;
-            color: $gray-9;
-            font-weight: 400;
-            border-radius: 4px;
-            padding: 2px 8px;
-
-            &:hover {
-                color: $gray-10;
-                background-color: $gray-3;
-            }
-        }
-    }
-}
-
-
 // === LAYOUT ===
-
-// layout right below body
-.layout-outer {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background-color: $white;
-}
-
-// Full width layout for stuff that do not have side-by-side split
-.layout-content {
-    width: 1000px;
-    margin: 0 auto;
-    padding: 32px 16px;
-}
 
 // Main document layout styles
 .text-document-layout {

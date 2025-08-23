@@ -10,8 +10,8 @@ import Bindings exposing (Document, InfluxResourceId(..), Language)
 import BindingsUtils
 import Colours
 import Components.FormElements3 exposing (FormSection, SelectCOption, buttonC, buttonRowC, formC, inputC, selectC, stringListC, textareaC)
+import Components.Layout
 import Components.ToastView
-import Components.Topbar
 import Css exposing (marginTop)
 import Dict
 import Effect exposing (Effect)
@@ -436,26 +436,24 @@ view shared route model =
 
                 EditMode ->
                     "Edit Document"
+
+        toastTray =
+            Html.fromUnstyled (Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)))
     in
     { title = title
     , body =
-        [ Html.div [ class "layout-outer" ]
-            [ Html.fromUnstyled <| Components.Topbar.view {}
-            , Html.div [ class "toast-tray" ] [ Html.fromUnstyled <| Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg)) ]
-            , Html.div [ class "layout-content" ]
-                [ Html.h1 [] [ Html.text title ]
-                , case model.formModel of
-                    LoadingForm ->
-                        div [] [ Html.text "Loading..." ]
+        Components.Layout.pageLayoutC { toastTray = Just toastTray }
+            [ h1 [] [ text title ]
+            , case model.formModel of
+                LoadingForm ->
+                    div [] [ text "Loading..." ]
 
-                    ErrorForm error ->
-                        div [ style "color" "red" ] [ Html.text error ]
+                ErrorForm error ->
+                    div [ css [ Css.color (Css.hex "#ff0000") ] ] [ text error ]
 
-                    EditingDocument formModel ->
-                        viewDocumentForm formModel model.languagesData model.isSubmitting model.mode
-                ]
+                EditingDocument formModel ->
+                    viewDocumentForm formModel model.languagesData model.isSubmitting model.mode
             ]
-        ]
     }
 
 
@@ -513,13 +511,13 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
                                 }
 
                         Api.Loading ->
-                            Html.div [] [ Html.text "Loading languages..." ]
+                            div [] [ text "Loading languages..." ]
 
                         Api.Failure _ ->
-                            Html.div [] [ Html.text "Failed to load languages" ]
+                            div [] [ text "Failed to load languages" ]
 
                         Api.NotAsked ->
-                            Html.div [] [ Html.text "Languages not loaded" ]
+                            div [] [ text "Languages not loaded" ]
                     ]
               , buttons = []
               }
@@ -572,8 +570,8 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
                 ]
         , status =
             [ if hasChanges && not isSubmitting then
-                Html.div [ css [ Colours.colorCss Colours.orange9, marginTop (Css.px 8) ] ]
-                    [ Html.text
+                div [ css [ Colours.colorCss Colours.orange9, marginTop (Css.px 8) ] ]
+                    [ text
                         (case mode of
                             CreateMode ->
                                 "Fill in the form to create a new document."
@@ -584,8 +582,8 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
                     ]
 
               else if isSubmitting then
-                Html.div [ css [ Colours.colorCss Colours.orange9, marginTop (Css.px 8) ] ]
-                    [ Html.text
+                div [ css [ Colours.colorCss Colours.orange9, marginTop (Css.px 8) ] ]
+                    [ text
                         (case mode of
                             CreateMode ->
                                 "Creating document..."
@@ -596,7 +594,7 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
                     ]
 
               else
-                Html.text ""
+                text ""
             ]
         , compact = False
         }
