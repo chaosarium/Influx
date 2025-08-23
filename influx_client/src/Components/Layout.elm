@@ -1,5 +1,6 @@
 module Components.Layout exposing (documentLayoutC, pageLayoutC)
 
+import Colours exposing (..)
 import Components.Topbar
 import Css exposing (..)
 import Html.Styled as Html exposing (..)
@@ -13,7 +14,7 @@ pageLayoutC { toastTray } content =
             [ height (vh 100)
             , displayFlex
             , flexDirection column
-            , backgroundColor (hex "#FEFEFE")
+            , bgCss gray2
             ]
         ]
         ([ Components.Topbar.view {} ]

@@ -6,6 +6,7 @@ import Bindings exposing (InfluxResourceId(..), Language)
 import BindingsUtils
 import Components.FormElements3 exposing (buttonC)
 import Components.Layout
+import Components.ListingElements
 import Css exposing (..)
 import Dict
 import Effect exposing (Effect)
@@ -82,47 +83,37 @@ subscriptions model =
 
 viewLanguagesTable : List Language -> Html msg
 viewLanguagesTable languages =
-    Html.table
-        [ css
-            [ Css.borderCollapse Css.collapse
-            , Css.width (Css.pct 100)
-            ]
-        ]
-        [ thead []
-            [ tr []
-                [ th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Name" ]
-                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Dictionary URLs" ]
-                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Actions" ]
-                ]
-            ]
-        , tbody []
-            (List.map
-                (\language ->
-                    tr [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd") ] ]
-                        [ td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
-                            [ text language.name ]
-                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
-                            [ text (String.join ", " language.dicts) ]
-                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
-                            [ case language.id of
-                                Just langId ->
-                                    div []
-                                        [ a
-                                            [ href ("/lang/edit?langId=" ++ BindingsUtils.influxResourceIdToString langId) ]
-                                            [ text "Edit" ]
-                                        , text " | "
-                                        , a
-                                            [ href ("/docs?lang=" ++ BindingsUtils.influxResourceIdToString langId) ]
-                                            [ text "View Docs" ]
-                                        ]
+    let
+        headers =
+            [ "Name", "Actions" ]
 
-                                Nothing ->
-                                    text "No ID"
-                            ]
-                        ]
+        languageRows =
+            List.map
+                (\language ->
+                    [ text language.name
+                    , case language.id of
+                        Just langId ->
+                            div []
+                                [ a
+                                    [ href ("/lang/edit?langId=" ++ BindingsUtils.influxResourceIdToString langId) ]
+                                    [ text "Edit" ]
+                                , text " | "
+                                , a
+                                    [ href ("/docs?lang=" ++ BindingsUtils.influxResourceIdToString langId) ]
+                                    [ text "View Docs" ]
+                                ]
+
+                        Nothing ->
+                            text "No ID"
+                    ]
                 )
                 languages
-            )
+    in
+    Components.ListingElements.listingCardC
+        [ Components.ListingElements.listingTableC
+            { headers = headers
+            , rows = languageRows
+            }
         ]
 
 

@@ -7,6 +7,7 @@ import BindingsUtils
 import Components.DbgDisplay
 import Components.FormElements3 exposing (buttonC)
 import Components.Layout
+import Components.ListingElements
 import Css exposing (..)
 import Dict
 import Effect exposing (Effect)
@@ -110,74 +111,42 @@ formatDate dateString =
     String.left 10 dateString
 
 
-viewDocumentRow : DocPackage -> Html msg
-viewDocumentRow docPackage =
-    let
-        documentId =
-            BindingsUtils.influxResourceIdToString docPackage.documentId
-
-        tagsString =
-            String.join ", " docPackage.document.tags
-    in
-    tr []
-        [ td []
-            [ a [ href ("/documents/" ++ documentId) ]
-                [ text docPackage.document.title ]
-            ]
-        , td [] [ text tagsString ]
-        , td [] [ text (docTypeToString docPackage.document.docType) ]
-        , td [] [ text (formatDate docPackage.document.createdTs) ]
-        , td [] [ text (formatDate docPackage.document.updatedTs) ]
-        ]
-
-
 viewDocumentsTable : List DocPackage -> Html msg
 viewDocumentsTable docPackages =
-    Html.table
-        [ css
-            [ Css.borderCollapse Css.collapse
-            , Css.width (Css.pct 100)
-            ]
-        ]
-        [ thead []
-            [ tr []
-                [ th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Title" ]
-                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Language" ]
-                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Tags" ]
-                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Type" ]
-                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Created" ]
-                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Modified" ]
-                , th [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8), Css.textAlign Css.left ] ] [ text "Actions" ]
-                ]
-            ]
-        , Html.tbody []
-            (List.map
+    let
+        headers =
+            [ "Title", "Language", "Tags", "Type", "Created", "Modified", "Actions" ]
+
+        documentRows =
+            List.map
                 (\docPackage ->
-                    tr [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd") ] ]
-                        [ td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
-                            [ Html.a [ href ("/doc/" ++ BindingsUtils.influxResourceIdToString docPackage.documentId) ]
-                                [ text docPackage.document.title ]
-                            ]
-                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
-                            [ text docPackage.language.name ]
-                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
-                            [ text (String.join ", " docPackage.document.tags) ]
-                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
-                            [ text (docTypeToString docPackage.document.docType) ]
-                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
-                            [ text (formatDate docPackage.document.createdTs) ]
-                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
-                            [ text (formatDate docPackage.document.updatedTs) ]
-                        , td [ css [ Css.border3 (Css.px 1) Css.solid (Css.hex "#ddd"), Css.padding (Css.px 8) ] ]
-                            [ Html.a
-                                [ href ("/doc/edit?docId=" ++ BindingsUtils.influxResourceIdToString docPackage.documentId)
-                                ]
-                                [ text "Edit" ]
-                            ]
+                    let
+                        documentId =
+                            BindingsUtils.influxResourceIdToString docPackage.documentId
+
+                        tagsString =
+                            String.join ", " docPackage.document.tags
+                    in
+                    [ a [ href ("/doc/" ++ documentId) ]
+                        [ text docPackage.document.title ]
+                    , text docPackage.language.name
+                    , text tagsString
+                    , text (docTypeToString docPackage.document.docType)
+                    , text (formatDate docPackage.document.createdTs)
+                    , text (formatDate docPackage.document.updatedTs)
+                    , a
+                        [ href ("/doc/edit?docId=" ++ documentId)
                         ]
+                        [ text "Edit" ]
+                    ]
                 )
                 docPackages
-            )
+    in
+    Components.ListingElements.listingCardC
+        [ Components.ListingElements.listingTableC
+            { headers = headers
+            , rows = documentRows
+            }
         ]
 
 

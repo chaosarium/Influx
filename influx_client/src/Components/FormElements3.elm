@@ -18,6 +18,8 @@ module Components.FormElements3 exposing
 
 import Bindings exposing (TokenStatus(..))
 import Colours
+import Components.Common exposing (..)
+import Components.CssExtra exposing (..)
 import Components.StatusColours as StatusColours
 import Css exposing (..)
 import Html.Styled as Html exposing (..)
@@ -26,97 +28,12 @@ import Html.Styled.Events as Events exposing (onClick, onInput)
 import Json.Decode as Decode
 
 
-space0px =
-    px 0
-
-
-space2px =
-    px 2
-
-
-space4px =
-    px 4
-
-
-space8px =
-    px 8
-
-
-space16px =
-    px 16
-
-
-space32px =
-    px 32
-
-
-space64px =
-    px 64
-
-
-gap : LengthOrNumberOrAutoOrNoneOrContent compatible -> Style
-gap x =
-    property "gap" x.value
-
-
 red =
     rgb 255 0 0
 
 
 formLabelWidth =
     px 200
-
-
-inputKeyValHeight =
-    px 42
-
-
-inputKeyValHeightCompact =
-    px 32
-
-
-getKeyValHeight compact =
-    if compact then
-        inputKeyValHeightCompact
-
-    else
-        inputKeyValHeight
-
-
-getGapSize compact =
-    if compact then
-        space8px
-
-    else
-        space16px
-
-
-getPaddingXSize compact =
-    if compact then
-        space4px
-
-    else
-        space8px
-
-
-getPaddingYSize compact =
-    if compact then
-        space2px
-
-    else
-        space8px
-
-
-getFormGapSize compact =
-    if compact then
-        space4px
-
-    else
-        space8px
-
-
-borderNone =
-    property "border" "none"
 
 
 labelColor =
