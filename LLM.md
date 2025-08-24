@@ -62,6 +62,7 @@ When updating the database schema, you should just do `cargo sqlx database reset
 - `influx_client/assets/scss/main.scss` should use color variables defined in `influx_client/assets/scss/theme.scss` 
 - Prefer minimal CSS. Use the least code to achive the desired effect.
 - We use `rtfeldman/elm-css` for styling elm components inline, and the preferred practice is to drop and replace the default Html modules with the styled modules via, e.g. `import Html.Styled as Html exposing ...`, `import Html.Styled.Attributes as Attributes exposing ...`, `import Html.Styled.Events as Events exposing ...`, etc. There might still be legacy code that uses unstyled html, but we should adopt the new practice going forward (when possible, refactor to always use styled html).
+- `Components.CssExtra` defines extra css functions like `gap` that's missing from elm-css.
 
 ## Testing
 

@@ -135,7 +135,6 @@ type Msg
     | SharedMsg Shared.Msg.Msg
       -- Dictionary
     | DictionaryLookupMsg DictionaryLookup.Msg
-    | LookupSelectedText
 
 
 getLemmaFromSeg : SentSegV2 -> Maybe String
@@ -225,26 +224,6 @@ update msg model =
             , Effect.map DictionaryLookupMsg effect
             )
 
-        LookupSelectedText ->
-            case model.focus_ctx.selected_text of
-                Just selectedText ->
-                    if String.isEmpty (String.trim selectedText) then
-                        ( model, Effect.none )
-
-                    else
-                        let
-                            ( newDictionaryModel, effect ) =
-                                DictionaryLookup.update (DictionaryLookup.QueryChanged selectedText) model.dictionaryLookup
-                        in
-                        ( { model
-                            | dictionaryLookup = newDictionaryModel
-                          }
-                        , Effect.map DictionaryLookupMsg effect
-                        )
-
-                Nothing ->
-                    ( model, Effect.none )
-
         ApiResponded (Ok res) ->
             ( { model
                 | get_doc_api_res = Api.Success res
@@ -265,13 +244,27 @@ update msg model =
 
                 ( form_model, _ ) =
                     updateFormBasedOnSelection model.working_dict { model | focus_ctx = focus_ctx }
+
+                -- Auto-populate dictionary query with selected text
+                ( newDictionaryModel, dictEffect ) =
+                    case focus_ctx.selected_text of
+                        Just selectedText ->
+                            if not (String.isEmpty (String.trim selectedText)) then
+                                DictionaryLookup.update (DictionaryLookup.QueryChanged selectedText) model.dictionaryLookup
+
+                            else
+                                ( model.dictionaryLookup, Effect.none )
+
+                        Nothing ->
+                            ( model.dictionaryLookup, Effect.none )
             in
             ( { model
                 | focus_ctx = focus_ctx
                 , form_model = form_model
                 , lemma_editing_mode = EditingInflectedToken -- Reset to inflected when new selection
+                , dictionaryLookup = newDictionaryModel
               }
-            , Effect.none
+            , Effect.map DictionaryLookupMsg dictEffect
             )
 
         SwitchToLemmaEditing ->
@@ -339,14 +332,28 @@ update msg model =
 
                 ( form_model, _ ) =
                     updateFormBasedOnSelection model.working_dict { model | focus_ctx = focus_ctx }
+
+                -- Auto-populate dictionary query with selected text
+                ( newDictionaryModel, dictEffect ) =
+                    case focus_ctx.selected_text of
+                        Just selectedText ->
+                            if not (String.isEmpty (String.trim selectedText)) then
+                                DictionaryLookup.update (DictionaryLookup.QueryChanged selectedText) model.dictionaryLookup
+
+                            else
+                                ( model.dictionaryLookup, Effect.none )
+
+                        Nothing ->
+                            ( model.dictionaryLookup, Effect.none )
             in
             ( { model
                 | focus_ctx = focus_ctx
                 , form_model = form_model
                 , popup_state = Just { position = position, content = popupContent }
                 , lemma_editing_mode = EditingInflectedToken -- Reset to inflected when new selection
+                , dictionaryLookup = newDictionaryModel
               }
-            , Effect.none
+            , Effect.map DictionaryLookupMsg dictEffect
             )
 
         StartTts ->
@@ -972,8 +979,6 @@ view shared route model =
                         , div
                             [ class "annotated-doc-div"
                             , class "dbg-off"
-                            , style "max-height" "70vh"
-                            , style "overflow-y" "auto"
                             ]
                             (AnnotatedText.view
                                 annotatedDocViewCtx
@@ -1019,62 +1024,59 @@ view shared route model =
                 , viewAnnotationControls model.annotation_config model.showFurigana model.sidebarWidth
                 ]
 
-        translationCard =
-            Components.ListingElements.listingCardC
-                [ h3 [] [ text "Translation" ]
-                , text
-                    ("Selected text: "
-                        ++ Maybe.withDefault "" model.focus_ctx.selected_text
-                    )
-                , br [] []
-                , button
-                    [ onClick TranslateText
-                    , Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
-                    ]
-                    [ text "Translate with DeepL" ]
-                , case model.translation_result of
-                    Just translation ->
-                        div [ style "margin-top" "10px", style "padding" "10px", style "background-color" "#f0f0f0" ]
-                            [ strong [] [ text "Translation: " ]
-                            , br [] []
-                            , text translation
-                            ]
+        selectedTextCard =
+            let
+                selectedText =
+                    Maybe.withDefault "" model.focus_ctx.selected_text
 
-                    Nothing ->
-                        text ""
-                ]
-
-        ttsCard =
+                isEmpty =
+                    String.isEmpty (String.trim selectedText)
+            in
             case model.get_doc_api_res of
                 Api.Success response ->
                     Components.ListingElements.listingCardC
-                        [ h3 [] [ text "Text-to-Speech" ]
-                        , Components.TtsEmitter.view
-                            { text = Maybe.withDefault "" model.focus_ctx.selected_text
-                            , language = response.docPackage.language
-                            , onStartTts = StartTts
-                            , onStopTts = StopTts
-                            }
+                        [ h3 [] [ text "Selected Text" ]
+                        , p [] [ text ("\"" ++ selectedText ++ "\"") ]
+                        , div [ css [ displayFlex, gap space8px, flexWrap wrap ] ]
+                            [ FormElements3.buttonC
+                                { label = "Translate"
+                                , onPress =
+                                    if isEmpty then
+                                        Nothing
+
+                                    else
+                                        Just TranslateText
+                                , compact = True
+                                }
+                            , FormElements3.buttonC
+                                { label = "TTS"
+                                , onPress =
+                                    if isEmpty then
+                                        Nothing
+
+                                    else
+                                        Just StartTts
+                                , compact = True
+                                }
+                            ]
+                        , case model.translation_result of
+                            Just translation ->
+                                div [ style "margin-top" "10px", style "padding" "10px", style "background-color" "#f0f0f0" ]
+                                    [ strong [] [ text "Translation: " ]
+                                    , br [] []
+                                    , text translation
+                                    ]
+
+                            Nothing ->
+                                text ""
+                        , Html.fromUnstyled <| UnstyledHtml.map DictionaryLookupMsg (DictionaryLookup.view model.dictionaryLookup)
                         ]
 
                 _ ->
                     Components.ListingElements.listingCardC
-                        [ h3 [] [ text "Text-to-Speech" ]
+                        [ h3 [] [ text "Selected Text" ]
                         , text ""
                         ]
-
-        dictionaryCard =
-            Components.ListingElements.listingCardC
-                [ h3 [] [ text "Dictionary Lookup" ]
-                , div []
-                    [ text ("Selected text: " ++ Maybe.withDefault "" model.focus_ctx.selected_text) ]
-                , button
-                    [ onClick LookupSelectedText
-                    , Attributes.disabled (String.isEmpty (String.trim (Maybe.withDefault "" model.focus_ctx.selected_text)))
-                    ]
-                    [ text "Lookup in Dictionary" ]
-                , Html.fromUnstyled <| UnstyledHtml.map DictionaryLookupMsg (DictionaryLookup.view model.dictionaryLookup)
-                ]
 
         audioCard =
             Components.ListingElements.listingCardC
@@ -1086,47 +1088,62 @@ view shared route model =
         toastTray =
             div [ class "toast-tray" ] [ Html.fromUnstyled (Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg))) ]
 
-        leftColumn =
+        leftSidebar =
             div
                 [ css
-                    [ width (px 1000)
+                    [ width (px 300) -- Fixed sidebar width
+                    , height (vh 100)
+                    , overflowY auto
                     , paddingRight (px 16)
+                    , paddingLeft (px 16)
+                    , position fixed
+                    , left (px 48) -- Account for ribbon width
+                    , top zero
+                    , backgroundColor (hex "#FEFEFE")
+                    , borderRight3 (px 1) solid (hex "#E9E9E7")
+                    ]
+                ]
+                [ termDetailsCard
+                , annotationControlsCard
+                ]
+
+        centerColumn =
+            div
+                [ css
+                    [ width (px 800) -- Fixed center width
+                    , marginLeft (px 348) -- ribbon(48) + sidebar(300)
+                    , marginRight (px 316) -- sidebar(300) + padding(16)
+                    , minHeight (vh 100)
+                    , padding2 space0px space16px
                     ]
                 ]
                 [ documentCard ]
 
-        rightColumn =
+        rightSidebar =
             div
                 [ css
-                    [ width (px (toFloat model.sidebarWidth))
-                    , maxHeight (vh 100)
+                    [ width (px 300) -- Fixed sidebar width
+                    , height (vh 100)
                     , overflowY auto
                     , paddingLeft (px 16)
+                    , paddingRight (px 16)
+                    , position fixed
+                    , right zero
+                    , top zero
+                    , backgroundColor (hex "#FEFEFE")
+                    , borderLeft3 (px 1) solid (hex "#E9E9E7")
                     ]
                 ]
                 [ termEditorCard
-                , termDetailsCard
-                , annotationControlsCard
-                , translationCard
-                , ttsCard
-                , dictionaryCard
+                , selectedTextCard
                 , audioCard
-                ]
-
-        mainContent =
-            div
-                [ css
-                    [ displayFlex
-                    , width (px (1000 + toFloat model.sidebarWidth + 32))
-                    , minHeight (vh 100)
-                    ]
-                ]
-                [ leftColumn
-                , rightColumn
                 ]
     in
     { title = "Document view"
     , body =
-        Components.Layout.pageLayoutC { toastTray = Just toastTray }
-            [ mainContent ]
+        [ Components.Layout.ribbonDocumentLayoutC { toastTray = Just toastTray }
+            leftSidebar
+            centerColumn
+            rightSidebar
+        ]
     }

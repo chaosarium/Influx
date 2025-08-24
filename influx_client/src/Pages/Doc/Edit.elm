@@ -533,6 +533,7 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
                             else
                                 Just SubmitForm
                         , label = submitButtonText
+                        , compact = False
                         }
                     )
                 , Just
@@ -544,6 +545,7 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
                             else
                                 Just CancelEdit
                         , label = "Cancel"
+                        , compact = False
                         }
                     )
                 , case mode of
@@ -562,6 +564,7 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
 
                                     else
                                         "Delete"
+                                , compact = False
                                 }
                             )
 

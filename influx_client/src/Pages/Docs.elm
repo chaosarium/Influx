@@ -167,6 +167,7 @@ viewDocs model =
                     [ buttonC
                         { label = "Add Document"
                         , onPress = Just AddDocument
+                        , compact = False
                         }
                     ]
                 , viewDocumentsTable docPackages

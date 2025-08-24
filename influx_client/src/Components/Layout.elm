@@ -1,6 +1,7 @@
-module Components.Layout exposing (documentLayoutC, pageLayoutC)
+module Components.Layout exposing (documentLayoutC, pageLayoutC, ribbonDocumentLayoutC)
 
 import Colours exposing (..)
+import Components.RibbonNav
 import Components.Topbar
 import Css exposing (..)
 import Html.Styled as Html exposing (..)
@@ -100,3 +101,41 @@ documentLayoutC { toastTray } leftPanelContent rightPanel =
                ]
         )
     ]
+
+
+ribbonDocumentLayoutC : { toastTray : Maybe (Html msg) } -> Html msg -> Html msg -> Html msg -> Html msg
+ribbonDocumentLayoutC { toastTray } leftSidebar centerColumn rightSidebar =
+    div
+        [ css
+            [ height (vh 100)
+            , displayFlex
+            , backgroundColor (hex "#FEFEFE")
+            ]
+        ]
+        [ Components.RibbonNav.view {}
+        , div
+            [ css
+                [ displayFlex
+                , flex (int 1)
+                , marginLeft (px 48) -- Account for ribbon width
+                ]
+            ]
+            [ leftSidebar
+            , centerColumn
+            , rightSidebar
+            ]
+        , case toastTray of
+            Just toastElement ->
+                div
+                    [ css
+                        [ position fixed
+                        , left (px 56) -- Account for ribbon + some margin
+                        , bottom (px 8)
+                        , zIndex (int 9999)
+                        ]
+                    ]
+                    [ toastElement ]
+
+            Nothing ->
+                text ""
+        ]

@@ -421,17 +421,17 @@ viewTermForm form lift args =
               , buttons =
                     List.filterMap identity
                         [ if form.write_action == Create then
-                            Just (buttonC { label = "Create", onPress = Just (lift (RequestEditTerm CreateTerm form.working_term args.document_id)) })
+                            Just (buttonC { label = "Create", onPress = Just (lift (RequestEditTerm CreateTerm form.working_term args.document_id)), compact = True })
 
                           else
                             Nothing
                         , if form.write_action == Update then
-                            Just (buttonC { label = "Update", onPress = Just (lift (RequestEditTerm UpdateTerm form.working_term args.document_id)) })
+                            Just (buttonC { label = "Update", onPress = Just (lift (RequestEditTerm UpdateTerm form.working_term args.document_id)), compact = True })
 
                           else
                             Nothing
                         , if form.write_action == Update then
-                            Just (buttonC { label = "Delete", onPress = Just (lift (RequestEditTerm DeleteTerm form.working_term args.document_id)) })
+                            Just (buttonC { label = "Delete", onPress = Just (lift (RequestEditTerm DeleteTerm form.working_term args.document_id)), compact = True })
 
                           else
                             Nothing

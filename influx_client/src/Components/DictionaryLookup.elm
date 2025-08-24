@@ -149,6 +149,7 @@ view model =
             buttonC
                 { label = "Lookup"
                 , onPress = Just LookupClicked
+                , compact = False
                 }
         , viewLookupResult model.lookupResult
         ]

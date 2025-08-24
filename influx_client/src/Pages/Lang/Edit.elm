@@ -691,6 +691,7 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
 
                             else
                                 Just SubmitForm
+                        , compact = False
                         }
                     )
                 , Just
@@ -702,6 +703,7 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
 
                             else
                                 Just CancelEdit
+                        , compact = False
                         }
                     )
                 , if mode == EditMode then
@@ -714,6 +716,7 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
 
                                 else
                                     Just DeleteLanguage
+                            , compact = False
                             }
                         )
 
@@ -856,6 +859,7 @@ viewDictionarySelectorRow selectedDictPath availableDictionaries dictionariesLoa
 
                                 else
                                     Just AddSelectedDict
+                            , compact = False
                             }
                         ]
                     ]

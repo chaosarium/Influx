@@ -580,8 +580,19 @@ buttonBaseCss =
     ]
 
 
-buttonC : { label : String, onPress : Maybe msg } -> Html msg
-buttonC { label, onPress } =
+buttonC : { label : String, onPress : Maybe msg, compact : Bool } -> Html msg
+buttonC { label, onPress, compact } =
+    let
+        compactStyles =
+            if compact then
+                [ padding2 space4px space8px
+                , fontSize (rem 0.875)
+                ]
+
+            else
+                [ padding2 space8px space16px
+                ]
+    in
     button
         [ case onPress of
             Just msg ->
@@ -591,8 +602,8 @@ buttonC { label, onPress } =
                 Attributes.disabled True
         , css
             (buttonBaseCss
-                ++ [ padding2 space8px space16px
-                   , disabled
+                ++ compactStyles
+                ++ [ disabled
                         [ cursor notAllowed
                         , opacity (num 0.5)
                         ]

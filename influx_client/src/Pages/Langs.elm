@@ -134,6 +134,7 @@ viewLangs model =
                     [ buttonC
                         { label = "Add Language"
                         , onPress = Just AddLanguage
+                        , compact = False
                         }
                     ]
                 , viewLanguagesTable languages
