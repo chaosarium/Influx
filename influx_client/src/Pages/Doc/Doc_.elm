@@ -1078,11 +1078,31 @@ view shared route model =
                         , text ""
                         ]
 
-        audioCard =
-            Components.ListingElements.listingCardC
-                [ h3 [] [ text "Audio" ]
-                , audio [ id "influx-audio-player", src "http://localhost:3000/influx_app_data/test.mp3", Attributes.controls True ]
-                    []
+        audioStrip =
+            div
+                [ css
+                    [ position sticky
+                    , top (px 16)
+                    , zIndex (int 100)
+                    , marginBottom (px 16)
+                    , backgroundColor (hex "#FEFEFE")
+                    , border3 (px 1) solid (hex "#E9E9E7")
+                    , borderRadius (px 8)
+                    , padding (px 12)
+                    , boxShadow4 zero (px 2) (px 8) (rgba 0 0 0 0.1)
+                    ]
+                ]
+                [ div
+                    [ css
+                        [ displayFlex
+                        , alignItems center
+                        , gap (px 12)
+                        ]
+                    ]
+                    [ span [ css [ fontSize (Css.em 0.9), fontWeight (int 500) ] ] [ text "Audio:" ]
+                    , audio [ id "influx-audio-player", src "http://localhost:3000/influx_app_data/test.mp3", Attributes.controls True ]
+                        []
+                    ]
                 ]
 
         toastTray =
@@ -1117,7 +1137,9 @@ view shared route model =
                     , padding2 space0px space16px
                     ]
                 ]
-                [ documentCard ]
+                [ audioStrip
+                , documentCard
+                ]
 
         rightSidebar =
             div
@@ -1136,7 +1158,6 @@ view shared route model =
                 ]
                 [ termEditorCard
                 , selectedTextCard
-                , audioCard
                 ]
     in
     { title = "Document view"
