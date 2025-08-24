@@ -2,9 +2,9 @@ module Components.TtsEmitter exposing (view)
 
 import Bindings exposing (Language)
 import Effect exposing (Effect)
-import Html exposing (..)
-import Html.Attributes exposing (disabled, style)
-import Html.Events exposing (onClick)
+import Html.Styled as Html exposing (Html, button, div, text)
+import Html.Styled.Attributes exposing (disabled, style)
+import Html.Styled.Events exposing (onClick)
 
 
 {-| A stateless component that provides TTS controls for a given text and language.

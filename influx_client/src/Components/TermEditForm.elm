@@ -7,9 +7,8 @@ import Components.Styles as Styles
 import Datastore.DictContext as DictContext
 import Datastore.FocusContext as FocusContext
 import Effect exposing (Effect)
-import Html exposing (Html)
-import Html.Styled
-import Html.Styled.Attributes exposing (style)
+import Html.Styled as Html exposing (Html, div, text)
+import Html.Styled.Attributes as Attributes exposing (style)
 import Http
 import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
 
@@ -403,54 +402,53 @@ viewTermForm form lift args =
                     , notes = phrase.notes
                     }
     in
-    Html.Styled.toUnstyled <|
-        formC
-            { sections =
-                [ { title = Just ("Editing " ++ form_data.token_or_phrase)
-                  , rows =
-                        List.filterMap identity
-                            [ Just (inputC { label = "Orthography", toMsg = Nothing, value_ = form_data.orthography, placeholder = "", compact = True })
-                            , Just (inputC { label = "Definition", toMsg = Just (lift << InputChanged << UpdateDefinitionInput), value_ = form_data.definition, placeholder = "Definition...", compact = True })
-                            , case form_data.phonetic of
-                                Just p ->
-                                    Just (inputC { label = "Phonetic", toMsg = Just (lift << InputChanged << UpdatePhoneticInput), value_ = p, placeholder = "Phonetic...", compact = True })
+    formC
+        { sections =
+            [ { title = Just ("Editing " ++ form_data.token_or_phrase)
+              , rows =
+                    List.filterMap identity
+                        [ Just (inputC { label = "Orthography", toMsg = Nothing, value_ = form_data.orthography, placeholder = "", compact = True })
+                        , Just (inputC { label = "Definition", toMsg = Just (lift << InputChanged << UpdateDefinitionInput), value_ = form_data.definition, placeholder = "Definition...", compact = True })
+                        , case form_data.phonetic of
+                            Just p ->
+                                Just (inputC { label = "Phonetic", toMsg = Just (lift << InputChanged << UpdatePhoneticInput), value_ = p, placeholder = "Phonetic...", compact = True })
 
-                                Nothing ->
-                                    Nothing
-                            , Just (termStatusSelectC { label = "Status", toMsg = lift << InputChanged << UpdateStatusInput, selectedStatus = form_data.status, compact = True })
-                            , Just (textareaC { label = "Notes", toMsg = Just (lift << InputChanged << UpdateNotesInput), value_ = form_data.notes, placeholder = "Notes...", minHeight = 80, compact = True })
-                            ]
-                  , buttons =
-                        List.filterMap identity
-                            [ if form.write_action == Create then
-                                Just (buttonC { label = "Create", onPress = Just (lift (RequestEditTerm CreateTerm form.working_term args.document_id)) })
-
-                              else
+                            Nothing ->
                                 Nothing
-                            , if form.write_action == Update then
-                                Just (buttonC { label = "Update", onPress = Just (lift (RequestEditTerm UpdateTerm form.working_term args.document_id)) })
+                        , Just (termStatusSelectC { label = "Status", toMsg = lift << InputChanged << UpdateStatusInput, selectedStatus = form_data.status, compact = True })
+                        , Just (textareaC { label = "Notes", toMsg = Just (lift << InputChanged << UpdateNotesInput), value_ = form_data.notes, placeholder = "Notes...", minHeight = 80, compact = True })
+                        ]
+              , buttons =
+                    List.filterMap identity
+                        [ if form.write_action == Create then
+                            Just (buttonC { label = "Create", onPress = Just (lift (RequestEditTerm CreateTerm form.working_term args.document_id)) })
 
-                              else
-                                Nothing
-                            , if form.write_action == Update then
-                                Just (buttonC { label = "Delete", onPress = Just (lift (RequestEditTerm DeleteTerm form.working_term args.document_id)) })
+                          else
+                            Nothing
+                        , if form.write_action == Update then
+                            Just (buttonC { label = "Update", onPress = Just (lift (RequestEditTerm UpdateTerm form.working_term args.document_id)) })
 
-                              else
-                                Nothing
-                            ]
-                  }
-                ]
-            , buttons = []
-            , status =
-                [ if form.working_term /= form.orig_term then
-                    Html.Styled.div [ style "color" "orange", style "margin-top" "8px" ]
-                        [ Html.Styled.text "You have unsaved changes." ]
+                          else
+                            Nothing
+                        , if form.write_action == Update then
+                            Just (buttonC { label = "Delete", onPress = Just (lift (RequestEditTerm DeleteTerm form.working_term args.document_id)) })
 
-                  else
-                    Html.Styled.text ""
-                ]
-            , compact = True
-            }
+                          else
+                            Nothing
+                        ]
+              }
+            ]
+        , buttons = []
+        , status =
+            [ if form.working_term /= form.orig_term then
+                Html.div [ style "color" "orange", style "margin-top" "8px" ]
+                    [ Html.text "You have unsaved changes." ]
+
+              else
+                Html.text ""
+            ]
+        , compact = True
+        }
 
 
 view :
@@ -467,4 +465,4 @@ view model lift { dict, document_id } =
             viewTermForm term_form lift { dict = dict, document_id = document_id }
 
         _ ->
-            Html.div [] [ Html.text "No segment selected for editing." ]
+            div [] [ text "No segment selected for editing." ]

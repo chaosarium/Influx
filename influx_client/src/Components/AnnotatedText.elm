@@ -6,12 +6,11 @@ import Datastore.DictContext
 import Datastore.DocContext
 import Datastore.FocusContext as FocusContext
 import Dict
-import Html exposing (Html, div, span)
-import Html.Attributes exposing (class, style)
-import Html.Attributes.Extra
-import Html.Events exposing (onDoubleClick, onMouseDown, onMouseEnter, onMouseLeave, onMouseUp)
+import Html.Styled as Html exposing (Attribute, Html, div, span, text)
+import Html.Styled.Attributes as Attributes exposing (class, style)
+import Html.Styled.Events as Events exposing (onDoubleClick, onMouseDown, onMouseEnter, onMouseLeave, onMouseUp)
 import Json.Decode as Decode
-import Utils exposing (rb, rt, rtc, ruby, unreachableHtml)
+import Utils exposing (attributeIf, attributeIfNot, classIf, rb, rt, rtc, ruby, unreachableHtml)
 import Utils.ModifierState as ModifierState
 
 
@@ -64,7 +63,7 @@ view args doc =
         popup =
             case args.popup_state of
                 Nothing ->
-                    Html.text ""
+                    text ""
 
                 Just { position, content } ->
                     Popup.view
@@ -81,23 +80,23 @@ createPopupContent content =
     case content of
         TokenPopup token seg ->
             [ div [ class "popup-field" ]
-                [ div [ class "popup-label" ] [ Html.text "Word" ]
-                , div [ class "popup-value" ] [ Html.text token.orthography ]
+                [ div [ class "popup-label" ] [ text "Word" ]
+                , div [ class "popup-value" ] [ text token.orthography ]
                 ]
             , div [ class "popup-field" ]
-                [ div [ class "popup-label" ] [ Html.text "Definition" ]
-                , div [ class "popup-value popup-definition" ] [ Html.text token.definition ]
+                [ div [ class "popup-label" ] [ text "Definition" ]
+                , div [ class "popup-value popup-definition" ] [ text token.definition ]
                 ]
             , div [ class "popup-field" ]
-                [ div [ class "popup-label" ] [ Html.text "Phonetic" ]
-                , div [ class "popup-value" ] [ Html.text token.phonetic ]
+                [ div [ class "popup-label" ] [ text "Phonetic" ]
+                , div [ class "popup-value" ] [ text token.phonetic ]
                 ]
             ]
                 ++ (case seg.attributes.lemma of
                         Just lemma ->
                             [ div [ class "popup-field" ]
-                                [ div [ class "popup-label" ] [ Html.text "Lemma" ]
-                                , div [ class "popup-value popup-lemma" ] [ Html.text lemma ]
+                                [ div [ class "popup-label" ] [ text "Lemma" ]
+                                , div [ class "popup-value popup-lemma" ] [ text lemma ]
                                 ]
                             ]
 
@@ -107,8 +106,8 @@ createPopupContent content =
                 ++ (case seg.attributes.upos of
                         Just pos ->
                             [ div [ class "popup-field" ]
-                                [ div [ class "popup-label" ] [ Html.text "Part of Speech" ]
-                                , div [ class "popup-value popup-pos" ] [ Html.text pos ]
+                                [ div [ class "popup-label" ] [ text "Part of Speech" ]
+                                , div [ class "popup-value popup-pos" ] [ text pos ]
                                 ]
                             ]
 
@@ -118,24 +117,19 @@ createPopupContent content =
 
         PhrasePopup phrase seg ->
             [ div [ class "popup-field" ]
-                [ div [ class "popup-label" ] [ Html.text "Phrase" ]
-                , div [ class "popup-value" ] [ Html.text (String.join " " phrase.orthographySeq) ]
+                [ div [ class "popup-label" ] [ text "Phrase" ]
+                , div [ class "popup-value" ] [ text (String.join " " phrase.orthographySeq) ]
                 ]
             , div [ class "popup-field" ]
-                [ div [ class "popup-label" ] [ Html.text "Definition" ]
-                , div [ class "popup-value popup-definition" ] [ Html.text phrase.definition ]
+                [ div [ class "popup-label" ] [ text "Definition" ]
+                , div [ class "popup-value popup-definition" ] [ text phrase.definition ]
                 ]
             ]
 
 
-
--- Combined mouse enter handler that handles both position-based popup and focus selection
--- We need to create a message that can handle both the popup positioning and focus selection
-
-
-onMouseEnterWithPositionAndFocus : (Float -> Float -> FocusContext.Msg -> msg) -> FocusContext.Msg -> Html.Attribute msg
+onMouseEnterWithPositionAndFocus : (Float -> Float -> FocusContext.Msg -> msg) -> FocusContext.Msg -> Attribute msg
 onMouseEnterWithPositionAndFocus combinedMsg focusMsg =
-    Html.Events.on "mouseenter"
+    Events.on "mouseenter"
         (Decode.map2 (\x y -> combinedMsg x y focusMsg)
             (Decode.at [ "target", "offsetLeft" ] Decode.float)
             (Decode.map2 (+)
@@ -146,24 +140,24 @@ onMouseEnterWithPositionAndFocus combinedMsg focusMsg =
 
 
 getTokenContent : Bool -> Dict.Dict String String -> String -> List (Html msg)
-getTokenContent showFurigana miscAttrs text =
+getTokenContent showFurigana miscAttrs textStr =
     if showFurigana then
         case Dict.get "furigana_ruby" miscAttrs of
             Just furiganaHtml ->
                 Utils.htmlOfString furiganaHtml
 
             Nothing ->
-                [ Html.text text ]
+                [ text textStr ]
 
     else
-        [ Html.text text ]
+        [ text textStr ]
 
 
-doubleRubyC : String -> List (Html.Attribute msg) -> List (Html msg) -> String -> Html msg
+doubleRubyC : String -> List (Attribute msg) -> List (Html msg) -> String -> Html msg
 doubleRubyC topText mainAttrs mainContent bottomText =
     span
-        ([ Html.Attributes.attribute "data-top" topText
-         , Html.Attributes.attribute "data-bottom" bottomText
+        ([ Attributes.attribute "data-top" topText
+         , Attributes.attribute "data-bottom" bottomText
          , class "double-ruby tkn-auto-width"
          ]
             ++ mainAttrs
@@ -177,7 +171,7 @@ viewDocumentSegment :
     -> Html msg
 viewDocumentSegment args segment =
     if not (args.doc_seg_display_predicate segment) then
-        Utils.htmlEmpty
+        text ""
 
     else
         case segment.inner of
@@ -186,7 +180,7 @@ viewDocumentSegment args segment =
                     (List.filterMap (viewSentenceSegment args) segments)
 
             DocumentWhitespace ->
-                span [ class "document-whitespace-span" ] [ Html.text segment.text ]
+                span [ class "document-whitespace-span" ] [ text segment.text ]
 
 
 tokenDictLookup : Datastore.DictContext.T -> String -> Maybe Token
@@ -250,27 +244,28 @@ viewPhraseSubsegment :
 viewPhraseSubsegment args seg =
     let
         attrs =
-            [ Utils.attributeIf args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
-            , Utils.attributeIf args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
-            , Utils.attributeIf args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
-            , Utils.classIf (args.focus_predicate seg) "tkn-focus"
+            [ attributeIf args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
+            , attributeIf args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
+            , attributeIf args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+            , classIf (args.focus_predicate seg) "tkn-focus"
             ]
     in
     case seg.inner of
         TokenSeg _ ->
-            span (attrs ++ [ class "single-token-span" ]) [ Html.text seg.text ]
+            span (attrs ++ [ class "single-token-span" ]) [ text seg.text ]
 
         WhitespaceSeg ->
-            span (attrs ++ [ class "sentence-whitespace-span" ]) [ Html.text seg.text ]
+            span (attrs ++ [ class "sentence-whitespace-span" ]) [ text seg.text ]
 
         PunctuationSeg ->
-            span (attrs ++ [ class "sentence-punctuation-span" ]) [ Html.text seg.text ]
+            span (attrs ++ [ class "sentence-punctuation-span" ]) [ text seg.text ]
 
         PhraseSeg _ ->
-            Utils.unreachableHtml "phrase within phrase???"
+            -- This should not happen normally
+            unreachableHtml "phrase within phrase???"
 
 
-tokenStatusToClass : TokenStatus -> Html.Attribute msg
+tokenStatusToClass : TokenStatus -> Attribute msg
 tokenStatusToClass status =
     case status of
         Unmarked ->
@@ -301,19 +296,19 @@ tokenStatusToClass status =
 {-| When token missing from dictionary context, show error message.
 Should not normally happen.
 -}
-viewUnregisteredTkn : List (Html.Attribute msg) -> String -> Html msg
-viewUnregisteredTkn attrs text =
-    span attrs [ Html.text (text ++ " [ERR: NO STATUS]") ]
+viewUnregisteredTkn : List (Attribute msg) -> String -> Html msg
+viewUnregisteredTkn attrs textStr =
+    span attrs [ text (textStr ++ " [ERR: NO STATUS]") ]
 
 
 viewRegisteredTkn :
     Args msg
-    -> List (Html.Attribute msg)
+    -> List (Attribute msg)
     -> String
     -> Token
     -> SentSegV2
     -> Html msg
-viewRegisteredTkn args attrs text tkn seg =
+viewRegisteredTkn args attrs textStr tkn seg =
     let
         topText =
             getAnnotationText args.annotation_config.topAnnotation (Just tkn) Nothing seg
@@ -333,16 +328,16 @@ viewRegisteredTkn args attrs text tkn seg =
                     (FocusContext.SelectMouseEnter seg)
                , onMouseLeave args.on_hover_end
                , class "clickable-tkn-span"
-               , Utils.classIf (args.focus_predicate seg) "tkn-focus"
+               , classIf (args.focus_predicate seg) "tkn-focus"
                ]
         )
-        (getTokenContent args.showFurigana seg.attributes.misc text)
+        (getTokenContent args.showFurigana seg.attributes.misc textStr)
         bottomText
 
 
 viewRegisteredPhrase :
     Args msg
-    -> List (Html.Attribute msg)
+    -> List (Attribute msg)
     -> Phrase
     -> SentSegV2
     -> List SentSegV2
@@ -358,17 +353,17 @@ viewRegisteredPhrase args attrs phrase seg components =
     doubleRubyC
         topText
         (attrs
-            ++ [ Utils.attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
-               , Utils.attributeIfNot args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
-               , Utils.attributeIfNot args.modifier_state.alt <| onDoubleClick (args.on_token_double_click seg)
-               , Utils.attributeIfNot args.modifier_state.alt <|
+            ++ [ attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
+               , attributeIfNot args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+               , attributeIfNot args.modifier_state.alt <| onDoubleClick (args.on_token_double_click seg)
+               , attributeIfNot args.modifier_state.alt <|
                     onMouseEnterWithPositionAndFocus
                         (\x y focusMsg -> args.on_mouse_enter_with_position x y focusMsg (PhrasePopup phrase seg))
                         (FocusContext.SelectMouseEnter seg)
                , onMouseLeave args.on_hover_end
                , tokenStatusToClass phrase.status
                , class "clickable-tkn-span"
-               , Utils.classIf (args.focus_predicate seg) "tkn-focus"
+               , classIf (args.focus_predicate seg) "tkn-focus"
                ]
         )
         (if args.showFurigana then
@@ -413,16 +408,16 @@ viewSentenceSegment args seg =
                             viewRegisteredPhrase args [ class "phrase-span" ] phrase seg components
 
                 WhitespaceSeg ->
-                    span [ class "sentence-whitespace-span", Utils.classIf (args.focus_predicate seg) "tkn-focus" ] [ Html.text seg.text ]
+                    span [ class "sentence-whitespace-span", classIf (args.focus_predicate seg) "tkn-focus" ] [ text seg.text ]
 
                 PunctuationSeg ->
                     span
                         [ class "sentence-punctuation-span"
-                        , Utils.classIf (args.focus_predicate seg) "tkn-focus"
+                        , classIf (args.focus_predicate seg) "tkn-focus"
                         , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
                         , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
                         , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
                         , class "clickable-tkn-span"
                         ]
-                        [ Html.text seg.text ]
+                        [ text seg.text ]
             )

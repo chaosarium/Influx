@@ -1,11 +1,9 @@
 module Utils exposing (..)
 
-import Html
-import Html.Attributes
-import Html.Attributes.Extra
-import Html.Extra
 import Html.Parser
 import Html.Parser.Util
+import Html.Styled as Html exposing (Attribute, Html)
+import Html.Styled.Attributes as Attributes
 import Url
 
 
@@ -24,15 +22,15 @@ percentEncode s =
     Url.percentEncode s
 
 
-unreachableHtml : String -> Html.Html msg
+unreachableHtml : String -> Html msg
 unreachableHtml s =
-    Html.div [ Html.Attributes.class "dbg-unreachable" ]
+    Html.div [ Attributes.class "dbg-unreachable" ]
         [ Html.text ("UNREACHABLE: " ++ s) ]
 
 
-todoHtml : String -> Html.Html msg
+todoHtml : String -> Html msg
 todoHtml s =
-    Html.div [ Html.Attributes.class "dbg-todo" ]
+    Html.div [ Attributes.class "dbg-todo" ]
         [ Html.text ("TODO: " ++ s) ]
 
 
@@ -56,9 +54,9 @@ htmlEmpty =
     Html.text ""
 
 
-attributeEmpty : Html.Attribute msg
+attributeEmpty : Attribute msg
 attributeEmpty =
-    Html.Attributes.Extra.empty
+    Attributes.attribute "data-empty" ""
 
 
 maybeIsJust : Maybe a -> Bool
@@ -81,33 +79,41 @@ maybeSelect maybe justRet nothingRet =
             nothingRet
 
 
-attributeIf : Bool -> Html.Attribute msg -> Html.Attribute msg
-attributeIf =
-    Html.Attributes.Extra.attributeIf
+attributeIf : Bool -> Attribute msg -> Attribute msg
+attributeIf cond attr =
+    if cond then
+        attr
+
+    else
+        attributeEmpty
 
 
-attributeIfNot : Bool -> Html.Attribute msg -> Html.Attribute msg
+attributeIfNot : Bool -> Attribute msg -> Attribute msg
 attributeIfNot cond attr =
     attributeIf (not cond) attr
 
 
-classIf : Bool -> String -> Html.Attribute msg
+classIf : Bool -> String -> Attribute msg
 classIf cond class =
     if cond then
-        Html.Attributes.class class
+        Attributes.class class
 
     else
-        Html.Attributes.Extra.empty
+        attributeEmpty
 
 
-classIfNot : Bool -> String -> Html.Attribute msg
+classIfNot : Bool -> String -> Attribute msg
 classIfNot cond attr =
     classIf (not cond) attr
 
 
-htmlIf : Bool -> Html.Html msg -> Html.Html msg
+htmlIf : Bool -> Html msg -> Html msg
 htmlIf cond html =
-    Html.Extra.viewIf cond html
+    if cond then
+        html
+
+    else
+        Html.text ""
 
 
 
@@ -134,11 +140,12 @@ dbgToString value =
     "debug not enabled"
 
 
-htmlOfString : String -> List (Html.Html msg)
+htmlOfString : String -> List (Html msg)
 htmlOfString t =
     case Html.Parser.run t of
         Ok nodes ->
             Html.Parser.Util.toVirtualDom nodes
+                |> List.map Html.fromUnstyled
 
         Err _ ->
             [ unreachableHtml ("failed to parse" ++ t) ]

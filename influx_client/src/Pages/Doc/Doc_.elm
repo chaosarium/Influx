@@ -733,10 +733,10 @@ viewLemmaDisplay seg editingMode dict annotation_config showFurigana =
                     }
 
                 lemmaView =
-                    Maybe.withDefault (text lemma) (Maybe.map Html.fromUnstyled (AnnotatedText.viewSentenceSegment lemmaViewCtx lemmaSegment))
+                    Maybe.withDefault (text lemma) (AnnotatedText.viewSentenceSegment lemmaViewCtx lemmaSegment)
 
                 inflectedView =
-                    Maybe.withDefault (text seg.text) (Maybe.map Html.fromUnstyled (AnnotatedText.viewSentenceSegment inflectedViewCtx inflectedSegment))
+                    Maybe.withDefault (text seg.text) (AnnotatedText.viewSentenceSegment inflectedViewCtx inflectedSegment)
             in
             div []
                 [ span []
@@ -975,28 +975,26 @@ view shared route model =
                             , style "max-height" "70vh"
                             , style "overflow-y" "auto"
                             ]
-                            (List.map Html.fromUnstyled <|
-                                AnnotatedText.view
-                                    annotatedDocViewCtx
-                                    model.working_doc
+                            (AnnotatedText.view
+                                annotatedDocViewCtx
+                                model.working_doc
                             )
                         ]
 
         termEditorCard =
             Components.ListingElements.listingCardC
                 [ h3 [] [ text "Term Editor" ]
-                , Html.fromUnstyled <|
-                    TermEditForm.view model.form_model
-                        TermEditorEvent
-                        { dict = model.working_dict
-                        , document_id =
-                            case String.toInt route.params.doc of
-                                Just id ->
-                                    Just (Bindings.SerialId id)
+                , TermEditForm.view model.form_model
+                    TermEditorEvent
+                    { dict = model.working_dict
+                    , document_id =
+                        case String.toInt route.params.doc of
+                            Just id ->
+                                Just (Bindings.SerialId id)
 
-                                Nothing ->
-                                    Nothing
-                        }
+                            Nothing ->
+                                Nothing
+                    }
                 ]
 
         termDetailsCard =
@@ -1051,13 +1049,12 @@ view shared route model =
                 Api.Success response ->
                     Components.ListingElements.listingCardC
                         [ h3 [] [ text "Text-to-Speech" ]
-                        , Html.fromUnstyled <|
-                            Components.TtsEmitter.view
-                                { text = Maybe.withDefault "" model.focus_ctx.selected_text
-                                , language = response.docPackage.language
-                                , onStartTts = StartTts
-                                , onStopTts = StopTts
-                                }
+                        , Components.TtsEmitter.view
+                            { text = Maybe.withDefault "" model.focus_ctx.selected_text
+                            , language = response.docPackage.language
+                            , onStartTts = StartTts
+                            , onStopTts = StopTts
+                            }
                         ]
 
                 _ ->

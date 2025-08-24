@@ -57,10 +57,11 @@ When updating the database schema, you should just do `cargo sqlx database reset
 - **Elm:**
   - Component functions end in uppercase `C`, e.g. `textboxC` for some textbox component used in HTML forms.
 
-## CSS Guidelines
+## Elm and CSS Guidelines
 
 - `influx_client/assets/scss/main.scss` should use color variables defined in `influx_client/assets/scss/theme.scss` 
 - Prefer minimal CSS. Use the least code to achive the desired effect.
+- We use `rtfeldman/elm-css` for styling elm components inline, and the preferred practice is to drop and replace the default Html modules with the styled modules via, e.g. `import Html.Styled as Html exposing ...`, `import Html.Styled.Attributes as Attributes exposing ...`, `import Html.Styled.Events as Events exposing ...`, etc. There might still be legacy code that uses unstyled html, but we should adopt the new practice going forward (when possible, refactor to always use styled html).
 
 ## Testing
 

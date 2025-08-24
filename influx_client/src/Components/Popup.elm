@@ -1,7 +1,7 @@
 module Components.Popup exposing (Config, view)
 
-import Html exposing (Html, div)
-import Html.Attributes exposing (class, style)
+import Html.Styled as Html exposing (Html, div, text)
+import Html.Styled.Attributes as Attributes exposing (class, style)
 
 
 {-| Configuration for the popup component
@@ -32,4 +32,4 @@ view config =
             ]
 
     else
-        Html.text ""
+        text ""
