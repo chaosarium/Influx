@@ -1,23 +1,8 @@
-module Components.Common exposing
-    ( getFormGapSize
-    , getGapSize
-    , getKeyValHeight
-    , getPaddingXSize
-    , getPaddingYSize
-    , inputKeyValHeight
-    , inputKeyValHeightCompact
-    , space0px
-    , space16px
-    , space2px
-    , space32px
-    , space4px
-    , space64px
-    , space8px
-    )
+module Components.Common exposing (..)
 
 import Css exposing (..)
 import Html.Styled as Html exposing (..)
-import Html.Styled.Attributes exposing (..)
+import Html.Styled.Attributes as Attributes exposing (..)
 
 
 space0px =
@@ -46,6 +31,14 @@ space32px =
 
 space64px =
     px 64
+
+
+bascShadow =
+    Css.property "box-shadow" "0px 0px 8px 0px var(--gray-a2)"
+
+
+
+-- form stuff
 
 
 inputKeyValHeight =

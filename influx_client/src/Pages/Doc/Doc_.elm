@@ -68,7 +68,6 @@ type alias Model =
     , focus_ctx : FocusContext.T
     , form_model : TermEditForm.Model
     , translation_result : Maybe String
-    , popup_state : Maybe { position : { x : Float, y : Float }, content : AnnotatedText.PopupContent }
     , annotation_config : AnnotatedText.AnnotationConfig
     , showFurigana : Bool
     , lemma_editing_mode : LemmaEditingMode
@@ -85,7 +84,6 @@ init { documentId } () =
       , focus_ctx = FocusContext.new
       , form_model = TermEditForm.empty
       , translation_result = Nothing
-      , popup_state = Nothing
       , annotation_config = { topAnnotation = AnnotatedText.Definition, bottomAnnotation = AnnotatedText.Phonetic }
       , showFurigana = False
       , lemma_editing_mode = EditingInflectedToken
@@ -106,7 +104,6 @@ type Msg
       -- Mouse selection...
     | SelectionMouseEvent FocusContext.Msg -- will update focus context
     | NoopMouseEvent FocusContext.Msg -- for mouse events that don't change the focus context
-    | CombinedMouseEnter { x : Float, y : Float } FocusContext.Msg AnnotatedText.PopupContent -- handles both focus and popup
       -- Term editor...
     | TermEditorEvent TermEditForm.Msg
       -- Lemma editing selection...
@@ -121,9 +118,6 @@ type Msg
       -- Translation...
     | TranslateText
     | TranslationReceived (Result Http.Error Api.Translate.TranslateResponse)
-      -- Popup...
-    | ShowPopup { x : Float, y : Float } AnnotatedText.PopupContent
-    | HidePopup
       -- Annotation configuration...
     | SetTopAnnotation AnnotatedText.AnnotationOption
     | SetBottomAnnotation AnnotatedText.AnnotationOption
@@ -325,37 +319,6 @@ update msg model =
         NoopMouseEvent _ ->
             ( model, Effect.none )
 
-        CombinedMouseEnter position focusMsg popupContent ->
-            let
-                focus_ctx =
-                    FocusContext.update model.working_doc focusMsg model.focus_ctx
-
-                ( form_model, _ ) =
-                    updateFormBasedOnSelection model.working_dict { model | focus_ctx = focus_ctx }
-
-                -- Auto-populate dictionary query with selected text
-                ( newDictionaryModel, dictEffect ) =
-                    case focus_ctx.selected_text of
-                        Just selectedText ->
-                            if not (String.isEmpty (String.trim selectedText)) then
-                                DictionaryLookup.update (DictionaryLookup.QueryChanged selectedText) model.dictionaryLookup
-
-                            else
-                                ( model.dictionaryLookup, Effect.none )
-
-                        Nothing ->
-                            ( model.dictionaryLookup, Effect.none )
-            in
-            ( { model
-                | focus_ctx = focus_ctx
-                , form_model = form_model
-                , popup_state = Just { position = position, content = popupContent }
-                , lemma_editing_mode = EditingInflectedToken -- Reset to inflected when new selection
-                , dictionaryLookup = newDictionaryModel
-              }
-            , Effect.map DictionaryLookupMsg dictEffect
-            )
-
         StartTts ->
             case model.get_doc_api_res of
                 Api.Success response ->
@@ -453,16 +416,6 @@ update msg model =
 
         TranslationReceived (Err httpError) ->
             ( { model | translation_result = Just ("Translation error: " ++ Api.stringOfHttpErrMsg httpError) }
-            , Effect.none
-            )
-
-        ShowPopup position content ->
-            ( { model | popup_state = Just { position = position, content = content } }
-            , Effect.none
-            )
-
-        HidePopup ->
-            ( { model | popup_state = Nothing }
             , Effect.none
             )
 
@@ -725,11 +678,7 @@ viewLemmaDisplay seg editingMode dict annotation_config showFurigana =
                     , focus_predicate = \_ -> editingMode == EditingLemma
                     , seg_display_predicate = \_ -> True
                     , doc_seg_display_predicate = \_ -> True
-                    , popup_state = Nothing
-                    , on_hover_start = \_ _ -> HidePopup
-                    , on_hover_end = HidePopup
-                    , on_mouse_enter_with_position = \_ _ _ _ -> HidePopup
-                    , on_token_double_click = \_ -> HidePopup
+                    , on_token_double_click = \_ -> NoopMouseEvent (FocusContext.SelectMouseUp ())
                     , annotation_config = annotation_config
                     , showFurigana = showFurigana
                     }
@@ -942,12 +891,6 @@ view shared route model =
                         FocusContext.isSentSegInSlice slice
             , seg_display_predicate = \_ -> True
             , doc_seg_display_predicate = \_ -> True
-            , popup_state = model.popup_state
-            , on_hover_start = ShowPopup
-            , on_hover_end = HidePopup
-            , on_mouse_enter_with_position =
-                \x y focusMsg popupContent ->
-                    CombinedMouseEnter { x = x, y = y } focusMsg popupContent
             , on_token_double_click = AudioJumpToToken
             , annotation_config = model.annotation_config
             , showFurigana = model.showFurigana

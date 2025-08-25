@@ -28,20 +28,12 @@ import Html.Styled.Events as Events exposing (onClick, onInput)
 import Json.Decode as Decode
 
 
-red =
-    rgb 255 0 0
-
-
 formLabelWidth =
     px 200
 
 
 labelColor =
     Colours.colorCss Colours.gray10
-
-
-bascShadow =
-    property "box-shadow" "0px 0px 8px 0px var(--gray-a2)"
 
 
 inputKeyVal compact label inputEl =

@@ -37,72 +37,6 @@ h3 {
 
 // === SIDEBAR ===
 
-// Resizable Sidebar Component Styles
-.resizable-sidebar {
-    min-width: 200px;
-    max-width: 800px;
-    background-color: $gray-2;
-    border-left: 1px solid $gray-6;
-    position: sticky;
-    top: 0;
-    bottom: 0;
-    min-height: 60vh;
-    max-height: 100vh;
-}
-
-.resizable-sidebar--collapsed {
-    width: 30px;
-    background-color: $gray-2;
-    border-left: 1px solid $gray-6;
-    display: flex;
-    align-items: flex-start;
-    height: 100%;
-}
-
-
-.resizable-sidebar__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px;
-    border-bottom: 1px solid $gray-6;
-    background-color: $gray-3;
-    flex-shrink: 0;
-}
-
-
-.resizable-sidebar__sections {
-    flex: 1;
-    overflow-y: auto;
-}
-
-.resizable-sidebar__resize-handle {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 2px;
-    height: 100%;
-    background-color: $colorHover;
-    cursor: col-resize;
-}
-
-.resizable-sidebar__content {
-    padding: 0 12px;
-    padding: 0;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-
-}
-
-// .resizable-sidebar__header {
-//     display: flex;
-//     justify-content: space-between;
-//     align-items: center;
-//     margin-bottom: 12px;
-//     padding-bottom: 8px;
-//     border-bottom: 1px solid $gray-6;
-// }
 
 
 
@@ -297,95 +231,16 @@ span.clickable-tkn-span {
     display: none;
 }
 
-// === HOVER DICT ===
+// === POPOVER ===
 
-.popup-container {
-    pointer-events: none;
-    /* Allow clicks to pass through the container */
-    // background-color: white;
-    // border: #999;
-}
-
-.popup-content {
-    background: $background;
-    border: 1px solid $gray-6;
-    border-radius: $border-radius;
-    box-shadow: $card-ish-shadow;
-    padding: 8px 12px;
-    max-width: 300px;
-    font-size: 14px;
-    line-height: 1.4;
-    pointer-events: auto;
-    /* Re-enable pointer events for the content */
-}
-
-.popup-content .popup-field {
-    margin-bottom: 4px;
-}
-
-.popup-content .popup-field:last-child {
-    margin-bottom: 0;
-}
-
-.popup-content .popup-label {
-    font-weight: bold;
-    color: $gray-10;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.popup-content .popup-value {
-    color: $foreground;
-    margin-top: 2px;
-}
-
-.popup-content .popup-definition {
-    color: $violet-10;
-    font-weight: 500;
-}
-
-.popup-content .popup-pos {
-    color: $amber-10;
-    font-style: italic;
-}
-
-.popup-content .popup-lemma {
-    color: $green-10;
-}
-
-// === Collapsible Section ===
-
-.collapsible-section {
-    margin-bottom: 0;
-}
-
-.collapsible-section__header {
-    // background-color: $gray-3;
-    padding: 8px 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid $gray-5;
-}
-
-.collapsible-section__header--expanded {
-    border-bottom: 1px solid $gray-5;
-}
-
-.collapsible-section__title {
-    // font-weight: bold;
-    // font-size: 14px;
-}
-
-.collapsible-section__toggle-icon {
-    // font-size: 12px;
-}
-
-.collapsible-section__content {
-    padding: 16px;
-    // border-bottom: 1px solid $gray-5;
+.popover-container:hover .popover-content,
+.popover-container:hover .popover-bridge,
+.popover-content:hover,
+.popover-bridge:hover + .popover-content {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: translateY(0) !important;
 }
 
 // === HTML CONTENT PLACEHOLDERS ===

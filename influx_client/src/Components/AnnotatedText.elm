@@ -1,14 +1,14 @@
-module Components.AnnotatedText exposing (AnnotationConfig, AnnotationOption(..), PopupContent(..), view, viewRegisteredPhrase, viewSentenceSegment)
+module Components.AnnotatedText exposing (AnnotationConfig, AnnotationOption(..), view, viewRegisteredPhrase, viewSentenceSegment)
 
 import Bindings exposing (DocSegV2, DocSegVariants(..), Phrase, SentSegV2, SentSegVariants(..), Token, TokenStatus(..))
-import Components.Popup as Popup
+import Components.Popover as Popover
 import Datastore.DictContext
 import Datastore.DocContext
 import Datastore.FocusContext as FocusContext
 import Dict
 import Html.Styled as Html exposing (Attribute, Html, div, span, text)
 import Html.Styled.Attributes as Attributes exposing (class, style)
-import Html.Styled.Events as Events exposing (onDoubleClick, onMouseDown, onMouseEnter, onMouseLeave, onMouseUp)
+import Html.Styled.Events as Events exposing (onDoubleClick, onMouseDown, onMouseEnter, onMouseUp)
 import Json.Decode as Decode
 import Utils exposing (attributeIf, attributeIfNot, classIf, rb, rt, rtc, ruby, unreachableHtml)
 import Utils.ModifierState as ModifierState
@@ -36,19 +36,10 @@ type alias Args msg =
     , focus_predicate : SentSegV2 -> Bool
     , seg_display_predicate : SentSegV2 -> Bool
     , doc_seg_display_predicate : DocSegV2 -> Bool
-    , popup_state : Maybe { position : { x : Float, y : Float }, content : PopupContent }
-    , on_hover_start : { x : Float, y : Float } -> PopupContent -> msg
-    , on_hover_end : msg
-    , on_mouse_enter_with_position : Float -> Float -> FocusContext.Msg -> PopupContent -> msg
     , on_token_double_click : SentSegV2 -> msg
     , annotation_config : AnnotationConfig
     , showFurigana : Bool
     }
-
-
-type PopupContent
-    = TokenPopup Token SentSegV2
-    | PhrasePopup Phrase SentSegV2
 
 
 view :
@@ -56,87 +47,7 @@ view :
     -> Datastore.DocContext.T
     -> List (Html msg)
 view args doc =
-    let
-        documentSegments =
-            List.map (viewDocumentSegment args) doc.segments
-
-        popup =
-            case args.popup_state of
-                Nothing ->
-                    text ""
-
-                Just { position, content } ->
-                    Popup.view
-                        { isVisible = True
-                        , position = position
-                        , content = createPopupContent content
-                        }
-    in
-    documentSegments ++ [ popup ]
-
-
-createPopupContent : PopupContent -> List (Html msg)
-createPopupContent content =
-    case content of
-        TokenPopup token seg ->
-            [ div [ class "popup-field" ]
-                [ div [ class "popup-label" ] [ text "Word" ]
-                , div [ class "popup-value" ] [ text token.orthography ]
-                ]
-            , div [ class "popup-field" ]
-                [ div [ class "popup-label" ] [ text "Definition" ]
-                , div [ class "popup-value popup-definition" ] [ text token.definition ]
-                ]
-            , div [ class "popup-field" ]
-                [ div [ class "popup-label" ] [ text "Phonetic" ]
-                , div [ class "popup-value" ] [ text token.phonetic ]
-                ]
-            ]
-                ++ (case seg.attributes.lemma of
-                        Just lemma ->
-                            [ div [ class "popup-field" ]
-                                [ div [ class "popup-label" ] [ text "Lemma" ]
-                                , div [ class "popup-value popup-lemma" ] [ text lemma ]
-                                ]
-                            ]
-
-                        Nothing ->
-                            []
-                   )
-                ++ (case seg.attributes.upos of
-                        Just pos ->
-                            [ div [ class "popup-field" ]
-                                [ div [ class "popup-label" ] [ text "Part of Speech" ]
-                                , div [ class "popup-value popup-pos" ] [ text pos ]
-                                ]
-                            ]
-
-                        Nothing ->
-                            []
-                   )
-
-        PhrasePopup phrase seg ->
-            [ div [ class "popup-field" ]
-                [ div [ class "popup-label" ] [ text "Phrase" ]
-                , div [ class "popup-value" ] [ text (String.join " " phrase.orthographySeq) ]
-                ]
-            , div [ class "popup-field" ]
-                [ div [ class "popup-label" ] [ text "Definition" ]
-                , div [ class "popup-value popup-definition" ] [ text phrase.definition ]
-                ]
-            ]
-
-
-onMouseEnterWithPositionAndFocus : (Float -> Float -> FocusContext.Msg -> msg) -> FocusContext.Msg -> Attribute msg
-onMouseEnterWithPositionAndFocus combinedMsg focusMsg =
-    Events.on "mouseenter"
-        (Decode.map2 (\x y -> combinedMsg x y focusMsg)
-            (Decode.at [ "target", "offsetLeft" ] Decode.float)
-            (Decode.map2 (+)
-                (Decode.at [ "target", "offsetTop" ] Decode.float)
-                (Decode.at [ "target", "offsetHeight" ] Decode.float)
-            )
-        )
+    List.map (viewDocumentSegment args) doc.segments
 
 
 getTokenContent : Bool -> Dict.Dict String String -> String -> List (Html msg)
@@ -315,24 +226,33 @@ viewRegisteredTkn args attrs textStr tkn seg =
 
         bottomText =
             getAnnotationText args.annotation_config.bottomAnnotation (Just tkn) Nothing seg
+
+        tokenContent =
+            getTokenContent args.showFurigana seg.attributes.misc textStr
+
+        popoverContent =
+            Popover.viewTokenPopover tkn seg
     in
-    doubleRubyC
-        topText
-        (attrs
-            ++ [ tokenStatusToClass tkn.status
-               , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
-               , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
-               , onDoubleClick (args.on_token_double_click seg)
-               , onMouseEnterWithPositionAndFocus
-                    (\x y focusMsg -> args.on_mouse_enter_with_position x y focusMsg (TokenPopup tkn seg))
-                    (FocusContext.SelectMouseEnter seg)
-               , onMouseLeave args.on_hover_end
-               , class "clickable-tkn-span"
-               , classIf (args.focus_predicate seg) "tkn-focus"
-               ]
-        )
-        (getTokenContent args.showFurigana seg.attributes.misc textStr)
-        bottomText
+    Popover.view
+        { content = popoverContent
+        , triggerContent =
+            [ doubleRubyC
+                topText
+                (attrs
+                    ++ [ tokenStatusToClass tkn.status
+                       , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
+                       , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+                       , onDoubleClick (args.on_token_double_click seg)
+                       , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
+                       , class "clickable-tkn-span"
+                       , classIf (args.focus_predicate seg) "tkn-focus"
+                       ]
+                )
+                tokenContent
+                bottomText
+            ]
+        , triggerAttributes = []
+        }
 
 
 viewRegisteredPhrase :
@@ -349,35 +269,42 @@ viewRegisteredPhrase args attrs phrase seg components =
 
         bottomText =
             getAnnotationText args.annotation_config.bottomAnnotation Nothing (Just phrase) seg
+
+        phraseContent =
+            if args.showFurigana then
+                case Dict.get "furigana_ruby" seg.attributes.misc of
+                    Just furiganaHtml ->
+                        Utils.htmlOfString furiganaHtml
+
+                    Nothing ->
+                        List.map (viewPhraseSubsegment args) components
+
+            else
+                List.map (viewPhraseSubsegment args) components
+
+        popoverContent =
+            Popover.viewPhrasePopover phrase seg
     in
-    doubleRubyC
-        topText
-        (attrs
-            ++ [ attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
-               , attributeIfNot args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
-               , attributeIfNot args.modifier_state.alt <| onDoubleClick (args.on_token_double_click seg)
-               , attributeIfNot args.modifier_state.alt <|
-                    onMouseEnterWithPositionAndFocus
-                        (\x y focusMsg -> args.on_mouse_enter_with_position x y focusMsg (PhrasePopup phrase seg))
-                        (FocusContext.SelectMouseEnter seg)
-               , onMouseLeave args.on_hover_end
-               , tokenStatusToClass phrase.status
-               , class "clickable-tkn-span"
-               , classIf (args.focus_predicate seg) "tkn-focus"
-               ]
-        )
-        (if args.showFurigana then
-            case Dict.get "furigana_ruby" seg.attributes.misc of
-                Just furiganaHtml ->
-                    Utils.htmlOfString furiganaHtml
-
-                Nothing ->
-                    List.map (viewPhraseSubsegment args) components
-
-         else
-            List.map (viewPhraseSubsegment args) components
-        )
-        bottomText
+    Popover.view
+        { content = popoverContent
+        , triggerContent =
+            [ doubleRubyC
+                topText
+                (attrs
+                    ++ [ attributeIfNot args.modifier_state.alt <| onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
+                       , attributeIfNot args.modifier_state.alt <| onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+                       , attributeIfNot args.modifier_state.alt <| onDoubleClick (args.on_token_double_click seg)
+                       , attributeIfNot args.modifier_state.alt <| onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
+                       , tokenStatusToClass phrase.status
+                       , class "clickable-tkn-span"
+                       , classIf (args.focus_predicate seg) "tkn-focus"
+                       ]
+                )
+                phraseContent
+                bottomText
+            ]
+        , triggerAttributes = []
+        }
 
 
 viewSentenceSegment :
