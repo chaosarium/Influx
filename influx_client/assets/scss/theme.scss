@@ -28,7 +28,7 @@ $unreachable-color: red;
 $colorDebugTodo: orange;
 
 
-// white and black
+// === WHITE AND BLACK COLORS ===
 $white-light: white;
 $black-light: black;
 $white-dark: black;
@@ -49,3 +49,5 @@ $black-dark: white;
 
 $white: var(--white);
 $black: var(--black);
+
+$basic-shadow: 0px 0px 8px 0px var(--gray-a2);

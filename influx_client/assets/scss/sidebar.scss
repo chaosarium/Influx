@@ -1,0 +1,89 @@
+@use "extern/radix-ui-colors.scss" as *;
+@use "theme.scss" as *;
+
+#layout-with-sidebars {
+    background-color: $white;
+    height: 100vh;
+    overflow: hidden;
+
+    & div.sidebar {
+        width: 400px;
+        min-width: 200px;
+        height: 100vh;
+        overflow-y: auto;
+        padding-right: 16px;
+        padding-left: 16px;
+        background-color: $gray-2;
+        resize: horizontal;
+        overflow: auto;
+
+        & div.sidebar-inner {
+            width: 100%;
+            direction: ltr;
+        }
+
+    }
+
+    & #sidebar-left {
+        border-right: 1px solid $gray-5;
+        // position: fixed;
+        left: 0;
+        top: 0;
+        direction: ltr;
+    }
+
+    & #sidebar-right {
+        border-left: 1px solid $gray-5;
+        // position: fixed;
+        right: 0;
+        top: 0;
+        direction: rtl;
+    }
+
+    & div.sidebar-widget {
+        border: 1px solid $gray-3;
+        border-radius: 8px;
+        padding: 16px;
+        margin: 16px 0;
+        background-color: $white;
+        box-shadow: $basic-shadow;
+        resize: vertical;
+        overflow: auto;
+    }
+
+    & #center-column {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+
+        & #center-column-topbar {
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: $gray-2;
+            border-bottom: 1px solid $gray-5;
+
+            & audio {
+                max-width: 800px;
+                width: 100%;
+            }
+        }
+
+        & #center-column-content {
+            overflow-x: hidden;
+            overflow-y: scroll;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            & #center-column-content-inner {
+                margin: 16px;
+                max-width: 800px;
+            }
+        }
+    }
+
+
+}

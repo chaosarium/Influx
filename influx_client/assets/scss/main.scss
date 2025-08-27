@@ -1,6 +1,8 @@
+@use "reset.scss" as *;
 @use "extern/radix-ui-colors.scss" as *;
 @use "theme.scss" as *;
-@use "reset.scss" as *;
+@use "sidebar.scss";
+
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
 // === BASE STYLES ===
@@ -31,14 +33,30 @@ h3 {
     font-weight: 700;
 }
 
-// === COMPONENTS ===
+// === SCROLLBAR ===
 
-// === LAYOUT ===
+* {
+    scrollbar-width: 8px;
+    scrollbar-color: $gray-5 #00000000;
+}
 
-// === SIDEBAR ===
+// === valueOrUnreachable ===
 
+.http-status-not-asked {
+    color: $gray-2;
+}
 
+.http-status-loading {
+    color: $gray-3;
+}
 
+.http-status-failure {
+    color: $red-2;
+}
+
+.http-status-success {
+    color: $green-2;
+}
 
 // === DEBUG ===
 
@@ -78,10 +96,6 @@ pre.dbg-json-pre {
 // === TEXT VIEWER ===
 
 .annotated-doc-div {
-    border-top: 1px solid $gray-6;
-    border-bottom: 1px solid $gray-6;
-    padding-top: 10px;
-    padding-bottom: 10px;
     line-height: 3.2;
     user-select: none;
     white-space: preserve;
@@ -236,7 +250,7 @@ span.clickable-tkn-span {
 .popover-container:hover .popover-content,
 .popover-container:hover .popover-bridge,
 .popover-content:hover,
-.popover-bridge:hover + .popover-content {
+.popover-bridge:hover+.popover-content {
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;

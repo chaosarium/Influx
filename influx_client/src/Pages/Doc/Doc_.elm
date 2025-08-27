@@ -875,6 +875,11 @@ tokenStatusToString status =
 -- end
 
 
+sidebarWidgetC : List (Html msg) -> Html msg
+sidebarWidgetC content =
+    div [ class "sidebar-widget" ] content
+
+
 view : Shared.Model -> ThisRoute -> Model -> View Msg
 view shared route model =
     let
@@ -896,41 +901,8 @@ view shared route model =
             , showFurigana = model.showFurigana
             }
 
-        documentCard =
-            case model.get_doc_api_res of
-                Api.NotAsked ->
-                    Components.ListingElements.listingCardC
-                        [ h1 [] [ text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
-                        , text "Not loaded"
-                        ]
-
-                Api.Loading ->
-                    Components.ListingElements.listingCardC
-                        [ h1 [] [ text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
-                        , text "Loading..."
-                        ]
-
-                Api.Failure err ->
-                    Components.ListingElements.listingCardC
-                        [ h1 [] [ text ("Document ID: " ++ Utils.unwrappedPercentDecode route.params.doc) ]
-                        , text ("Error: " ++ Api.stringOfHttpErrMsg err)
-                        ]
-
-                Api.Success response ->
-                    Components.ListingElements.listingCardC
-                        [ viewDocumentInfo response
-                        , div
-                            [ class "annotated-doc-div"
-                            , class "dbg-off"
-                            ]
-                            (AnnotatedText.view
-                                annotatedDocViewCtx
-                                model.working_doc
-                            )
-                        ]
-
         termEditorCard =
-            Components.ListingElements.listingCardC
+            sidebarWidgetC
                 [ h3 [] [ text "Term Editor" ]
                 , TermEditForm.view model.form_model
                     TermEditorEvent
@@ -946,7 +918,7 @@ view shared route model =
                 ]
 
         termDetailsCard =
-            Components.ListingElements.listingCardC
+            sidebarWidgetC
                 [ h3 [] [ text "Term Details" ]
                 , viewTermDetails model.working_dict model.focus_ctx.segment_selection
                 , case model.focus_ctx.segment_selection of
@@ -962,7 +934,7 @@ view shared route model =
                 ]
 
         annotationControlsCard =
-            Components.ListingElements.listingCardC
+            sidebarWidgetC
                 [ h3 [] [ text "Annotation Controls" ]
                 , viewAnnotationControls model.annotation_config model.showFurigana model.sidebarWidth
                 ]
@@ -977,7 +949,7 @@ view shared route model =
             in
             case model.get_doc_api_res of
                 Api.Success response ->
-                    Components.ListingElements.listingCardC
+                    sidebarWidgetC
                         [ h3 [] [ text "Selected Text" ]
                         , p [] [ text ("\"" ++ selectedText ++ "\"") ]
                         , div [ css [ displayFlex, gap space8px, flexWrap wrap ] ]
@@ -1016,98 +988,88 @@ view shared route model =
                         ]
 
                 _ ->
-                    Components.ListingElements.listingCardC
+                    sidebarWidgetC
                         [ h3 [] [ text "Selected Text" ]
                         , text ""
                         ]
-
-        audioStrip =
-            div
-                [ css
-                    [ position sticky
-                    , top (px 16)
-                    , zIndex (int 100)
-                    , marginBottom (px 16)
-                    , backgroundColor (hex "#FEFEFE")
-                    , border3 (px 1) solid (hex "#E9E9E7")
-                    , borderRadius (px 8)
-                    , padding (px 12)
-                    , boxShadow4 zero (px 2) (px 8) (rgba 0 0 0 0.1)
-                    ]
-                ]
-                [ div
-                    [ css
-                        [ displayFlex
-                        , alignItems center
-                        , gap (px 12)
-                        ]
-                    ]
-                    [ span [ css [ fontSize (Css.em 0.9), fontWeight (int 500) ] ] [ text "Audio:" ]
-                    , audio [ id "influx-audio-player", src "http://localhost:3000/influx_app_data/test.mp3", Attributes.controls True ]
-                        []
-                    ]
-                ]
 
         toastTray =
             div [ class "toast-tray" ] [ Html.fromUnstyled (Toast.render Components.ToastView.viewToast shared.toast_tray (Toast.config (SharedMsg << Shared.Msg.ToastMsg))) ]
 
         leftSidebar =
             div
-                [ css
-                    [ width (px 300) -- Fixed sidebar width
-                    , height (vh 100)
-                    , overflowY auto
-                    , paddingRight (px 16)
-                    , paddingLeft (px 16)
-                    , position fixed
-                    , left (px 48) -- Account for ribbon width
-                    , top zero
-                    , backgroundColor (hex "#FEFEFE")
-                    , borderRight3 (px 1) solid (hex "#E9E9E7")
-                    ]
+                [ id "sidebar-left"
+                , class "sidebar"
                 ]
-                [ termDetailsCard
-                , annotationControlsCard
+                [ div
+                    [ class "sidebar-inner"
+                    ]
+                    [ termDetailsCard
+                    , annotationControlsCard
+                    ]
                 ]
 
         centerColumn =
             div
-                [ css
-                    [ width (px 800) -- Fixed center width
-                    , marginLeft (px 348) -- ribbon(48) + sidebar(300)
-                    , marginRight (px 316) -- sidebar(300) + padding(16)
-                    , minHeight (vh 100)
-                    , padding2 space0px space16px
-                    ]
+                [ id "center-column"
                 ]
-                [ audioStrip
-                , documentCard
+                [ div [ id "center-column-topbar" ]
+                    [ audio [ id "influx-audio-player", src "http://localhost:3000/influx_app_data/test.mp3", Attributes.controls True ]
+                        []
+                    ]
+                , div [ id "center-column-content" ]
+                    [ div [ id "center-column-content-inner" ]
+                        [ Api.valueOrUnreachable model.get_doc_api_res <|
+                            \response -> viewDocumentInfo response
+                        , div
+                            [ class "annotated-doc-div"
+                            , class "dbg-off"
+                            ]
+                            (AnnotatedText.view
+                                annotatedDocViewCtx
+                                model.working_doc
+                            )
+                        ]
+                    ]
                 ]
 
         rightSidebar =
             div
-                [ css
-                    [ width (px 300) -- Fixed sidebar width
-                    , height (vh 100)
-                    , overflowY auto
-                    , paddingLeft (px 16)
-                    , paddingRight (px 16)
-                    , position fixed
-                    , right zero
-                    , top zero
-                    , backgroundColor (hex "#FEFEFE")
-                    , borderLeft3 (px 1) solid (hex "#E9E9E7")
-                    ]
+                [ id "sidebar-right"
+                , class "sidebar"
                 ]
-                [ termEditorCard
-                , selectedTextCard
+                [ div
+                    [ class "sidebar-inner"
+                    ]
+                    [ termEditorCard
+                    , selectedTextCard
+                    ]
                 ]
     in
     { title = "Document view"
     , body =
-        [ Components.Layout.ribbonDocumentLayoutC { toastTray = Just toastTray }
-            leftSidebar
-            centerColumn
-            rightSidebar
+        [ --Components.RibbonNav.view {}
+          div
+            [ css
+                [ displayFlex
+                , flex (int 1)
+
+                -- , marginLeft (px 48)
+                ]
+            , id "layout-with-sidebars"
+            ]
+            [ leftSidebar
+            , centerColumn
+            , rightSidebar
+            ]
+        , div
+            [ css
+                [ position fixed
+                , left (px 56) -- Account for ribbon + some margin
+                , bottom (px 8)
+                , zIndex (int 9999)
+                ]
+            ]
+            [ toastTray ]
         ]
     }
