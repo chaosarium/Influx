@@ -12,6 +12,7 @@ import Components.CssExtra exposing (..)
 import Components.DbgDisplay
 import Components.DictionaryLookup as DictionaryLookup
 import Components.FormElements3 as FormElements3
+import Components.InflectionChain as InflectionChain
 import Components.Layout
 import Components.ListingElements
 import Components.TermEditForm as TermEditForm
@@ -799,30 +800,16 @@ viewTermDetails dict maybeSeg =
 
                         Nothing ->
                             li [] [ text "Dependency: (none)" ]
-                    , case seg.attributes.conjugationChain of
-                        Just conjugationSteps ->
-                            li []
-                                [ text "Conjugation Chain: "
-                                , ol []
-                                    (List.map
-                                        (\step ->
-                                            li []
-                                                [ text
-                                                    ("Step "
-                                                        ++ String.fromInt step.step
-                                                        ++ ": "
-                                                        ++ step.form
-                                                        ++ " → "
-                                                        ++ step.result
-                                                    )
-                                                ]
-                                        )
-                                        conjugationSteps
-                                    )
-                                ]
+                     , case seg.attributes.conjugationChain of
+                         Just conjugationSteps ->
+                             li []
+                                 [ text "Conjugation Chain: "
+                                 , div [ css [ marginTop (px 8) ] ]
+                                     [ InflectionChain.inflectionChainC conjugationSteps ]
+                                 ]
 
-                        Nothing ->
-                            li [] [ text "Conjugation Chain: (none)" ]
+                         Nothing ->
+                             li [] [ text "Conjugation Chain: (none)" ]
                     , li []
                         [ text "Misc: "
                         , if Dict.isEmpty seg.attributes.misc then
