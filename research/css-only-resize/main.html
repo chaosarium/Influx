@@ -1,0 +1,41 @@
+<!-- based on https://stackoverflow.com/questions/18580795/possible-to-style-the-css3-resize-function -->
+<!-- licensed under CC BY-SA -->
+
+<style>
+  div.resize {
+    width: 300px;
+    height: 250px;
+    resize: horizontal;
+    overflow: scroll;
+    padding-right: 5px;
+    /* at least the with of the scrollbar. the resizer needs this to be clickable */
+    border: 1px solid darkgray;
+  }
+
+  div.resize>div {
+    position: absolute;
+    /* required */
+    box-sizing: border-box;
+    width: inherit;
+    height: inherit;
+    overflow: clip;
+  }
+
+  .resize::-webkit-scrollbar {
+    height: inherit;
+    /* needs to match div.resize */
+    width: 5px;
+  }
+
+  .resize::-webkit-resizer {
+    background: silver;
+    /* border: 1px solid darkgray; */
+  }
+</style>
+
+<!-- this is all the html required -->
+<div class="resize">
+  <div>
+    content
+  </div>
+</div>
