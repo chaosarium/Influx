@@ -248,32 +248,10 @@ viewRegisteredTkn args attrs textStr tkn seg =
                , classIf (args.focus_predicate seg) "tkn-focus"
                ]
         )
-        ([ span [ class "popover-content" ] popoverContent ] ++ tokenContent)
+        tokenContent
         bottomText
+    , div [ class "popover-box" ] [ div [ class "popover-content" ] popoverContent ]
     ]
-
-
-
--- Popover.view
--- { content = popoverContent
--- , triggerContent =
---     [ doubleRubyC
---         topText
---         (attrs
---             ++ [ tokenStatusToClass tkn.status
---                , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
---                , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
---                , onDoubleClick (args.on_token_double_click seg)
---                , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
---                , class "clickable-tkn-span"
---                , classIf (args.focus_predicate seg) "tkn-focus"
---                ]
---         )
---         tokenContent
---         bottomText
---     ]
--- , triggerAttributes = []
--- }
 
 
 viewRegisteredPhrase :

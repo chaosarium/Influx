@@ -6,32 +6,53 @@
     display: inline-block;
 }
 
-.popover-content {
-    position: absolute;
-    top: calc(100% + 0px);
-    left: 0;
-    z-index: 1000;
-    pointer-events: none;
-    background-color: $white;
-    border: 1px solid $gray-5;
-    border-radius: 6px;
-    box-shadow: $card-ish-shadow;
-    padding: 8px;
-    width: 300px;
-    line-height: 1.4;
-    user-select: text;
-    cursor: text;
-    display: none;
+.popover-trigger:has(+ .popover-box:hover),
+.popover-trigger:hover {
+    anchor-name: --the-popover-anchor;
 }
 
+// add a small gap between the popover content and the token
+.popover-box {
+    // small gap that's still hoverable
+    padding-top: 4px;
+    padding-bottom: 4px;
 
+    // hide by default
+    display: none;
 
-// .popover-content,
-.popover-content:hover,
-.popover-trigger:hover>.popover-content,
-.popover-bridge:hover>.popover-content,
-.popover-trigger:hover+.popover-content,
-.popover-bridge:hover+.popover-content {
+    // positioning
+    position: absolute;
+    position-anchor: --the-popover-anchor;
+    inset-block-start: anchor(bottom);
+    margin-block-start: 0px;
+    inset-inline-start: anchor(left);
+    margin-inline-start: 0px;
+    z-index: 1000;
+    position-try:
+        flip-inline,
+        flip-block,
+        flip-block flip-inline;
+
+    & .popover-content {
+        // sizing
+        width: 300px;
+
+        // look
+        background-color: $white;
+        border: 1px solid $gray-5;
+        border-radius: 6px;
+        box-shadow: $card-ish-shadow;
+        padding: 8px;
+        line-height: 1.4;
+        user-select: text;
+    }
+}
+
+.popover-box:hover,
+.popover-trigger:hover>.popover-box,
+.popover-bridge:hover>.popover-box,
+.popover-trigger:hover+.popover-box,
+.popover-bridge:hover+.popover-box {
     display: initial !important;
     pointer-events: auto !important;
 }
@@ -44,4 +65,3 @@ span:has(+ span.sentence-punctuation-span) {
 .double-ruby.tkn-auto-width {
     white-space: nowrap;
 }
-
