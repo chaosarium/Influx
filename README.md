@@ -16,6 +16,10 @@ No. Not yet. It technically has a functioning database and text reader, but the 
 - Continuous dev log [here](https://chaosarium.xyz/influx-dev-log/)
 - The concept [here](https://chaosarium.xyz/2022-07-18-towards-an-integrated-content-based-language-learning-environment-an-exploratory-proposal/)
 
+**Disclaimer**
+
+LLM wrote some of the non-critical code and they might be bad
+
 ## Features
 
 - [x] language-agnostic nlp 

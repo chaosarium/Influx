@@ -26,7 +26,7 @@ import Dict
 import Effect exposing (Effect)
 import Html as UnstyledHtml
 import Html.Extra
-import Html.Styled as Html exposing (Html, a, audio, br, button, div, h1, h2, h3, li, ol, p, span, strong, text, ul)
+import Html.Styled as Html exposing (Html, a, audio, br, button, details, div, h1, h2, h3, li, ol, p, span, strong, summary, text, ul)
 import Html.Styled.Attributes as Attributes exposing (class, controls, css, href, id, src, style)
 import Html.Styled.Events exposing (onClick)
 import Http
@@ -800,16 +800,16 @@ viewTermDetails dict maybeSeg =
 
                         Nothing ->
                             li [] [ text "Dependency: (none)" ]
-                     , case seg.attributes.conjugationChain of
-                         Just conjugationSteps ->
-                             li []
-                                 [ text "Conjugation Chain: "
-                                 , div [ css [ marginTop (px 8) ] ]
-                                     [ InflectionChain.inflectionChainC conjugationSteps ]
-                                 ]
+                    , case seg.attributes.conjugationChain of
+                        Just conjugationSteps ->
+                            li []
+                                [ text "Conjugation Chain: "
+                                , div [ css [ marginTop (px 8) ] ]
+                                    [ InflectionChain.inflectionChainC conjugationSteps ]
+                                ]
 
-                         Nothing ->
-                             li [] [ text "Conjugation Chain: (none)" ]
+                        Nothing ->
+                            li [] [ text "Conjugation Chain: (none)" ]
                     , li []
                         [ text "Misc: "
                         , if Dict.isEmpty seg.attributes.misc then
@@ -862,9 +862,23 @@ tokenStatusToString status =
 -- end
 
 
-sidebarWidgetC : List (Html msg) -> Html msg
-sidebarWidgetC content =
-    div [ class "sidebar-widget" ] content
+sidebarWidgetC : { title : String, isExpanded : Bool } -> List (Html msg) -> Html msg
+sidebarWidgetC config content =
+    details
+        [ class "sidebar-widget"
+        , if config.isExpanded then
+            Attributes.attribute "open" ""
+
+          else
+            Attributes.attribute "data-collapsed" ""
+        ]
+        [ summary
+            []
+            [ text config.title ]
+        , div
+            [ class "widget-content" ]
+            content
+        ]
 
 
 view : Shared.Model -> ThisRoute -> Model -> View Msg
@@ -890,8 +904,8 @@ view shared route model =
 
         termEditorCard =
             sidebarWidgetC
-                [ h3 [] [ text "Term Editor" ]
-                , TermEditForm.view model.form_model
+                { title = "Term Editor", isExpanded = True }
+                [ TermEditForm.view model.form_model
                     TermEditorEvent
                     { dict = model.working_dict
                     , document_id =
@@ -906,8 +920,8 @@ view shared route model =
 
         termDetailsCard =
             sidebarWidgetC
-                [ h3 [] [ text "Term Details" ]
-                , viewTermDetails model.working_dict model.focus_ctx.segment_selection
+                { title = "Term Details", isExpanded = True }
+                [ viewTermDetails model.working_dict model.focus_ctx.segment_selection
                 , case model.focus_ctx.segment_selection of
                     Just seg ->
                         if hasLemma seg then
@@ -922,8 +936,8 @@ view shared route model =
 
         annotationControlsCard =
             sidebarWidgetC
-                [ h3 [] [ text "Annotation Controls" ]
-                , viewAnnotationControls model.annotation_config model.showFurigana model.sidebarWidth
+                { title = "Annotation Controls", isExpanded = False }
+                [ viewAnnotationControls model.annotation_config model.showFurigana model.sidebarWidth
                 ]
 
         selectedTextCard =
@@ -937,8 +951,8 @@ view shared route model =
             case model.get_doc_api_res of
                 Api.Success response ->
                     sidebarWidgetC
-                        [ h3 [] [ text "Selected Text" ]
-                        , p [] [ text ("\"" ++ selectedText ++ "\"") ]
+                        { title = "Selected Text", isExpanded = True }
+                        [ p [] [ text ("\"" ++ selectedText ++ "\"") ]
                         , div [ css [ displayFlex, gap space8px, flexWrap wrap ] ]
                             [ FormElements3.buttonC
                                 { label = "Translate"
@@ -976,8 +990,8 @@ view shared route model =
 
                 _ ->
                     sidebarWidgetC
-                        [ h3 [] [ text "Selected Text" ]
-                        , text ""
+                        { title = "Selected Text", isExpanded = True }
+                        [ text ""
                         ]
 
         toastTray =
