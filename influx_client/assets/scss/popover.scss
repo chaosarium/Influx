@@ -1,0 +1,47 @@
+@use "extern/radix-ui-colors.scss" as *;
+@use "theme.scss" as *;
+
+.popover-trigger {
+    position: relative;
+    display: inline-block;
+}
+
+.popover-content {
+    position: absolute;
+    top: calc(100% + 0px);
+    left: 0;
+    z-index: 1000;
+    pointer-events: none;
+    background-color: $white;
+    border: 1px solid $gray-5;
+    border-radius: 6px;
+    box-shadow: $card-ish-shadow;
+    padding: 8px;
+    width: 300px;
+    line-height: 1.4;
+    user-select: text;
+    cursor: text;
+    display: none;
+}
+
+
+
+// .popover-content,
+.popover-content:hover,
+.popover-trigger:hover>.popover-content,
+.popover-bridge:hover>.popover-content,
+.popover-trigger:hover+.popover-content,
+.popover-bridge:hover+.popover-content {
+    display: initial !important;
+    pointer-events: auto !important;
+}
+
+span:has(+ span.sentence-punctuation-span) {
+    /* this styles the span that comes right before .sentence-punctuation-span */
+    white-space: nowrap;
+}
+
+.double-ruby.tkn-auto-width {
+    white-space: nowrap;
+}
+

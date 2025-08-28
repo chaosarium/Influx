@@ -7,6 +7,7 @@
     overflow: hidden;
 
     & div.sidebar {
+        flex-shrink: 0;
         width: 400px;
         min-width: 200px;
         height: 100vh;
@@ -55,6 +56,7 @@
         flex-grow: 1;
         display: flex;
         flex-direction: column;
+        flex-shrink: 1;
 
         & #center-column-topbar {
             height: 80px;
@@ -65,14 +67,16 @@
             border-bottom: 1px solid $gray-5;
 
             & audio {
-                max-width: 800px;
+                margin: 16px;
                 width: 100%;
+                max-width: 800px;
             }
         }
 
         & #center-column-content {
-            overflow-x: hidden;
+            overflow-x: visible;
             overflow-y: scroll;
+            z-index: 10;
             flex-grow: 1;
             display: flex;
             flex-direction: column;

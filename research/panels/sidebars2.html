@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VS Code–like Layout with Resizable Panes</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden; /* prevent page scroll */
+    }
+
+    .sidebar {
+      width: 200px;
+      min-width: 100px;
+      max-width: 400px;
+      background: #2d2d2d;
+      color: white;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    .right {
+      border-left: 1px solid #444;
+    }
+
+    .middle {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0; /* prevents flex overflow */
+    }
+
+    .main {
+      flex: 1;
+      background: #1e1e1e;
+      color: white;
+      padding: 10px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .bottom {
+      height: 200px;
+      min-height: 100px;
+      max-height: 400px;
+      background: #252526;
+      color: white;
+      padding: 10px;
+      overflow-y: auto;
+      border-top: 1px solid #444;
+    }
+
+    .content {
+      height: 2000px; /* force scrolling */
+    }
+
+    /* --- Resize handles (sashes) --- */
+    .resizer {
+      position: relative;
+      background: transparent;
+      z-index: 10;
+    }
+    .resizer.vertical {
+      width: 5px;
+      cursor: col-resize;
+    }
+    .resizer.horizontal {
+      height: 5px;
+      cursor: row-resize;
+    }
+    /* Optional: show a highlight when dragging */
+    .resizer.active {
+      background: rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar left">
+      <h3>Left Sidebar</h3>
+      <div class="content">Lots of items<br>...<br>(scroll me)</div>
+    </div>
+    <div class="resizer vertical" id="left-resizer"></div>
+
+    <div class="middle">
+      <div class="main">
+        <h2>Main Area</h2>
+        <div class="content">This is the editor area<br>...<br>(scroll me)</div>
+      </div>
+      <div class="resizer horizontal" id="bottom-resizer"></div>
+      <div class="bottom">
+        <h3>Bottom Pane</h3>
+        <div class="content">Logs, terminal, etc.<br>...<br>(scroll me)</div>
+      </div>
+    </div>
+
+    <div class="resizer vertical" id="right-resizer"></div>
+    <div class="sidebar right">
+      <h3>Right Sidebar</h3>
+      <div class="content">Extra tools<br>...<br>(scroll me)</div>
+    </div>
+  </div>
+
+  <script>
+    function makeResizable(resizer, prevEl, nextEl, isHorizontal = true) {
+      let startX, startY, startPrevSize, startNextSize;
+
+      resizer.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        startX = e.clientX;
+        startY = e.clientY;
+        startPrevSize = isHorizontal ? prevEl.offsetWidth : prevEl.offsetHeight;
+        startNextSize = isHorizontal ? nextEl.offsetWidth : nextEl.offsetHeight;
+
+        resizer.classList.add("active");
+
+        function onMouseMove(e) {
+          if (isHorizontal) {
+            let dx = e.clientX - startX;
+            let newPrev = startPrevSize + dx;
+            let newNext = startNextSize - dx;
+            if (newPrev > 100 && newNext > 100) {
+              prevEl.style.width = newPrev + "px";
+              nextEl.style.width = newNext + "px";
+            }
+          } else {
+            let dy = e.clientY - startY;
+            let newPrev = startPrevSize + dy;
+            if (newPrev > 100 && newPrev < 600) {
+              prevEl.style.height = newPrev + "px";
+            }
+          }
+        }
+
+        function onMouseUp() {
+          resizer.classList.remove("active");
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+        }
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+      });
+    }
+
+    // Left resizer: sidebar <-> middle
+    makeResizable(
+      document.getElementById("left-resizer"),
+      document.querySelector(".sidebar.left"),
+      document.querySelector(".middle"),
+      true
+    );
+
+    // Right resizer: middle <-> sidebar
+    makeResizable(
+      document.getElementById("right-resizer"),
+      document.querySelector(".middle"),
+      document.querySelector(".sidebar.right"),
+      true
+    );
+
+    // Bottom resizer: main <-> bottom
+    makeResizable(
+      document.getElementById("bottom-resizer"),
+      document.querySelector(".bottom"),
+      null,
+      false
+    );
+  </script>
+</body>
+</html>

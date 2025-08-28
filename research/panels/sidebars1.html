@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VSCode-Like Layout</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden; /* Prevent full-page scroll */
+    }
+
+    .sidebar {
+      width: 200px;
+      background: #2d2d2d;
+      color: white;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    .middle {
+      flex: 1;
+      display: flex;
+      flex-direction: column; /* stack main + bottom */
+    }
+
+    .main {
+      flex: 1;
+      background: #1e1e1e;
+      color: white;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    .bottom {
+      height: 200px;
+      background: #252526;
+      color: white;
+      padding: 10px;
+      overflow-y: auto;
+      border-top: 1px solid #444;
+    }
+
+    .content {
+      height: 2000px; /* just to force scrolling */
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <h3>Left Sidebar</h3>
+      <div class="content">Lots of items<br>...<br>(scroll me)</div>
+    </div>
+
+    <div class="middle">
+      <div class="main">
+        <h2>Main Area</h2>
+        <div class="content">This is the editor area<br>...<br>(scroll me)</div>
+      </div>
+      <div class="bottom">
+        <h3>Bottom Pane</h3>
+        <div class="content">Logs, terminal, etc.<br>...<br>(scroll me)</div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <h3>Right Sidebar</h3>
+      <div class="content">Extra tools<br>...<br>(scroll me)</div>
+    </div>
+  </div>
+</body>
+</html>

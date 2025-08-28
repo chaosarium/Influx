@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>VS Code–like Hover Popup</title>
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 200px;
+      background: #2d2d2d;
+      color: white;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    .right {
+      border-left: 1px solid #444;
+    }
+
+    .middle {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .main {
+      flex: 1;
+      background: #1e1e1e;
+      color: white;
+      padding: 10px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .bottom {
+      height: 200px;
+      background: #252526;
+      color: white;
+      padding: 10px;
+      overflow-y: auto;
+      border-top: 1px solid #444;
+    }
+
+    /* --- Hover popup styles --- */
+    .hover-container {
+      display: inline-block;
+      position: relative;
+    }
+
+    .hover-target {
+      color: #4fc3f7;
+      cursor: help;
+    }
+
+
+
+    .hover-container:hover .popup {
+      display: block;
+    }
+
+    /* fallback (works everywhere): original simple absolute popup inside the flow */
+    .popup {
+      /* your original fallback so older browsers still show the tooltip */
+      position: absolute;
+      top: 1.5em;
+      left: 0;
+      background: #333;
+      color: #fff;
+      border: 1px solid #666;
+      border-radius: 4px;
+      padding: 8px 12px;
+      max-width: 240px;
+      white-space: normal;
+      z-index: 1000;
+      display: none;
+    }
+
+    .hover-container:hover .popup {
+      display: block;
+    }
+
+    /* ----- Anchor positioning (modern browsers) ----- */
+    @supports (anchor-name: --foo) {
+
+      /* mark the anchor (the word) */
+      .hover-target {
+        anchor-name: --hover-word;
+      }
+
+      .popup {
+        /* anchor-enabled: put the popup in the top-layer (fixed so it can overlap sidebars) */
+        position: fixed;
+        /* or absolute if you want relative to a positioned ancestor */
+        position-anchor: --hover-word;
+
+        /* place the popup below the anchor (block axis) */
+        inset-block-start: anchor(bottom);
+        margin-block-start: 8px;
+        /* gap below anchor */
+
+        /* default: place popup to the RIGHT of the anchor
+         (popup inline-start = anchor's right edge) */
+        inset-inline-start: anchor(right);
+        margin-inline-start: 8px;
+        /* little gap */
+
+        /* try fallbacks when the default would overflow */
+        /* We'll first try our custom option (--align-right), then flip-inline, then combined flips */
+        position-try-fallbacks:
+          --align-right,
+          flip-inline,
+          flip-block flip-inline;
+        /* safety shorthand for implementations that still use position-try */
+        position-try:
+          --align-right,
+          flip-inline,
+          flip-block flip-inline;
+
+        /* visuals from your original */
+        background: #333;
+        color: #fff;
+        border: 1px solid #666;
+        border-radius: 4px;
+        padding: 8px 12px;
+        width: 400px;
+        white-space: normal;
+        z-index: 1000;
+        display: none;
+      }
+
+      /* show when hovered (same behavior) */
+      .hover-container:hover .popup {
+        display: block;
+      }
+
+      /* Custom fallback: align the popup's RIGHT edge to the anchor's RIGHT edge
+       (this is the exact "align word's right edge and popover's right edge" behavior) */
+      @position-try --align-right {
+        inset-inline-end: anchor(right);
+        /* position popover's right edge at anchor's right edge */
+        margin-inline-end: 8px;
+        /* little gap to the left */
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="sidebar left">
+      <h3>Left Sidebar</h3>
+      <p>Stuff here...</p>
+    </div>
+
+    <div class="middle">
+      <div class="main">
+        <h2>Main Area</h2>
+        <p>
+          Hover the
+          <span class="hover-container">
+            <span class="hover-target">word</span>
+            <span class="popup">
+              <strong>Hint:</strong> This is a hover popup that can extend
+              beyond the editor and overlap sidebars/bottom pane, just like VS Code tooltips.
+            </span>
+          </span>
+        </p>
+      </div>
+      <div class="bottom">
+        <h3>Bottom Pane</h3>
+        <p>Terminal, logs...</p>
+      </div>
+    </div>
+
+    <div class="sidebar right">
+      <h3>Right Sidebar</h3>
+      <p>Tools here...</p>
+    </div>
+  </div>
+</body>
+
+</html>
