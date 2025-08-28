@@ -70,6 +70,7 @@ doubleRubyC topText mainAttrs mainContent bottomText =
         ([ Attributes.attribute "data-top" topText
          , Attributes.attribute "data-bottom" bottomText
          , class "double-ruby tkn-auto-width"
+         , class "popover-trigger"
          ]
             ++ mainAttrs
         )
@@ -88,7 +89,7 @@ viewDocumentSegment args segment =
         case segment.inner of
             Sentence { segments } ->
                 span [ class "sentence-span annotated-text-container" ]
-                    (List.filterMap (viewSentenceSegment args) segments)
+                    (List.filterMap (viewSentenceSegment args) segments |> List.concat)
 
             DocumentWhitespace ->
                 span [ class "document-whitespace-span" ] [ text segment.text ]
@@ -218,7 +219,7 @@ viewRegisteredTkn :
     -> String
     -> Token
     -> SentSegV2
-    -> Html msg
+    -> List (Html msg)
 viewRegisteredTkn args attrs textStr tkn seg =
     let
         topText =
@@ -232,27 +233,47 @@ viewRegisteredTkn args attrs textStr tkn seg =
 
         popoverContent =
             Popover.viewTokenPopover tkn seg
+
+        -- [ text "" ]
     in
-    Popover.view
-        { content = popoverContent
-        , triggerContent =
-            [ doubleRubyC
-                topText
-                (attrs
-                    ++ [ tokenStatusToClass tkn.status
-                       , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
-                       , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
-                       , onDoubleClick (args.on_token_double_click seg)
-                       , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
-                       , class "clickable-tkn-span"
-                       , classIf (args.focus_predicate seg) "tkn-focus"
-                       ]
-                )
-                tokenContent
-                bottomText
-            ]
-        , triggerAttributes = []
-        }
+    [ doubleRubyC
+        topText
+        (attrs
+            ++ [ tokenStatusToClass tkn.status
+               , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
+               , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+               , onDoubleClick (args.on_token_double_click seg)
+               , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
+               , class "clickable-tkn-span"
+               , classIf (args.focus_predicate seg) "tkn-focus"
+               ]
+        )
+        ([ span [ class "popover-content" ] popoverContent ] ++ tokenContent)
+        bottomText
+    ]
+
+
+
+-- Popover.view
+-- { content = popoverContent
+-- , triggerContent =
+--     [ doubleRubyC
+--         topText
+--         (attrs
+--             ++ [ tokenStatusToClass tkn.status
+--                , onMouseDown (args.mouse_handler (FocusContext.SelectMouseDown seg))
+--                , onMouseUp (args.mouse_handler (FocusContext.SelectMouseUp ()))
+--                , onDoubleClick (args.on_token_double_click seg)
+--                , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
+--                , class "clickable-tkn-span"
+--                , classIf (args.focus_predicate seg) "tkn-focus"
+--                ]
+--         )
+--         tokenContent
+--         bottomText
+--     ]
+-- , triggerAttributes = []
+-- }
 
 
 viewRegisteredPhrase :
@@ -310,7 +331,7 @@ viewRegisteredPhrase args attrs phrase seg components =
 viewSentenceSegment :
     Args msg
     -> SentSegV2
-    -> Maybe (Html msg)
+    -> Maybe (List (Html msg))
 viewSentenceSegment args seg =
     if not (args.seg_display_predicate seg) then
         Nothing
@@ -321,7 +342,7 @@ viewSentenceSegment args seg =
                 TokenSeg { orthography } ->
                     case tokenDictLookup args.dict orthography of
                         Nothing ->
-                            viewUnregisteredTkn [ class "single-token-span", class "tkn-nostatus" ] seg.text
+                            [ viewUnregisteredTkn [ class "single-token-span", class "tkn-nostatus" ] seg.text ]
 
                         Just tkn ->
                             viewRegisteredTkn args [ class "single-token-span" ] seg.text tkn seg
@@ -329,16 +350,16 @@ viewSentenceSegment args seg =
                 PhraseSeg { normalisedOrthography, components } ->
                     case phraseDictLookup args.dict normalisedOrthography of
                         Nothing ->
-                            unreachableHtml "Phrase not found in dict"
+                            [ unreachableHtml "Phrase not found in dict" ]
 
                         Just phrase ->
-                            viewRegisteredPhrase args [ class "phrase-span" ] phrase seg components
+                            [ viewRegisteredPhrase args [ class "phrase-span" ] phrase seg components ]
 
                 WhitespaceSeg ->
-                    span [ class "sentence-whitespace-span", classIf (args.focus_predicate seg) "tkn-focus" ] [ text seg.text ]
+                    [ span [ class "sentence-whitespace-span", classIf (args.focus_predicate seg) "tkn-focus" ] [ text seg.text ] ]
 
                 PunctuationSeg ->
-                    span
+                    [ span
                         [ class "sentence-punctuation-span"
                         , classIf (args.focus_predicate seg) "tkn-focus"
                         , onMouseEnter (args.mouse_handler (FocusContext.SelectMouseEnter seg))
@@ -347,4 +368,5 @@ viewSentenceSegment args seg =
                         , class "clickable-tkn-span"
                         ]
                         [ text seg.text ]
+                    ]
             )

@@ -689,10 +689,10 @@ viewLemmaDisplay seg editingMode dict annotation_config showFurigana =
                     }
 
                 lemmaView =
-                    Maybe.withDefault (text lemma) (AnnotatedText.viewSentenceSegment lemmaViewCtx lemmaSegment)
+                    Maybe.withDefault [ text lemma ] (AnnotatedText.viewSentenceSegment lemmaViewCtx lemmaSegment)
 
                 inflectedView =
-                    Maybe.withDefault (text seg.text) (AnnotatedText.viewSentenceSegment inflectedViewCtx inflectedSegment)
+                    Maybe.withDefault [ text seg.text ] (AnnotatedText.viewSentenceSegment inflectedViewCtx inflectedSegment)
             in
             div []
                 [ span []
@@ -701,14 +701,14 @@ viewLemmaDisplay seg editingMode dict annotation_config showFurigana =
                     [ style "cursor" "pointer"
                     , onClick SwitchToLemmaEditing
                     ]
-                    [ lemmaView ]
+                    lemmaView
                 , span []
                     [ text " → " ]
                 , span
                     [ style "cursor" "pointer"
                     , onClick SwitchToInflectedTokenEditing
                     ]
-                    [ inflectedView ]
+                    inflectedView
                 ]
 
 

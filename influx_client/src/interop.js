@@ -158,7 +158,10 @@ function measureTextWidth(text, fontSize, fontFamily) {
 function adjustAnnotationWidth(element) {
     const topText = element.getAttribute('data-top') || '';
     const bottomText = element.getAttribute('data-bottom') || '';
-    const mainText = element.textContent || '';
+    const mainText = Array.from(element.childNodes)
+        .filter(node => node.nodeType === Node.TEXT_NODE)
+        .map(node => node.textContent)
+        .join('');
 
     // Get computed styles
     const computedStyle = window.getComputedStyle(element);

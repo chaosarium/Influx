@@ -56,27 +56,7 @@ view config =
         --     []
         , -- Popover content
           div
-            [ css
-                [ position absolute
-                , top (calc (pct 100) plus (px 0)) -- 8px spacing from trigger
-                , left (px 0)
-                , zIndex (int 1000)
-                , opacity (int 0)
-                , visibility hidden
-                , pointerEvents none
-                , transform (translateY (px 5))
-                , backgroundColor (hex "#ffffff")
-                , border3 (px 1) solid (hex "#d1d5db")
-                , borderRadius (px 6)
-                , boxShadow5 (px 0) (px 4) (px 6) (px -1) (rgba 0 0 0 0.1)
-                , padding2 (px 8) (px 12)
-                , width (px 300) -- Fixed width at 300px
-                , fontSize (px 14)
-                , lineHeight (num 1.4)
-                , Css.property "user-select" "text" -- Make text selectable
-                , Css.property "cursor" "text" -- Show text cursor when hovering over content
-                ]
-            , class "popover-content"
+            [ class "popover-content"
             ]
             config.content
         ]

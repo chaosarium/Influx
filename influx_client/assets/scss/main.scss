@@ -2,6 +2,7 @@
 @use "extern/radix-ui-colors.scss" as *;
 @use "theme.scss" as *;
 @use "sidebar.scss";
+@use "popover.scss";
 
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
@@ -106,6 +107,10 @@ pre.dbg-json-pre {
 }
 
 // === TOKENS ===
+
+.double-ruby.tkn-auto-width {
+    white-space: nowrap;
+}
 
 span.tkn-unmarked {
     background: $colorUnmarked;
@@ -243,18 +248,6 @@ span.clickable-tkn-span {
 .double-ruby:not([data-bottom])::after,
 .double-ruby[data-bottom=""]::after {
     display: none;
-}
-
-// === POPOVER ===
-
-.popover-container:hover .popover-content,
-.popover-container:hover .popover-bridge,
-.popover-content:hover,
-.popover-bridge:hover+.popover-content {
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-    transform: translateY(0) !important;
 }
 
 // === HTML CONTENT PLACEHOLDERS ===
