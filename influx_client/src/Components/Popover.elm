@@ -1,9 +1,8 @@
 module Components.Popover exposing (Config, popoverField, view, viewPhrasePopover, viewTokenPopover)
 
 import Bindings exposing (Phrase, SentSegV2, Token)
-import Css exposing (..)
 import Html.Styled as Html exposing (Attribute, Html, div, span, text)
-import Html.Styled.Attributes as Attributes exposing (class, css)
+import Html.Styled.Attributes as Attributes exposing (class)
 
 
 {-| Configuration for the popover component
@@ -21,39 +20,15 @@ The popover will remain visible when hovering over either the trigger or the pop
 view : Config msg -> Html msg
 view config =
     div
-        [ css
-            [ position relative
-            , display inlineBlock
-            ]
-        , class "popover-container"
+        [ class "popover-container"
         ]
         [ -- Trigger element
           span
-            ([ css
-                [ display inlineBlock
-                , cursor pointer
-                ]
-             , class "popover-trigger"
+            ([ class "popover-trigger"
              ]
                 ++ config.triggerAttributes
             )
             config.triggerContent
-
-        -- , -- Bridge area to prevent popover disappearing when moving mouse to content
-        --   div
-        --     [ css
-        --         [ position absolute
-        --         , top (pct 100)
-        --         , left (px 0)
-        --         , width (pct 100)
-        --         , height (px 8) -- 8px gap coverage
-        --         , zIndex (int 999)
-        --         , opacity (int 0)
-        --         , pointerEvents none
-        --         ]
-        --     , class "popover-bridge"
-        --     ]
-        --     []
         , -- Popover content
           div
             [ class "popover-content"
@@ -67,30 +42,14 @@ view config =
 popoverField : String -> List (Html msg) -> Html msg
 popoverField label content =
     div
-        [ css
-            [ marginBottom (px 4)
-            , lastChild [ marginBottom (px 0) ]
-            ]
-        , class "popover-field"
+        [ class "popover-field"
         ]
         [ div
-            [ css
-                [ fontWeight bold
-                , color (hex "#6b7280")
-                , fontSize (px 12)
-                , textTransform uppercase
-                , Css.property "letter-spacing" "0.5px"
-                ]
-            , class "popover-label"
+            [ class "popover-label"
             ]
             [ text label ]
         , div
-            [ css
-                [ color (hex "#1f2937")
-                , marginTop (px 2)
-                , Css.property "user-select" "text" -- Make field content selectable
-                ]
-            , class "popover-value"
+            [ class "popover-value"
             ]
             content
         ]
@@ -103,7 +62,7 @@ viewTokenPopover token seg =
     [ popoverField "Word" [ text token.orthography ]
     , popoverField "Definition"
         [ span
-            [ css [ color (hex "#8b5cf6"), fontWeight (int 500) ] ]
+            [ class "popover-definition" ]
             [ text token.definition ]
         ]
     , popoverField "Phonetic" [ text token.phonetic ]
@@ -112,7 +71,7 @@ viewTokenPopover token seg =
                 Just lemma ->
                     [ popoverField "Lemma"
                         [ span
-                            [ css [ color (hex "#10b981") ] ]
+                            [ class "popover-lemma" ]
                             [ text lemma ]
                         ]
                     ]
@@ -124,7 +83,7 @@ viewTokenPopover token seg =
                 Just pos ->
                     [ popoverField "Part of Speech"
                         [ span
-                            [ css [ color (hex "#f59e0b"), fontStyle italic ] ]
+                            [ class "popover-pos" ]
                             [ text pos ]
                         ]
                     ]
@@ -141,7 +100,7 @@ viewPhrasePopover phrase seg =
     [ popoverField "Phrase" [ text (String.join " " phrase.orthographySeq) ]
     , popoverField "Definition"
         [ span
-            [ css [ color (hex "#8b5cf6"), fontWeight (int 500) ] ]
+            [ class "popover-definition" ]
             [ text phrase.definition ]
         ]
     ]

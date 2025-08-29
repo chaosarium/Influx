@@ -1,9 +1,14 @@
 @use "extern/radix-ui-colors.scss" as *;
 @use "theme.scss" as *;
 
-.popover-trigger {
+.popover-container {
     position: relative;
     display: inline-block;
+}
+
+.popover-trigger {
+    display: inline-block;
+    cursor: pointer;
 }
 
 .popover-trigger:has(+ .popover-box:hover),
@@ -11,7 +16,6 @@
     anchor-name: --the-popover-anchor;
 }
 
-// add a small gap between the popover content and the token
 .popover-box {
     // small gap that's still hoverable
     padding-top: 4px;
@@ -65,3 +69,43 @@ span:has(+ span.sentence-punctuation-span) {
 .double-ruby.tkn-auto-width {
     white-space: nowrap;
 }
+
+// start TODO clean up this mess made by llm
+
+.popover-field {
+    margin-bottom: 4px;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.popover-label {
+    font-weight: bold;
+    color: #6b7280;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.popover-value {
+    color: #1f2937;
+    margin-top: 2px;
+    user-select: text;
+}
+
+.popover-definition {
+    color: #8b5cf6;
+    font-weight: 500;
+}
+
+.popover-lemma {
+    color: #10b981;
+}
+
+.popover-pos {
+    color: #f59e0b;
+    font-style: italic;
+}
+
+// end TODO clean up this mess made by llm
