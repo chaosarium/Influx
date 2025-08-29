@@ -32,13 +32,22 @@ LLM wrote some of the non-critical code and they might be bad
 - [x] phrase tracking and detection
 - [x] translation integration
 - [x] annotated text reader
-- [ ] dictionary integration
-- [ ] reasonable ui
-- [ ] SRS
-- [ ] language-specific nlp
+- [x] language-specific nlp
     - [x] japanese — auto furigana
     - [x] japanese — inflection derivation chain
-- [ ] import data from lwt
+- [ ] reasonable ui
+    - [ ] everything other than the text reader _(80% there)_
+    - [ ] the text reader _(50% there)_
+    - [ ] full ui consistency
+- [ ] dictionary integration _(post-first-release)_
+    - [x] stardict kind of works
+- [ ] srs _(post-first-release)_
+- [ ] import data from lwt _(planned sibling project)_
+- [ ] docker container _(gotta be able to run it somehow ╮(╯▽╰)╭)_
+- [ ] make ux fun _(post-first-release)_
+    - [ ] token status stats for documents
+    - [ ] better filtering of doc/lang listings
+    - [ ] term browser + editor outside doc
 
 ## Development notes
 
