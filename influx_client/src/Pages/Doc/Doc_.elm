@@ -454,8 +454,8 @@ subscriptions model =
 -- VIEW
 
 
-viewDocumentInfo : GetDocResponse -> Html msg
-viewDocumentInfo response =
+viewDocumentMetadata : GetDocResponse -> Html msg
+viewDocumentMetadata response =
     let
         document =
             response.docPackage.document
@@ -475,30 +475,45 @@ viewDocumentInfo response =
                     "unknown"
     in
     div []
+        [ ul []
+            [ li [] [ text ("Title: " ++ document.title) ]
+            , li []
+                [ text "Language: "
+                , text language.name
+                ]
+            , li []
+                [ text "Type: "
+                , text document.docType
+                ]
+            , li []
+                [ text "Tags: "
+                , text (String.join ", " document.tags)
+                ]
+            , li []
+                [ text "Created: "
+                , text (String.left 10 document.createdTs)
+                ]
+            , li []
+                [ text "Updated: "
+                , text (String.left 10 document.updatedTs)
+                ]
+            , li []
+                [ a [ href ("/doc/edit?docId=" ++ documentId) ] [ text "Edit Document" ]
+                , text " | "
+                , a [ href ("/lang/edit?langId=" ++ languageId) ] [ text "Edit Language" ]
+                ]
+            ]
+        ]
+
+
+viewDocumentInfo : GetDocResponse -> Html msg
+viewDocumentInfo response =
+    let
+        document =
+            response.docPackage.document
+    in
+    div []
         [ h2 [] [ text document.title ]
-        , p []
-            [ text "Language: "
-            , text language.name
-            ]
-        , p []
-            [ text "Type: "
-            , text document.docType
-            ]
-        , p []
-            [ text "Tags: "
-            , text (String.join ", " document.tags)
-            ]
-        , p []
-            [ text "Created: "
-            , text (String.left 10 document.createdTs)
-            , text " | Updated: "
-            , text (String.left 10 document.updatedTs)
-            ]
-        , p []
-            [ a [ href ("/doc/edit?docId=" ++ documentId) ] [ text "Edit Document" ]
-            , text " | "
-            , a [ href ("/lang/edit?langId=" ++ languageId) ] [ text "Edit Language" ]
-            ]
         ]
 
 
@@ -934,6 +949,16 @@ view shared route model =
                         text ""
                 ]
 
+        documentMetadataCard =
+            case model.get_doc_api_res of
+                Api.Success response ->
+                    sidebarWidgetC
+                        { title = "Document Details", isExpanded = False }
+                        [ viewDocumentMetadata response ]
+
+                _ ->
+                    text ""
+
         annotationControlsCard =
             sidebarWidgetC
                 { title = "Annotation Controls", isExpanded = False }
@@ -1006,6 +1031,7 @@ view shared route model =
                     [ class "sidebar-inner"
                     ]
                     [ termDetailsCard
+                    , documentMetadataCard
                     , annotationControlsCard
                     ]
                 ]
