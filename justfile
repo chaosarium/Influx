@@ -23,11 +23,11 @@ fmt:
     cd influx_client && just fmt
 
 push:
-    jj bookmark set dev -r @-
+    jj bookmark set dev -r @- --allow-backwards
     jj git push --all
 
 push-main:
-    jj bookmark set main -r @-
+    jj bookmark set main -r @- --allow-backwards
     jj git push --all
 
 new-empty-parent:
