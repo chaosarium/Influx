@@ -6,9 +6,11 @@ import Api.TermEdit
 import Api.Translate
 import Bindings exposing (..)
 import BindingsUtils
+import Colours
 import Components.AnnotatedText as AnnotatedText
 import Components.Common exposing (..)
 import Components.CssExtra exposing (..)
+import Components.DataViewElements as DataViewElements
 import Components.DbgDisplay
 import Components.DictionaryLookup as DictionaryLookup
 import Components.FormElements3 as FormElements3
@@ -473,34 +475,64 @@ viewDocumentMetadata response =
 
                 Nothing ->
                     "unknown"
+
+        documentRows =
+            [ { label = "Title", value = document.title }
+            , { label = "Language", value = language.name }
+            , { label = "Type", value = document.docType }
+            , { label = "Tags", value = String.join ", " document.tags }
+            , { label = "Created", value = String.left 10 document.createdTs }
+            , { label = "Updated", value = String.left 10 document.updatedTs }
+            ]
+
+        actionRows =
+            [ { label = "Actions"
+              , value = "Edit Document | Edit Language"
+              }
+            ]
     in
     div []
-        [ ul []
-            [ li [] [ text ("Title: " ++ document.title) ]
-            , li []
-                [ text "Language: "
-                , text language.name
-                ]
-            , li []
-                [ text "Type: "
-                , text document.docType
-                ]
-            , li []
-                [ text "Tags: "
-                , text (String.join ", " document.tags)
-                ]
-            , li []
-                [ text "Created: "
-                , text (String.left 10 document.createdTs)
-                ]
-            , li []
-                [ text "Updated: "
-                , text (String.left 10 document.updatedTs)
-                ]
-            , li []
-                [ a [ href ("/doc/edit?docId=" ++ documentId) ] [ text "Edit Document" ]
-                , text " | "
-                , a [ href ("/lang/edit?langId=" ++ languageId) ] [ text "Edit Language" ]
+        [ DataViewElements.keyValueGroupC documentRows
+        , div [ css [ marginTop space16px ] ]
+            [ div [ css [ displayFlex, gap (px 8) ] ]
+                [ a
+                    [ href ("/doc/edit?docId=" ++ documentId)
+                    , css
+                        [ border2 (px 1) solid
+                        , borderRadius space4px
+                        , Colours.bgCss Colours.white
+                        , cursor pointer
+                        , fontSize (rem 0.875)
+                        , fontFamily inherit
+                        , Colours.colorCss Colours.black
+                        , Colours.borderCss Colours.gray5
+                        , padding2 space4px space8px
+                        , textDecoration none
+                        , hover
+                            [ Colours.bgCss Colours.gray1
+                            ]
+                        ]
+                    ]
+                    [ text "Edit Document" ]
+                , a
+                    [ href ("/lang/edit?langId=" ++ languageId)
+                    , css
+                        [ border2 (px 1) solid
+                        , borderRadius space4px
+                        , Colours.bgCss Colours.white
+                        , cursor pointer
+                        , fontSize (rem 0.875)
+                        , fontFamily inherit
+                        , Colours.colorCss Colours.black
+                        , Colours.borderCss Colours.gray5
+                        , padding2 space4px space8px
+                        , textDecoration none
+                        , hover
+                            [ Colours.bgCss Colours.gray1
+                            ]
+                        ]
+                    ]
+                    [ text "Edit Language" ]
                 ]
             ]
         ]
@@ -764,84 +796,88 @@ viewTermDetails dict maybeSeg =
                     else
                         DictContext.lookupPhrase dict orthography
 
-                termInfo =
+                termRows =
                     case ( maybeToken, maybePhrase ) of
                         ( Just token, _ ) ->
-                            [ li [] [ text ("Orthography: " ++ token.orthography) ]
-                            , li [] [ text ("Definition: " ++ token.definition) ]
-                            , li [] [ text ("Phonetic: " ++ token.phonetic) ]
-                            , li [] [ text ("Notes: " ++ token.notes) ]
-                            , li [] [ text ("Original Context: " ++ token.originalContext) ]
-                            , li [] [ text ("Status: " ++ tokenStatusToString token.status) ]
+                            [ { label = "Orthography", value = token.orthography }
+                            , { label = "Definition", value = token.definition }
+                            , { label = "Phonetic", value = token.phonetic }
+                            , { label = "Notes", value = token.notes }
+                            , { label = "Original Context", value = token.originalContext }
+                            , { label = "Status", value = tokenStatusToString token.status }
                             ]
 
                         ( Nothing, Just phrase ) ->
-                            [ li [] [ text ("Phrase: " ++ String.join " " phrase.orthographySeq) ]
-                            , li [] [ text ("Definition: " ++ phrase.definition) ]
-                            , li [] [ text ("Notes: " ++ phrase.notes) ]
-                            , li [] [ text ("Original Context: " ++ phrase.originalContext) ]
-                            , li [] [ text ("Status: " ++ tokenStatusToString phrase.status) ]
+                            [ { label = "Phrase", value = String.join " " phrase.orthographySeq }
+                            , { label = "Definition", value = phrase.definition }
+                            , { label = "Notes", value = phrase.notes }
+                            , { label = "Original Context", value = phrase.originalContext }
+                            , { label = "Status", value = tokenStatusToString phrase.status }
                             ]
 
                         ( Nothing, Nothing ) ->
-                            [ li [] [ text "No term information available" ] ]
+                            [ { label = "Status", value = "No term information available" } ]
 
-                segAttributeInfo =
-                    [ li [] [ text ("Text: " ++ seg.text) ]
-                    , li [] [ text ("Sentence Index: " ++ String.fromInt seg.sentenceIdx) ]
-                    , li [] [ text ("Start Char: " ++ String.fromInt seg.startChar) ]
-                    , li [] [ text ("End Char: " ++ String.fromInt seg.endChar) ]
-                    , case seg.attributes.lemma of
-                        Just lemma ->
-                            li [] [ text ("Lemma: " ++ lemma) ]
+                segAttributeRows =
+                    [ { label = "Text", value = seg.text }
+                    , { label = "Sentence Index", value = String.fromInt seg.sentenceIdx }
+                    , { label = "Start Char", value = String.fromInt seg.startChar }
+                    , { label = "End Char", value = String.fromInt seg.endChar }
+                    , { label = "Lemma"
+                      , value =
+                            case seg.attributes.lemma of
+                                Just lemma ->
+                                    lemma
 
-                        Nothing ->
-                            li [] [ text "Lemma: (none)" ]
-                    , case seg.attributes.upos of
-                        Just upos ->
-                            li [] [ text ("UPOS: " ++ upos) ]
+                                Nothing ->
+                                    "(none)"
+                      }
+                    , { label = "UPOS"
+                      , value =
+                            case seg.attributes.upos of
+                                Just upos ->
+                                    upos
 
-                        Nothing ->
-                            li [] [ text "UPOS: (none)" ]
-                    , case seg.attributes.xpos of
-                        Just xpos ->
-                            li [] [ text ("XPOS: " ++ xpos) ]
+                                Nothing ->
+                                    "(none)"
+                      }
+                    , { label = "XPOS"
+                      , value =
+                            case seg.attributes.xpos of
+                                Just xpos ->
+                                    xpos
 
-                        Nothing ->
-                            li [] [ text "XPOS: (none)" ]
-                    , case seg.attributes.dependency of
-                        Just ( parentIdx, relation ) ->
-                            li [] [ text ("Dependency: " ++ String.fromInt parentIdx ++ " (" ++ relation ++ ")") ]
+                                Nothing ->
+                                    "(none)"
+                      }
+                    , { label = "Dependency"
+                      , value =
+                            case seg.attributes.dependency of
+                                Just ( parentIdx, relation ) ->
+                                    String.fromInt parentIdx ++ " (" ++ relation ++ ")"
 
-                        Nothing ->
-                            li [] [ text "Dependency: (none)" ]
-                    , case seg.attributes.conjugationChain of
-                        Just conjugationSteps ->
-                            li []
-                                [ text "Conjugation Chain: "
-                                , div [ css [ marginTop (px 8) ] ]
-                                    [ InflectionChain.inflectionChainC conjugationSteps ]
-                                ]
-
-                        Nothing ->
-                            li [] [ text "Conjugation Chain: (none)" ]
-                    , li []
-                        [ text "Misc: "
-                        , if Dict.isEmpty seg.attributes.misc then
-                            text "(none)"
-
-                          else
-                            ul []
-                                (Dict.toList seg.attributes.misc
-                                    |> List.map (\( key, value ) -> li [] [ text (key ++ ": " ++ value) ])
-                                )
-                        ]
+                                Nothing ->
+                                    "(none)"
+                      }
                     ]
+
+                conjugationChainSection =
+                    case seg.attributes.conjugationChain of
+                        Just conjugationSteps ->
+                            div []
+                                [ InflectionChain.inflectionChainC conjugationSteps ]
+
+                        Nothing ->
+                            text ""
+
+                dataViewLabelColor =
+                    Colours.colorCss Colours.gray10
             in
             div []
-                [ h3 [] [ text "Selected Term Details" ]
-                , ul []
-                    (termInfo ++ segAttributeInfo)
+                [ DataViewElements.keyValueGroupC termRows
+                , DataViewElements.keyValueGroupC segAttributeRows
+                , DataViewElements.dictKeyValueGroupC seg.attributes.misc
+                , conjugationChainSection
                 ]
 
 
