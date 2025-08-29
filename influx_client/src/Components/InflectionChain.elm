@@ -7,111 +7,119 @@ import Html.Styled as Html exposing (Html, div, span, text)
 import Html.Styled.Attributes as Attributes exposing (css)
 
 
+{-| Display an inflection chain as a clean horizontal flow with transformation steps.
+-}
 inflectionChainC : List ConjugationStep -> Html msg
 inflectionChainC conjugationSteps =
     case conjugationSteps of
         [] ->
             text ""
 
-        _ ->
+        firstStep :: remainingSteps ->
             div
                 [ css
                     [ displayFlex
                     , alignItems center
                     , flexWrap wrap
-                    , gap (px 8)
-                    , padding2 (px 24) (px 12)
-                    , paddingBottom (px 12)
+                    , gap (px 16)
+                    , padding2 (px 16) (px 20)
                     , backgroundColor (hex "#F8F9FA")
                     , borderRadius (px 6)
                     , border3 (px 1) solid (hex "#E9ECEF")
-                    , fontSize (Css.em 0.9)
-                    , position relative
+                    , fontSize (px 14)
+                    , lineHeight (num 1.5)
                     ]
                 ]
-                (buildChainElements conjugationSteps)
+                (termC firstStep.result :: List.map stepToArrowAndTerm remainingSteps)
 
 
-buildChainElements : List ConjugationStep -> List (Html msg)
-buildChainElements steps =
-    case steps of
-        [] ->
-            []
-
-        firstStep :: remainingSteps ->
-            let
-                startForm =
-                    span
-                        [ css
-                            [ fontWeight (int 500)
-                            , color (hex "#2D3748")
-                            ]
-                        ]
-                        [ text firstStep.form ]
-
-                chainElements =
-                    List.concatMap stepToElements (firstStep :: remainingSteps)
-            in
-            [ startForm ] ++ chainElements
-
-
-stepToElements : ConjugationStep -> List (Html msg)
-stepToElements step =
-    [ arrowWithLabel step.form
-    , span
+{-| Render a term in the chain with consistent styling.
+-}
+termC : String -> Html msg
+termC term =
+    span
         [ css
-            [ fontWeight (int 500)
-            , color (hex "#2D3748")
-            ]
-        ]
-        [ text step.result ]
-    ]
-
-
-arrowWithLabel : String -> Html msg
-arrowWithLabel label =
-    div
-        [ css
-            [ position relative
+            [ fontSize (px 16)
+            , fontWeight (int 600)
+            , color (hex "#1a202c")
+            , padding2 (px 6) (px 12)
+            , backgroundColor (hex "#ffffff")
+            , borderRadius (px 4)
+            , border3 (px 1) solid (hex "#cbd5e0")
+            , minHeight (px 32)
             , displayFlex
             , alignItems center
-            , margin2 zero (px 4)
-            , minWidth (px (max 60 (toFloat (String.length label) * 7 + 16)))
             ]
         ]
-        [ span
+        [ text term ]
+
+
+{-| Convert a conjugation step to an arrow with label plus the resulting term.
+-}
+stepToArrowAndTerm : ConjugationStep -> Html msg
+stepToArrowAndTerm step =
+    div
+        [ css
+            [ displayFlex
+            , alignItems center
+            , gap (px 16)
+            ]
+        ]
+        [ arrowWithLabelC step.form
+        , termC step.result
+        ]
+
+
+{-| Render a clean arrow with transformation label above it.
+-}
+arrowWithLabelC : String -> Html msg
+arrowWithLabelC label =
+    div
+        [ css
+            [ displayFlex
+            , flexDirection column
+            , alignItems center
+            , gap (px 6)
+            ]
+        ]
+        [ -- Transformation label
+          span
             [ css
-                [ position absolute
-                , top (px -20)
-                , left (pct 50)
-                , transform (translateX (pct -50))
-                , fontSize (Css.em 0.75)
-                , color (hex "#6B7280")
-                , whiteSpace noWrap
-                , backgroundColor (hex "#FFFFFF")
-                , padding2 (px 2) (px 4)
-                , borderRadius (px 3)
-                , border3 (px 1) solid (hex "#E5E7EB")
-                , zIndex (int 1)
+                [ fontSize (px 11)
+                , color (hex "#6b7280")
+                , fontWeight (int 500)
+                , textAlign center
+                , maxWidth (px 100)
+                , lineHeight (num 1.3)
                 ]
             ]
             [ text label ]
-        , div
+        , -- Clean arrow
+          div
             [ css
-                [ width (pct 100)
-                , height (px 1)
-                , backgroundColor (hex "#9CA3AF")
-                , position relative
+                [ displayFlex
+                , alignItems center
                 ]
             ]
-            []
-        , span
-            [ css
-                [ position absolute
-                , right (px -2)
-                , fontSize (Css.em 1.2)
-                , color (hex "#9CA3AF")
+            [ div
+                [ css
+                    [ width (px 24)
+                    , height (px 2)
+                    , backgroundColor (hex "#9ca3af")
+                    , borderRadius (px 1)
+                    ]
                 ]
+                []
+            , div
+                [ css
+                    [ width (px 0)
+                    , height (px 0)
+                    , borderLeft3 (px 6) solid (hex "#9ca3af")
+                    , borderTop3 (px 4) solid transparent
+                    , borderBottom3 (px 4) solid transparent
+                    , marginLeft (px -1)
+                    ]
+                ]
+                []
             ]
-            [ text "→" ]
         ]
