@@ -1,0 +1,121 @@
+@use "extern/radix-ui-colors.scss" as *;
+@use "theme.scss" as *;
+
+.double-ruby {
+    position: relative;
+    display: inline;
+    line-height: initial;
+}
+
+.double-ruby.auto-width {
+    // JavaScript will set min-width dynamically
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.double-ruby::before {
+    content: attr(data-top);
+    position: absolute;
+    top: -1.2em;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6em;
+    color: $violet-10;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: var(--annotation-max-width, 100%);
+}
+
+.double-ruby::after {
+    content: attr(data-bottom);
+    position: absolute;
+    bottom: -1.2em;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6em;
+    color: $red-10;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: var(--annotation-max-width, 100%);
+}
+
+.double-ruby:not([data-top])::before,
+.double-ruby[data-top=""]::before {
+    display: none;
+}
+
+.double-ruby:not([data-bottom])::after,
+.double-ruby[data-bottom=""]::after {
+    display: none;
+}
+
+
+.double-ruby.tkn-auto-width {
+    white-space: nowrap;
+}
+
+.annotated-text-div {
+    line-height: 3.2;
+}
+
+.annotated-text-styling {
+    white-space: preserve;
+    user-select: none;
+
+    span.document-whitespace-span {}
+
+    span.sentence-span {
+        span.tkn-unmarked {
+            background: $colorUnmarked;
+        }
+
+        span.tkn-ignored {
+            background: $colorIgnored;
+        }
+
+        span.tkn-l1 {
+            background: $colorL1;
+        }
+
+        span.tkn-l2 {
+            background: $colorL2;
+        }
+
+        span.tkn-l3 {
+            background: $colorL3;
+        }
+
+        span.tkn-l4 {
+            background: $colorL4;
+        }
+
+        span.tkn-l5 {
+            background: $colorL5;
+        }
+
+        span.tkn-known {
+            background: $colorKnown;
+        }
+
+        span.tkn-nostatus {
+            background: $unreachable-color;
+        }
+    }
+
+    span.tkn-focus {
+        text-decoration: underline;
+    }
+
+    span.clickable-tkn-span {
+        &:hover {
+            cursor: pointer;
+        }
+    }
+}

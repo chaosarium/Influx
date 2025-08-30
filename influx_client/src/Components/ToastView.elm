@@ -7,4 +7,6 @@ import Toast
 
 viewToast : List (Html.Attribute msg) -> Toast.Info String -> Html.Html msg
 viewToast attributes toast =
-    Html.div (Html.Attributes.class "toast toast--spaced" :: attributes) [ Html.text toast.content ]
+    Html.div
+        (Html.Attributes.class "toast-entry" :: attributes)
+        [ Html.text toast.content ]

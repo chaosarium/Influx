@@ -747,6 +747,7 @@ viewLemmaDisplay seg editingMode dict annotation_config showFurigana =
                     [ text "inflection: " ]
                 , span
                     [ style "cursor" "pointer"
+                    , class "annotated-text-styling"
                     , onClick SwitchToLemmaEditing
                     ]
                     lemmaView
@@ -754,6 +755,7 @@ viewLemmaDisplay seg editingMode dict annotation_config showFurigana =
                     [ text " → " ]
                 , span
                     [ style "cursor" "pointer"
+                    , class "annotated-text-styling"
                     , onClick SwitchToInflectedTokenEditing
                     ]
                     inflectedView
@@ -1085,9 +1087,7 @@ view shared route model =
                         [ Api.valueOrUnreachable model.get_doc_api_res <|
                             \response -> viewDocumentInfo response
                         , div
-                            [ class "annotated-doc-div"
-                            , class "dbg-off"
-                            ]
+                            [ class "annotated-text-div", class "annotated-text-styling" ]
                             (AnnotatedText.view
                                 annotatedDocViewCtx
                                 model.working_doc

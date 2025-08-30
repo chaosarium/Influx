@@ -1,0 +1,99 @@
+@use "extern/radix-ui-colors.scss" as *;
+@use "theme.scss" as *;
+
+// === BASIC ===
+
+$uiFont: "Open Sans";
+
+html {
+    height: 100%;
+}
+
+body {
+    font-family: $uiFont, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background-color: $gray-2;
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+// === SCROLLBAR ===
+
+* {
+    scrollbar-width: 8px;
+    scrollbar-color: $gray-5 #00000000;
+}
+
+// === valueOrUnreachable ===
+
+.http-status-not-asked {
+    color: $blue-9;
+}
+
+.http-status-loading {
+    color: $amber-9;
+}
+
+.http-status-failure {
+    color: $red-9;
+}
+
+.http-status-success {
+    color: $green-9;
+}
+
+// === DEBUG ONLY ===
+
+.dbg-unreachable {
+    background-color: $unreachable-color;
+}
+
+.dbg-todo {
+    background-color: $colorDebugTodo;
+}
+
+
+pre.dbg-json-pre {
+    text-wrap: auto;
+    margin: 10px;
+}
+
+.dbg-on {
+    span.sentence-span {
+        // border: 1px inset rgb(160, 15, 15);
+        padding-block: 2px;
+    }
+
+    span.document-whitespace-span {
+        // border: 1px dotted rgb(186, 166, 166);
+    }
+
+    span.single-token-span {
+        // border: 1px inset #bfdbfe;
+    }
+
+    span.phrase-span {
+        // border: 2px solid #05a239;
+        padding-block: 1px;
+    }
+
+    span.sentence-whitespace-span {
+        // border: 1px dotted #38bdf8;
+    }
+
+    span.sentence-punctuation-span {
+        // border: 1px solid #ff0000;
+    }
+}

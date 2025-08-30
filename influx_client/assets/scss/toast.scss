@@ -1,0 +1,25 @@
+@use "extern/radix-ui-colors.scss" as *;
+@use "theme.scss" as *;
+
+.toast-tray {
+    position: fixed;
+    left: 8px;
+    bottom: 8px;
+    z-index: 9999;
+
+    .toast-entry {
+        box-sizing: content-box;
+        display: flex;
+        box-shadow: $card-ish-shadow;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        width: 16em;
+        border: $borderSubtle;
+        padding: 8px 16px;
+        background-color: $white;
+        color: $black;
+        border-radius: $border-radius;
+        margin-top: 8px;
+    }
+}

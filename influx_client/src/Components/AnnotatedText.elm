@@ -88,7 +88,7 @@ viewDocumentSegment args segment =
     else
         case segment.inner of
             Sentence { segments } ->
-                span [ class "sentence-span annotated-text-container" ]
+                span [ class "sentence-span" ]
                     (List.filterMap (viewSentenceSegment args) segments |> List.concat)
 
             DocumentWhitespace ->
