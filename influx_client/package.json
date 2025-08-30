@@ -10,12 +10,14 @@
     "dev:elm-land": "elm-land server",
     "build": "npm run build:sass && npm run build:elm-land",
     "build:sass": "sass assets/scss/main.scss static/dist/main.css",
-    "build:elm-land": "elm-land build"
+    "build:elm-land": "elm-land build",
+    "generate-colors": "node scripts/generate-tailwind-colors.js"
   },
   "author": "",
   "devDependencies": {
     "concurrently": "^9.1.2",
-    "sass": "^1.83.1"
+    "sass": "^1.83.1",
+    "tailwindcss": "^4.0.0"
   },
   "dependencies": {
     "@radix-ui/colors": "^3.0.0"
