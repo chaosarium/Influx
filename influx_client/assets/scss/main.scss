@@ -27,3 +27,13 @@
     isolation: isolate;
     contain: layout style paint;
 }
+
+// TODO always have this class but style differently in different context
+.form-section-boxed {
+    border: 2px solid $gray-3;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0px;
+    background-color: $white;
+    box-shadow: $basic-shadow;
+}

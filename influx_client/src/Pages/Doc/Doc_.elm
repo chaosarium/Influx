@@ -11,12 +11,9 @@ import Components.AnnotatedText as AnnotatedText
 import Components.Common exposing (..)
 import Components.CssExtra exposing (..)
 import Components.DataViewElements as DataViewElements
-import Components.DbgDisplay
 import Components.DictionaryLookup as DictionaryLookup
 import Components.FormElements3 as FormElements3
 import Components.InflectionChain as InflectionChain
-import Components.Layout
-import Components.ListingElements
 import Components.TermEditForm as TermEditForm
 import Components.ToastView
 import Components.TtsEmitter
@@ -648,8 +645,9 @@ annotationSelectOptions =
 viewAnnotationControls : AnnotatedText.AnnotationConfig -> Bool -> Int -> Html Msg
 viewAnnotationControls config showFurigana sidebarWidth =
     FormElements3.formC
-        { sections =
-            [ { title = Just "Annotation Display Settings"
+        { section_div_attrs = []
+        , sections =
+            [ { title = Nothing
               , rows =
                     [ FormElements3.selectC
                         { label = "Top annotation"
@@ -762,11 +760,11 @@ viewLemmaDisplay seg editingMode dict annotation_config showFurigana =
                 ]
 
 
-viewTermDetails : DictContext.T -> Maybe SentSegV2 -> Html msg
+viewTermDetails : DictContext.T -> Maybe SentSegV2 -> List (Html msg)
 viewTermDetails dict maybeSeg =
     case maybeSeg of
         Nothing ->
-            text ""
+            []
 
         Just seg ->
             let
@@ -871,16 +869,12 @@ viewTermDetails dict maybeSeg =
 
                         Nothing ->
                             text ""
-
-                dataViewLabelColor =
-                    Colours.colorCss Colours.gray10
             in
-            div []
-                [ DataViewElements.keyValueGroupC termRows
-                , DataViewElements.keyValueGroupC segAttributeRows
-                , DataViewElements.dictKeyValueGroupC seg.attributes.misc
-                , conjugationChainSection
-                ]
+            [ DataViewElements.keyValueGroupC termRows
+            , DataViewElements.keyValueGroupC segAttributeRows
+            , DataViewElements.dictKeyValueGroupC seg.attributes.misc
+            , conjugationChainSection
+            ]
 
 
 tokenStatusToString : TokenStatus -> String
@@ -962,30 +956,26 @@ view shared route model =
                     TermEditorEvent
                     { dict = model.working_dict
                     , document_id =
-                        case String.toInt route.params.doc of
-                            Just id ->
-                                Just (Bindings.SerialId id)
-
-                            Nothing ->
-                                Nothing
+                        Maybe.map (\id -> Bindings.SerialId id) (String.toInt route.params.doc)
                     }
                 ]
 
         termDetailsCard =
             sidebarWidgetC
                 { title = "Term Details", isExpanded = True }
-                [ viewTermDetails model.working_dict model.focus_ctx.segment_selection
-                , case model.focus_ctx.segment_selection of
-                    Just seg ->
-                        if hasLemma seg then
-                            viewLemmaDisplay seg model.lemma_editing_mode model.working_dict model.annotation_config model.showFurigana
+                (viewTermDetails model.working_dict model.focus_ctx.segment_selection
+                    ++ [ case model.focus_ctx.segment_selection of
+                            Just seg ->
+                                if hasLemma seg then
+                                    viewLemmaDisplay seg model.lemma_editing_mode model.working_dict model.annotation_config model.showFurigana
 
-                        else
-                            text ""
+                                else
+                                    text ""
 
-                    Nothing ->
-                        text ""
-                ]
+                            Nothing ->
+                                text ""
+                       ]
+                )
 
         documentMetadataCard =
             case model.get_doc_api_res of

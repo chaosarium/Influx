@@ -6,9 +6,9 @@
     height: 100vh;
     overflow: hidden;
 
-    & div.sidebar {
+    div.sidebar {
         flex-shrink: 0;
-        width: 400px;
+        width: 450px;
         min-width: 200px;
         height: 100vh;
         overflow-y: auto;
@@ -18,14 +18,14 @@
         resize: horizontal;
         overflow: auto;
 
-        & div.sidebar-inner {
+        div.sidebar-inner {
             width: 100%;
             direction: ltr;
         }
 
     }
 
-    & #sidebar-left {
+    #sidebar-left {
         border-right: 1px solid $gray-5;
         // position: fixed;
         left: 0;
@@ -33,7 +33,7 @@
         direction: ltr;
     }
 
-    & #sidebar-right {
+    #sidebar-right {
         border-left: 1px solid $gray-5;
         // position: fixed;
         right: 0;
@@ -41,7 +41,7 @@
         direction: rtl;
     }
 
-    & details.sidebar-widget {
+    details.sidebar-widget {
         border: 1px solid $gray-3;
         border-radius: 8px;
         padding: 8px 16px;
@@ -60,7 +60,7 @@
             overflow: hidden;
         }
 
-        & summary {
+        summary {
             cursor: pointer;
             user-select: none;
             list-style: none;
@@ -71,14 +71,6 @@
             justify-content: space-between;
             align-items: center;
             height: 32px;
-
-            &::-webkit-details-marker {
-                display: none;
-            }
-
-            &::marker {
-                display: none;
-            }
 
             border-radius: 4px;
 
@@ -97,8 +89,11 @@
             transform: rotate(90deg);
         }
 
-        & .widget-content {
+        div.widget-content {
             padding-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
     }
 

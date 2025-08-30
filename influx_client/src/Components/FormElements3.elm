@@ -383,8 +383,8 @@ formSectionHr compact =
         []
 
 
-formC : { sections : List (FormSection msg), buttons : List (Html msg), status : List (Html msg), compact : Bool } -> Html msg
-formC { sections, buttons, status, compact } =
+formC : { sections : List (FormSection msg), section_div_attrs : List (Attribute msg), buttons : List (Html msg), status : List (Html msg), compact : Bool } -> Html msg
+formC { sections, section_div_attrs, buttons, status, compact } =
     let
         renderSection section =
             let
@@ -429,16 +429,7 @@ formC { sections, buttons, status, compact } =
                         [ buttonRowC section.buttons ]
             in
             div
-                [ css
-                    [ border2 (px 1) solid
-                    , Colours.borderCss Colours.gray3
-                    , borderRadius space8px
-                    , padding space16px
-                    , margin2 space16px space0px
-                    , Colours.bgCss Colours.white
-                    , bascShadow
-                    ]
-                ]
+                section_div_attrs
                 (List.concat
                     [ sectionHeader
                     , [ sectionContent ]

@@ -403,18 +403,18 @@ viewTermForm form lift args =
                     }
     in
     formC
-        { sections =
+        { section_div_attrs = []
+        , sections =
             [ { title = Just ("Editing " ++ form_data.token_or_phrase)
               , rows =
                     List.filterMap identity
                         [ Just (inputC { label = "Orthography", toMsg = Nothing, value_ = form_data.orthography, placeholder = "", compact = True })
                         , Just (inputC { label = "Definition", toMsg = Just (lift << InputChanged << UpdateDefinitionInput), value_ = form_data.definition, placeholder = "Definition...", compact = True })
-                        , case form_data.phonetic of
-                            Just p ->
-                                Just (inputC { label = "Phonetic", toMsg = Just (lift << InputChanged << UpdatePhoneticInput), value_ = p, placeholder = "Phonetic...", compact = True })
-
-                            Nothing ->
-                                Nothing
+                        , Maybe.map
+                            (\p ->
+                                inputC { label = "Phonetic", toMsg = Just (lift << InputChanged << UpdatePhoneticInput), value_ = p, placeholder = "Phonetic...", compact = True }
+                            )
+                            form_data.phonetic
                         , Just (termStatusSelectC { label = "Status", toMsg = lift << InputChanged << UpdateStatusInput, selectedStatus = form_data.status, compact = True })
                         , Just (textareaC { label = "Notes", toMsg = Just (lift << InputChanged << UpdateNotesInput), value_ = form_data.notes, placeholder = "Notes...", minHeight = 80, compact = True })
                         ]

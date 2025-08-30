@@ -71,42 +71,42 @@
 
     span.document-whitespace-span {}
 
-    span.sentence-span {
-        span.tkn-unmarked {
-            background: $colorUnmarked;
-        }
+    span.sentence-span {}
 
-        span.tkn-ignored {
-            background: $colorIgnored;
-        }
+    span.tkn-unmarked {
+        background: $colorUnmarked;
+    }
 
-        span.tkn-l1 {
-            background: $colorL1;
-        }
+    span.tkn-ignored {
+        background: $colorIgnored;
+    }
 
-        span.tkn-l2 {
-            background: $colorL2;
-        }
+    span.tkn-l1 {
+        background: $colorL1;
+    }
 
-        span.tkn-l3 {
-            background: $colorL3;
-        }
+    span.tkn-l2 {
+        background: $colorL2;
+    }
 
-        span.tkn-l4 {
-            background: $colorL4;
-        }
+    span.tkn-l3 {
+        background: $colorL3;
+    }
 
-        span.tkn-l5 {
-            background: $colorL5;
-        }
+    span.tkn-l4 {
+        background: $colorL4;
+    }
 
-        span.tkn-known {
-            background: $colorKnown;
-        }
+    span.tkn-l5 {
+        background: $colorL5;
+    }
 
-        span.tkn-nostatus {
-            background: $unreachable-color;
-        }
+    span.tkn-known {
+        background: $colorKnown;
+    }
+
+    span.tkn-nostatus {
+        background: $unreachable-color;
     }
 
     span.tkn-focus {

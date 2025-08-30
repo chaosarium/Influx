@@ -486,7 +486,8 @@ viewDocumentForm { originalDocument, workingDocument, currentTagInput } language
                         "Save"
     in
     formC
-        { sections =
+        { section_div_attrs = [ class "form-section-boxed" ]
+        , sections =
             [ { title = Nothing
               , rows =
                     [ inputC { label = "Title", toMsg = Just UpdateTitleInput, value_ = workingDocument.title, placeholder = "Edit title...", compact = False }

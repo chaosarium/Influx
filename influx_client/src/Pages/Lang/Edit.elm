@@ -725,7 +725,8 @@ viewLanguageForm mode { originalLanguage, workingLanguage, currentDictInput, tts
                 ]
     in
     formC
-        { sections =
+        { section_div_attrs = [ class "form-section-boxed" ]
+        , sections =
             [ { title = Just "Basic Information"
               , rows =
                     [ inputC
